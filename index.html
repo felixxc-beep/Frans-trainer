@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="nl">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Leer Franse woordenschat, zinnen, werkwoorden en grammatica per Trajet.">
+    <meta name="theme-color" content="#12372a">
+    <title>Mon parcours | Univers français 1</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='15' fill='%2312372a'/%3E%3Cpath d='M18 16h28v9H28v8h15v9H28v14H18z' fill='%23fff7df'/%3E%3Ccircle cx='48' cy='49' r='7' fill='%23f4b942'/%3E%3C/svg%3E">
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <header class="topbar">
+      <button class="brand" type="button" data-action="home" aria-label="Ga naar de startpagina">
+        <span class="brand-mark" aria-hidden="true">F</span>
+        <span><strong>Mon parcours</strong><small>Univers français 1</small></span>
+      </button>
+      <button class="icon-button" type="button" data-action="open-settings" aria-label="Instellingen">Aa</button>
+    </header>
+
+    <main id="app" tabindex="-1">
+      <section class="loading-state" aria-live="polite">
+        <span class="loader" aria-hidden="true"></span>
+        <p>Je cursus wordt klaargezet…</p>
+      </section>
+    </main>
+
+    <dialog id="settings-dialog">
+      <form method="dialog" class="dialog-card">
+        <div class="dialog-heading">
+          <div><p class="eyebrow">Instellingen</p><h2>Hoe wil je oefenen?</h2></div>
+          <button class="icon-button" value="cancel" aria-label="Sluiten">×</button>
+        </div>
+        <label class="switch-row">
+          <span><strong>Accenten streng beoordelen</strong><small>é en e tellen als verschillende letters</small></span>
+          <input id="strict-accents" type="checkbox" checked>
+        </label>
+      </form>
+    </dialog>
+
+    <noscript>Deze studietool heeft JavaScript nodig.</noscript>
+    <script src="./app.js" defer></script>
+  </body>
+</html>
