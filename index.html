@@ -15,7 +15,10 @@
         <span class="brand-mark" aria-hidden="true">F</span>
         <span><strong>Mon parcours</strong><small>Univers français 1</small></span>
       </button>
-      <button class="icon-button" type="button" data-action="open-settings" aria-label="Instellingen">Aa</button>
+      <div class="topbar-actions">
+        <button class="identity-button" type="button" data-action="open-identity" aria-label="Koppel of wissel leerling"><span id="identity-label">Lokaal</span></button>
+        <button class="icon-button" type="button" data-action="open-settings" aria-label="Instellingen">Aa</button>
+      </div>
     </header>
 
     <main id="app" tabindex="-1">
@@ -33,12 +36,34 @@
         </div>
         <label class="switch-row">
           <span><strong>Accenten streng beoordelen</strong><small>é en e tellen als verschillende letters</small></span>
-          <input id="strict-accents" type="checkbox" checked>
+          <input id="strict-accents" type="checkbox" checked disabled>
         </label>
       </form>
     </dialog>
 
+    <dialog id="identity-dialog">
+      <form id="identity-form" class="dialog-card">
+        <div class="dialog-heading">
+          <div><p class="eyebrow">Leerling</p><h2>Koppel je voortgang</h2></div>
+          <button class="icon-button" type="button" data-action="close-identity" aria-label="Sluiten">×</button>
+        </div>
+        <p id="identity-current" class="identity-current"></p>
+        <div id="identity-fields" class="identity-fields">
+          <label><span>Klascode</span><input name="class_code" type="text" maxlength="32" autocomplete="off" required></label>
+          <label><span>Leerlingcode</span><input name="student_code" type="text" minlength="8" maxlength="64" autocomplete="off" required></label>
+          <p class="privacy-note">Er wordt geen wachtwoord of privé-e-mailadres gevraagd.</p>
+          <button class="button button-primary" type="submit">Koppelen / wisselen</button>
+        </div>
+        <p id="identity-message" class="identity-message" aria-live="polite"></p>
+        <button class="text-button" type="button" data-action="use-local-identity">Gebruik alleen lokale voortgang</button>
+      </form>
+    </dialog>
+
     <noscript>Deze studietool heeft JavaScript nodig.</noscript>
+    <script src="./config.js" defer></script>
+    <script src="./supabase-client.js" defer></script>
+    <script src="./student-identity.js" defer></script>
+    <script src="./sync-manager.js" defer></script>
     <script src="./app.js" defer></script>
   </body>
 </html>

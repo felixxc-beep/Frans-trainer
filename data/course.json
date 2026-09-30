@@ -131,7 +131,8 @@
           "category": "substantifs",
           "type": "vocabulary",
           "fr": "l’âge",
-          "nl": "de leeftijd"
+          "nl": "de leeftijd",
+          "id": "uf1-item-000001"
         },
         {
           "top_category": "Atelier Parole",
@@ -141,7 +142,8 @@
           "category": "substantifs",
           "type": "vocabulary",
           "fr": "l’ami",
-          "nl": "de vriend"
+          "nl": "de vriend",
+          "id": "uf1-item-000002"
         },
         {
           "top_category": "Atelier Parole",
@@ -151,7 +153,8 @@
           "category": "substantifs",
           "type": "vocabulary",
           "fr": "l’amie",
-          "nl": "de vriendin"
+          "nl": "de vriendin",
+          "id": "uf1-item-000003"
         },
         {
           "top_category": "Atelier Parole",
@@ -161,7 +164,8 @@
           "category": "substantifs",
           "type": "vocabulary",
           "fr": "l’an",
-          "nl": "het jaar"
+          "nl": "het jaar",
+          "id": "uf1-item-000004"
         },
         {
           "top_category": "Atelier Parole",
@@ -171,7 +175,8 @@
           "category": "substantifs",
           "type": "vocabulary",
           "fr": "l’année",
-          "nl": "het jaar"
+          "nl": "het jaar",
+          "id": "uf1-item-000005"
         },
         {
           "top_category": "Atelier Parole",
@@ -181,7 +186,8 @@
           "category": "substantifs",
           "type": "vocabulary",
           "fr": "l’anniversaire",
-          "nl": "de verjaardag"
+          "nl": "de verjaardag",
+          "id": "uf1-item-000006"
         },
         {
           "top_category": "Atelier Parole",
@@ -191,7 +197,12 @@
           "category": "substantifs",
           "type": "vocabulary",
           "fr": "le ballon (de foot)",
-          "nl": "de (voet)bal"
+          "nl": "de (voet)bal",
+          "accepted_answers": [
+            "le ballon",
+            "le ballon de foot"
+          ],
+          "id": "uf1-item-000007"
         },
         {
           "top_category": "Atelier Parole",
@@ -201,7 +212,8 @@
           "category": "substantifs",
           "type": "vocabulary",
           "fr": "la banane",
-          "nl": "de banaan"
+          "nl": "de banaan",
+          "id": "uf1-item-000008"
         },
         {
           "top_category": "Atelier Parole",
@@ -211,7 +223,12 @@
           "category": "substantifs",
           "type": "vocabulary",
           "fr": "la basket",
-          "nl": "de basket(schoen), de sneaker"
+          "nl": "de basket(schoen), de sneaker",
+          "accepted_answers_nl": [
+            "de basket(schoen)",
+            "de sneaker"
+          ],
+          "id": "uf1-item-000009"
         },
         {
           "top_category": "Atelier Parole",
@@ -221,7 +238,12 @@
           "category": "substantifs",
           "type": "vocabulary",
           "fr": "le basket",
-          "nl": "de basket(sport), het basket"
+          "nl": "de basket(sport), het basket",
+          "accepted_answers_nl": [
+            "de basket(sport)",
+            "het basket"
+          ],
+          "id": "uf1-item-000010"
         },
         {
           "top_category": "Atelier Parole",
@@ -231,7 +253,8 @@
           "category": "substantifs",
           "type": "vocabulary",
           "fr": "le chat",
-          "nl": "de kat"
+          "nl": "de kat",
+          "id": "uf1-item-000011"
         },
         {
           "top_category": "Atelier Parole",
@@ -241,7 +264,8 @@
           "category": "substantifs",
           "type": "vocabulary",
           "fr": "le chien",
-          "nl": "de hond"
+          "nl": "de hond",
+          "id": "uf1-item-000012"
         },
         {
           "top_category": "Atelier Parole",
@@ -251,7 +275,8 @@
           "category": "substantifs",
           "type": "vocabulary",
           "fr": "le cinéma",
-          "nl": "de bioscoop"
+          "nl": "de bioscoop",
+          "id": "uf1-item-000013"
         },
         {
           "top_category": "Atelier Parole",
@@ -261,7 +286,8 @@
           "category": "substantifs",
           "type": "vocabulary",
           "fr": "la classe",
-          "nl": "de klas"
+          "nl": "de klas",
+          "id": "uf1-item-000014"
         },
         {
           "top_category": "Atelier Parole",
@@ -271,7 +297,8 @@
           "category": "substantifs",
           "type": "vocabulary",
           "fr": "le copain",
-          "nl": "de vriend"
+          "nl": "de vriend",
+          "id": "uf1-item-000015"
         },
         {
           "top_category": "Atelier Parole",
@@ -281,7 +308,8 @@
           "category": "substantifs",
           "type": "vocabulary",
           "fr": "la copine",
-          "nl": "de vriendin"
+          "nl": "de vriendin",
+          "id": "uf1-item-000016"
         },
         {
           "top_category": "Atelier Parole",
@@ -291,7 +319,8 @@
           "category": "substantifs",
           "type": "vocabulary",
           "fr": "l’école",
-          "nl": "de school"
+          "nl": "de school",
+          "id": "uf1-item-000017"
         },
         {
           "top_category": "Atelier Parole",
@@ -301,7 +330,8 @@
           "category": "substantifs",
           "type": "vocabulary",
           "fr": "l’élève",
-          "nl": "de leerling"
+          "nl": "de leerling",
+          "id": "uf1-item-000018"
         },
         {
           "top_category": "Atelier Parole",
@@ -311,7 +341,12 @@
           "category": "substantifs",
           "type": "vocabulary",
           "fr": "la fille",
-          "nl": "het meisje, de dochter"
+          "nl": "het meisje, de dochter",
+          "accepted_answers_nl": [
+            "het meisje",
+            "de dochter"
+          ],
+          "id": "uf1-item-000019"
         },
         {
           "top_category": "Atelier Parole",
@@ -321,7 +356,8 @@
           "category": "substantifs",
           "type": "vocabulary",
           "fr": "le fils",
-          "nl": "de zoon"
+          "nl": "de zoon",
+          "id": "uf1-item-000020"
         },
         {
           "top_category": "Atelier Parole",
@@ -331,7 +367,8 @@
           "category": "substantifs",
           "type": "vocabulary",
           "fr": "le foot",
-          "nl": "het voetbal"
+          "nl": "het voetbal",
+          "id": "uf1-item-000021"
         },
         {
           "top_category": "Atelier Parole",
@@ -341,7 +378,8 @@
           "category": "substantifs",
           "type": "vocabulary",
           "fr": "le frère",
-          "nl": "de broer"
+          "nl": "de broer",
+          "id": "uf1-item-000022"
         },
         {
           "top_category": "Atelier Parole",
@@ -351,7 +389,8 @@
           "category": "substantifs",
           "type": "vocabulary",
           "fr": "le garçon",
-          "nl": "de jongen"
+          "nl": "de jongen",
+          "id": "uf1-item-000023"
         },
         {
           "top_category": "Atelier Parole",
@@ -361,7 +400,16 @@
           "category": "substantifs",
           "type": "vocabulary",
           "fr": "la gym(nastique)",
-          "nl": "de gymnastiek, het turnen"
+          "nl": "de gymnastiek, het turnen",
+          "accepted_answers": [
+            "la gym",
+            "la gymnastique"
+          ],
+          "accepted_answers_nl": [
+            "de gymnastiek",
+            "het turnen"
+          ],
+          "id": "uf1-item-000024"
         },
         {
           "top_category": "Atelier Parole",
@@ -371,7 +419,8 @@
           "category": "substantifs",
           "type": "vocabulary",
           "fr": "le hobby",
-          "nl": "de hobby"
+          "nl": "de hobby",
+          "id": "uf1-item-000025"
         },
         {
           "top_category": "Atelier Parole",
@@ -381,7 +430,8 @@
           "category": "substantifs",
           "type": "vocabulary",
           "fr": "le jean",
-          "nl": "de jeans(broek)"
+          "nl": "de jeans(broek)",
+          "id": "uf1-item-000026"
         },
         {
           "top_category": "Atelier Parole",
@@ -391,7 +441,12 @@
           "category": "substantifs",
           "type": "vocabulary",
           "fr": "le message",
-          "nl": "het bericht, de boodschap"
+          "nl": "het bericht, de boodschap",
+          "accepted_answers_nl": [
+            "het bericht",
+            "de boodschap"
+          ],
+          "id": "uf1-item-000027"
         },
         {
           "top_category": "Atelier Parole",
@@ -401,7 +456,8 @@
           "category": "substantifs",
           "type": "vocabulary",
           "fr": "la musique",
-          "nl": "de muziek"
+          "nl": "de muziek",
+          "id": "uf1-item-000028"
         },
         {
           "top_category": "Atelier Parole",
@@ -411,7 +467,12 @@
           "category": "substantifs",
           "type": "vocabulary",
           "fr": "le nom (de famille)",
-          "nl": "de (familie)naam"
+          "nl": "de (familie)naam",
+          "accepted_answers": [
+            "le nom",
+            "le nom de famille"
+          ],
+          "id": "uf1-item-000029"
         },
         {
           "top_category": "Atelier Parole",
@@ -421,7 +482,8 @@
           "category": "substantifs",
           "type": "vocabulary",
           "fr": "la pomme",
-          "nl": "de appel"
+          "nl": "de appel",
+          "id": "uf1-item-000030"
         },
         {
           "top_category": "Atelier Parole",
@@ -431,7 +493,12 @@
           "category": "substantifs",
           "type": "vocabulary",
           "fr": "le (pré)nom",
-          "nl": "de (voor)naam"
+          "nl": "de (voor)naam",
+          "accepted_answers": [
+            "le nom",
+            "le prénom"
+          ],
+          "id": "uf1-item-000031"
         },
         {
           "top_category": "Atelier Parole",
@@ -441,7 +508,12 @@
           "category": "substantifs",
           "type": "vocabulary",
           "fr": "la professeur / le professeur",
-          "nl": "de leerkracht"
+          "nl": "de leerkracht",
+          "accepted_answers": [
+            "la professeur",
+            "le professeur"
+          ],
+          "id": "uf1-item-000032"
         },
         {
           "top_category": "Atelier Parole",
@@ -451,7 +523,12 @@
           "category": "substantifs",
           "type": "vocabulary",
           "fr": "le short",
-          "nl": "de short, de korte broek"
+          "nl": "de short, de korte broek",
+          "accepted_answers_nl": [
+            "de short",
+            "de korte broek"
+          ],
+          "id": "uf1-item-000033"
         },
         {
           "top_category": "Atelier Parole",
@@ -461,7 +538,8 @@
           "category": "substantifs",
           "type": "vocabulary",
           "fr": "le teeshirt",
-          "nl": "het T-shirt"
+          "nl": "het T-shirt",
+          "id": "uf1-item-000034"
         },
         {
           "top_category": "Atelier Parole",
@@ -471,7 +549,8 @@
           "category": "substantifs",
           "type": "vocabulary",
           "fr": "le vélo",
-          "nl": "de fiets"
+          "nl": "de fiets",
+          "id": "uf1-item-000035"
         },
         {
           "top_category": "Atelier Parole",
@@ -481,7 +560,12 @@
           "category": "adjectifs",
           "type": "vocabulary",
           "fr": "chouette",
-          "nl": "tof, leuk"
+          "nl": "tof, leuk",
+          "accepted_answers_nl": [
+            "tof",
+            "leuk"
+          ],
+          "id": "uf1-item-000036"
         },
         {
           "top_category": "Atelier Parole",
@@ -491,7 +575,16 @@
           "category": "adjectifs",
           "type": "vocabulary",
           "fr": "intelligent(e)",
-          "nl": "verstandig, slim"
+          "nl": "verstandig, slim",
+          "accepted_answers": [
+            "intelligent",
+            "intelligente"
+          ],
+          "accepted_answers_nl": [
+            "verstandig",
+            "slim"
+          ],
+          "id": "uf1-item-000037"
         },
         {
           "top_category": "Atelier Parole",
@@ -501,7 +594,12 @@
           "category": "adjectifs",
           "type": "vocabulary",
           "fr": "nouveau, nouvelle",
-          "nl": "nieuw"
+          "nl": "nieuw",
+          "accepted_answers": [
+            "nouveau",
+            "nouvelle"
+          ],
+          "id": "uf1-item-000038"
         },
         {
           "top_category": "Atelier Parole",
@@ -511,7 +609,12 @@
           "category": "adjectifs",
           "type": "vocabulary",
           "fr": "premier, première",
-          "nl": "eerst"
+          "nl": "eerst",
+          "accepted_answers": [
+            "premier",
+            "première"
+          ],
+          "id": "uf1-item-000039"
         },
         {
           "top_category": "Atelier Parole",
@@ -521,7 +624,8 @@
           "category": "adjectifs",
           "type": "vocabulary",
           "fr": "super",
-          "nl": "super"
+          "nl": "super",
+          "id": "uf1-item-000040"
         },
         {
           "top_category": "Atelier Parole",
@@ -531,7 +635,12 @@
           "category": "adjectifs",
           "type": "vocabulary",
           "fr": "sympa",
-          "nl": "tof, sympathiek"
+          "nl": "tof, sympathiek",
+          "accepted_answers_nl": [
+            "tof",
+            "sympathiek"
+          ],
+          "id": "uf1-item-000041"
         },
         {
           "top_category": "Atelier Parole",
@@ -541,7 +650,8 @@
           "category": "mots invariables",
           "type": "vocabulary",
           "fr": "aussi",
-          "nl": "ook"
+          "nl": "ook",
+          "id": "uf1-item-000042"
         },
         {
           "top_category": "Atelier Parole",
@@ -551,7 +661,8 @@
           "category": "mots invariables",
           "type": "vocabulary",
           "fr": "beaucoup",
-          "nl": "veel"
+          "nl": "veel",
+          "id": "uf1-item-000043"
         },
         {
           "top_category": "Atelier Parole",
@@ -561,7 +672,12 @@
           "category": "mots invariables",
           "type": "vocabulary",
           "fr": "combien (de)",
-          "nl": "hoeveel"
+          "nl": "hoeveel",
+          "accepted_answers": [
+            "combien",
+            "combien de"
+          ],
+          "id": "uf1-item-000044"
         },
         {
           "top_category": "Atelier Parole",
@@ -571,7 +687,8 @@
           "category": "mots invariables",
           "type": "vocabulary",
           "fr": "comment",
-          "nl": "hoe"
+          "nl": "hoe",
+          "id": "uf1-item-000045"
         },
         {
           "top_category": "Atelier Parole",
@@ -581,7 +698,12 @@
           "category": "mots invariables",
           "type": "vocabulary",
           "fr": "déjà",
-          "nl": "al, reeds"
+          "nl": "al, reeds",
+          "accepted_answers_nl": [
+            "al",
+            "reeds"
+          ],
+          "id": "uf1-item-000046"
         },
         {
           "top_category": "Atelier Parole",
@@ -591,7 +713,8 @@
           "category": "mots invariables",
           "type": "vocabulary",
           "fr": "donc",
-          "nl": "dus"
+          "nl": "dus",
+          "id": "uf1-item-000047"
         },
         {
           "top_category": "Atelier Parole",
@@ -601,7 +724,8 @@
           "category": "mots invariables",
           "type": "vocabulary",
           "fr": "et toi",
-          "nl": "en jij"
+          "nl": "en jij",
+          "id": "uf1-item-000048"
         },
         {
           "top_category": "Atelier Parole",
@@ -611,7 +735,12 @@
           "category": "mots invariables",
           "type": "vocabulary",
           "fr": "(pas) loin de",
-          "nl": "(niet) ver van"
+          "nl": "(niet) ver van",
+          "accepted_answers": [
+            "loin de",
+            "pas loin de"
+          ],
+          "id": "uf1-item-000049"
         },
         {
           "top_category": "Atelier Parole",
@@ -621,7 +750,8 @@
           "category": "mots invariables",
           "type": "vocabulary",
           "fr": "salut",
-          "nl": "hallo"
+          "nl": "hallo",
+          "id": "uf1-item-000050"
         },
         {
           "top_category": "Atelier Parole",
@@ -631,7 +761,8 @@
           "category": "mots invariables",
           "type": "vocabulary",
           "fr": "trop",
-          "nl": "te (veel)"
+          "nl": "te (veel)",
+          "id": "uf1-item-000051"
         },
         {
           "top_category": "Atelier Parole",
@@ -641,7 +772,8 @@
           "category": "mots invariables",
           "type": "vocabulary",
           "fr": "voici",
-          "nl": "ziehier"
+          "nl": "ziehier",
+          "id": "uf1-item-000052"
         },
         {
           "top_category": "Atelier Parole",
@@ -651,7 +783,8 @@
           "category": "mots invariables",
           "type": "vocabulary",
           "fr": "voilà",
-          "nl": "ziedaar"
+          "nl": "ziedaar",
+          "id": "uf1-item-000053"
         },
         {
           "top_category": "Atelier Parole",
@@ -661,7 +794,8 @@
           "category": "expressions",
           "type": "vocabulary",
           "fr": "Bonjour.",
-          "nl": "Goeiedag."
+          "nl": "Goeiedag.",
+          "id": "uf1-item-000054"
         },
         {
           "top_category": "Atelier Parole",
@@ -671,7 +805,8 @@
           "category": "expressions",
           "type": "vocabulary",
           "fr": "Ça tombe bien.",
-          "nl": "Dat komt goed uit."
+          "nl": "Dat komt goed uit.",
+          "id": "uf1-item-000055"
         },
         {
           "top_category": "Atelier Parole",
@@ -681,7 +816,8 @@
           "category": "expressions",
           "type": "vocabulary",
           "fr": "Ça va ?",
-          "nl": "Gaat het?"
+          "nl": "Gaat het?",
+          "id": "uf1-item-000056"
         },
         {
           "top_category": "Atelier Parole",
@@ -691,7 +827,8 @@
           "category": "expressions",
           "type": "vocabulary",
           "fr": "Ça va bien.",
-          "nl": "Het gaat goed."
+          "nl": "Het gaat goed.",
+          "id": "uf1-item-000057"
         },
         {
           "top_category": "Atelier Parole",
@@ -701,7 +838,8 @@
           "category": "expressions",
           "type": "vocabulary",
           "fr": "J’habite à Bruxelles.",
-          "nl": "Ik woon in Brussel."
+          "nl": "Ik woon in Brussel.",
+          "id": "uf1-item-000058"
         },
         {
           "top_category": "Atelier Parole",
@@ -711,7 +849,8 @@
           "category": "expressions",
           "type": "vocabulary",
           "fr": "Tu habites où ?",
-          "nl": "Waar woon jij?"
+          "nl": "Waar woon jij?",
+          "id": "uf1-item-000059"
         },
         {
           "top_category": "Atelier Parole",
@@ -721,7 +860,8 @@
           "category": "substantifs",
           "type": "vocabulary",
           "fr": "le badminton",
-          "nl": "(het) badminton"
+          "nl": "(het) badminton",
+          "id": "uf1-item-000060"
         },
         {
           "top_category": "Atelier Parole",
@@ -731,7 +871,8 @@
           "category": "substantifs",
           "type": "vocabulary",
           "fr": "la casquette",
-          "nl": "de pet"
+          "nl": "de pet",
+          "id": "uf1-item-000061"
         },
         {
           "top_category": "Atelier Parole",
@@ -741,7 +882,12 @@
           "category": "substantifs",
           "type": "vocabulary",
           "fr": "le coach",
-          "nl": "de coach, de trainer"
+          "nl": "de coach, de trainer",
+          "accepted_answers_nl": [
+            "de coach",
+            "de trainer"
+          ],
+          "id": "uf1-item-000062"
         },
         {
           "top_category": "Atelier Parole",
@@ -751,7 +897,8 @@
           "category": "substantifs",
           "type": "vocabulary",
           "fr": "le cours",
-          "nl": "de les"
+          "nl": "de les",
+          "id": "uf1-item-000063"
         },
         {
           "top_category": "Atelier Parole",
@@ -761,7 +908,8 @@
           "category": "substantifs",
           "type": "vocabulary",
           "fr": "le cyclisme",
-          "nl": "de wielersport"
+          "nl": "de wielersport",
+          "id": "uf1-item-000064"
         },
         {
           "top_category": "Atelier Parole",
@@ -771,7 +919,8 @@
           "category": "substantifs",
           "type": "vocabulary",
           "fr": "la danse",
-          "nl": "de dans"
+          "nl": "de dans",
+          "id": "uf1-item-000065"
         },
         {
           "top_category": "Atelier Parole",
@@ -781,7 +930,8 @@
           "category": "substantifs",
           "type": "vocabulary",
           "fr": "le degré",
-          "nl": "de graad"
+          "nl": "de graad",
+          "id": "uf1-item-000066"
         },
         {
           "top_category": "Atelier Parole",
@@ -791,7 +941,8 @@
           "category": "substantifs",
           "type": "vocabulary",
           "fr": "l’église",
-          "nl": "de kerk"
+          "nl": "de kerk",
+          "id": "uf1-item-000067"
         },
         {
           "top_category": "Atelier Parole",
@@ -801,7 +952,8 @@
           "category": "substantifs",
           "type": "vocabulary",
           "fr": "la gourde",
-          "nl": "de drinkfles"
+          "nl": "de drinkfles",
+          "id": "uf1-item-000068"
         },
         {
           "top_category": "Atelier Parole",
@@ -811,7 +963,8 @@
           "category": "substantifs",
           "type": "vocabulary",
           "fr": "le groupe",
-          "nl": "de groep"
+          "nl": "de groep",
+          "id": "uf1-item-000069"
         },
         {
           "top_category": "Atelier Parole",
@@ -821,7 +974,8 @@
           "category": "substantifs",
           "type": "vocabulary",
           "fr": "l’horloge",
-          "nl": "de klok"
+          "nl": "de klok",
+          "id": "uf1-item-000070"
         },
         {
           "top_category": "Atelier Parole",
@@ -831,7 +985,12 @@
           "category": "substantifs",
           "type": "vocabulary",
           "fr": "le jeu vidéo",
-          "nl": "het videospel, de videogame"
+          "nl": "het videospel, de videogame",
+          "accepted_answers_nl": [
+            "het videospel",
+            "de videogame"
+          ],
+          "id": "uf1-item-000071"
         },
         {
           "top_category": "Atelier Parole",
@@ -841,7 +1000,12 @@
           "category": "substantifs",
           "type": "vocabulary",
           "fr": "le loisir",
-          "nl": "de hobby, de vrije tijd"
+          "nl": "de hobby, de vrije tijd",
+          "accepted_answers_nl": [
+            "de hobby",
+            "de vrije tijd"
+          ],
+          "id": "uf1-item-000072"
         },
         {
           "top_category": "Atelier Parole",
@@ -851,7 +1015,8 @@
           "category": "substantifs",
           "type": "vocabulary",
           "fr": "le miroir",
-          "nl": "de spiegel"
+          "nl": "de spiegel",
+          "id": "uf1-item-000073"
         },
         {
           "top_category": "Atelier Parole",
@@ -861,7 +1026,8 @@
           "category": "substantifs",
           "type": "vocabulary",
           "fr": "le padel",
-          "nl": "(de) padel"
+          "nl": "(de) padel",
+          "id": "uf1-item-000074"
         },
         {
           "top_category": "Atelier Parole",
@@ -871,7 +1037,8 @@
           "category": "substantifs",
           "type": "vocabulary",
           "fr": "les réseaux sociaux",
-          "nl": "de sociale media"
+          "nl": "de sociale media",
+          "id": "uf1-item-000075"
         },
         {
           "top_category": "Atelier Parole",
@@ -881,7 +1048,8 @@
           "category": "substantifs",
           "type": "vocabulary",
           "fr": "le sac à dos",
-          "nl": "de rugzak"
+          "nl": "de rugzak",
+          "id": "uf1-item-000076"
         },
         {
           "top_category": "Atelier Parole",
@@ -891,7 +1059,17 @@
           "category": "substantifs",
           "type": "vocabulary",
           "fr": "la salle (de danse) (de sport)",
-          "nl": "de (dans)zaal, de (sport)zaal"
+          "nl": "de (dans)zaal, de (sport)zaal",
+          "accepted_answers": [
+            "la salle",
+            "la salle de danse",
+            "la salle de sport"
+          ],
+          "accepted_answers_nl": [
+            "de (dans)zaal",
+            "de (sport)zaal"
+          ],
+          "id": "uf1-item-000077"
         },
         {
           "top_category": "Atelier Parole",
@@ -901,7 +1079,8 @@
           "category": "substantifs",
           "type": "vocabulary",
           "fr": "le volley",
-          "nl": "het volleybal"
+          "nl": "het volleybal",
+          "id": "uf1-item-000078"
         },
         {
           "top_category": "Atelier Parole",
@@ -911,7 +1090,12 @@
           "category": "verbes / expressions verbales",
           "type": "vocabulary",
           "fr": "cuisiner",
-          "nl": "koken, kokkerellen"
+          "nl": "koken, kokkerellen",
+          "accepted_answers_nl": [
+            "koken",
+            "kokkerellen"
+          ],
+          "id": "uf1-item-000079"
         },
         {
           "top_category": "Atelier Parole",
@@ -921,7 +1105,8 @@
           "category": "verbes / expressions verbales",
           "type": "vocabulary",
           "fr": "dessiner",
-          "nl": "tekenen"
+          "nl": "tekenen",
+          "id": "uf1-item-000080"
         },
         {
           "top_category": "Atelier Parole",
@@ -931,7 +1116,8 @@
           "category": "verbes / expressions verbales",
           "type": "vocabulary",
           "fr": "écouter de la musique",
-          "nl": "naar muziek luisteren"
+          "nl": "naar muziek luisteren",
+          "id": "uf1-item-000081"
         },
         {
           "top_category": "Atelier Parole",
@@ -941,7 +1127,8 @@
           "category": "verbes / expressions verbales",
           "type": "vocabulary",
           "fr": "envoyer des messages",
-          "nl": "berichtjes sturen"
+          "nl": "berichtjes sturen",
+          "id": "uf1-item-000082"
         },
         {
           "top_category": "Atelier Parole",
@@ -951,7 +1138,8 @@
           "category": "verbes / expressions verbales",
           "type": "vocabulary",
           "fr": "faire du shopping",
-          "nl": "shoppen"
+          "nl": "shoppen",
+          "id": "uf1-item-000083"
         },
         {
           "top_category": "Atelier Parole",
@@ -961,7 +1149,8 @@
           "category": "verbes / expressions verbales",
           "type": "vocabulary",
           "fr": "jouer du piano",
-          "nl": "piano spelen"
+          "nl": "piano spelen",
+          "id": "uf1-item-000084"
         },
         {
           "top_category": "Atelier Parole",
@@ -971,7 +1160,8 @@
           "category": "verbes / expressions verbales",
           "type": "vocabulary",
           "fr": "lire",
-          "nl": "lezen"
+          "nl": "lezen",
+          "id": "uf1-item-000085"
         },
         {
           "top_category": "Atelier Parole",
@@ -981,7 +1171,12 @@
           "category": "verbes / expressions verbales",
           "type": "vocabulary",
           "fr": "marcher",
-          "nl": "stappen, wandelen"
+          "nl": "stappen, wandelen",
+          "accepted_answers_nl": [
+            "stappen",
+            "wandelen"
+          ],
+          "id": "uf1-item-000086"
         },
         {
           "top_category": "Atelier Parole",
@@ -991,7 +1186,8 @@
           "category": "verbes / expressions verbales",
           "type": "vocabulary",
           "fr": "nager",
-          "nl": "zwemmen"
+          "nl": "zwemmen",
+          "id": "uf1-item-000087"
         },
         {
           "top_category": "Atelier Parole",
@@ -1001,7 +1197,12 @@
           "category": "verbes / expressions verbales",
           "type": "vocabulary",
           "fr": "parler",
-          "nl": "spreken, praten"
+          "nl": "spreken, praten",
+          "accepted_answers_nl": [
+            "spreken",
+            "praten"
+          ],
+          "id": "uf1-item-000088"
         },
         {
           "top_category": "Atelier Parole",
@@ -1011,7 +1212,8 @@
           "category": "verbes / expressions verbales",
           "type": "vocabulary",
           "fr": "regarder des films",
-          "nl": "naar films kijken"
+          "nl": "naar films kijken",
+          "id": "uf1-item-000089"
         },
         {
           "top_category": "Atelier Parole",
@@ -1021,7 +1223,8 @@
           "category": "verbes / expressions verbales",
           "type": "vocabulary",
           "fr": "trainer",
-          "nl": "rondhangen"
+          "nl": "rondhangen",
+          "id": "uf1-item-000090"
         },
         {
           "top_category": "Atelier Parole",
@@ -1031,7 +1234,8 @@
           "category": "adjectifs",
           "type": "vocabulary",
           "fr": "drôle",
-          "nl": "grappig"
+          "nl": "grappig",
+          "id": "uf1-item-000091"
         },
         {
           "top_category": "Atelier Parole",
@@ -1041,7 +1245,12 @@
           "category": "adjectifs",
           "type": "vocabulary",
           "fr": "génial(e)",
-          "nl": "geniaal"
+          "nl": "geniaal",
+          "accepted_answers": [
+            "génial",
+            "géniale"
+          ],
+          "id": "uf1-item-000092"
         },
         {
           "top_category": "Atelier Parole",
@@ -1051,7 +1260,12 @@
           "category": "adjectifs",
           "type": "vocabulary",
           "fr": "gentil(le)",
-          "nl": "vriendelijk"
+          "nl": "vriendelijk",
+          "accepted_answers": [
+            "gentil",
+            "gentille"
+          ],
+          "id": "uf1-item-000093"
         },
         {
           "top_category": "Atelier Parole",
@@ -1061,7 +1275,12 @@
           "category": "adjectifs",
           "type": "vocabulary",
           "fr": "malin, maligne",
-          "nl": "slim"
+          "nl": "slim",
+          "accepted_answers": [
+            "malin",
+            "maligne"
+          ],
+          "id": "uf1-item-000094"
         },
         {
           "top_category": "Atelier Parole",
@@ -1071,7 +1290,12 @@
           "category": "adjectifs",
           "type": "vocabulary",
           "fr": "sérieux, sérieuse",
-          "nl": "ernstig"
+          "nl": "ernstig",
+          "accepted_answers": [
+            "sérieux",
+            "sérieuse"
+          ],
+          "id": "uf1-item-000095"
         },
         {
           "top_category": "Atelier Parole",
@@ -1081,7 +1305,8 @@
           "category": "adjectifs",
           "type": "vocabulary",
           "fr": "sévère",
-          "nl": "streng"
+          "nl": "streng",
+          "id": "uf1-item-000096"
         },
         {
           "top_category": "Atelier Parole",
@@ -1091,7 +1316,8 @@
           "category": "adjectifs",
           "type": "vocabulary",
           "fr": "sociable",
-          "nl": "sociaal"
+          "nl": "sociaal",
+          "id": "uf1-item-000097"
         },
         {
           "top_category": "Atelier Parole",
@@ -1101,7 +1327,12 @@
           "category": "adjectifs",
           "type": "vocabulary",
           "fr": "sportif, sportive",
-          "nl": "sportief"
+          "nl": "sportief",
+          "accepted_answers": [
+            "sportif",
+            "sportive"
+          ],
+          "id": "uf1-item-000098"
         },
         {
           "top_category": "Atelier Parole",
@@ -1111,7 +1342,8 @@
           "category": "expressions",
           "type": "vocabulary",
           "fr": "Bonne journée !",
-          "nl": "(Nog een) prettige dag!"
+          "nl": "(Nog een) prettige dag!",
+          "id": "uf1-item-000099"
         },
         {
           "top_category": "Atelier Parole",
@@ -1121,7 +1353,12 @@
           "category": "expressions",
           "type": "vocabulary",
           "fr": "Il est l’heure (de)",
-          "nl": "Het is tijd (om)"
+          "nl": "Het is tijd (om)",
+          "accepted_answers": [
+            "Il est l’heure",
+            "Il est l’heure de"
+          ],
+          "id": "uf1-item-000100"
         },
         {
           "top_category": "Atelier Parole",
@@ -1131,7 +1368,278 @@
           "category": "expressions",
           "type": "vocabulary",
           "fr": "vite",
-          "nl": "snel"
+          "nl": "snel",
+          "id": "uf1-item-000101"
+        },
+        {
+          "top_category": "Atelier Parole", "lesson": "Se présenter / Présenter quelqu’un (1)", "block": "À retenir", "subsection": "Actes de parole", "category": "Se présenter", "type": "phrase",
+          "nl": "Hoe heet je?", "fr": "Tu t’appelles comment ?",
+          "accepted_answers": ["Tu t’appelles comment ?", "Comment tu t’appelles ?", "Quel est ton prénom ?", "Quel est ton nom ?"],
+          "id": "uf1-item-000521"
+        },
+        {
+          "top_category": "Atelier Parole", "lesson": "Se présenter / Présenter quelqu’un (1)", "block": "À retenir", "subsection": "Actes de parole", "category": "Se présenter", "type": "phrase",
+          "nl": "Ik heet [naam].", "fr": "Je m’appelle [nom].",
+          "accepted_answers": ["Je m’appelle [nom].", "Moi, je suis [nom].", "Mon prénom, c’est [nom].", "Mon nom, c’est [nom]."],
+          "id": "uf1-item-000522"
+        },
+        {
+          "top_category": "Atelier Parole", "lesson": "Se présenter / Présenter quelqu’un (1)", "block": "À retenir", "subsection": "Actes de parole", "category": "Se présenter", "type": "phrase",
+          "nl": "Wat is je familienaam?", "fr": "C’est quoi, ton nom de famille ?",
+          "accepted_answers": ["C’est quoi, ton nom de famille ?"],
+          "id": "uf1-item-000523"
+        },
+        {
+          "top_category": "Atelier Parole", "lesson": "Se présenter / Présenter quelqu’un (1)", "block": "À retenir", "subsection": "Actes de parole", "category": "Se présenter", "type": "phrase",
+          "nl": "Mijn familienaam is [naam].", "fr": "Mon nom est [nom].",
+          "accepted_answers": ["Mon nom est [nom].", "Mon nom de famille est [nom]."],
+          "id": "uf1-item-000524"
+        },
+        {
+          "top_category": "Atelier Parole", "lesson": "Se présenter / Présenter quelqu’un (1)", "block": "À retenir", "subsection": "Actes de parole", "category": "Se présenter", "type": "phrase",
+          "nl": "Hoe oud ben je?", "fr": "Tu as quel âge ?",
+          "accepted_answers": ["Tu as quel âge ?"],
+          "id": "uf1-item-000525"
+        },
+        {
+          "top_category": "Atelier Parole", "lesson": "Se présenter / Présenter quelqu’un (1)", "block": "À retenir", "subsection": "Actes de parole", "category": "Se présenter", "type": "phrase",
+          "nl": "Ik ben [leeftijd] jaar.", "fr": "J’ai [âge] ans.",
+          "accepted_answers": ["J’ai [âge] ans."],
+          "id": "uf1-item-000526"
+        },
+        {
+          "top_category": "Atelier Parole", "lesson": "Se présenter / Présenter quelqu’un (1)", "block": "À retenir", "subsection": "Actes de parole", "category": "Se présenter", "type": "phrase",
+          "nl": "Waar woon je?", "fr": "Tu habites où ?",
+          "accepted_answers": ["Tu habites où ?"],
+          "id": "uf1-item-000527"
+        },
+        {
+          "top_category": "Atelier Parole", "lesson": "Se présenter / Présenter quelqu’un (1)", "block": "À retenir", "subsection": "Actes de parole", "category": "Se présenter", "type": "phrase",
+          "nl": "Ik woon in Dinant, in België.", "fr": "J’habite à Dinant, en Belgique.",
+          "accepted_answers": ["J’habite à Dinant, en Belgique."],
+          "id": "uf1-item-000528"
+        },
+        {
+          "top_category": "Atelier Parole", "lesson": "Se présenter / Présenter quelqu’un (1)", "block": "À retenir", "subsection": "Actes de parole", "category": "Se présenter", "type": "phrase",
+          "nl": "Wat zijn je hobby’s?", "fr": "Quels sont tes hobbys ?",
+          "accepted_answers": ["Quels sont tes hobbys ?", "Quels sont tes loisirs ?"],
+          "id": "uf1-item-000529"
+        },
+        {
+          "top_category": "Atelier Parole", "lesson": "Se présenter / Présenter quelqu’un (1)", "block": "À retenir", "subsection": "Actes de parole", "category": "Se présenter", "type": "phrase",
+          "nl": "Ik dans graag.", "fr": "J’aime danser.",
+          "accepted_answers": ["J’aime danser."],
+          "id": "uf1-item-000530"
+        },
+        {
+          "top_category": "Atelier Parole", "lesson": "Se présenter / Présenter quelqu’un (1)", "block": "À retenir", "subsection": "Actes de parole", "category": "Se présenter", "type": "phrase",
+          "nl": "Ik speel heel graag padel.", "fr": "J’adore jouer au padel.",
+          "accepted_answers": ["J’adore jouer au padel."],
+          "id": "uf1-item-000531"
+        },
+        {
+          "top_category": "Atelier Parole", "lesson": "Se présenter / Présenter quelqu’un (1)", "block": "À retenir", "subsection": "Actes de parole", "category": "Se présenter", "type": "phrase",
+          "nl": "Ik speel videogames.", "fr": "Je joue à des jeux vidéo.",
+          "accepted_answers": ["Je joue à des jeux vidéo."],
+          "id": "uf1-item-000532"
+        },
+        {
+          "top_category": "Atelier Parole", "lesson": "Se présenter / Présenter quelqu’un (1)", "block": "À retenir", "subsection": "Actes de parole", "category": "Se présenter", "type": "phrase",
+          "nl": "Hou je van sport?", "fr": "Tu aimes le sport ?",
+          "accepted_answers": ["Tu aimes le sport ?"],
+          "id": "uf1-item-000533"
+        },
+        {
+          "top_category": "Atelier Parole", "lesson": "Se présenter / Présenter quelqu’un (1)", "block": "À retenir", "subsection": "Actes de parole", "category": "Se présenter", "type": "phrase",
+          "nl": "Ja, ik hou van klassieke dans.", "fr": "Oui, j’aime la danse classique.",
+          "accepted_answers": ["Oui, j’aime la danse classique."],
+          "id": "uf1-item-000534"
+        },
+        {
+          "top_category": "Atelier Parole", "lesson": "Se présenter / Présenter quelqu’un (1)", "block": "À retenir", "subsection": "Actes de parole", "category": "Se présenter", "type": "phrase",
+          "nl": "Nee, ik haat voetballen.", "fr": "Non, je déteste jouer au foot.",
+          "accepted_answers": ["Non, je déteste jouer au foot."],
+          "id": "uf1-item-000535"
+        },
+        {
+          "top_category": "Atelier Parole", "lesson": "Se présenter / Présenter quelqu’un (1)", "block": "À retenir", "subsection": "Actes de parole", "category": "Se présenter", "type": "phrase",
+          "nl": "Nee, ik ben niet sportief.", "fr": "Non, je ne suis pas sportif / sportive.",
+          "accepted_answers": ["Non, je ne suis pas sportif.", "Non, je ne suis pas sportive."],
+          "id": "uf1-item-000536"
+        },
+        {
+          "top_category": "Atelier Parole", "lesson": "Se présenter / Présenter quelqu’un (1)", "block": "À retenir", "subsection": "Actes de parole", "category": "Se présenter", "type": "phrase",
+          "nl": "In welke klas zit je?", "fr": "Tu es dans quelle classe ?",
+          "accepted_answers": ["Tu es dans quelle classe ?"],
+          "id": "uf1-item-000537"
+        },
+        {
+          "top_category": "Atelier Parole", "lesson": "Se présenter / Présenter quelqu’un (1)", "block": "À retenir", "subsection": "Actes de parole", "category": "Se présenter", "type": "phrase",
+          "nl": "Ik zit in [klas].", "fr": "Je suis en [classe].",
+          "accepted_answers": ["Je suis en [classe].", "Je suis dans la classe de [classe]."],
+          "id": "uf1-item-000538"
+        },
+        {
+          "top_category": "Atelier Parole", "lesson": "Se présenter / Présenter quelqu’un (1)", "block": "À retenir", "subsection": "Actes de parole", "category": "Se présenter", "type": "phrase",
+          "nl": "In welke groep zit je?", "fr": "Tu es dans quel groupe ?",
+          "accepted_answers": ["Tu es dans quel groupe ?"],
+          "id": "uf1-item-000539"
+        },
+        {
+          "top_category": "Atelier Parole", "lesson": "Se présenter / Présenter quelqu’un (1)", "block": "À retenir", "subsection": "Actes de parole", "category": "Se présenter", "type": "phrase",
+          "nl": "Ik zit in groep [groep].", "fr": "Je suis dans le groupe [groupe].",
+          "accepted_answers": ["Je suis dans le groupe [groupe]."],
+          "id": "uf1-item-000540"
+        },
+        {
+          "top_category": "Atelier Parole", "lesson": "Se présenter / Présenter quelqu’un (1)", "block": "À retenir", "subsection": "Actes de parole", "category": "Se présenter", "type": "phrase",
+          "nl": "Ben je nieuw?", "fr": "Tu es nouveau / nouvelle ?",
+          "accepted_answers": ["Tu es nouveau ?", "Tu es nouvelle ?"],
+          "id": "uf1-item-000541"
+        },
+        {
+          "top_category": "Atelier Parole", "lesson": "Se présenter / Présenter quelqu’un (1)", "block": "À retenir", "subsection": "Actes de parole", "category": "Se présenter", "type": "phrase",
+          "nl": "Ja, het is mijn eerste les.", "fr": "Oui, c’est mon premier cours.",
+          "accepted_answers": ["Oui, c’est mon premier cours."],
+          "id": "uf1-item-000542"
+        },
+        {
+          "top_category": "Atelier Parole", "lesson": "Se présenter / Présenter quelqu’un (1)", "block": "À retenir", "subsection": "Actes de parole", "category": "Se présenter", "type": "phrase",
+          "nl": "Ja, het is mijn eerste dag.", "fr": "Oui, c’est mon premier jour.",
+          "accepted_answers": ["Oui, c’est mon premier jour."],
+          "id": "uf1-item-000543"
+        },
+        {
+          "top_category": "Atelier Parole", "lesson": "Se présenter / Présenter quelqu’un (1)", "block": "À retenir", "subsection": "Actes de parole", "category": "Présenter quelqu’un (1)", "type": "phrase",
+          "nl": "Hoe heet hij/zij?", "fr": "Il / Elle s’appelle comment ?",
+          "accepted_answers": ["Il s’appelle comment ?", "Elle s’appelle comment ?", "C’est quoi, son nom ?", "C’est quoi, son prénom ?"],
+          "id": "uf1-item-000544"
+        },
+        {
+          "top_category": "Atelier Parole", "lesson": "Se présenter / Présenter quelqu’un (1)", "block": "À retenir", "subsection": "Actes de parole", "category": "Présenter quelqu’un (1)", "type": "phrase",
+          "nl": "Hij/zij heet [naam].", "fr": "Il / Elle s’appelle [nom].",
+          "accepted_answers": ["Il s’appelle [nom].", "Elle s’appelle [nom].", "Son nom, c’est [nom].", "Son prénom, c’est [nom]."],
+          "id": "uf1-item-000545"
+        },
+        {
+          "top_category": "Atelier Parole", "lesson": "Se présenter / Présenter quelqu’un (1)", "block": "À retenir", "subsection": "Actes de parole", "category": "Présenter quelqu’un (1)", "type": "phrase",
+          "nl": "En zijn/haar familienaam?", "fr": "Et son nom de famille ?",
+          "accepted_answers": ["Et son nom de famille ?"],
+          "id": "uf1-item-000546"
+        },
+        {
+          "top_category": "Atelier Parole", "lesson": "Se présenter / Présenter quelqu’un (1)", "block": "À retenir", "subsection": "Actes de parole", "category": "Présenter quelqu’un (1)", "type": "phrase",
+          "nl": "Zijn/haar familienaam is [naam].", "fr": "Son nom de famille, c’est [nom].",
+          "accepted_answers": ["Son nom de famille, c’est [nom]."],
+          "id": "uf1-item-000547"
+        },
+        {
+          "top_category": "Atelier Parole", "lesson": "Se présenter / Présenter quelqu’un (1)", "block": "À retenir", "subsection": "Actes de parole", "category": "Présenter quelqu’un (1)", "type": "phrase",
+          "nl": "Hoe oud is hij/zij?", "fr": "Il / Elle a quel âge ?",
+          "accepted_answers": ["Il a quel âge ?", "Elle a quel âge ?"],
+          "id": "uf1-item-000548"
+        },
+        {
+          "top_category": "Atelier Parole", "lesson": "Se présenter / Présenter quelqu’un (1)", "block": "À retenir", "subsection": "Actes de parole", "category": "Présenter quelqu’un (1)", "type": "phrase",
+          "nl": "Hij/zij is [leeftijd] jaar.", "fr": "Il / Elle a [âge] ans.",
+          "accepted_answers": ["Il a [âge] ans.", "Elle a [âge] ans."],
+          "id": "uf1-item-000549"
+        },
+        {
+          "top_category": "Atelier Parole", "lesson": "Se présenter / Présenter quelqu’un (1)", "block": "À retenir", "subsection": "Actes de parole", "category": "Présenter quelqu’un (1)", "type": "phrase",
+          "nl": "Waar woont hij/zij?", "fr": "Il / Elle habite où ?",
+          "accepted_answers": ["Il habite où ?", "Elle habite où ?"],
+          "id": "uf1-item-000550"
+        },
+        {
+          "top_category": "Atelier Parole", "lesson": "Se présenter / Présenter quelqu’un (1)", "block": "À retenir", "subsection": "Actes de parole", "category": "Présenter quelqu’un (1)", "type": "phrase",
+          "nl": "Hij/zij woont in [plaats].", "fr": "Il / Elle habite à [lieu].",
+          "accepted_answers": ["Il habite à [lieu].", "Elle habite à [lieu]."],
+          "id": "uf1-item-000551"
+        },
+        {
+          "top_category": "Atelier Parole", "lesson": "Se présenter / Présenter quelqu’un (1)", "block": "À retenir", "subsection": "Actes de parole", "category": "Présenter quelqu’un (1)", "type": "phrase",
+          "nl": "Wat zijn zijn/haar hobby’s?", "fr": "Quels sont ses hobbys ?",
+          "accepted_answers": ["Quels sont ses hobbys ?", "Quels sont ses loisirs ?"],
+          "id": "uf1-item-000552"
+        },
+        {
+          "top_category": "Atelier Parole", "lesson": "Se présenter / Présenter quelqu’un (1)", "block": "À retenir", "subsection": "Actes de parole", "category": "Présenter quelqu’un (1)", "type": "phrase",
+          "nl": "Hij/zij houdt van dansen.", "fr": "Il / Elle aime danser.",
+          "accepted_answers": ["Il aime danser.", "Elle aime danser."],
+          "id": "uf1-item-000553"
+        },
+        {
+          "top_category": "Atelier Parole", "lesson": "Se présenter / Présenter quelqu’un (1)", "block": "À retenir", "subsection": "Actes de parole", "category": "Présenter quelqu’un (1)", "type": "phrase",
+          "nl": "Hij/zij houdt van voetballen.", "fr": "Il / Elle aime jouer au foot.",
+          "accepted_answers": ["Il aime jouer au foot.", "Elle aime jouer au foot."],
+          "id": "uf1-item-000554"
+        },
+        {
+          "top_category": "Atelier Parole", "lesson": "Se présenter / Présenter quelqu’un (1)", "block": "À retenir", "subsection": "Actes de parole", "category": "Présenter quelqu’un (1)", "type": "phrase",
+          "nl": "Hij/zij houdt van koken.", "fr": "Il / Elle aime cuisiner.",
+          "accepted_answers": ["Il aime cuisiner.", "Elle aime cuisiner."],
+          "id": "uf1-item-000555"
+        },
+        {
+          "top_category": "Atelier Parole", "lesson": "Se présenter / Présenter quelqu’un (1)", "block": "À retenir", "subsection": "Actes de parole", "category": "Présenter quelqu’un (1)", "type": "phrase",
+          "nl": "Hij/zij houdt van videogames spelen.", "fr": "Il / Elle aime jouer à des jeux vidéo.",
+          "accepted_answers": ["Il aime jouer à des jeux vidéo.", "Elle aime jouer à des jeux vidéo."],
+          "id": "uf1-item-000556"
+        },
+        {
+          "top_category": "Atelier Parole", "lesson": "Se présenter / Présenter quelqu’un (1)", "block": "À retenir", "subsection": "Actes de parole", "category": "Présenter quelqu’un (1)", "type": "phrase",
+          "nl": "Hij/zij stuurt graag berichten naar zijn/haar vrienden.", "fr": "Il / Elle aime envoyer des messages à ses ami(e)s.",
+          "accepted_answers": ["Il aime envoyer des messages à ses amis.", "Il aime envoyer des messages à ses amies.", "Elle aime envoyer des messages à ses amis.", "Elle aime envoyer des messages à ses amies."],
+          "id": "uf1-item-000557"
+        },
+        {
+          "top_category": "Atelier Parole", "lesson": "Se présenter / Présenter quelqu’un (1)", "block": "À retenir", "subsection": "Actes de parole", "category": "Présenter quelqu’un (1)", "type": "phrase",
+          "nl": "Hoe is hij/zij?", "fr": "Il / Elle est comment ?",
+          "accepted_answers": ["Il est comment ?", "Elle est comment ?"],
+          "id": "uf1-item-000558"
+        },
+        {
+          "top_category": "Atelier Parole", "lesson": "Se présenter / Présenter quelqu’un (1)", "block": "À retenir", "subsection": "Actes de parole", "category": "Présenter quelqu’un (1)", "type": "phrase",
+          "nl": "Hij/zij is grappig.", "fr": "Il / Elle est drôle.",
+          "accepted_answers": ["Il est drôle.", "Elle est drôle."],
+          "id": "uf1-item-000559"
+        },
+        {
+          "top_category": "Atelier Parole", "lesson": "Se présenter / Présenter quelqu’un (1)", "block": "À retenir", "subsection": "Actes de parole", "category": "Présenter quelqu’un (1)", "type": "phrase",
+          "nl": "Hij/zij is aardig.", "fr": "Il / Elle est sympa.",
+          "accepted_answers": ["Il est sympa.", "Elle est sympa."],
+          "id": "uf1-item-000560"
+        },
+        {
+          "top_category": "Atelier Parole", "lesson": "Se présenter / Présenter quelqu’un (1)", "block": "À retenir", "subsection": "Actes de parole", "category": "Présenter quelqu’un (1)", "type": "phrase",
+          "nl": "Hij/zij is sportief.", "fr": "Il / Elle est sportif / sportive.",
+          "accepted_answers": ["Il est sportif.", "Elle est sportive."],
+          "id": "uf1-item-000561"
+        },
+        {
+          "top_category": "Atelier Parole", "lesson": "Se présenter / Présenter quelqu’un (1)", "block": "À retenir", "subsection": "Actes de parole", "category": "Présenter quelqu’un (1)", "type": "phrase",
+          "nl": "Hij/zij is vriendelijk.", "fr": "Il / Elle est gentil / gentille.",
+          "accepted_answers": ["Il est gentil.", "Elle est gentille."],
+          "id": "uf1-item-000562"
+        },
+        {
+          "top_category": "Atelier Parole", "lesson": "Se présenter / Présenter quelqu’un (1)", "block": "À retenir", "subsection": "Actes de parole", "category": "Présenter quelqu’un (1)", "type": "phrase",
+          "nl": "Hij/zij is serieus.", "fr": "Il / Elle est sérieux / sérieuse.",
+          "accepted_answers": ["Il est sérieux.", "Elle est sérieuse."],
+          "id": "uf1-item-000563"
+        },
+        {
+          "top_category": "Atelier Parole", "lesson": "Se présenter / Présenter quelqu’un (1)", "block": "À retenir", "subsection": "Actes de parole", "category": "Présenter quelqu’un (1)", "type": "phrase",
+          "nl": "In welke klas zit hij/zij?", "fr": "Il / Elle est dans quelle classe ?",
+          "accepted_answers": ["Il est dans quelle classe ?", "Elle est dans quelle classe ?"],
+          "id": "uf1-item-000564"
+        },
+        {
+          "top_category": "Atelier Parole", "lesson": "Se présenter / Présenter quelqu’un (1)", "block": "À retenir", "subsection": "Actes de parole", "category": "Présenter quelqu’un (1)", "type": "phrase",
+          "nl": "Hij/zij zit in [klas].", "fr": "Il / Elle est en [classe].",
+          "accepted_answers": ["Il est en [classe].", "Elle est en [classe]."],
+          "id": "uf1-item-000565"
         },
         {
           "top_category": "Atelier Verbes",
@@ -1167,7 +1675,12 @@
               "subject": "ils/elles",
               "form": "ils/elles adorent"
             }
-          ]
+          ],
+          "accepted_answers_nl": [
+            "leuk vinden",
+            "dol zijn op"
+          ],
+          "id": "uf1-item-000102"
         },
         {
           "top_category": "Atelier Verbes",
@@ -1203,7 +1716,8 @@
               "subject": "ils/elles",
               "form": "ils/elles aident"
             }
-          ]
+          ],
+          "id": "uf1-item-000103"
         },
         {
           "top_category": "Atelier Verbes",
@@ -1239,7 +1753,12 @@
               "subject": "ils/elles",
               "form": "ils/elles aiment"
             }
-          ]
+          ],
+          "accepted_answers_nl": [
+            "houden van",
+            "graag ..."
+          ],
+          "id": "uf1-item-000104"
         },
         {
           "top_category": "Atelier Verbes",
@@ -1275,7 +1794,8 @@
               "subject": "ils/elles",
               "form": "ils/elles chantent"
             }
-          ]
+          ],
+          "id": "uf1-item-000105"
         },
         {
           "top_category": "Atelier Verbes",
@@ -1311,7 +1831,8 @@
               "subject": "ils/elles",
               "form": "ils/elles cherchent"
             }
-          ]
+          ],
+          "id": "uf1-item-000106"
         },
         {
           "top_category": "Atelier Verbes",
@@ -1347,7 +1868,8 @@
               "subject": "ils/elles",
               "form": "ils/elles commencent"
             }
-          ]
+          ],
+          "id": "uf1-item-000107"
         },
         {
           "top_category": "Atelier Verbes",
@@ -1383,7 +1905,12 @@
               "subject": "ils/elles",
               "form": "ils/elles cuisinent"
             }
-          ]
+          ],
+          "accepted_answers_nl": [
+            "koken",
+            "kokkerellen"
+          ],
+          "id": "uf1-item-000108"
         },
         {
           "top_category": "Atelier Verbes",
@@ -1419,7 +1946,8 @@
               "subject": "ils/elles",
               "form": "ils/elles dansent"
             }
-          ]
+          ],
+          "id": "uf1-item-000109"
         },
         {
           "top_category": "Atelier Verbes",
@@ -1455,7 +1983,8 @@
               "subject": "ils/elles",
               "form": "ils/elles dessinent"
             }
-          ]
+          ],
+          "id": "uf1-item-000110"
         },
         {
           "top_category": "Atelier Verbes",
@@ -1491,7 +2020,12 @@
               "subject": "ils/elles",
               "form": "ils/elles détestent"
             }
-          ]
+          ],
+          "accepted_answers_nl": [
+            "haten",
+            "verafschuwen"
+          ],
+          "id": "uf1-item-000111"
         },
         {
           "top_category": "Atelier Verbes",
@@ -1527,7 +2061,8 @@
               "subject": "ils/elles",
               "form": "ils/elles donnent"
             }
-          ]
+          ],
+          "id": "uf1-item-000112"
         },
         {
           "top_category": "Atelier Verbes",
@@ -1563,7 +2098,8 @@
               "subject": "ils/elles",
               "form": "ils/elles écoutent"
             }
-          ]
+          ],
+          "id": "uf1-item-000113"
         },
         {
           "top_category": "Atelier Verbes",
@@ -1599,7 +2135,8 @@
               "subject": "ils/elles",
               "form": "ils/elles habitent"
             }
-          ]
+          ],
+          "id": "uf1-item-000114"
         },
         {
           "top_category": "Atelier Verbes",
@@ -1635,7 +2172,8 @@
               "subject": "ils/elles",
               "form": "ils/elles jouent"
             }
-          ]
+          ],
+          "id": "uf1-item-000115"
         },
         {
           "top_category": "Atelier Verbes",
@@ -1671,7 +2209,12 @@
               "subject": "ils/elles",
               "form": "ils/elles marchent"
             }
-          ]
+          ],
+          "accepted_answers_nl": [
+            "stappen",
+            "wandelen"
+          ],
+          "id": "uf1-item-000116"
         },
         {
           "top_category": "Atelier Verbes",
@@ -1707,7 +2250,8 @@
               "subject": "ils/elles",
               "form": "ils/elles nagent"
             }
-          ]
+          ],
+          "id": "uf1-item-000117"
         },
         {
           "top_category": "Atelier Verbes",
@@ -1743,7 +2287,12 @@
               "subject": "ils/elles",
               "form": "ils/elles parlent"
             }
-          ]
+          ],
+          "accepted_answers_nl": [
+            "spreken",
+            "praten"
+          ],
+          "id": "uf1-item-000118"
         },
         {
           "top_category": "Atelier Verbes",
@@ -1779,7 +2328,8 @@
               "subject": "ils/elles",
               "form": "ils/elles racontent"
             }
-          ]
+          ],
+          "id": "uf1-item-000119"
         },
         {
           "top_category": "Atelier Verbes",
@@ -1815,7 +2365,12 @@
               "subject": "ils/elles",
               "form": "ils/elles regardent"
             }
-          ]
+          ],
+          "accepted_answers_nl": [
+            "kijken naar",
+            "bekijken"
+          ],
+          "id": "uf1-item-000120"
         },
         {
           "top_category": "Atelier Verbes",
@@ -1851,7 +2406,8 @@
               "subject": "ils/elles",
               "form": "ils/elles restent"
             }
-          ]
+          ],
+          "id": "uf1-item-000121"
         },
         {
           "top_category": "Atelier Verbes",
@@ -1887,7 +2443,8 @@
               "subject": "ils/elles",
               "form": "ils/elles trainent"
             }
-          ]
+          ],
+          "id": "uf1-item-000122"
         },
         {
           "top_category": "Atelier Verbes",
@@ -1923,7 +2480,8 @@
               "subject": "ils/elles",
               "form": "ils/elles travaillent"
             }
-          ]
+          ],
+          "id": "uf1-item-000123"
         },
         {
           "top_category": "Atelier Verbes",
@@ -1959,7 +2517,8 @@
               "subject": "ils/elles",
               "form": "ils/elles sont"
             }
-          ]
+          ],
+          "id": "uf1-item-000124"
         },
         {
           "top_category": "Atelier Verbes",
@@ -1995,7 +2554,8 @@
               "subject": "ils/elles",
               "form": "ils/elles ont"
             }
-          ]
+          ],
+          "id": "uf1-item-000125"
         },
         {
           "top_category": "Atelier Grammaire",
@@ -2007,7 +2567,8 @@
           "prompt": "mannelijk enkelvoud",
           "answer": "un",
           "example_fr": "un thé / un café",
-          "example_nl": "een thee / een koffie"
+          "example_nl": "een thee / een koffie",
+          "id": "uf1-item-000126"
         },
         {
           "top_category": "Atelier Grammaire",
@@ -2019,7 +2580,8 @@
           "prompt": "vrouwelijk enkelvoud",
           "answer": "une",
           "example_fr": "une bière / une glace",
-          "example_nl": "een bier / een ijsje"
+          "example_nl": "een bier / een ijsje",
+          "id": "uf1-item-000127"
         },
         {
           "top_category": "Atelier Grammaire",
@@ -2031,7 +2593,8 @@
           "prompt": "meervoud",
           "answer": "des",
           "example_fr": "des thés / des cafés / des bières / des glaces",
-          "example_nl": "thees / koffies / bieren / ijsjes"
+          "example_nl": "thees / koffies / bieren / ijsjes",
+          "id": "uf1-item-000128"
         },
         {
           "top_category": "Atelier Grammaire",
@@ -2043,7 +2606,8 @@
           "prompt": "mannelijk enkelvoud",
           "answer": "le",
           "example_fr": "le thé / le café",
-          "example_nl": "de thee / de koffie"
+          "example_nl": "de thee / de koffie",
+          "id": "uf1-item-000129"
         },
         {
           "top_category": "Atelier Grammaire",
@@ -2055,7 +2619,8 @@
           "prompt": "vrouwelijk enkelvoud",
           "answer": "la",
           "example_fr": "la bière / la glace / l’amie",
-          "example_nl": "het bier / het ijsje / de vriendin"
+          "example_nl": "het bier / het ijsje / de vriendin",
+          "id": "uf1-item-000130"
         },
         {
           "top_category": "Atelier Grammaire",
@@ -2067,7 +2632,8 @@
           "prompt": "voor klinker of stomme h",
           "answer": "l’",
           "example_fr": "l’hôtel / l’amie",
-          "example_nl": "het hotel / de vriendin"
+          "example_nl": "het hotel / de vriendin",
+          "id": "uf1-item-000131"
         },
         {
           "top_category": "Atelier Grammaire",
@@ -2079,7 +2645,8 @@
           "prompt": "meervoud",
           "answer": "les",
           "example_fr": "les thés / les cafés / les hôtels / les bières / les glaces / les amies",
-          "example_nl": "de ... (meervoud)"
+          "example_nl": "de ... (meervoud)",
+          "id": "uf1-item-000132"
         },
         {
           "top_category": "Atelier Grammaire",
@@ -2091,7 +2658,8 @@
           "prompt": "Nederlands enkelvoud, Frans meervoud bij sommige woorden",
           "answer": "bv. de bril → les lunettes; de vakantie → les vacances; de spaghetti → les spaghettis; de wiskunde → les maths",
           "example_fr": "",
-          "example_nl": ""
+          "example_nl": "",
+          "id": "uf1-item-000133"
         },
         {
           "top_category": "Atelier Grammaire",
@@ -2103,7 +2671,8 @@
           "prompt": "aimer / adorer / détester + zelfstandig naamwoord",
           "answer": "gebruik het bepaald lidwoord: le, la, l’, les",
           "example_fr": "J’adore le chocolat. / Chen déteste la limonade.",
-          "example_nl": "Ik hou van chocolade. / Chen haat limonade."
+          "example_nl": "Ik hou van chocolade. / Chen haat limonade.",
+          "id": "uf1-item-000134"
         },
         {
           "top_category": "Atelier Grammaire",
@@ -2115,7 +2684,8 @@
           "prompt": "aimer / adorer / détester + werkwoord",
           "answer": "gebruik de infinitief",
           "example_fr": "Tu aimes cuisiner ? / Nous adorons regarder des séries.",
-          "example_nl": "Kook je graag? / Wij kijken graag naar series."
+          "example_nl": "Kook je graag? / Wij kijken graag naar series.",
+          "id": "uf1-item-000135"
         },
         {
           "top_category": "Atelier Grammaire",
@@ -2127,7 +2697,8 @@
           "prompt": "aimer + zelfstandig naamwoord",
           "answer": "houden van",
           "example_fr": "J’aime le basket.",
-          "example_nl": "Ik hou van basket."
+          "example_nl": "Ik hou van basket.",
+          "id": "uf1-item-000136"
         },
         {
           "top_category": "Atelier Grammaire",
@@ -2139,7 +2710,8 @@
           "prompt": "aimer + infinitief",
           "answer": "graag ...",
           "example_fr": "J’aime jouer au basket.",
-          "example_nl": "Ik speel graag basket."
+          "example_nl": "Ik speel graag basket.",
+          "id": "uf1-item-000137"
         }
       ]
     },
@@ -2321,7 +2893,8 @@
           "type": "vocabulary",
           "fr": "l’anglais",
           "nl": "het Engels",
-          "gender": "m"
+          "gender": "m",
+          "id": "uf1-item-000138"
         },
         {
           "top_category": "Atelier Parole",
@@ -2332,7 +2905,8 @@
           "type": "vocabulary",
           "fr": "le bébé",
           "nl": "de baby",
-          "gender": "m"
+          "gender": "m",
+          "id": "uf1-item-000139"
         },
         {
           "top_category": "Atelier Parole",
@@ -2343,7 +2917,8 @@
           "type": "vocabulary",
           "fr": "l’enfant",
           "nl": "het kind",
-          "gender": "m"
+          "gender": "m",
+          "id": "uf1-item-000140"
         },
         {
           "top_category": "Atelier Parole",
@@ -2354,7 +2929,12 @@
           "type": "vocabulary",
           "fr": "la famille",
           "nl": "de familie, het gezin",
-          "gender": "f"
+          "gender": "f",
+          "accepted_answers_nl": [
+            "de familie",
+            "het gezin"
+          ],
+          "id": "uf1-item-000141"
         },
         {
           "top_category": "Atelier Parole",
@@ -2365,7 +2945,12 @@
           "type": "vocabulary",
           "fr": "la fille",
           "nl": "de dochter, het meisje",
-          "gender": "f"
+          "gender": "f",
+          "accepted_answers_nl": [
+            "de dochter",
+            "het meisje"
+          ],
+          "id": "uf1-item-000142"
         },
         {
           "top_category": "Atelier Parole",
@@ -2376,7 +2961,8 @@
           "type": "vocabulary",
           "fr": "le fils",
           "nl": "de zoon",
-          "gender": "m"
+          "gender": "m",
+          "id": "uf1-item-000143"
         },
         {
           "top_category": "Atelier Parole",
@@ -2387,7 +2973,8 @@
           "type": "vocabulary",
           "fr": "le français",
           "nl": "het Frans",
-          "gender": "m"
+          "gender": "m",
+          "id": "uf1-item-000144"
         },
         {
           "top_category": "Atelier Parole",
@@ -2398,7 +2985,8 @@
           "type": "vocabulary",
           "fr": "la France",
           "nl": "Frankrijk",
-          "gender": "f"
+          "gender": "f",
+          "id": "uf1-item-000145"
         },
         {
           "top_category": "Atelier Parole",
@@ -2409,7 +2997,8 @@
           "type": "vocabulary",
           "fr": "le frère",
           "nl": "de broer",
-          "gender": "m"
+          "gender": "m",
+          "id": "uf1-item-000146"
         },
         {
           "top_category": "Atelier Parole",
@@ -2420,7 +3009,8 @@
           "type": "vocabulary",
           "fr": "le garçon",
           "nl": "de jongen",
-          "gender": "m"
+          "gender": "m",
+          "id": "uf1-item-000147"
         },
         {
           "top_category": "Atelier Parole",
@@ -2431,7 +3021,8 @@
           "type": "vocabulary",
           "fr": "la grand-mère",
           "nl": "de grootmoeder",
-          "gender": "f"
+          "gender": "f",
+          "id": "uf1-item-000148"
         },
         {
           "top_category": "Atelier Parole",
@@ -2442,7 +3033,8 @@
           "type": "vocabulary",
           "fr": "le grand-père",
           "nl": "de grootvader",
-          "gender": "m"
+          "gender": "m",
+          "id": "uf1-item-000149"
         },
         {
           "top_category": "Atelier Parole",
@@ -2453,7 +3045,8 @@
           "type": "vocabulary",
           "fr": "le grand-parent",
           "nl": "de grootouder",
-          "gender": "m"
+          "gender": "m",
+          "id": "uf1-item-000150"
         },
         {
           "top_category": "Atelier Parole",
@@ -2464,7 +3057,8 @@
           "type": "vocabulary",
           "fr": "la maman",
           "nl": "de mama",
-          "gender": "f"
+          "gender": "f",
+          "id": "uf1-item-000151"
         },
         {
           "top_category": "Atelier Parole",
@@ -2475,7 +3069,8 @@
           "type": "vocabulary",
           "fr": "la mère",
           "nl": "de moeder",
-          "gender": "f"
+          "gender": "f",
+          "id": "uf1-item-000152"
         },
         {
           "top_category": "Atelier Parole",
@@ -2486,7 +3081,8 @@
           "type": "vocabulary",
           "fr": "le néerlandais",
           "nl": "het Nederlands",
-          "gender": "m"
+          "gender": "m",
+          "id": "uf1-item-000153"
         },
         {
           "top_category": "Atelier Parole",
@@ -2497,7 +3093,12 @@
           "type": "vocabulary",
           "fr": "le nom (de famille)",
           "nl": "de (familie)naam",
-          "gender": "m"
+          "gender": "m",
+          "accepted_answers": [
+            "le nom",
+            "le nom de famille"
+          ],
+          "id": "uf1-item-000154"
         },
         {
           "top_category": "Atelier Parole",
@@ -2508,7 +3109,12 @@
           "type": "vocabulary",
           "fr": "l’oncle",
           "nl": "de oom, de nonkel",
-          "gender": "m"
+          "gender": "m",
+          "accepted_answers_nl": [
+            "de oom",
+            "de nonkel"
+          ],
+          "id": "uf1-item-000155"
         },
         {
           "top_category": "Atelier Parole",
@@ -2519,7 +3125,8 @@
           "type": "vocabulary",
           "fr": "le papa",
           "nl": "de papa",
-          "gender": "m"
+          "gender": "m",
+          "id": "uf1-item-000156"
         },
         {
           "top_category": "Atelier Parole",
@@ -2530,7 +3137,8 @@
           "type": "vocabulary",
           "fr": "le parent",
           "nl": "de ouder",
-          "gender": "m"
+          "gender": "m",
+          "id": "uf1-item-000157"
         },
         {
           "top_category": "Atelier Parole",
@@ -2541,7 +3149,8 @@
           "type": "vocabulary",
           "fr": "le père",
           "nl": "de vader",
-          "gender": "m"
+          "gender": "m",
+          "id": "uf1-item-000158"
         },
         {
           "top_category": "Atelier Parole",
@@ -2552,7 +3161,8 @@
           "type": "vocabulary",
           "fr": "la sœur",
           "nl": "de zus",
-          "gender": "f"
+          "gender": "f",
+          "id": "uf1-item-000159"
         },
         {
           "top_category": "Atelier Parole",
@@ -2563,7 +3173,8 @@
           "type": "vocabulary",
           "fr": "la tante",
           "nl": "de tante",
-          "gender": "f"
+          "gender": "f",
+          "id": "uf1-item-000160"
         },
         {
           "top_category": "Atelier Parole",
@@ -2574,7 +3185,8 @@
           "type": "vocabulary",
           "fr": "chouette",
           "nl": "tof",
-          "gender": ""
+          "gender": "",
+          "id": "uf1-item-000161"
         },
         {
           "top_category": "Atelier Parole",
@@ -2585,7 +3197,12 @@
           "type": "vocabulary",
           "fr": "génial(e)",
           "nl": "geniaal",
-          "gender": ""
+          "gender": "",
+          "accepted_answers": [
+            "génial",
+            "géniale"
+          ],
+          "id": "uf1-item-000162"
         },
         {
           "top_category": "Atelier Parole",
@@ -2596,7 +3213,12 @@
           "type": "vocabulary",
           "fr": "grand(e)",
           "nl": "groot",
-          "gender": ""
+          "gender": "",
+          "accepted_answers": [
+            "grand",
+            "grande"
+          ],
+          "id": "uf1-item-000163"
         },
         {
           "top_category": "Atelier Parole",
@@ -2607,7 +3229,8 @@
           "type": "vocabulary",
           "fr": "jeune",
           "nl": "jong",
-          "gender": ""
+          "gender": "",
+          "id": "uf1-item-000164"
         },
         {
           "top_category": "Atelier Parole",
@@ -2618,7 +3241,12 @@
           "type": "vocabulary",
           "fr": "nouveau, nouvelle",
           "nl": "nieuw",
-          "gender": ""
+          "gender": "",
+          "accepted_answers": [
+            "nouveau",
+            "nouvelle"
+          ],
+          "id": "uf1-item-000165"
         },
         {
           "top_category": "Atelier Parole",
@@ -2629,7 +3257,12 @@
           "type": "vocabulary",
           "fr": "petit(e)",
           "nl": "klein",
-          "gender": ""
+          "gender": "",
+          "accepted_answers": [
+            "petit",
+            "petite"
+          ],
+          "id": "uf1-item-000166"
         },
         {
           "top_category": "Atelier Parole",
@@ -2640,7 +3273,8 @@
           "type": "vocabulary",
           "fr": "sympa",
           "nl": "sympathiek",
-          "gender": ""
+          "gender": "",
+          "id": "uf1-item-000167"
         },
         {
           "top_category": "Atelier Parole",
@@ -2651,7 +3285,8 @@
           "type": "vocabulary",
           "fr": "être en première année",
           "nl": "in het eerste jaar zitten",
-          "gender": ""
+          "gender": "",
+          "id": "uf1-item-000168"
         },
         {
           "top_category": "Atelier Parole",
@@ -2662,7 +3297,8 @@
           "type": "vocabulary",
           "fr": "jouer au foot",
           "nl": "voetballen",
-          "gender": ""
+          "gender": "",
+          "id": "uf1-item-000169"
         },
         {
           "top_category": "Atelier Parole",
@@ -2673,7 +3309,12 @@
           "type": "vocabulary",
           "fr": "jouer à des jeux vidéo",
           "nl": "gamen, computerspelletjes spelen",
-          "gender": ""
+          "gender": "",
+          "accepted_answers_nl": [
+            "gamen",
+            "computerspelletjes spelen"
+          ],
+          "id": "uf1-item-000170"
         },
         {
           "top_category": "Atelier Parole",
@@ -2684,7 +3325,8 @@
           "type": "vocabulary",
           "fr": "pas loin de",
           "nl": "niet ver van",
-          "gender": ""
+          "gender": "",
+          "id": "uf1-item-000171"
         },
         {
           "top_category": "Atelier Parole",
@@ -2695,7 +3337,8 @@
           "type": "vocabulary",
           "fr": "l’aîné",
           "nl": "de oudste",
-          "gender": "m"
+          "gender": "m",
+          "id": "uf1-item-000172"
         },
         {
           "top_category": "Atelier Parole",
@@ -2706,7 +3349,8 @@
           "type": "vocabulary",
           "fr": "l’aînée",
           "nl": "de oudste",
-          "gender": "f"
+          "gender": "f",
+          "id": "uf1-item-000173"
         },
         {
           "top_category": "Atelier Parole",
@@ -2717,7 +3361,8 @@
           "type": "vocabulary",
           "fr": "le beau-frère",
           "nl": "de schoonbroer",
-          "gender": "m"
+          "gender": "m",
+          "id": "uf1-item-000174"
         },
         {
           "top_category": "Atelier Parole",
@@ -2728,7 +3373,8 @@
           "type": "vocabulary",
           "fr": "le beau-père",
           "nl": "de schoonvader",
-          "gender": "m"
+          "gender": "m",
+          "id": "uf1-item-000175"
         },
         {
           "top_category": "Atelier Parole",
@@ -2739,7 +3385,8 @@
           "type": "vocabulary",
           "fr": "la belle-mère",
           "nl": "de schoonmoeder",
-          "gender": "f"
+          "gender": "f",
+          "id": "uf1-item-000176"
         },
         {
           "top_category": "Atelier Parole",
@@ -2750,7 +3397,8 @@
           "type": "vocabulary",
           "fr": "la belle-sœur",
           "nl": "de schoonzus",
-          "gender": "f"
+          "gender": "f",
+          "id": "uf1-item-000177"
         },
         {
           "top_category": "Atelier Parole",
@@ -2761,7 +3409,8 @@
           "type": "vocabulary",
           "fr": "la cabine de plage",
           "nl": "de strandcabine",
-          "gender": "f"
+          "gender": "f",
+          "id": "uf1-item-000178"
         },
         {
           "top_category": "Atelier Parole",
@@ -2772,7 +3421,8 @@
           "type": "vocabulary",
           "fr": "le copain",
           "nl": "de vriend",
-          "gender": "m"
+          "gender": "m",
+          "id": "uf1-item-000179"
         },
         {
           "top_category": "Atelier Parole",
@@ -2783,7 +3433,8 @@
           "type": "vocabulary",
           "fr": "la copine",
           "nl": "de vriendin",
-          "gender": "f"
+          "gender": "f",
+          "id": "uf1-item-000180"
         },
         {
           "top_category": "Atelier Parole",
@@ -2794,7 +3445,8 @@
           "type": "vocabulary",
           "fr": "le cousin",
           "nl": "de neef",
-          "gender": "m"
+          "gender": "m",
+          "id": "uf1-item-000181"
         },
         {
           "top_category": "Atelier Parole",
@@ -2805,7 +3457,8 @@
           "type": "vocabulary",
           "fr": "la cousine",
           "nl": "de nicht",
-          "gender": "f"
+          "gender": "f",
+          "id": "uf1-item-000182"
         },
         {
           "top_category": "Atelier Parole",
@@ -2816,7 +3469,8 @@
           "type": "vocabulary",
           "fr": "le demi-frère",
           "nl": "de halfbroer",
-          "gender": "m"
+          "gender": "m",
+          "id": "uf1-item-000183"
         },
         {
           "top_category": "Atelier Parole",
@@ -2827,7 +3481,8 @@
           "type": "vocabulary",
           "fr": "la demi-sœur",
           "nl": "de halfzus",
-          "gender": "f"
+          "gender": "f",
+          "id": "uf1-item-000184"
         },
         {
           "top_category": "Atelier Parole",
@@ -2838,7 +3493,8 @@
           "type": "vocabulary",
           "fr": "le dessin",
           "nl": "de tekening",
-          "gender": "m"
+          "gender": "m",
+          "id": "uf1-item-000185"
         },
         {
           "top_category": "Atelier Parole",
@@ -2849,7 +3505,8 @@
           "type": "vocabulary",
           "fr": "l’enfant unique",
           "nl": "het enig kind",
-          "gender": "m"
+          "gender": "m",
+          "id": "uf1-item-000186"
         },
         {
           "top_category": "Atelier Parole",
@@ -2860,7 +3517,12 @@
           "type": "vocabulary",
           "fr": "la femme",
           "nl": "de vrouw, de echtgenote",
-          "gender": "f"
+          "gender": "f",
+          "accepted_answers_nl": [
+            "de vrouw",
+            "de echtgenote"
+          ],
+          "id": "uf1-item-000187"
         },
         {
           "top_category": "Atelier Parole",
@@ -2871,7 +3533,8 @@
           "type": "vocabulary",
           "fr": "le Français",
           "nl": "de Fransman",
-          "gender": "m"
+          "gender": "m",
+          "id": "uf1-item-000188"
         },
         {
           "top_category": "Atelier Parole",
@@ -2882,7 +3545,8 @@
           "type": "vocabulary",
           "fr": "la Française",
           "nl": "de Française",
-          "gender": "f"
+          "gender": "f",
+          "id": "uf1-item-000189"
         },
         {
           "top_category": "Atelier Parole",
@@ -2893,7 +3557,8 @@
           "type": "vocabulary",
           "fr": "les gens",
           "nl": "de mensen",
-          "gender": "m, mv."
+          "gender": "m, mv.",
+          "id": "uf1-item-000190"
         },
         {
           "top_category": "Atelier Parole",
@@ -2904,7 +3569,8 @@
           "type": "vocabulary",
           "fr": "le jumeau",
           "nl": "de tweeling",
-          "gender": "m"
+          "gender": "m",
+          "id": "uf1-item-000191"
         },
         {
           "top_category": "Atelier Parole",
@@ -2915,7 +3581,8 @@
           "type": "vocabulary",
           "fr": "la jumelle",
           "nl": "de tweelinge",
-          "gender": "f"
+          "gender": "f",
+          "id": "uf1-item-000192"
         },
         {
           "top_category": "Atelier Parole",
@@ -2926,7 +3593,8 @@
           "type": "vocabulary",
           "fr": "la langue",
           "nl": "de taal",
-          "gender": "f"
+          "gender": "f",
+          "id": "uf1-item-000193"
         },
         {
           "top_category": "Atelier Parole",
@@ -2937,7 +3605,8 @@
           "type": "vocabulary",
           "fr": "la mamie",
           "nl": "de oma",
-          "gender": "f"
+          "gender": "f",
+          "id": "uf1-item-000194"
         },
         {
           "top_category": "Atelier Parole",
@@ -2948,7 +3617,12 @@
           "type": "vocabulary",
           "fr": "le mari",
           "nl": "de man, de echtgenoot",
-          "gender": "m"
+          "gender": "m",
+          "accepted_answers_nl": [
+            "de man",
+            "de echtgenoot"
+          ],
+          "id": "uf1-item-000195"
         },
         {
           "top_category": "Atelier Parole",
@@ -2959,7 +3633,8 @@
           "type": "vocabulary",
           "fr": "le papi",
           "nl": "de opa",
-          "gender": "m"
+          "gender": "m",
+          "id": "uf1-item-000196"
         },
         {
           "top_category": "Atelier Parole",
@@ -2970,7 +3645,8 @@
           "type": "vocabulary",
           "fr": "le parasol",
           "nl": "de parasol",
-          "gender": "m"
+          "gender": "m",
+          "id": "uf1-item-000197"
         },
         {
           "top_category": "Atelier Parole",
@@ -2981,7 +3657,8 @@
           "type": "vocabulary",
           "fr": "la petite-fille",
           "nl": "de kleindochter",
-          "gender": "f"
+          "gender": "f",
+          "id": "uf1-item-000198"
         },
         {
           "top_category": "Atelier Parole",
@@ -2992,7 +3669,8 @@
           "type": "vocabulary",
           "fr": "le petit-fils",
           "nl": "de kleinzoon",
-          "gender": "m"
+          "gender": "m",
+          "id": "uf1-item-000199"
         },
         {
           "top_category": "Atelier Parole",
@@ -3003,7 +3681,12 @@
           "type": "vocabulary",
           "fr": "la planche à voile",
           "nl": "de zeilplank, het (wind)surfen",
-          "gender": "f"
+          "gender": "f",
+          "accepted_answers_nl": [
+            "de zeilplank",
+            "het (wind)surfen"
+          ],
+          "id": "uf1-item-000200"
         },
         {
           "top_category": "Atelier Parole",
@@ -3014,7 +3697,8 @@
           "type": "vocabulary",
           "fr": "le portugais",
           "nl": "het Portugees",
-          "gender": "m"
+          "gender": "m",
+          "id": "uf1-item-000201"
         },
         {
           "top_category": "Atelier Parole",
@@ -3025,7 +3709,8 @@
           "type": "vocabulary",
           "fr": "le sud",
           "nl": "het zuiden",
-          "gender": "m"
+          "gender": "m",
+          "id": "uf1-item-000202"
         },
         {
           "top_category": "Atelier Parole",
@@ -3036,7 +3721,8 @@
           "type": "vocabulary",
           "fr": "divorcer",
           "nl": "scheiden",
-          "gender": ""
+          "gender": "",
+          "id": "uf1-item-000203"
         },
         {
           "top_category": "Atelier Parole",
@@ -3047,7 +3733,8 @@
           "type": "vocabulary",
           "fr": "cohabiter",
           "nl": "samenwonen",
-          "gender": ""
+          "gender": "",
+          "id": "uf1-item-000204"
         },
         {
           "top_category": "Atelier Parole",
@@ -3058,7 +3745,12 @@
           "type": "vocabulary",
           "fr": "adopté(e)",
           "nl": "geadopteerd",
-          "gender": ""
+          "gender": "",
+          "accepted_answers": [
+            "adopté",
+            "adoptée"
+          ],
+          "id": "uf1-item-000205"
         },
         {
           "top_category": "Atelier Parole",
@@ -3069,7 +3761,13 @@
           "type": "vocabulary",
           "fr": "cool",
           "nl": "gaaf, gek, cool",
-          "gender": ""
+          "gender": "",
+          "accepted_answers_nl": [
+            "gaaf",
+            "gek",
+            "cool"
+          ],
+          "id": "uf1-item-000206"
         },
         {
           "top_category": "Atelier Parole",
@@ -3080,7 +3778,12 @@
           "type": "vocabulary",
           "fr": "délicieux, délicieuse",
           "nl": "heerlijk",
-          "gender": ""
+          "gender": "",
+          "accepted_answers": [
+            "délicieux",
+            "délicieuse"
+          ],
+          "id": "uf1-item-000207"
         },
         {
           "top_category": "Atelier Parole",
@@ -3091,7 +3794,12 @@
           "type": "vocabulary",
           "fr": "divorcé(e)",
           "nl": "gescheiden",
-          "gender": ""
+          "gender": "",
+          "accepted_answers": [
+            "divorcé",
+            "divorcée"
+          ],
+          "id": "uf1-item-000208"
         },
         {
           "top_category": "Atelier Parole",
@@ -3102,7 +3810,12 @@
           "type": "vocabulary",
           "fr": "français(e)",
           "nl": "Frans",
-          "gender": ""
+          "gender": "",
+          "accepted_answers": [
+            "français",
+            "française"
+          ],
+          "id": "uf1-item-000209"
         },
         {
           "top_category": "Atelier Parole",
@@ -3113,7 +3826,12 @@
           "type": "vocabulary",
           "fr": "marié(e)",
           "nl": "getrouwd",
-          "gender": ""
+          "gender": "",
+          "accepted_answers": [
+            "marié",
+            "mariée"
+          ],
+          "id": "uf1-item-000210"
         },
         {
           "top_category": "Atelier Parole",
@@ -3124,7 +3842,12 @@
           "type": "vocabulary",
           "fr": "mort(e)",
           "nl": "gestorven",
-          "gender": ""
+          "gender": "",
+          "accepted_answers": [
+            "mort",
+            "morte"
+          ],
+          "id": "uf1-item-000211"
         },
         {
           "top_category": "Atelier Parole",
@@ -3135,7 +3858,12 @@
           "type": "vocabulary",
           "fr": "né(e)",
           "nl": "geboren",
-          "gender": ""
+          "gender": "",
+          "accepted_answers": [
+            "né",
+            "née"
+          ],
+          "id": "uf1-item-000212"
         },
         {
           "top_category": "Atelier Parole",
@@ -3146,7 +3874,12 @@
           "type": "vocabulary",
           "fr": "paresseux, paresseuse",
           "nl": "lui",
-          "gender": ""
+          "gender": "",
+          "accepted_answers": [
+            "paresseux",
+            "paresseuse"
+          ],
+          "id": "uf1-item-000213"
         },
         {
           "top_category": "Atelier Parole",
@@ -3157,7 +3890,12 @@
           "type": "vocabulary",
           "fr": "pratique",
           "nl": "praktisch, handig",
-          "gender": ""
+          "gender": "",
+          "accepted_answers_nl": [
+            "praktisch",
+            "handig"
+          ],
+          "id": "uf1-item-000214"
         },
         {
           "top_category": "Atelier Parole",
@@ -3168,7 +3906,8 @@
           "type": "vocabulary",
           "fr": "quelques",
           "nl": "enkele",
-          "gender": ""
+          "gender": "",
+          "id": "uf1-item-000215"
         },
         {
           "top_category": "Atelier Parole",
@@ -3179,7 +3918,16 @@
           "type": "vocabulary",
           "fr": "seul(e)",
           "nl": "alleen, alleenstaand",
-          "gender": ""
+          "gender": "",
+          "accepted_answers": [
+            "seul",
+            "seule"
+          ],
+          "accepted_answers_nl": [
+            "alleen",
+            "alleenstaand"
+          ],
+          "id": "uf1-item-000216"
         },
         {
           "top_category": "Atelier Parole",
@@ -3190,7 +3938,8 @@
           "type": "vocabulary",
           "fr": "unique",
           "nl": "enig",
-          "gender": ""
+          "gender": "",
+          "id": "uf1-item-000217"
         },
         {
           "top_category": "Atelier Parole",
@@ -3201,7 +3950,8 @@
           "type": "vocabulary",
           "fr": "comme moi",
           "nl": "zoals ik",
-          "gender": ""
+          "gender": "",
+          "id": "uf1-item-000218"
         },
         {
           "top_category": "Atelier Parole",
@@ -3212,7 +3962,11 @@
           "type": "vocabulary",
           "fr": "être (quatre)",
           "nl": "met z’n (vieren) zijn",
-          "gender": ""
+          "gender": "",
+          "accepted_answers": [
+            "être quatre"
+          ],
+          "id": "uf1-item-000219"
         },
         {
           "top_category": "Atelier Parole",
@@ -3223,7 +3977,8 @@
           "type": "vocabulary",
           "fr": "aller au Patro",
           "nl": "naar de Chiro gaan",
-          "gender": ""
+          "gender": "",
+          "id": "uf1-item-000220"
         },
         {
           "top_category": "Atelier Parole",
@@ -3235,8 +3990,10 @@
           "nl": "… is de broer / halfbroer van …",
           "fr": "… est le frère / le demi-frère de …",
           "accepted_answers": [
-            "… est le frère / le demi-frère de …"
-          ]
+            "… est le frère de …",
+            "… est le demi-frère de …"
+          ],
+          "id": "uf1-item-000221"
         },
         {
           "top_category": "Atelier Parole",
@@ -3248,8 +4005,10 @@
           "nl": "… is de zus / halfzus van …",
           "fr": "… est la sœur / la demi-sœur de …",
           "accepted_answers": [
-            "… est la sœur / la demi-sœur de …"
-          ]
+            "… est la sœur de …",
+            "… est la demi-sœur de …"
+          ],
+          "id": "uf1-item-000222"
         },
         {
           "top_category": "Atelier Parole",
@@ -3261,8 +4020,10 @@
           "nl": "… is de mama / schoonmoeder van …",
           "fr": "… est la maman / la belle-mère de …",
           "accepted_answers": [
-            "… est la maman / la belle-mère de …"
-          ]
+            "… est la maman de …",
+            "… est la belle-mère de …"
+          ],
+          "id": "uf1-item-000223"
         },
         {
           "top_category": "Atelier Parole",
@@ -3274,8 +4035,10 @@
           "nl": "… is de papa / schoonvader van …",
           "fr": "… est le papa / le beau-père de …",
           "accepted_answers": [
-            "… est le papa / le beau-père de …"
-          ]
+            "… est le papa de …",
+            "… est le beau-père de …"
+          ],
+          "id": "uf1-item-000224"
         },
         {
           "top_category": "Atelier Parole",
@@ -3287,8 +4050,10 @@
           "nl": "… is de oom / tante van …",
           "fr": "… est l’oncle / la tante de …",
           "accepted_answers": [
-            "… est l’oncle / la tante de …"
-          ]
+            "… est l’oncle de …",
+            "… est la tante de …"
+          ],
+          "id": "uf1-item-000225"
         },
         {
           "top_category": "Atelier Parole",
@@ -3300,8 +4065,10 @@
           "nl": "… is de neef / nicht van …",
           "fr": "… est le cousin / la cousine de …",
           "accepted_answers": [
-            "… est le cousin / la cousine de …"
-          ]
+            "… est le cousin de …",
+            "… est la cousine de …"
+          ],
+          "id": "uf1-item-000226"
         },
         {
           "top_category": "Atelier Parole",
@@ -3313,8 +4080,10 @@
           "nl": "… is de opa / oma van …",
           "fr": "… est le papi / la mamie de …",
           "accepted_answers": [
-            "… est le papi / la mamie de …"
-          ]
+            "… est le papi de …",
+            "… est la mamie de …"
+          ],
+          "id": "uf1-item-000227"
         },
         {
           "top_category": "Atelier Parole",
@@ -3327,7 +4096,8 @@
           "fr": "… sont les parents de …",
           "accepted_answers": [
             "… sont les parents de …"
-          ]
+          ],
+          "id": "uf1-item-000228"
         },
         {
           "top_category": "Atelier Parole",
@@ -3340,7 +4110,8 @@
           "fr": "… sont les grands-parents de …",
           "accepted_answers": [
             "… sont les grands-parents de …"
-          ]
+          ],
+          "id": "uf1-item-000229"
         },
         {
           "top_category": "Atelier Parole",
@@ -3352,8 +4123,10 @@
           "nl": "Hoe heet hij/zij?",
           "fr": "Il / Elle s’appelle comment ?",
           "accepted_answers": [
-            "Il / Elle s’appelle comment ?"
-          ]
+            "Il s’appelle comment ?",
+            "Elle s’appelle comment ?"
+          ],
+          "id": "uf1-item-000230"
         },
         {
           "top_category": "Atelier Parole",
@@ -3366,7 +4139,8 @@
           "fr": "C’est quoi, son nom de famille ?",
           "accepted_answers": [
             "C’est quoi, son nom de famille ?"
-          ]
+          ],
+          "id": "uf1-item-000231"
         },
         {
           "top_category": "Atelier Parole",
@@ -3378,8 +4152,10 @@
           "nl": "Wanneer is hij/zij geboren?",
           "fr": "Il / Elle est né(e) quand ?",
           "accepted_answers": [
-            "Il / Elle est né(e) quand ?"
-          ]
+            "Il est né quand ?",
+            "Elle est née quand ?"
+          ],
+          "id": "uf1-item-000232"
         },
         {
           "top_category": "Atelier Parole",
@@ -3391,8 +4167,10 @@
           "nl": "Waar is hij/zij geboren?",
           "fr": "Il / Elle est né(e) où ?",
           "accepted_answers": [
-            "Il / Elle est né(e) où ?"
-          ]
+            "Il est né où ?",
+            "Elle est née où ?"
+          ],
+          "id": "uf1-item-000233"
         },
         {
           "top_category": "Atelier Parole",
@@ -3404,8 +4182,10 @@
           "nl": "Hoe oud is hij/zij?",
           "fr": "Il / Elle a quel âge ?",
           "accepted_answers": [
-            "Il / Elle a quel âge ?"
-          ]
+            "Il a quel âge ?",
+            "Elle a quel âge ?"
+          ],
+          "id": "uf1-item-000234"
         },
         {
           "top_category": "Atelier Parole",
@@ -3417,8 +4197,10 @@
           "nl": "Heeft hij/zij broers of zussen?",
           "fr": "Il / Elle a des frères ou des sœurs ?",
           "accepted_answers": [
-            "Il / Elle a des frères ou des sœurs ?"
-          ]
+            "Il a des frères ou des sœurs ?",
+            "Elle a des frères ou des sœurs ?"
+          ],
+          "id": "uf1-item-000235"
         },
         {
           "top_category": "Atelier Parole",
@@ -3430,8 +4212,10 @@
           "nl": "Welke talen spreekt hij/zij?",
           "fr": "Il / Elle parle quelles langues ?",
           "accepted_answers": [
-            "Il / Elle parle quelles langues ?"
-          ]
+            "Il parle quelles langues ?",
+            "Elle parle quelles langues ?"
+          ],
+          "id": "uf1-item-000236"
         },
         {
           "top_category": "Atelier Parole",
@@ -3443,8 +4227,10 @@
           "nl": "In welk jaar zit hij/zij?",
           "fr": "Il / Elle est en quelle année ?",
           "accepted_answers": [
-            "Il / Elle est en quelle année ?"
-          ]
+            "Il est en quelle année ?",
+            "Elle est en quelle année ?"
+          ],
+          "id": "uf1-item-000237"
         },
         {
           "top_category": "Atelier Parole",
@@ -3456,8 +4242,12 @@
           "nl": "Hoe heet de vader/moeder/broer/zus?",
           "fr": "Le père / La mère / Le frère / La sœur s’appelle comment ?",
           "accepted_answers": [
-            "Le père / La mère / Le frère / La sœur s’appelle comment ?"
-          ]
+            "Le père s’appelle comment ?",
+            "La mère s’appelle comment ?",
+            "Le frère s’appelle comment ?",
+            "La sœur s’appelle comment ?"
+          ],
+          "id": "uf1-item-000238"
         },
         {
           "top_category": "Atelier Parole",
@@ -3469,8 +4259,10 @@
           "nl": "Waar wonen zij?",
           "fr": "Ils / Elles habitent où ?",
           "accepted_answers": [
-            "Ils / Elles habitent où ?"
-          ]
+            "Ils habitent où ?",
+            "Elles habitent où ?"
+          ],
+          "id": "uf1-item-000239"
         },
         {
           "top_category": "Atelier Verbes",
@@ -3506,7 +4298,8 @@
               "subject": "ils/elles",
               "form": "ils/elles partent"
             }
-          ]
+          ],
+          "id": "uf1-item-000240"
         },
         {
           "top_category": "Atelier Verbes",
@@ -3542,7 +4335,8 @@
               "subject": "ils/elles",
               "form": "ils/elles mentent"
             }
-          ]
+          ],
+          "id": "uf1-item-000241"
         },
         {
           "top_category": "Atelier Verbes",
@@ -3578,7 +4372,12 @@
               "subject": "ils/elles",
               "form": "ils/elles sentent"
             }
-          ]
+          ],
+          "accepted_answers_nl": [
+            "ruiken",
+            "voelen"
+          ],
+          "id": "uf1-item-000242"
         },
         {
           "top_category": "Atelier Verbes",
@@ -3614,7 +4413,12 @@
               "subject": "ils/elles",
               "form": "ils/elles servent"
             }
-          ]
+          ],
+          "accepted_answers_nl": [
+            "(be)dienen",
+            "opdienen"
+          ],
+          "id": "uf1-item-000243"
         },
         {
           "top_category": "Atelier Verbes",
@@ -3650,7 +4454,12 @@
               "subject": "ils/elles",
               "form": "ils/elles sortent"
             }
-          ]
+          ],
+          "accepted_answers_nl": [
+            "uitgaan",
+            "naar buiten gaan"
+          ],
+          "id": "uf1-item-000244"
         },
         {
           "top_category": "Atelier Verbes",
@@ -3686,7 +4495,8 @@
               "subject": "ils/elles",
               "form": "ils/elles dorment"
             }
-          ]
+          ],
+          "id": "uf1-item-000245"
         },
         {
           "top_category": "Atelier Verbes",
@@ -3722,7 +4532,12 @@
               "subject": "ils/elles",
               "form": "ils/elles finissent"
             }
-          ]
+          ],
+          "accepted_answers_nl": [
+            "eindigen",
+            "stoppen"
+          ],
+          "id": "uf1-item-000246"
         },
         {
           "top_category": "Atelier Verbes",
@@ -3758,7 +4573,8 @@
               "subject": "ils/elles",
               "form": "ils/elles choisissent"
             }
-          ]
+          ],
+          "id": "uf1-item-000247"
         },
         {
           "top_category": "Atelier Verbes",
@@ -3794,7 +4610,12 @@
               "subject": "ils/elles",
               "form": "ils/elles grandissent"
             }
-          ]
+          ],
+          "accepted_answers_nl": [
+            "groeien",
+            "groot worden"
+          ],
+          "id": "uf1-item-000248"
         },
         {
           "top_category": "Atelier Verbes",
@@ -3830,7 +4651,8 @@
               "subject": "ils/elles",
               "form": "ils/elles grossissent"
             }
-          ]
+          ],
+          "id": "uf1-item-000249"
         },
         {
           "top_category": "Atelier Verbes",
@@ -3866,7 +4688,8 @@
               "subject": "ils/elles",
               "form": "ils/elles maigrissent"
             }
-          ]
+          ],
+          "id": "uf1-item-000250"
         },
         {
           "top_category": "Atelier Verbes",
@@ -3902,7 +4725,8 @@
               "subject": "ils/elles",
               "form": "ils/elles réagissent"
             }
-          ]
+          ],
+          "id": "uf1-item-000251"
         },
         {
           "top_category": "Atelier Verbes",
@@ -3938,7 +4762,8 @@
               "subject": "ils/elles",
               "form": "ils/elles réfléchissent"
             }
-          ]
+          ],
+          "id": "uf1-item-000252"
         },
         {
           "top_category": "Atelier Verbes",
@@ -3974,7 +4799,8 @@
               "subject": "ils/elles",
               "form": "ils/elles remplissent"
             }
-          ]
+          ],
+          "id": "uf1-item-000253"
         },
         {
           "top_category": "Atelier Verbes",
@@ -4010,7 +4836,12 @@
               "subject": "ils/elles",
               "form": "ils/elles rougissent"
             }
-          ]
+          ],
+          "accepted_answers_nl": [
+            "blozen",
+            "rood worden"
+          ],
+          "id": "uf1-item-000254"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -4020,7 +4851,8 @@
           "category": "nombres",
           "type": "number",
           "nl": "0",
-          "fr": "zéro"
+          "fr": "zéro",
+          "id": "uf1-item-000255"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -4030,7 +4862,8 @@
           "category": "nombres",
           "type": "number",
           "nl": "1",
-          "fr": "un"
+          "fr": "un",
+          "id": "uf1-item-000256"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -4040,7 +4873,8 @@
           "category": "nombres",
           "type": "number",
           "nl": "2",
-          "fr": "deux"
+          "fr": "deux",
+          "id": "uf1-item-000257"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -4050,7 +4884,8 @@
           "category": "nombres",
           "type": "number",
           "nl": "3",
-          "fr": "trois"
+          "fr": "trois",
+          "id": "uf1-item-000258"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -4060,7 +4895,8 @@
           "category": "nombres",
           "type": "number",
           "nl": "4",
-          "fr": "quatre"
+          "fr": "quatre",
+          "id": "uf1-item-000259"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -4070,7 +4906,8 @@
           "category": "nombres",
           "type": "number",
           "nl": "5",
-          "fr": "cinq"
+          "fr": "cinq",
+          "id": "uf1-item-000260"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -4080,7 +4917,8 @@
           "category": "nombres",
           "type": "number",
           "nl": "6",
-          "fr": "six"
+          "fr": "six",
+          "id": "uf1-item-000261"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -4090,7 +4928,8 @@
           "category": "nombres",
           "type": "number",
           "nl": "7",
-          "fr": "sept"
+          "fr": "sept",
+          "id": "uf1-item-000262"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -4100,7 +4939,8 @@
           "category": "nombres",
           "type": "number",
           "nl": "8",
-          "fr": "huit"
+          "fr": "huit",
+          "id": "uf1-item-000263"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -4110,7 +4950,8 @@
           "category": "nombres",
           "type": "number",
           "nl": "9",
-          "fr": "neuf"
+          "fr": "neuf",
+          "id": "uf1-item-000264"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -4120,7 +4961,8 @@
           "category": "nombres",
           "type": "number",
           "nl": "10",
-          "fr": "dix"
+          "fr": "dix",
+          "id": "uf1-item-000265"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -4130,7 +4972,8 @@
           "category": "nombres",
           "type": "number",
           "nl": "11",
-          "fr": "onze"
+          "fr": "onze",
+          "id": "uf1-item-000266"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -4140,7 +4983,8 @@
           "category": "nombres",
           "type": "number",
           "nl": "12",
-          "fr": "douze"
+          "fr": "douze",
+          "id": "uf1-item-000267"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -4150,7 +4994,8 @@
           "category": "nombres",
           "type": "number",
           "nl": "13",
-          "fr": "treize"
+          "fr": "treize",
+          "id": "uf1-item-000268"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -4160,7 +5005,8 @@
           "category": "nombres",
           "type": "number",
           "nl": "14",
-          "fr": "quatorze"
+          "fr": "quatorze",
+          "id": "uf1-item-000269"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -4170,7 +5016,8 @@
           "category": "nombres",
           "type": "number",
           "nl": "15",
-          "fr": "quinze"
+          "fr": "quinze",
+          "id": "uf1-item-000270"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -4180,7 +5027,8 @@
           "category": "nombres",
           "type": "number",
           "nl": "16",
-          "fr": "seize"
+          "fr": "seize",
+          "id": "uf1-item-000271"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -4190,7 +5038,8 @@
           "category": "nombres",
           "type": "number",
           "nl": "17",
-          "fr": "dix-sept"
+          "fr": "dix-sept",
+          "id": "uf1-item-000272"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -4200,7 +5049,8 @@
           "category": "nombres",
           "type": "number",
           "nl": "18",
-          "fr": "dix-huit"
+          "fr": "dix-huit",
+          "id": "uf1-item-000273"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -4210,7 +5060,8 @@
           "category": "nombres",
           "type": "number",
           "nl": "19",
-          "fr": "dix-neuf"
+          "fr": "dix-neuf",
+          "id": "uf1-item-000274"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -4220,7 +5071,8 @@
           "category": "nombres",
           "type": "number",
           "nl": "20",
-          "fr": "vingt"
+          "fr": "vingt",
+          "id": "uf1-item-000275"
         },
         {
           "top_category": "Atelier Grammaire",
@@ -4232,7 +5084,8 @@
           "prompt": "Hoe maak je een gewone ontkenning?",
           "answer": "NON, onderwerp + NE + werkwoord + PAS",
           "example_fr": "Non, il ne cherche pas le prof.",
-          "example_nl": "Nee, hij zoekt de leerkracht niet."
+          "example_nl": "Nee, hij zoekt de leerkracht niet.",
+          "id": "uf1-item-000276"
         },
         {
           "top_category": "Atelier Grammaire",
@@ -4244,7 +5097,8 @@
           "prompt": "Hoe ontken je encore (nog)?",
           "answer": "NON, onderwerp + NE + werkwoord + PLUS",
           "example_fr": "Non, il n’est plus à Paris.",
-          "example_nl": "Nee, hij is niet meer in Parijs."
+          "example_nl": "Nee, hij is niet meer in Parijs.",
+          "id": "uf1-item-000277"
         },
         {
           "top_category": "Atelier Grammaire",
@@ -4256,7 +5110,8 @@
           "prompt": "Hoe ontken je parfois / souvent?",
           "answer": "NON, onderwerp + NE + werkwoord + JAMAIS",
           "example_fr": "Non, ils ne vont jamais au zoo.",
-          "example_nl": "Nee, ze gaan nooit naar de zoo."
+          "example_nl": "Nee, ze gaan nooit naar de zoo.",
+          "id": "uf1-item-000278"
         },
         {
           "top_category": "Atelier Grammaire",
@@ -4268,7 +5123,8 @@
           "prompt": "Wat gebeurt er met un, une en des na een ontkenning?",
           "answer": "un / une / des → de",
           "example_fr": "Il a une sœur. → Il n’a pas de sœur.",
-          "example_nl": "Hij heeft een zus. → Hij heeft geen zus."
+          "example_nl": "Hij heeft een zus. → Hij heeft geen zus.",
+          "id": "uf1-item-000279"
         },
         {
           "top_category": "Atelier Grammaire",
@@ -4280,7 +5136,8 @@
           "prompt": "Wat gebeurt er met het lidwoord na être in een ontkenning?",
           "answer": "Na être verandert het lidwoord niet.",
           "example_fr": "C’est un prof sympa. → Ce n’est pas un prof sympa.",
-          "example_nl": "Het is een sympathieke leerkracht. → Het is geen sympathieke leerkracht."
+          "example_nl": "Het is een sympathieke leerkracht. → Het is geen sympathieke leerkracht.",
+          "id": "uf1-item-000280"
         },
         {
           "top_category": "Comment dire ?",
@@ -4291,7 +5148,8 @@
           "type": "sound_rule",
           "spelling": "ai",
           "sound": "[e]",
-          "example_fr": "j’ai"
+          "example_fr": "j’ai",
+          "id": "uf1-item-000281"
         },
         {
           "top_category": "Comment dire ?",
@@ -4302,7 +5160,8 @@
           "type": "sound_rule",
           "spelling": "er",
           "sound": "[e]",
-          "example_fr": "danser"
+          "example_fr": "danser",
+          "id": "uf1-item-000282"
         },
         {
           "top_category": "Comment dire ?",
@@ -4313,7 +5172,8 @@
           "type": "sound_rule",
           "spelling": "ez",
           "sound": "[e]",
-          "example_fr": "vous aimez"
+          "example_fr": "vous aimez",
+          "id": "uf1-item-000283"
         },
         {
           "top_category": "Comment dire ?",
@@ -4324,7 +5184,8 @@
           "type": "sound_rule",
           "spelling": "é",
           "sound": "[e]",
-          "example_fr": "Céline, théâtre"
+          "example_fr": "Céline, théâtre",
+          "id": "uf1-item-000284"
         },
         {
           "top_category": "Comment dire ?",
@@ -4335,7 +5196,8 @@
           "type": "sound_rule",
           "spelling": "et",
           "sound": "[e]",
-          "example_fr": "mon chien et mon chat"
+          "example_fr": "mon chien et mon chat",
+          "id": "uf1-item-000285"
         }
       ]
     },
@@ -4500,7 +5362,8 @@
           "type": "vocabulary",
           "fr": "le bois",
           "nl": "het bos",
-          "gender": "m"
+          "gender": "m",
+          "id": "uf1-item-000286"
         },
         {
           "top_category": "Atelier Parole",
@@ -4511,7 +5374,8 @@
           "type": "vocabulary",
           "fr": "la campagne",
           "nl": "het platteland",
-          "gender": "f"
+          "gender": "f",
+          "id": "uf1-item-000287"
         },
         {
           "top_category": "Atelier Parole",
@@ -4522,7 +5386,8 @@
           "type": "vocabulary",
           "fr": "le cinéma",
           "nl": "de bioscoop",
-          "gender": "m"
+          "gender": "m",
+          "id": "uf1-item-000288"
         },
         {
           "top_category": "Atelier Parole",
@@ -4533,7 +5398,8 @@
           "type": "vocabulary",
           "fr": "l’école",
           "nl": "de school",
-          "gender": "f"
+          "gender": "f",
+          "id": "uf1-item-000289"
         },
         {
           "top_category": "Atelier Parole",
@@ -4544,7 +5410,8 @@
           "type": "vocabulary",
           "fr": "l’hôpital",
           "nl": "het ziekenhuis",
-          "gender": "m"
+          "gender": "m",
+          "id": "uf1-item-000290"
         },
         {
           "top_category": "Atelier Parole",
@@ -4555,7 +5422,8 @@
           "type": "vocabulary",
           "fr": "le jardin",
           "nl": "de tuin",
-          "gender": "m"
+          "gender": "m",
+          "id": "uf1-item-000291"
         },
         {
           "top_category": "Atelier Parole",
@@ -4566,7 +5434,12 @@
           "type": "vocabulary",
           "fr": "le magasin (de vêtements)",
           "nl": "de (kleding)winkel",
-          "gender": "m"
+          "gender": "m",
+          "accepted_answers": [
+            "le magasin",
+            "le magasin de vêtements"
+          ],
+          "id": "uf1-item-000292"
         },
         {
           "top_category": "Atelier Parole",
@@ -4577,7 +5450,8 @@
           "type": "vocabulary",
           "fr": "le marché",
           "nl": "de markt",
-          "gender": "m"
+          "gender": "m",
+          "id": "uf1-item-000293"
         },
         {
           "top_category": "Atelier Parole",
@@ -4588,7 +5462,8 @@
           "type": "vocabulary",
           "fr": "la place",
           "nl": "het plein",
-          "gender": "f"
+          "gender": "f",
+          "id": "uf1-item-000294"
         },
         {
           "top_category": "Atelier Parole",
@@ -4599,7 +5474,8 @@
           "type": "vocabulary",
           "fr": "le restaurant",
           "nl": "het restaurant",
-          "gender": "m"
+          "gender": "m",
+          "id": "uf1-item-000295"
         },
         {
           "top_category": "Atelier Parole",
@@ -4610,7 +5486,8 @@
           "type": "vocabulary",
           "fr": "le supermarché",
           "nl": "de supermarkt",
-          "gender": "m"
+          "gender": "m",
+          "id": "uf1-item-000296"
         },
         {
           "top_category": "Atelier Parole",
@@ -4621,7 +5498,12 @@
           "type": "vocabulary",
           "fr": "les toilettes",
           "nl": "het toilet, de wc",
-          "gender": "f, mv."
+          "gender": "f, mv.",
+          "accepted_answers_nl": [
+            "het toilet",
+            "de wc"
+          ],
+          "id": "uf1-item-000297"
         },
         {
           "top_category": "Atelier Parole",
@@ -4632,7 +5514,8 @@
           "type": "vocabulary",
           "fr": "le village",
           "nl": "het dorp",
-          "gender": "m"
+          "gender": "m",
+          "id": "uf1-item-000298"
         },
         {
           "top_category": "Atelier Parole",
@@ -4643,7 +5526,8 @@
           "type": "vocabulary",
           "fr": "la ville",
           "nl": "de stad",
-          "gender": "f"
+          "gender": "f",
+          "id": "uf1-item-000299"
         },
         {
           "top_category": "Atelier Parole",
@@ -4654,7 +5538,8 @@
           "type": "vocabulary",
           "fr": "aller",
           "nl": "gaan",
-          "gender": ""
+          "gender": "",
+          "id": "uf1-item-000300"
         },
         {
           "top_category": "Atelier Parole",
@@ -4665,7 +5550,12 @@
           "type": "vocabulary",
           "fr": "beau, belle",
           "nl": "mooi",
-          "gender": ""
+          "gender": "",
+          "accepted_answers": [
+            "beau",
+            "belle"
+          ],
+          "id": "uf1-item-000301"
         },
         {
           "top_category": "Atelier Parole",
@@ -4676,7 +5566,12 @@
           "type": "vocabulary",
           "fr": "chouette",
           "nl": "leuk, tof",
-          "gender": ""
+          "gender": "",
+          "accepted_answers_nl": [
+            "leuk",
+            "tof"
+          ],
+          "id": "uf1-item-000302"
         },
         {
           "top_category": "Atelier Parole",
@@ -4687,7 +5582,12 @@
           "type": "vocabulary",
           "fr": "délicieux, délicieuse",
           "nl": "heerlijk",
-          "gender": ""
+          "gender": "",
+          "accepted_answers": [
+            "délicieux",
+            "délicieuse"
+          ],
+          "id": "uf1-item-000303"
         },
         {
           "top_category": "Atelier Parole",
@@ -4698,7 +5598,12 @@
           "type": "vocabulary",
           "fr": "grand(e)",
           "nl": "groot",
-          "gender": ""
+          "gender": "",
+          "accepted_answers": [
+            "grand",
+            "grande"
+          ],
+          "id": "uf1-item-000304"
         },
         {
           "top_category": "Atelier Parole",
@@ -4709,7 +5614,12 @@
           "type": "vocabulary",
           "fr": "petit(e)",
           "nl": "klein",
-          "gender": ""
+          "gender": "",
+          "accepted_answers": [
+            "petit",
+            "petite"
+          ],
+          "id": "uf1-item-000305"
         },
         {
           "top_category": "Atelier Parole",
@@ -4720,7 +5630,12 @@
           "type": "vocabulary",
           "fr": "pratique",
           "nl": "praktisch, handig",
-          "gender": ""
+          "gender": "",
+          "accepted_answers_nl": [
+            "praktisch",
+            "handig"
+          ],
+          "id": "uf1-item-000306"
         },
         {
           "top_category": "Atelier Parole",
@@ -4731,7 +5646,8 @@
           "type": "vocabulary",
           "fr": "super",
           "nl": "super",
-          "gender": ""
+          "gender": "",
+          "id": "uf1-item-000307"
         },
         {
           "top_category": "Atelier Parole",
@@ -4742,7 +5658,12 @@
           "type": "vocabulary",
           "fr": "sympa",
           "nl": "sympathiek, leuk",
-          "gender": ""
+          "gender": "",
+          "accepted_answers_nl": [
+            "sympathiek",
+            "leuk"
+          ],
+          "id": "uf1-item-000308"
         },
         {
           "top_category": "Atelier Parole",
@@ -4753,7 +5674,8 @@
           "type": "vocabulary",
           "fr": "loin de",
           "nl": "ver van",
-          "gender": ""
+          "gender": "",
+          "id": "uf1-item-000309"
         },
         {
           "top_category": "Atelier Parole",
@@ -4764,7 +5686,8 @@
           "type": "vocabulary",
           "fr": "l’attraction touristique",
           "nl": "de toeristische attractie",
-          "gender": "f"
+          "gender": "f",
+          "id": "uf1-item-000310"
         },
         {
           "top_category": "Atelier Parole",
@@ -4775,7 +5698,8 @@
           "type": "vocabulary",
           "fr": "la banque",
           "nl": "de bank",
-          "gender": "f"
+          "gender": "f",
+          "id": "uf1-item-000311"
         },
         {
           "top_category": "Atelier Parole",
@@ -4786,7 +5710,8 @@
           "type": "vocabulary",
           "fr": "le bâtiment",
           "nl": "het gebouw",
-          "gender": "m"
+          "gender": "m",
+          "id": "uf1-item-000312"
         },
         {
           "top_category": "Atelier Parole",
@@ -4797,7 +5722,8 @@
           "type": "vocabulary",
           "fr": "la bibliothèque",
           "nl": "de bibliotheek",
-          "gender": "f"
+          "gender": "f",
+          "id": "uf1-item-000313"
         },
         {
           "top_category": "Atelier Parole",
@@ -4808,7 +5734,8 @@
           "type": "vocabulary",
           "fr": "la boucherie",
           "nl": "de slagerij",
-          "gender": "f"
+          "gender": "f",
+          "id": "uf1-item-000314"
         },
         {
           "top_category": "Atelier Parole",
@@ -4819,7 +5746,8 @@
           "type": "vocabulary",
           "fr": "la boulangerie",
           "nl": "de bakkerij",
-          "gender": "f"
+          "gender": "f",
+          "id": "uf1-item-000315"
         },
         {
           "top_category": "Atelier Parole",
@@ -4830,7 +5758,8 @@
           "type": "vocabulary",
           "fr": "la boutique",
           "nl": "de boetiek",
-          "gender": "f"
+          "gender": "f",
+          "id": "uf1-item-000316"
         },
         {
           "top_category": "Atelier Parole",
@@ -4841,7 +5770,8 @@
           "type": "vocabulary",
           "fr": "le café",
           "nl": "het café",
-          "gender": "m"
+          "gender": "m",
+          "id": "uf1-item-000317"
         },
         {
           "top_category": "Atelier Parole",
@@ -4852,7 +5782,8 @@
           "type": "vocabulary",
           "fr": "la cathédrale",
           "nl": "de kathedraal",
-          "gender": "f"
+          "gender": "f",
+          "id": "uf1-item-000318"
         },
         {
           "top_category": "Atelier Parole",
@@ -4863,7 +5794,12 @@
           "type": "vocabulary",
           "fr": "le centre(-ville)",
           "nl": "het (stads)centrum",
-          "gender": "m"
+          "gender": "m",
+          "accepted_answers": [
+            "le centre",
+            "le centre-ville"
+          ],
+          "id": "uf1-item-000319"
         },
         {
           "top_category": "Atelier Parole",
@@ -4874,7 +5810,8 @@
           "type": "vocabulary",
           "fr": "le centre commercial",
           "nl": "het winkelcentrum",
-          "gender": "m"
+          "gender": "m",
+          "id": "uf1-item-000320"
         },
         {
           "top_category": "Atelier Parole",
@@ -4885,7 +5822,8 @@
           "type": "vocabulary",
           "fr": "le château",
           "nl": "het kasteel",
-          "gender": "m"
+          "gender": "m",
+          "id": "uf1-item-000321"
         },
         {
           "top_category": "Atelier Parole",
@@ -4896,7 +5834,8 @@
           "type": "vocabulary",
           "fr": "le commerce",
           "nl": "de handel(szaak)",
-          "gender": "m"
+          "gender": "m",
+          "id": "uf1-item-000322"
         },
         {
           "top_category": "Atelier Parole",
@@ -4907,7 +5846,8 @@
           "type": "vocabulary",
           "fr": "l’église",
           "nl": "de kerk",
-          "gender": "f"
+          "gender": "f",
+          "id": "uf1-item-000323"
         },
         {
           "top_category": "Atelier Parole",
@@ -4918,7 +5858,8 @@
           "type": "vocabulary",
           "fr": "la friterie",
           "nl": "de frituur",
-          "gender": "f"
+          "gender": "f",
+          "id": "uf1-item-000324"
         },
         {
           "top_category": "Atelier Parole",
@@ -4929,7 +5870,8 @@
           "type": "vocabulary",
           "fr": "la gare",
           "nl": "het station",
-          "gender": "f"
+          "gender": "f",
+          "id": "uf1-item-000325"
         },
         {
           "top_category": "Atelier Parole",
@@ -4940,7 +5882,8 @@
           "type": "vocabulary",
           "fr": "l’hôtel",
           "nl": "het hotel",
-          "gender": "m"
+          "gender": "m",
+          "id": "uf1-item-000326"
         },
         {
           "top_category": "Atelier Parole",
@@ -4951,7 +5894,8 @@
           "type": "vocabulary",
           "fr": "le musée",
           "nl": "het museum",
-          "gender": "m"
+          "gender": "m",
+          "id": "uf1-item-000327"
         },
         {
           "top_category": "Atelier Parole",
@@ -4962,7 +5906,8 @@
           "type": "vocabulary",
           "fr": "le parc",
           "nl": "het park",
-          "gender": "m"
+          "gender": "m",
+          "id": "uf1-item-000328"
         },
         {
           "top_category": "Atelier Parole",
@@ -4973,7 +5918,8 @@
           "type": "vocabulary",
           "fr": "la pharmacie",
           "nl": "de apotheek",
-          "gender": "f"
+          "gender": "f",
+          "id": "uf1-item-000329"
         },
         {
           "top_category": "Atelier Parole",
@@ -4984,7 +5930,8 @@
           "type": "vocabulary",
           "fr": "la piscine",
           "nl": "het zwembad",
-          "gender": "f"
+          "gender": "f",
+          "id": "uf1-item-000330"
         },
         {
           "top_category": "Atelier Parole",
@@ -4995,7 +5942,8 @@
           "type": "vocabulary",
           "fr": "la pizzeria",
           "nl": "de pizzeria",
-          "gender": "f"
+          "gender": "f",
+          "id": "uf1-item-000331"
         },
         {
           "top_category": "Atelier Parole",
@@ -5006,7 +5954,8 @@
           "type": "vocabulary",
           "fr": "la poste",
           "nl": "het postkantoor",
-          "gender": "f"
+          "gender": "f",
+          "id": "uf1-item-000332"
         },
         {
           "top_category": "Atelier Parole",
@@ -5017,7 +5966,12 @@
           "type": "vocabulary",
           "fr": "la rue (commerçante)",
           "nl": "de (winkel)straat",
-          "gender": "f"
+          "gender": "f",
+          "accepted_answers": [
+            "la rue",
+            "la rue commerçante"
+          ],
+          "id": "uf1-item-000333"
         },
         {
           "top_category": "Atelier Parole",
@@ -5028,7 +5982,8 @@
           "type": "vocabulary",
           "fr": "la salle de sport",
           "nl": "de sporthal",
-          "gender": "f"
+          "gender": "f",
+          "id": "uf1-item-000334"
         },
         {
           "top_category": "Atelier Parole",
@@ -5039,7 +5994,12 @@
           "type": "vocabulary",
           "fr": "le stade (de foot)",
           "nl": "het (voetbal)stadion",
-          "gender": "m"
+          "gender": "m",
+          "accepted_answers": [
+            "le stade",
+            "le stade de foot"
+          ],
+          "id": "uf1-item-000335"
         },
         {
           "top_category": "Atelier Parole",
@@ -5050,7 +6010,8 @@
           "type": "vocabulary",
           "fr": "la supérette",
           "nl": "de superette",
-          "gender": "f"
+          "gender": "f",
+          "id": "uf1-item-000336"
         },
         {
           "top_category": "Atelier Parole",
@@ -5061,7 +6022,8 @@
           "type": "vocabulary",
           "fr": "la terrasse",
           "nl": "het terras",
-          "gender": "f"
+          "gender": "f",
+          "id": "uf1-item-000337"
         },
         {
           "top_category": "Atelier Parole",
@@ -5072,7 +6034,8 @@
           "type": "vocabulary",
           "fr": "faire de l’escalade",
           "nl": "klimmen",
-          "gender": ""
+          "gender": "",
+          "id": "uf1-item-000338"
         },
         {
           "top_category": "Atelier Parole",
@@ -5083,7 +6046,8 @@
           "type": "vocabulary",
           "fr": "loger",
           "nl": "logeren",
-          "gender": ""
+          "gender": "",
+          "id": "uf1-item-000339"
         },
         {
           "top_category": "Atelier Parole",
@@ -5094,7 +6058,8 @@
           "type": "vocabulary",
           "fr": "visiter",
           "nl": "bezoeken",
-          "gender": ""
+          "gender": "",
+          "id": "uf1-item-000340"
         },
         {
           "top_category": "Atelier Parole",
@@ -5105,7 +6070,8 @@
           "type": "vocabulary",
           "fr": "agréable",
           "nl": "aangenaam",
-          "gender": ""
+          "gender": "",
+          "id": "uf1-item-000341"
         },
         {
           "top_category": "Atelier Parole",
@@ -5116,7 +6082,16 @@
           "type": "vocabulary",
           "fr": "animé(e)",
           "nl": "bruisend, levendig",
-          "gender": ""
+          "gender": "",
+          "accepted_answers": [
+            "animé",
+            "animée"
+          ],
+          "accepted_answers_nl": [
+            "bruisend",
+            "levendig"
+          ],
+          "id": "uf1-item-000342"
         },
         {
           "top_category": "Atelier Parole",
@@ -5127,7 +6102,12 @@
           "type": "vocabulary",
           "fr": "calme",
           "nl": "kalm, rustig",
-          "gender": ""
+          "gender": "",
+          "accepted_answers_nl": [
+            "kalm",
+            "rustig"
+          ],
+          "id": "uf1-item-000343"
         },
         {
           "top_category": "Atelier Parole",
@@ -5138,7 +6118,16 @@
           "type": "vocabulary",
           "fr": "charmant(e)",
           "nl": "charmant, leuk",
-          "gender": ""
+          "gender": "",
+          "accepted_answers": [
+            "charmant",
+            "charmante"
+          ],
+          "accepted_answers_nl": [
+            "charmant",
+            "leuk"
+          ],
+          "id": "uf1-item-000344"
         },
         {
           "top_category": "Atelier Parole",
@@ -5149,7 +6138,16 @@
           "type": "vocabulary",
           "fr": "ennuyeux, ennuyeuse",
           "nl": "vervelend, saai",
-          "gender": ""
+          "gender": "",
+          "accepted_answers": [
+            "ennuyeux",
+            "ennuyeuse"
+          ],
+          "accepted_answers_nl": [
+            "vervelend",
+            "saai"
+          ],
+          "id": "uf1-item-000345"
         },
         {
           "top_category": "Atelier Parole",
@@ -5160,7 +6158,8 @@
           "type": "vocabulary",
           "fr": "magnifique",
           "nl": "prachtig",
-          "gender": ""
+          "gender": "",
+          "id": "uf1-item-000346"
         },
         {
           "top_category": "Atelier Parole",
@@ -5171,7 +6170,12 @@
           "type": "vocabulary",
           "fr": "vivant(e)",
           "nl": "levendig",
-          "gender": ""
+          "gender": "",
+          "accepted_answers": [
+            "vivant",
+            "vivante"
+          ],
+          "id": "uf1-item-000347"
         },
         {
           "top_category": "Atelier Parole",
@@ -5182,7 +6186,8 @@
           "type": "vocabulary",
           "fr": "à côté de",
           "nl": "naast",
-          "gender": ""
+          "gender": "",
+          "id": "uf1-item-000348"
         },
         {
           "top_category": "Atelier Parole",
@@ -5193,7 +6198,8 @@
           "type": "vocabulary",
           "fr": "en face de",
           "nl": "tegenover",
-          "gender": ""
+          "gender": "",
+          "id": "uf1-item-000349"
         },
         {
           "top_category": "Atelier Parole",
@@ -5204,7 +6210,12 @@
           "type": "vocabulary",
           "fr": "(tout) près de",
           "nl": "(heel) dichtbij",
-          "gender": ""
+          "gender": "",
+          "accepted_answers": [
+            "près de",
+            "tout près de"
+          ],
+          "id": "uf1-item-000350"
         },
         {
           "top_category": "Atelier Parole",
@@ -5215,7 +6226,8 @@
           "type": "vocabulary",
           "fr": "souvent",
           "nl": "vaak",
-          "gender": ""
+          "gender": "",
+          "id": "uf1-item-000351"
         },
         {
           "top_category": "Atelier Parole",
@@ -5226,7 +6238,12 @@
           "type": "vocabulary",
           "fr": "faire une activité (sportive)",
           "nl": "een (sport)activiteit doen",
-          "gender": ""
+          "gender": "",
+          "accepted_answers": [
+            "faire une activité",
+            "faire une activité sportive"
+          ],
+          "id": "uf1-item-000352"
         },
         {
           "top_category": "Atelier Parole",
@@ -5237,7 +6254,12 @@
           "type": "vocabulary",
           "fr": "je suis désolé(e)",
           "nl": "het spijt me",
-          "gender": ""
+          "gender": "",
+          "accepted_answers": [
+            "je suis désolé",
+            "je suis désolée"
+          ],
+          "id": "uf1-item-000353"
         },
         {
           "top_category": "Atelier Parole",
@@ -5248,7 +6270,12 @@
           "type": "vocabulary",
           "fr": "on (y) va ensemble",
           "nl": "we gaan (er) samen (heen)",
-          "gender": ""
+          "gender": "",
+          "accepted_answers": [
+            "on va ensemble",
+            "on y va ensemble"
+          ],
+          "id": "uf1-item-000354"
         },
         {
           "top_category": "Atelier Parole",
@@ -5259,7 +6286,8 @@
           "type": "vocabulary",
           "fr": "pas de soucis",
           "nl": "geen zorgen",
-          "gender": ""
+          "gender": "",
+          "id": "uf1-item-000355"
         },
         {
           "top_category": "Atelier Parole",
@@ -5270,7 +6298,8 @@
           "type": "vocabulary",
           "fr": "prendre un verre",
           "nl": "een glas drinken",
-          "gender": ""
+          "gender": "",
+          "id": "uf1-item-000356"
         },
         {
           "top_category": "Atelier Parole",
@@ -5283,7 +6312,8 @@
           "fr": "Ça te dit d’aller au cinéma ?",
           "accepted_answers": [
             "Ça te dit d’aller au cinéma ?"
-          ]
+          ],
+          "id": "uf1-item-000357"
         },
         {
           "top_category": "Atelier Parole",
@@ -5296,7 +6326,8 @@
           "fr": "Tu as envie de nager ?",
           "accepted_answers": [
             "Tu as envie de nager ?"
-          ]
+          ],
+          "id": "uf1-item-000358"
         },
         {
           "top_category": "Atelier Parole",
@@ -5309,7 +6340,8 @@
           "fr": "On va faire du shopping ?",
           "accepted_answers": [
             "On va faire du shopping ?"
-          ]
+          ],
+          "id": "uf1-item-000359"
         },
         {
           "top_category": "Atelier Parole",
@@ -5322,7 +6354,8 @@
           "fr": "Pourquoi ne pas jouer au padel ?",
           "accepted_answers": [
             "Pourquoi ne pas jouer au padel ?"
-          ]
+          ],
+          "id": "uf1-item-000360"
         },
         {
           "top_category": "Atelier Parole",
@@ -5335,7 +6368,8 @@
           "fr": "On va à la bibliothèque ?",
           "accepted_answers": [
             "On va à la bibliothèque ?"
-          ]
+          ],
+          "id": "uf1-item-000361"
         },
         {
           "top_category": "Atelier Parole",
@@ -5348,7 +6382,8 @@
           "fr": "On va manger un sandwich ?",
           "accepted_answers": [
             "On va manger un sandwich ?"
-          ]
+          ],
+          "id": "uf1-item-000362"
         },
         {
           "top_category": "Atelier Parole",
@@ -5361,7 +6396,8 @@
           "fr": "On va prendre un verre en terrasse ?",
           "accepted_answers": [
             "On va prendre un verre en terrasse ?"
-          ]
+          ],
+          "id": "uf1-item-000363"
         },
         {
           "top_category": "Atelier Parole",
@@ -5374,7 +6410,8 @@
           "fr": "On fait une partie de tennis ?",
           "accepted_answers": [
             "On fait une partie de tennis ?"
-          ]
+          ],
+          "id": "uf1-item-000364"
         },
         {
           "top_category": "Atelier Parole",
@@ -5387,7 +6424,8 @@
           "fr": "Tu es libre samedi prochain, à 14 heures ?",
           "accepted_answers": [
             "Tu es libre samedi prochain, à 14 heures ?"
-          ]
+          ],
+          "id": "uf1-item-000365"
         },
         {
           "top_category": "Atelier Parole",
@@ -5400,7 +6438,8 @@
           "fr": "Et dimanche à 10 heures ?",
           "accepted_answers": [
             "Et dimanche à 10 heures ?"
-          ]
+          ],
+          "id": "uf1-item-000366"
         },
         {
           "top_category": "Atelier Parole",
@@ -5413,7 +6452,8 @@
           "fr": "Super, alors tu viens chez moi à 9 h 30 ?",
           "accepted_answers": [
             "Super, alors tu viens chez moi à 9 h 30 ?"
-          ]
+          ],
+          "id": "uf1-item-000367"
         },
         {
           "top_category": "Atelier Parole",
@@ -5426,7 +6466,8 @@
           "fr": "On part vers 10 h 30 ?",
           "accepted_answers": [
             "On part vers 10 h 30 ?"
-          ]
+          ],
+          "id": "uf1-item-000368"
         },
         {
           "top_category": "Atelier Parole",
@@ -5439,7 +6480,8 @@
           "fr": "Oui, super !",
           "accepted_answers": [
             "Oui, super !"
-          ]
+          ],
+          "id": "uf1-item-000369"
         },
         {
           "top_category": "Atelier Parole",
@@ -5452,7 +6494,8 @@
           "fr": "Génial !",
           "accepted_answers": [
             "Génial !"
-          ]
+          ],
+          "id": "uf1-item-000370"
         },
         {
           "top_category": "Atelier Parole",
@@ -5465,7 +6508,8 @@
           "fr": "J’aime bien.",
           "accepted_answers": [
             "J’aime bien."
-          ]
+          ],
+          "id": "uf1-item-000371"
         },
         {
           "top_category": "Atelier Parole",
@@ -5478,7 +6522,8 @@
           "fr": "J’adore !",
           "accepted_answers": [
             "J’adore !"
-          ]
+          ],
+          "id": "uf1-item-000372"
         },
         {
           "top_category": "Atelier Parole",
@@ -5491,7 +6536,8 @@
           "fr": "D’accord.",
           "accepted_answers": [
             "D’accord."
-          ]
+          ],
+          "id": "uf1-item-000373"
         },
         {
           "top_category": "Atelier Parole",
@@ -5504,7 +6550,8 @@
           "fr": "Chouette.",
           "accepted_answers": [
             "Chouette."
-          ]
+          ],
+          "id": "uf1-item-000374"
         },
         {
           "top_category": "Atelier Parole",
@@ -5517,7 +6564,8 @@
           "fr": "Bonne idée.",
           "accepted_answers": [
             "Bonne idée."
-          ]
+          ],
+          "id": "uf1-item-000375"
         },
         {
           "top_category": "Atelier Parole",
@@ -5530,7 +6578,8 @@
           "fr": "O.K., c’est original !",
           "accepted_answers": [
             "O.K., c’est original !"
-          ]
+          ],
+          "id": "uf1-item-000376"
         },
         {
           "top_category": "Atelier Parole",
@@ -5543,7 +6592,8 @@
           "fr": "Nickel.",
           "accepted_answers": [
             "Nickel."
-          ]
+          ],
+          "id": "uf1-item-000377"
         },
         {
           "top_category": "Atelier Parole",
@@ -5555,8 +6605,10 @@
           "nl": "Nee, sorry, ik heb geen zin.",
           "fr": "Non, désolé(e), je n’ai pas envie.",
           "accepted_answers": [
-            "Non, désolé(e), je n’ai pas envie."
-          ]
+            "Non, désolé, je n’ai pas envie.",
+            "Non, désolée, je n’ai pas envie."
+          ],
+          "id": "uf1-item-000378"
         },
         {
           "top_category": "Atelier Parole",
@@ -5569,7 +6621,8 @@
           "fr": "Bof, je ne suis plus libre.",
           "accepted_answers": [
             "Bof, je ne suis plus libre."
-          ]
+          ],
+          "id": "uf1-item-000379"
         },
         {
           "top_category": "Atelier Parole",
@@ -5582,7 +6635,8 @@
           "fr": "Je ne sais pas. Ça ne me dit rien.",
           "accepted_answers": [
             "Je ne sais pas. Ça ne me dit rien."
-          ]
+          ],
+          "id": "uf1-item-000380"
         },
         {
           "top_category": "Atelier Parole",
@@ -5595,7 +6649,8 @@
           "fr": "Pas du tout, ce n’est pas mon truc.",
           "accepted_answers": [
             "Pas du tout, ce n’est pas mon truc."
-          ]
+          ],
+          "id": "uf1-item-000381"
         },
         {
           "top_category": "Atelier Parole",
@@ -5608,7 +6663,8 @@
           "fr": "Oui, je n’ai rien à faire.",
           "accepted_answers": [
             "Oui, je n’ai rien à faire."
-          ]
+          ],
+          "id": "uf1-item-000382"
         },
         {
           "top_category": "Atelier Parole",
@@ -5621,7 +6677,8 @@
           "fr": "Dommage, je ne suis pas libre.",
           "accepted_answers": [
             "Dommage, je ne suis pas libre."
-          ]
+          ],
+          "id": "uf1-item-000383"
         },
         {
           "top_category": "Atelier Parole",
@@ -5634,7 +6691,8 @@
           "fr": "Non, je vais chez les scouts.",
           "accepted_answers": [
             "Non, je vais chez les scouts."
-          ]
+          ],
+          "id": "uf1-item-000384"
         },
         {
           "top_category": "Atelier Parole",
@@ -5647,7 +6705,8 @@
           "fr": "D’accord ! Rendez-vous chez toi.",
           "accepted_answers": [
             "D’accord ! Rendez-vous chez toi."
-          ]
+          ],
+          "id": "uf1-item-000385"
         },
         {
           "top_category": "Atelier Parole",
@@ -5660,7 +6719,8 @@
           "fr": "O.K.",
           "accepted_answers": [
             "O.K."
-          ]
+          ],
+          "id": "uf1-item-000386"
         },
         {
           "top_category": "Atelier Parole",
@@ -5673,7 +6733,8 @@
           "fr": "Ça va pour moi.",
           "accepted_answers": [
             "Ça va pour moi."
-          ]
+          ],
+          "id": "uf1-item-000387"
         },
         {
           "top_category": "Atelier Parole",
@@ -5686,7 +6747,8 @@
           "fr": "Parfait !",
           "accepted_answers": [
             "Parfait !"
-          ]
+          ],
+          "id": "uf1-item-000388"
         },
         {
           "top_category": "Atelier Parole",
@@ -5699,7 +6761,8 @@
           "fr": "Tu habites où ?",
           "accepted_answers": [
             "Tu habites où ?"
-          ]
+          ],
+          "id": "uf1-item-000389"
         },
         {
           "top_category": "Atelier Parole",
@@ -5712,7 +6775,8 @@
           "fr": "J’habite dans le centre.",
           "accepted_answers": [
             "J’habite dans le centre."
-          ]
+          ],
+          "id": "uf1-item-000390"
         },
         {
           "top_category": "Atelier Parole",
@@ -5725,7 +6789,8 @@
           "fr": "J’habite à la campagne.",
           "accepted_answers": [
             "J’habite à la campagne."
-          ]
+          ],
+          "id": "uf1-item-000391"
         },
         {
           "top_category": "Atelier Parole",
@@ -5738,7 +6803,8 @@
           "fr": "J’habite à la mer.",
           "accepted_answers": [
             "J’habite à la mer."
-          ]
+          ],
+          "id": "uf1-item-000392"
         },
         {
           "top_category": "Atelier Parole",
@@ -5750,8 +6816,10 @@
           "nl": "Ik woon vlak bij de bakkerij.",
           "fr": "J’habite (tout) près de la boulangerie.",
           "accepted_answers": [
-            "J’habite (tout) près de la boulangerie."
-          ]
+            "J’habite près de la boulangerie.",
+            "J’habite tout près de la boulangerie."
+          ],
+          "id": "uf1-item-000393"
         },
         {
           "top_category": "Atelier Parole",
@@ -5764,7 +6832,8 @@
           "fr": "Mon village se trouve entre Dijon et Lyon.",
           "accepted_answers": [
             "Mon village se trouve entre Dijon et Lyon."
-          ]
+          ],
+          "id": "uf1-item-000394"
         },
         {
           "top_category": "Atelier Parole",
@@ -5777,7 +6846,8 @@
           "fr": "Mon village se trouve près de Nantes.",
           "accepted_answers": [
             "Mon village se trouve près de Nantes."
-          ]
+          ],
+          "id": "uf1-item-000395"
         },
         {
           "top_category": "Atelier Parole",
@@ -5790,7 +6860,8 @@
           "fr": "Mon village se trouve à 20 km d’ici.",
           "accepted_answers": [
             "Mon village se trouve à 20 km d’ici."
-          ]
+          ],
+          "id": "uf1-item-000396"
         },
         {
           "top_category": "Atelier Parole",
@@ -5803,7 +6874,8 @@
           "fr": "Il est comment, ton village ?",
           "accepted_answers": [
             "Il est comment, ton village ?"
-          ]
+          ],
+          "id": "uf1-item-000397"
         },
         {
           "top_category": "Atelier Parole",
@@ -5816,7 +6888,8 @@
           "fr": "Il est charmant.",
           "accepted_answers": [
             "Il est charmant."
-          ]
+          ],
+          "id": "uf1-item-000398"
         },
         {
           "top_category": "Atelier Parole",
@@ -5829,7 +6902,8 @@
           "fr": "Il est agréable.",
           "accepted_answers": [
             "Il est agréable."
-          ]
+          ],
+          "id": "uf1-item-000399"
         },
         {
           "top_category": "Atelier Parole",
@@ -5842,7 +6916,8 @@
           "fr": "Il est petit.",
           "accepted_answers": [
             "Il est petit."
-          ]
+          ],
+          "id": "uf1-item-000400"
         },
         {
           "top_category": "Atelier Parole",
@@ -5855,7 +6930,8 @@
           "fr": "Il est calme.",
           "accepted_answers": [
             "Il est calme."
-          ]
+          ],
+          "id": "uf1-item-000401"
         },
         {
           "top_category": "Atelier Parole",
@@ -5868,7 +6944,8 @@
           "fr": "Il est ennuyeux.",
           "accepted_answers": [
             "Il est ennuyeux."
-          ]
+          ],
+          "id": "uf1-item-000402"
         },
         {
           "top_category": "Atelier Parole",
@@ -5881,7 +6958,8 @@
           "fr": "Elle est comment, ta ville ?",
           "accepted_answers": [
             "Elle est comment, ta ville ?"
-          ]
+          ],
+          "id": "uf1-item-000403"
         },
         {
           "top_category": "Atelier Parole",
@@ -5894,7 +6972,8 @@
           "fr": "Elle est vivante.",
           "accepted_answers": [
             "Elle est vivante."
-          ]
+          ],
+          "id": "uf1-item-000404"
         },
         {
           "top_category": "Atelier Parole",
@@ -5907,7 +6986,8 @@
           "fr": "Elle est magnifique.",
           "accepted_answers": [
             "Elle est magnifique."
-          ]
+          ],
+          "id": "uf1-item-000405"
         },
         {
           "top_category": "Atelier Parole",
@@ -5920,7 +7000,8 @@
           "fr": "Elle est grande.",
           "accepted_answers": [
             "Elle est grande."
-          ]
+          ],
+          "id": "uf1-item-000406"
         },
         {
           "top_category": "Atelier Parole",
@@ -5933,7 +7014,8 @@
           "fr": "Elle est animée.",
           "accepted_answers": [
             "Elle est animée."
-          ]
+          ],
+          "id": "uf1-item-000407"
         },
         {
           "top_category": "Atelier Parole",
@@ -5946,7 +7028,8 @@
           "fr": "Il y a beaucoup de magasins.",
           "accepted_answers": [
             "Il y a beaucoup de magasins."
-          ]
+          ],
+          "id": "uf1-item-000408"
         },
         {
           "top_category": "Atelier Parole",
@@ -5959,7 +7042,8 @@
           "fr": "Il y a peu de magasins.",
           "accepted_answers": [
             "Il y a peu de magasins."
-          ]
+          ],
+          "id": "uf1-item-000409"
         },
         {
           "top_category": "Atelier Verbes",
@@ -5995,7 +7079,8 @@
               "subject": "ils/elles",
               "form": "ils/elles vont"
             }
-          ]
+          ],
+          "id": "uf1-item-000410"
         },
         {
           "top_category": "Atelier Verbes",
@@ -6031,7 +7116,8 @@
               "subject": "ils/elles",
               "form": "ils/elles viennent"
             }
-          ]
+          ],
+          "id": "uf1-item-000411"
         },
         {
           "top_category": "Atelier Verbes",
@@ -6067,7 +7153,8 @@
               "subject": "ils/elles",
               "form": "ils/elles reviennent"
             }
-          ]
+          ],
+          "id": "uf1-item-000412"
         },
         {
           "top_category": "Atelier Verbes",
@@ -6103,7 +7190,12 @@
               "subject": "ils/elles",
               "form": "ils/elles tiennent"
             }
-          ]
+          ],
+          "accepted_answers_nl": [
+            "houden",
+            "vasthouden"
+          ],
+          "id": "uf1-item-000413"
         },
         {
           "top_category": "Atelier Verbes",
@@ -6139,7 +7231,12 @@
               "subject": "ils/elles",
               "form": "ils/elles retiennent"
             }
-          ]
+          ],
+          "accepted_answers_nl": [
+            "onthouden",
+            "tegenhouden"
+          ],
+          "id": "uf1-item-000414"
         },
         {
           "top_category": "Atelier Verbes",
@@ -6175,7 +7272,8 @@
               "subject": "ils/elles",
               "form": "ils/elles attendent"
             }
-          ]
+          ],
+          "id": "uf1-item-000415"
         },
         {
           "top_category": "Atelier Verbes",
@@ -6211,7 +7309,8 @@
               "subject": "ils/elles",
               "form": "ils/elles descendent"
             }
-          ]
+          ],
+          "id": "uf1-item-000416"
         },
         {
           "top_category": "Atelier Verbes",
@@ -6247,7 +7346,8 @@
               "subject": "ils/elles",
               "form": "ils/elles entendent"
             }
-          ]
+          ],
+          "id": "uf1-item-000417"
         },
         {
           "top_category": "Atelier Verbes",
@@ -6283,7 +7383,8 @@
               "subject": "ils/elles",
               "form": "ils/elles perdent"
             }
-          ]
+          ],
+          "id": "uf1-item-000418"
         },
         {
           "top_category": "Atelier Verbes",
@@ -6319,7 +7420,8 @@
               "subject": "ils/elles",
               "form": "ils/elles rendent"
             }
-          ]
+          ],
+          "id": "uf1-item-000419"
         },
         {
           "top_category": "Atelier Verbes",
@@ -6355,7 +7457,8 @@
               "subject": "ils/elles",
               "form": "ils/elles rendent visite à"
             }
-          ]
+          ],
+          "id": "uf1-item-000420"
         },
         {
           "top_category": "Atelier Verbes",
@@ -6391,7 +7494,8 @@
               "subject": "ils/elles",
               "form": "ils/elles répondent"
             }
-          ]
+          ],
+          "id": "uf1-item-000421"
         },
         {
           "top_category": "Atelier Verbes",
@@ -6427,7 +7531,8 @@
               "subject": "ils/elles",
               "form": "ils/elles vendent"
             }
-          ]
+          ],
+          "id": "uf1-item-000422"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -6440,7 +7545,8 @@
           "fr": "zéro",
           "accepted_answers": [
             "zéro"
-          ]
+          ],
+          "id": "uf1-item-000423"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -6453,7 +7559,8 @@
           "fr": "un",
           "accepted_answers": [
             "un"
-          ]
+          ],
+          "id": "uf1-item-000424"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -6466,7 +7573,8 @@
           "fr": "deux",
           "accepted_answers": [
             "deux"
-          ]
+          ],
+          "id": "uf1-item-000425"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -6479,7 +7587,8 @@
           "fr": "trois",
           "accepted_answers": [
             "trois"
-          ]
+          ],
+          "id": "uf1-item-000426"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -6492,7 +7601,8 @@
           "fr": "quatre",
           "accepted_answers": [
             "quatre"
-          ]
+          ],
+          "id": "uf1-item-000427"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -6505,7 +7615,8 @@
           "fr": "cinq",
           "accepted_answers": [
             "cinq"
-          ]
+          ],
+          "id": "uf1-item-000428"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -6518,7 +7629,8 @@
           "fr": "six",
           "accepted_answers": [
             "six"
-          ]
+          ],
+          "id": "uf1-item-000429"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -6531,7 +7643,8 @@
           "fr": "sept",
           "accepted_answers": [
             "sept"
-          ]
+          ],
+          "id": "uf1-item-000430"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -6544,7 +7657,8 @@
           "fr": "huit",
           "accepted_answers": [
             "huit"
-          ]
+          ],
+          "id": "uf1-item-000431"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -6557,7 +7671,8 @@
           "fr": "neuf",
           "accepted_answers": [
             "neuf"
-          ]
+          ],
+          "id": "uf1-item-000432"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -6570,7 +7685,8 @@
           "fr": "dix",
           "accepted_answers": [
             "dix"
-          ]
+          ],
+          "id": "uf1-item-000433"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -6583,7 +7699,8 @@
           "fr": "onze",
           "accepted_answers": [
             "onze"
-          ]
+          ],
+          "id": "uf1-item-000434"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -6596,7 +7713,8 @@
           "fr": "douze",
           "accepted_answers": [
             "douze"
-          ]
+          ],
+          "id": "uf1-item-000435"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -6609,7 +7727,8 @@
           "fr": "treize",
           "accepted_answers": [
             "treize"
-          ]
+          ],
+          "id": "uf1-item-000436"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -6622,7 +7741,8 @@
           "fr": "quatorze",
           "accepted_answers": [
             "quatorze"
-          ]
+          ],
+          "id": "uf1-item-000437"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -6635,7 +7755,8 @@
           "fr": "quinze",
           "accepted_answers": [
             "quinze"
-          ]
+          ],
+          "id": "uf1-item-000438"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -6648,7 +7769,8 @@
           "fr": "seize",
           "accepted_answers": [
             "seize"
-          ]
+          ],
+          "id": "uf1-item-000439"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -6661,7 +7783,8 @@
           "fr": "dix-sept",
           "accepted_answers": [
             "dix-sept"
-          ]
+          ],
+          "id": "uf1-item-000440"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -6674,7 +7797,8 @@
           "fr": "dix-huit",
           "accepted_answers": [
             "dix-huit"
-          ]
+          ],
+          "id": "uf1-item-000441"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -6687,7 +7811,8 @@
           "fr": "dix-neuf",
           "accepted_answers": [
             "dix-neuf"
-          ]
+          ],
+          "id": "uf1-item-000442"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -6700,7 +7825,8 @@
           "fr": "vingt",
           "accepted_answers": [
             "vingt"
-          ]
+          ],
+          "id": "uf1-item-000443"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -6713,7 +7839,8 @@
           "fr": "vingt-et-un",
           "accepted_answers": [
             "vingt-et-un"
-          ]
+          ],
+          "id": "uf1-item-000444"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -6726,7 +7853,8 @@
           "fr": "vingt-deux",
           "accepted_answers": [
             "vingt-deux"
-          ]
+          ],
+          "id": "uf1-item-000445"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -6739,7 +7867,8 @@
           "fr": "vingt-trois",
           "accepted_answers": [
             "vingt-trois"
-          ]
+          ],
+          "id": "uf1-item-000446"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -6752,7 +7881,8 @@
           "fr": "vingt-quatre",
           "accepted_answers": [
             "vingt-quatre"
-          ]
+          ],
+          "id": "uf1-item-000447"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -6765,7 +7895,8 @@
           "fr": "vingt-cinq",
           "accepted_answers": [
             "vingt-cinq"
-          ]
+          ],
+          "id": "uf1-item-000448"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -6778,7 +7909,8 @@
           "fr": "vingt-six",
           "accepted_answers": [
             "vingt-six"
-          ]
+          ],
+          "id": "uf1-item-000449"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -6791,7 +7923,8 @@
           "fr": "vingt-sept",
           "accepted_answers": [
             "vingt-sept"
-          ]
+          ],
+          "id": "uf1-item-000450"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -6804,7 +7937,8 @@
           "fr": "vingt-huit",
           "accepted_answers": [
             "vingt-huit"
-          ]
+          ],
+          "id": "uf1-item-000451"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -6817,7 +7951,8 @@
           "fr": "vingt-neuf",
           "accepted_answers": [
             "vingt-neuf"
-          ]
+          ],
+          "id": "uf1-item-000452"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -6830,7 +7965,8 @@
           "fr": "trente",
           "accepted_answers": [
             "trente"
-          ]
+          ],
+          "id": "uf1-item-000453"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -6843,7 +7979,8 @@
           "fr": "trente-et-un",
           "accepted_answers": [
             "trente-et-un"
-          ]
+          ],
+          "id": "uf1-item-000454"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -6856,7 +7993,8 @@
           "fr": "trente-deux",
           "accepted_answers": [
             "trente-deux"
-          ]
+          ],
+          "id": "uf1-item-000455"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -6869,7 +8007,8 @@
           "fr": "trente-trois",
           "accepted_answers": [
             "trente-trois"
-          ]
+          ],
+          "id": "uf1-item-000456"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -6882,7 +8021,8 @@
           "fr": "trente-quatre",
           "accepted_answers": [
             "trente-quatre"
-          ]
+          ],
+          "id": "uf1-item-000457"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -6895,7 +8035,8 @@
           "fr": "trente-cinq",
           "accepted_answers": [
             "trente-cinq"
-          ]
+          ],
+          "id": "uf1-item-000458"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -6908,7 +8049,8 @@
           "fr": "trente-six",
           "accepted_answers": [
             "trente-six"
-          ]
+          ],
+          "id": "uf1-item-000459"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -6921,7 +8063,8 @@
           "fr": "trente-sept",
           "accepted_answers": [
             "trente-sept"
-          ]
+          ],
+          "id": "uf1-item-000460"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -6934,7 +8077,8 @@
           "fr": "trente-huit",
           "accepted_answers": [
             "trente-huit"
-          ]
+          ],
+          "id": "uf1-item-000461"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -6947,7 +8091,8 @@
           "fr": "trente-neuf",
           "accepted_answers": [
             "trente-neuf"
-          ]
+          ],
+          "id": "uf1-item-000462"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -6960,7 +8105,8 @@
           "fr": "quarante",
           "accepted_answers": [
             "quarante"
-          ]
+          ],
+          "id": "uf1-item-000463"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -6973,7 +8119,8 @@
           "fr": "quarante-et-un",
           "accepted_answers": [
             "quarante-et-un"
-          ]
+          ],
+          "id": "uf1-item-000464"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -6986,7 +8133,8 @@
           "fr": "quarante-deux",
           "accepted_answers": [
             "quarante-deux"
-          ]
+          ],
+          "id": "uf1-item-000465"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -6999,7 +8147,8 @@
           "fr": "quarante-trois",
           "accepted_answers": [
             "quarante-trois"
-          ]
+          ],
+          "id": "uf1-item-000466"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -7012,7 +8161,8 @@
           "fr": "quarante-quatre",
           "accepted_answers": [
             "quarante-quatre"
-          ]
+          ],
+          "id": "uf1-item-000467"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -7025,7 +8175,8 @@
           "fr": "quarante-cinq",
           "accepted_answers": [
             "quarante-cinq"
-          ]
+          ],
+          "id": "uf1-item-000468"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -7038,7 +8189,8 @@
           "fr": "quarante-six",
           "accepted_answers": [
             "quarante-six"
-          ]
+          ],
+          "id": "uf1-item-000469"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -7051,7 +8203,8 @@
           "fr": "quarante-sept",
           "accepted_answers": [
             "quarante-sept"
-          ]
+          ],
+          "id": "uf1-item-000470"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -7064,7 +8217,8 @@
           "fr": "quarante-huit",
           "accepted_answers": [
             "quarante-huit"
-          ]
+          ],
+          "id": "uf1-item-000471"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -7077,7 +8231,8 @@
           "fr": "quarante-neuf",
           "accepted_answers": [
             "quarante-neuf"
-          ]
+          ],
+          "id": "uf1-item-000472"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -7090,7 +8245,8 @@
           "fr": "cinquante",
           "accepted_answers": [
             "cinquante"
-          ]
+          ],
+          "id": "uf1-item-000473"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -7103,7 +8259,8 @@
           "fr": "cinquante-et-un",
           "accepted_answers": [
             "cinquante-et-un"
-          ]
+          ],
+          "id": "uf1-item-000474"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -7116,7 +8273,8 @@
           "fr": "cinquante-deux",
           "accepted_answers": [
             "cinquante-deux"
-          ]
+          ],
+          "id": "uf1-item-000475"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -7129,7 +8287,8 @@
           "fr": "cinquante-trois",
           "accepted_answers": [
             "cinquante-trois"
-          ]
+          ],
+          "id": "uf1-item-000476"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -7142,7 +8301,8 @@
           "fr": "cinquante-quatre",
           "accepted_answers": [
             "cinquante-quatre"
-          ]
+          ],
+          "id": "uf1-item-000477"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -7155,7 +8315,8 @@
           "fr": "cinquante-cinq",
           "accepted_answers": [
             "cinquante-cinq"
-          ]
+          ],
+          "id": "uf1-item-000478"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -7168,7 +8329,8 @@
           "fr": "cinquante-six",
           "accepted_answers": [
             "cinquante-six"
-          ]
+          ],
+          "id": "uf1-item-000479"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -7181,7 +8343,8 @@
           "fr": "cinquante-sept",
           "accepted_answers": [
             "cinquante-sept"
-          ]
+          ],
+          "id": "uf1-item-000480"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -7194,7 +8357,8 @@
           "fr": "cinquante-huit",
           "accepted_answers": [
             "cinquante-huit"
-          ]
+          ],
+          "id": "uf1-item-000481"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -7207,7 +8371,8 @@
           "fr": "cinquante-neuf",
           "accepted_answers": [
             "cinquante-neuf"
-          ]
+          ],
+          "id": "uf1-item-000482"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -7220,7 +8385,8 @@
           "fr": "soixante",
           "accepted_answers": [
             "soixante"
-          ]
+          ],
+          "id": "uf1-item-000483"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -7233,7 +8399,8 @@
           "fr": "soixante-et-un",
           "accepted_answers": [
             "soixante-et-un"
-          ]
+          ],
+          "id": "uf1-item-000484"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -7246,7 +8413,8 @@
           "fr": "soixante-deux",
           "accepted_answers": [
             "soixante-deux"
-          ]
+          ],
+          "id": "uf1-item-000485"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -7259,7 +8427,8 @@
           "fr": "soixante-trois",
           "accepted_answers": [
             "soixante-trois"
-          ]
+          ],
+          "id": "uf1-item-000486"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -7272,7 +8441,8 @@
           "fr": "soixante-quatre",
           "accepted_answers": [
             "soixante-quatre"
-          ]
+          ],
+          "id": "uf1-item-000487"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -7285,7 +8455,8 @@
           "fr": "soixante-cinq",
           "accepted_answers": [
             "soixante-cinq"
-          ]
+          ],
+          "id": "uf1-item-000488"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -7298,7 +8469,8 @@
           "fr": "soixante-six",
           "accepted_answers": [
             "soixante-six"
-          ]
+          ],
+          "id": "uf1-item-000489"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -7311,7 +8483,8 @@
           "fr": "soixante-sept",
           "accepted_answers": [
             "soixante-sept"
-          ]
+          ],
+          "id": "uf1-item-000490"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -7324,7 +8497,8 @@
           "fr": "soixante-huit",
           "accepted_answers": [
             "soixante-huit"
-          ]
+          ],
+          "id": "uf1-item-000491"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -7337,7 +8511,8 @@
           "fr": "soixante-neuf",
           "accepted_answers": [
             "soixante-neuf"
-          ]
+          ],
+          "id": "uf1-item-000492"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -7351,7 +8526,8 @@
           "accepted_answers": [
             "septante",
             "soixante-dix"
-          ]
+          ],
+          "id": "uf1-item-000493"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -7365,7 +8541,8 @@
           "accepted_answers": [
             "septante-et-un",
             "soixante-et-onze"
-          ]
+          ],
+          "id": "uf1-item-000494"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -7379,7 +8556,8 @@
           "accepted_answers": [
             "septante-deux",
             "soixante-douze"
-          ]
+          ],
+          "id": "uf1-item-000495"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -7393,7 +8571,8 @@
           "accepted_answers": [
             "septante-trois",
             "soixante-treize"
-          ]
+          ],
+          "id": "uf1-item-000496"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -7407,7 +8586,8 @@
           "accepted_answers": [
             "septante-quatre",
             "soixante-quatorze"
-          ]
+          ],
+          "id": "uf1-item-000497"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -7421,7 +8601,8 @@
           "accepted_answers": [
             "septante-cinq",
             "soixante-quinze"
-          ]
+          ],
+          "id": "uf1-item-000498"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -7435,7 +8616,8 @@
           "accepted_answers": [
             "septante-six",
             "soixante-seize"
-          ]
+          ],
+          "id": "uf1-item-000499"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -7449,7 +8631,8 @@
           "accepted_answers": [
             "septante-sept",
             "soixante-dix-sept"
-          ]
+          ],
+          "id": "uf1-item-000500"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -7463,7 +8646,8 @@
           "accepted_answers": [
             "septante-huit",
             "soixante-dix-huit"
-          ]
+          ],
+          "id": "uf1-item-000501"
         },
         {
           "top_category": "Chiffres et lettres",
@@ -7477,7 +8661,8 @@
           "accepted_answers": [
             "septante-neuf",
             "soixante-dix-neuf"
-          ]
+          ],
+          "id": "uf1-item-000502"
         },
         {
           "top_category": "Atelier Grammaire",
@@ -7489,7 +8674,8 @@
           "prompt": "à + le",
           "answer": "au",
           "example_fr": "Je vais au parc.",
-          "example_nl": ""
+          "example_nl": "",
+          "id": "uf1-item-000503"
         },
         {
           "top_category": "Atelier Grammaire",
@@ -7501,7 +8687,8 @@
           "prompt": "à + la",
           "answer": "à la",
           "example_fr": "Je vais à la gare.",
-          "example_nl": ""
+          "example_nl": "",
+          "id": "uf1-item-000504"
         },
         {
           "top_category": "Atelier Grammaire",
@@ -7513,7 +8700,8 @@
           "prompt": "à + l’",
           "answer": "à l’",
           "example_fr": "Je vais à l’hôpital.",
-          "example_nl": ""
+          "example_nl": "",
+          "id": "uf1-item-000505"
         },
         {
           "top_category": "Atelier Grammaire",
@@ -7525,7 +8713,8 @@
           "prompt": "à + les",
           "answer": "aux",
           "example_fr": "Je vais aux jardins.",
-          "example_nl": ""
+          "example_nl": "",
+          "id": "uf1-item-000506"
         },
         {
           "top_category": "Atelier Grammaire",
@@ -7537,7 +8726,8 @@
           "prompt": "de + le",
           "answer": "du",
           "example_fr": "Je viens du marché.",
-          "example_nl": ""
+          "example_nl": "",
+          "id": "uf1-item-000507"
         },
         {
           "top_category": "Atelier Grammaire",
@@ -7549,7 +8739,8 @@
           "prompt": "de + la",
           "answer": "de la",
           "example_fr": "Je viens de la piscine.",
-          "example_nl": ""
+          "example_nl": "",
+          "id": "uf1-item-000508"
         },
         {
           "top_category": "Atelier Grammaire",
@@ -7561,7 +8752,8 @@
           "prompt": "de + l’",
           "answer": "de l’",
           "example_fr": "Je viens de l’école.",
-          "example_nl": ""
+          "example_nl": "",
+          "id": "uf1-item-000509"
         },
         {
           "top_category": "Atelier Grammaire",
@@ -7573,7 +8765,8 @@
           "prompt": "de + les",
           "answer": "des",
           "example_fr": "Je viens des jardins.",
-          "example_nl": ""
+          "example_nl": "",
+          "id": "uf1-item-000510"
         },
         {
           "top_category": "Atelier Grammaire",
@@ -7585,7 +8778,8 @@
           "prompt": "denken aan",
           "answer": "penser à",
           "example_fr": "",
-          "example_nl": ""
+          "example_nl": "",
+          "id": "uf1-item-000511"
         },
         {
           "top_category": "Atelier Grammaire",
@@ -7597,7 +8791,8 @@
           "prompt": "telefoneren naar",
           "answer": "téléphoner à",
           "example_fr": "",
-          "example_nl": ""
+          "example_nl": "",
+          "id": "uf1-item-000512"
         },
         {
           "top_category": "Atelier Grammaire",
@@ -7609,7 +8804,8 @@
           "prompt": "vragen aan",
           "answer": "demander à",
           "example_fr": "",
-          "example_nl": ""
+          "example_nl": "",
+          "id": "uf1-item-000513"
         },
         {
           "top_category": "Atelier Grammaire",
@@ -7621,7 +8817,8 @@
           "prompt": "dromen van",
           "answer": "rêver de",
           "example_fr": "",
-          "example_nl": ""
+          "example_nl": "",
+          "id": "uf1-item-000514"
         },
         {
           "top_category": "Atelier Grammaire",
@@ -7633,7 +8830,8 @@
           "prompt": "rechts van",
           "answer": "à droite de",
           "example_fr": "",
-          "example_nl": ""
+          "example_nl": "",
+          "id": "uf1-item-000515"
         },
         {
           "top_category": "Atelier Grammaire",
@@ -7645,7 +8843,8 @@
           "prompt": "links van",
           "answer": "à gauche de",
           "example_fr": "",
-          "example_nl": ""
+          "example_nl": "",
+          "id": "uf1-item-000516"
         },
         {
           "top_category": "Atelier Grammaire",
@@ -7657,7 +8856,8 @@
           "prompt": "tegenover",
           "answer": "en face de",
           "example_fr": "",
-          "example_nl": ""
+          "example_nl": "",
+          "id": "uf1-item-000517"
         },
         {
           "top_category": "Atelier Grammaire",
@@ -7669,7 +8869,8 @@
           "prompt": "naast",
           "answer": "à côté de",
           "example_fr": "",
-          "example_nl": ""
+          "example_nl": "",
+          "id": "uf1-item-000518"
         },
         {
           "top_category": "Comment dire ?",
@@ -7685,7 +8886,8 @@
             "Il est huit heures.",
             "Elle a dix-neuf chats.",
             "Nous sommes dix."
-          ]
+          ],
+          "id": "uf1-item-000519"
         },
         {
           "top_category": "Comment dire ?",
@@ -7700,7 +8902,8 @@
             "Ça fait vingt euros.",
             "Il y a vingt hommes.",
             "Prenez la page vingt-huit."
-          ]
+          ],
+          "id": "uf1-item-000520"
         }
       ]
     }

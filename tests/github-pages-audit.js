@@ -13,9 +13,9 @@ assert.equal(path.dirname(indexPath), root, "index.html moet in de projectroot s
 assert.ok(fs.existsSync(path.join(root, ".nojekyll")), ".nojekyll ontbreekt");
 
 const stylesheet = html.match(/<link[^>]+rel="stylesheet"[^>]+href="([^"]+)"/)[1];
-const appScript = html.match(/<script[^>]+src="([^"]+)"/)[1];
+const appScripts = Array.from(html.matchAll(/<script[^>]+src="([^"]+)"/g)).map(function (match) { return match[1]; });
 const dataUrl = script.match(/const DATA_URL = "([^"]+)"/)[1];
-const assets = [stylesheet, appScript, dataUrl];
+const assets = [stylesheet].concat(appScripts, dataUrl);
 
 assets.forEach(function (asset) {
   assert.ok(asset.startsWith("./"), asset + " moet expliciet relatief zijn");
@@ -25,7 +25,9 @@ assets.forEach(function (asset) {
 
 const projectBase = new URL("https://voorbeeld.github.io/frans-trainer/");
 assert.equal(new URL(stylesheet, projectBase).pathname, "/frans-trainer/styles.css");
-assert.equal(new URL(appScript, projectBase).pathname, "/frans-trainer/app.js");
+appScripts.forEach(function (appScript) {
+  assert.ok(new URL(appScript, projectBase).pathname.startsWith("/frans-trainer/"));
+});
 assert.equal(new URL(dataUrl, projectBase).pathname, "/frans-trainer/data/course.json");
 
 [html, script, styles, json].forEach(function (content) {
@@ -33,8 +35,9 @@ assert.equal(new URL(dataUrl, projectBase).pathname, "/frans-trainer/data/course
   assert.equal(/file:\/\//i.test(content), false, "Een file://-pad is gevonden");
 });
 
-assert.equal(/(?:WebSocket|EventSource|XMLHttpRequest|\/api\/)/.test(script), false, "Backendafhankelijkheid gevonden");
-assert.equal(/fetch\s*\(\s*(?!DATA_URL)/.test(script), false, "Onverwachte netwerkrequest gevonden");
+assert.equal(/(?:WebSocket|EventSource|XMLHttpRequest|\/api\/)/.test(script), false, "Eigen serverafhankelijkheid gevonden");
+assert.equal(/fetch\s*\(\s*(?!DATA_URL)/.test(script), false, "Onverwachte request in de trainerkern gevonden");
+assert.ok(fs.readFileSync(path.join(root, "supabase-client.js"), "utf8").includes('/rest/v1/rpc/'));
 assert.ok(script.includes("localStorage.getItem(STORAGE_KEY)"));
 assert.ok(script.includes("localStorage.setItem(STORAGE_KEY"));
 assert.ok(script.includes("localStorage.removeItem(STORAGE_KEY)"));
@@ -45,5 +48,5 @@ JSON.parse(json);
 console.log("GITHUB PAGES AUDIT GESLAAGD");
 console.log("index.html staat in de root");
 console.log("CSS, JavaScript en JSON blijven onder /frans-trainer/");
-console.log("Geen lokale absolute paden, buildstap of backend");
+console.log("Geen lokale absolute paden, buildstap of eigen backend; Supabase blijft optioneel");
 console.log("localStorage blijft browserlokaal beschikbaar");

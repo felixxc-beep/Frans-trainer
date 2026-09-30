@@ -4,6 +4,7 @@
   --muted: #66756f;
   --paper: #fbfcf8;
   --surface: #ffffff;
+  --surface-soft: #f1f7f3;
   --forest: #12372a;
   --forest-2: #215646;
   --mint: #dceee6;
@@ -44,6 +45,9 @@ button { color: inherit; }
   top: 0;
   z-index: 10;
 }
+.topbar-actions { display: flex; align-items: center; gap: .55rem; }
+.identity-button { min-height: 42px; padding: .55rem .9rem; border: 1px solid var(--line); border-radius: 999px; background: var(--mint); color: var(--forest); cursor: pointer; font-weight: 800; }
+.identity-button::before { content: "●"; margin-right: .45rem; color: var(--forest-2); font-size: .7rem; }
 
 .brand { display: flex; align-items: center; gap: .8rem; border: 0; background: none; text-align: left; cursor: pointer; }
 .brand-mark { width: 42px; height: 42px; display: grid; place-items: center; border-radius: 12px; background: var(--forest); color: var(--cream); font: 800 1.35rem Georgia, serif; box-shadow: 0 6px 14px rgba(18,55,42,.18); }
@@ -99,6 +103,14 @@ dialog { width: min(520px, calc(100% - 2rem)); padding: 0; border: 0; border-rad
 dialog::backdrop { background: rgba(10,29,23,.45); backdrop-filter: blur(4px); }
 .dialog-card { padding: 1.5rem; }
 .dialog-heading { display: flex; justify-content: space-between; gap: 1rem; }
+.identity-current { margin: 0 0 1rem; padding: .8rem 1rem; border-radius: 14px; background: var(--surface-soft); color: var(--muted); }
+.identity-fields { display: grid; gap: .8rem; }
+.identity-fields[hidden] { display: none; }
+.identity-fields label { display: grid; gap: .35rem; color: var(--ink); font-weight: 750; }
+.identity-fields input { width: 100%; min-height: 48px; padding: .7rem .85rem; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); color: var(--ink); }
+.identity-fields input:focus { outline: 3px solid rgba(244,185,66,.35); border-color: var(--forest); }
+.privacy-note, .identity-message { margin: 0; color: var(--muted); font-size: .9rem; }
+.identity-message { min-height: 1.5rem; margin-top: .8rem; }
 .switch-row { display: flex; justify-content: space-between; gap: 1.5rem; align-items: center; padding: 1rem 0; border-top: 1px solid var(--line); }
 .switch-row small { display: block; color: var(--muted); }
 .switch-row input { width: 22px; height: 22px; accent-color: var(--forest); }
@@ -181,6 +193,14 @@ dialog::backdrop { background: rgba(10,29,23,.45); backdrop-filter: blur(4px); }
 .mode-card strong, .mode-card small { display: block; }
 .mode-card small { margin-top: .15rem; color: var(--muted); line-height: 1.35; }
 .session-note { margin-top: 1rem; color: var(--muted); font-size: .84rem; }
+.session-size-panel { margin-top: 1.5rem; padding: 1.1rem; border: 1px solid var(--line); border-radius: 18px; background: var(--surface-soft); }
+.size-options { display: flex; flex-wrap: wrap; gap: .6rem; }
+.size-choice { cursor: pointer; }
+.size-choice input { position: absolute; opacity: 0; pointer-events: none; }
+.size-choice span { display: block; min-width: 4rem; padding: .7rem .9rem; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); color: var(--ink); font-weight: 800; text-align: center; transition: .18s ease; }
+.size-choice input:checked + span { border-color: var(--forest); background: var(--forest); color: white; box-shadow: 0 5px 14px rgba(18, 55, 42, .18); }
+.size-choice:focus-within span { outline: 3px solid rgba(244, 185, 66, .45); outline-offset: 2px; }
+.session-plan { margin: .85rem 0 0; color: var(--ink); font-weight: 750; }
 
 .practice-shell { width: min(820px, 100%); margin: 0 auto; }
 .practice-header { display: grid; grid-template-columns: auto 1fr auto; gap: 1rem; align-items: center; margin-bottom: 1.2rem; }
@@ -209,6 +229,9 @@ dialog::backdrop { background: rgba(10,29,23,.45); backdrop-filter: blur(4px); }
 .feedback p { margin: .1rem 0 .8rem; }
 
 .summary-card { width: min(920px, 100%); margin: 0 auto; text-align: center; }
+.summary-coverage { display: grid; gap: .25rem; width: min(600px, 100%); margin: 1.1rem auto 1.5rem; padding: 1rem 1.2rem; border-radius: 16px; background: var(--surface-soft); color: var(--muted); }
+.summary-coverage strong { color: var(--ink); }
+.sync-note { margin: -.6rem auto 1rem; color: var(--muted); font-size: .9rem; }
 .score-ring { --score: 0; width: 190px; aspect-ratio: 1; display: grid; place-items: center; margin: 2rem auto; border-radius: 50%; background: conic-gradient(var(--forest) calc(var(--score) * 1%), var(--mint) 0); position: relative; }
 .score-ring::before { content: ""; position: absolute; inset: 14px; border-radius: inherit; background: var(--paper); }
 .score-ring span { position: relative; }

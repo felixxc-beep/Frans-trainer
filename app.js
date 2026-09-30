@@ -1,5 +1,6 @@
 const DATA_URL = "./data/course.json";
 const STORAGE_KEY = "monParcoursProgressV1";
+const IDENTITY_PROMPT_KEY = "monParcoursIdentityPromptSeenV1";
 const ACCENTS = ["é", "è", "ê", "ë", "à", "â", "ç", "ù", "û", "ô", "î", "ï"];
 const EXERCISES = {
   "vocab-nl-fr": { type: "vocabulary", label: "Nederlands → Frans", short: "Woordenschat" },
@@ -32,15 +33,23 @@ const state = {
 
 const app = document.querySelector("#app");
 const settingsDialog = document.querySelector("#settings-dialog");
+const identityDialog = document.querySelector("#identity-dialog");
 const strictToggle = document.querySelector("#strict-accents");
 strictToggle.checked = state.progress.settings.strictAccents;
+strictToggle.disabled = true;
 
 document.addEventListener("click", handleClick);
 document.addEventListener("submit", handleSubmit);
-strictToggle.addEventListener("change", function (event) {
-  state.progress.settings.strictAccents = event.target.checked;
-  saveProgress();
-});
+document.addEventListener("change", handleChange);
+
+function handleChange(event) {
+  if (event.target.name === "exercise") updateSessionSizePicker();
+  if (event.target.name === "session-size") {
+    state.progress.settings.sessionSize = event.target.value === "all" ? "all" : Number(event.target.value);
+    saveProgress();
+    updateSessionPlan();
+  }
+}
 
 function handleClick(event) {
   const control = event.target.closest("[data-action]");
@@ -49,6 +58,13 @@ function handleClick(event) {
 
   if (action === "home") renderHome();
   if (action === "open-settings") settingsDialog.showModal();
+  if (action === "open-identity") openIdentityDialog();
+  if (action === "close-identity" && identityDialog) identityDialog.close();
+  if (action === "use-local-identity") {
+    if (window.StudentIdentity) window.StudentIdentity.switchToLocal();
+    updateIdentityUi();
+    if (identityDialog) identityDialog.close();
+  }
   if (action === "select-trajectory") {
     state.trajectoryIndex = Number(control.dataset.index);
     renderHome();
@@ -87,9 +103,75 @@ function handleClick(event) {
 }
 
 function handleSubmit(event) {
-  if (event.target.id !== "answer-form") return;
-  event.preventDefault();
-  submitAnswer(new FormData(event.target).get("answer") || "");
+  if (event.target.id === "identity-form") {
+    event.preventDefault();
+    submitStudentIdentity(event.target);
+    return;
+  }
+  if (event.target.id === "answer-form") {
+    event.preventDefault();
+    submitAnswer(new FormData(event.target).get("answer") || "");
+  }
+}
+
+function currentStudentIdentity() {
+  if (window.StudentIdentity) return window.StudentIdentity.getCurrentStudentIdentity();
+  return { provider: "local", subject: "local", displayName: "Lokale leerling", className: "Alleen op dit toestel", verified: false };
+}
+
+function updateIdentityUi() {
+  const identity = currentStudentIdentity();
+  const label = document.querySelector("#identity-label");
+  if (label) label.textContent = identity.provider === "local" ? "Lokaal" : identity.displayName;
+  const current = document.querySelector("#identity-current");
+  if (current) current.textContent = identity.provider === "local"
+    ? "Je voortgang wordt alleen op dit toestel bewaard."
+    : identity.displayName + " · " + identity.className;
+}
+
+function openIdentityDialog() {
+  if (!identityDialog) return;
+  updateIdentityUi();
+  const fields = document.querySelector("#identity-fields");
+  const message = document.querySelector("#identity-message");
+  const remoteAvailable = Boolean(window.StudentIdentity && window.StudentIdentity.isRemoteAvailable());
+  if (fields) fields.hidden = !remoteAvailable;
+  if (message) message.textContent = remoteAvailable
+    ? "Vul de codes in die je van je leerkracht kreeg."
+    : "De online koppeling is nog niet ingesteld. Je kunt de trainer volledig lokaal gebruiken.";
+  identityDialog.showModal();
+}
+
+async function submitStudentIdentity(form) {
+  const message = document.querySelector("#identity-message");
+  const submit = form.querySelector('button[type="submit"]');
+  if (!window.StudentIdentity) return;
+  if (submit) submit.disabled = true;
+  if (message) message.textContent = "Codes controleren…";
+  try {
+    await window.StudentIdentity.connectFromForm("school_code", form);
+    updateIdentityUi();
+    if (message) message.textContent = "Gelukt. Nieuwe oefensessies worden veilig gesynchroniseerd.";
+    form.reset();
+    if (window.MonParcoursSync) window.MonParcoursSync.scheduleFlush();
+  } catch (error) {
+    if (message) message.textContent = error && error.message === "STUDENT_NOT_FOUND"
+      ? "Deze combinatie werd niet gevonden. Controleer beide codes."
+      : "Koppelen lukt nu niet. Je kunt gewoon lokaal verder oefenen.";
+  } finally {
+    if (submit) submit.disabled = false;
+  }
+}
+
+function initializeIdentity() {
+  updateIdentityUi();
+  if (window.MonParcoursSync) window.MonParcoursSync.scheduleFlush();
+  const shouldPrompt = window.StudentIdentity && window.StudentIdentity.isRemoteAvailable() &&
+    currentStudentIdentity().provider === "local" && !localStorage.getItem(IDENTITY_PROMPT_KEY);
+  if (shouldPrompt) {
+    localStorage.setItem(IDENTITY_PROMPT_KEY, "1");
+    setTimeout(openIdentityDialog, 0);
+  }
 }
 
 async function loadCourse() {
@@ -186,9 +268,11 @@ function renderUnit() {
           (blockItems.length ? scopeButton(unit, section.title, "", section.title, blockItems.length, "Oefen dit studieblok") : "") + '</div>' +
           '<div class="subsection-list">' +
             section.subsections.map(function (subsection) {
-              const subset = unitItems.filter(function (item) {
-                return item.block === section.title && item.subsection === subsection.title && isExerciseItem(item);
-              });
+              const subsectionScope = {
+                block: section.title,
+                subsection: subsection.title
+              };
+              const subset = exerciseItemsForScope(trajectory, unit, subsectionScope);
               return '<div class="subsection-row"><div><strong>' + escapeHtml(subsection.title) + '</strong>' +
                 '<div class="content-tags">' + subsection.content_types.map(function (type) {
                   return '<span>' + escapeHtml(type) + '</span>';
@@ -234,12 +318,8 @@ function renderSetup() {
   const scope = state.selectedScope;
   if (!scope || !unit) return renderUnit();
   const items = itemsForScope(trajectory, unit, scope);
-  const available = [];
-  Object.keys(TYPE_EXERCISES).forEach(function (type) {
-    if (items.some(function (item) { return item.type === type; })) {
-      TYPE_EXERCISES[type].forEach(function (key) { available.push(key); });
-    }
-  });
+  const exerciseItems = items.filter(isExerciseItem);
+  const available = exerciseKeysForItems(exerciseItems);
   if (!available.length) return renderUnit();
 
   app.innerHTML =
@@ -248,23 +328,74 @@ function renderSetup() {
       { label: unit.top_category, action: "back-unit" }
     ]) +
     '<section class="setup-header"><p class="eyebrow">Stap 3 en 4</p><h1>' + escapeHtml(scope.title) + '</h1>' +
-    '<p class="lede">' + items.filter(isExerciseItem).length + ' leeritems · kies je oefenvorm en modus.</p></section>' +
+    '<p class="lede">' + exerciseItems.length + ' leeritems · kies je oefenvorm en modus.</p></section>' +
     '<section class="setup-grid"><div><div class="section-heading compact"><h2>Wat wil je oefenen?</h2></div>' +
       '<div class="choice-list" role="radiogroup">' +
         available.map(function (key, index) {
           const option = EXERCISES[key];
-          const count = items.filter(function (item) { return item.type === option.type; }).length;
+          const exerciseItems = items.filter(function (item) { return item.type === option.type; });
+          const count = buildQuestions(exerciseItems, key).length;
           return '<label class="radio-card"><input type="radio" name="exercise" value="' + key + '"' + (index === 0 ? " checked" : "") + '>' +
-            '<span><small>' + escapeHtml(option.short) + '</small><strong>' + escapeHtml(option.label) + '</strong><em>' + count + ' bronitems</em></span></label>';
+            '<span><small>' + escapeHtml(option.short) + '</small><strong>' + escapeHtml(option.label) + '</strong><em>' + count + ' oefenbare items</em></span></label>';
         }).join("") +
-      '</div></div>' +
+      '</div><section class="session-size-panel" aria-labelledby="session-size-heading"><div class="section-heading compact"><h2 id="session-size-heading">Hoeveel wil je oefenen?</h2></div>' +
+        '<div id="session-size-picker"></div></section></div>' +
       '<div><div class="section-heading compact"><h2>Kies je modus</h2></div><div class="mode-list">' +
         modeCard("learn", "Leren", "Je ziet het juiste antwoord en typt het daarna zelf.") +
         modeCard("practice", "Oefenen", "Je probeert opnieuw; pas na de tweede fout verschijnt het antwoord.") +
         modeCard("test", "Test jezelf", "Geen feedback onderweg. Je resultaat verschijnt op het einde.") +
-      '</div><p class="session-note">Een sessie bevat maximaal 20 vragen. Moeilijke items krijgen voorrang.</p></div>' +
+      '</div><p class="session-note">De eerste selectie bevat geen dubbels. Moeilijke items krijgen voorrang; fouten kunnen later opnieuw verschijnen.</p></div>' +
     '</section>';
+  updateSessionSizePicker();
   focusApp();
+}
+
+function sessionSizeOptions(availableCount) {
+  return [10, 20, 30].filter(function (count) { return count <= availableCount; }).concat("all");
+}
+
+function preferredSessionSize(availableCount) {
+  const options = sessionSizeOptions(availableCount);
+  const preference = state.progress.settings.sessionSize;
+  if (preference === "all") return "all";
+  if (options.includes(Number(preference))) return Number(preference);
+  const numeric = options.filter(function (option) { return typeof option === "number"; });
+  return numeric.length ? numeric[numeric.length - 1] : "all";
+}
+
+function questionsForSetup(exerciseKey) {
+  const trajectory = currentTrajectory();
+  const unit = currentUnit();
+  if (!exerciseKey || !EXERCISES[exerciseKey] || !unit || !state.selectedScope) return [];
+  const items = itemsForScope(trajectory, unit, state.selectedScope).filter(function (item) {
+    return item.type === EXERCISES[exerciseKey].type;
+  });
+  return buildQuestions(items, exerciseKey);
+}
+
+function updateSessionSizePicker() {
+  const picker = document.querySelector("#session-size-picker");
+  const selectedExercise = document.querySelector('input[name="exercise"]:checked');
+  if (!picker || !selectedExercise) return;
+  const availableCount = questionsForSetup(selectedExercise.value).length;
+  const preferred = preferredSessionSize(availableCount);
+  picker.innerHTML = '<div class="size-options" role="radiogroup">' + sessionSizeOptions(availableCount).map(function (option) {
+    const value = String(option);
+    const label = option === "all" ? "Alle " + availableCount : value;
+    return '<label class="size-choice"><input type="radio" name="session-size" value="' + value + '"' + (option === preferred ? " checked" : "") + '><span>' + label + '</span></label>';
+  }).join("") + '</div><p id="session-plan" class="session-plan" aria-live="polite"></p>';
+  updateSessionPlan();
+}
+
+function updateSessionPlan() {
+  const plan = document.querySelector("#session-plan");
+  const selectedExercise = document.querySelector('input[name="exercise"]:checked');
+  const selectedSize = document.querySelector('input[name="session-size"]:checked');
+  if (!plan || !selectedExercise || !selectedSize) return;
+  const availableCount = questionsForSetup(selectedExercise.value).length;
+  plan.textContent = selectedSize.value === "all"
+    ? "Je oefent alle " + availableCount + " items."
+    : "Je gaat " + selectedSize.value + " van de " + availableCount + " items oefenen.";
 }
 
 function modeCard(mode, title, description) {
@@ -274,18 +405,20 @@ function modeCard(mode, title, description) {
 
 function startSession(mode) {
   const selected = document.querySelector('input[name="exercise"]:checked');
-  if (!selected) return;
-  const trajectory = currentTrajectory();
-  const unit = currentUnit();
-  const items = itemsForScope(trajectory, unit, state.selectedScope).filter(function (item) {
-    return item.type === EXERCISES[selected.value].type;
-  });
-  const questions = selectQuestions(buildQuestions(items, selected.value));
-  beginSession(questions, mode, selected.value, state.selectedScope.title);
+  const selectedSize = document.querySelector('input[name="session-size"]:checked');
+  if (!selected || !selectedSize) return;
+  const allQuestions = questionsForSetup(selected.value);
+  const requestedCount = selectedSize.value === "all" ? allQuestions.length : Number(selectedSize.value);
+  state.progress.settings.sessionSize = selectedSize.value === "all" ? "all" : requestedCount;
+  const questions = selectQuestions(allQuestions, requestedCount);
+  beginSession(questions, mode, selected.value, state.selectedScope.title, { availableCount: allQuestions.length });
 }
 
-function beginSession(questions, mode, exerciseKey, title) {
+function beginSession(questions, mode, exerciseKey, title, metadata) {
   if (!questions.length) return;
+  const availableCount = metadata && metadata.availableCount ? metadata.availableCount : questions.length;
+  const identity = currentStudentIdentity();
+  const sessionPath = currentSessionPath();
   state.session = {
     questions: questions,
     index: 0,
@@ -293,7 +426,15 @@ function beginSession(questions, mode, exerciseKey, title) {
     exerciseKey: exerciseKey,
     title: title,
     phase: "answer",
-    attempts: 0,
+    questionAttempts: 0,
+    question_count: questions.length,
+    attempt_count: 0,
+    available_count: availableCount,
+    client_session_id: createClientId(),
+    identity_provider: identity.provider,
+    identity_subject: identity.subject,
+    course_path: sessionPath,
+    sync_attempts: [],
     results: [],
     startedAt: new Date().toISOString()
   };
@@ -304,10 +445,33 @@ function beginSession(questions, mode, exerciseKey, title) {
     exerciseKey: exerciseKey,
     mode: mode,
     title: title,
+    question_count: questions.length,
+    available_count: availableCount,
     at: new Date().toISOString()
   };
   saveProgress();
+  syncSessionSnapshot();
   renderQuestion();
+}
+
+function currentSessionPath() {
+  const trajectory = state.data && state.data.trajectories[state.trajectoryIndex];
+  const unit = trajectory && currentUnit();
+  const scope = state.selectedScope || {};
+  return {
+    course_key: "UF1",
+    trajectory: trajectory ? trajectory.trajectory : "Onbekend",
+    top_category: unit ? unit.top_category : "Extra oefening",
+    lesson: unit ? unit.title : (scope.title || "Extra oefening"),
+    block: scope.block || "",
+    subsection: scope.subsection || ""
+  };
+}
+
+function createClientId() {
+  if (window.MonParcoursSync) return window.MonParcoursSync.createId();
+  if (window.crypto && typeof window.crypto.randomUUID === "function") return window.crypto.randomUUID();
+  return "00000000-0000-4000-8000-" + Math.random().toString(16).slice(2).padEnd(12, "0").slice(0, 12);
 }
 
 function renderQuestion(message) {
@@ -343,7 +507,9 @@ function submitAnswer(rawAnswer) {
   const session = state.session;
   const question = session.questions[session.index];
   if (!question || !rawAnswer.trim()) return;
+  session.attempt_count += 1;
   const correct = isCorrect(rawAnswer, question.answers);
+  recordSyncAttempt(question, correct);
 
   if (session.mode === "test") {
     session.results.push({ question: question, answer: rawAnswer, correct: correct });
@@ -380,8 +546,8 @@ function submitAnswer(rawAnswer) {
     showFeedback(true, "Juist! Ga zo verder.", true);
   } else {
     recordAttempt(question, false);
-    session.attempts += 1;
-    if (session.attempts === 1) {
+    session.questionAttempts += 1;
+    if (session.questionAttempts === 1) {
       showFeedback(false, "Nog niet juist. Kijk nog eens goed en probeer opnieuw.", false);
     } else {
       requeueQuestion(question);
@@ -411,7 +577,7 @@ function nextQuestion() {
   const session = state.session;
   session.index += 1;
   session.phase = "answer";
-  session.attempts = 0;
+  session.questionAttempts = 0;
   renderQuestion();
 }
 
@@ -424,10 +590,75 @@ function finishSession() {
     title: session.title,
     mode: session.mode,
     at: new Date().toISOString(),
-    questions: session.questions.length
+    questions: session.question_count,
+    question_count: session.question_count,
+    attempt_count: session.attempt_count,
+    available_count: session.available_count
   };
+  session.finishedAt = new Date().toISOString();
   saveProgress();
+  syncSessionSnapshot();
   renderSummary();
+}
+
+function recordSyncAttempt(question, correct) {
+  const session = state.session;
+  if (!session || session.identity_provider !== "school_code") return;
+  const stableIds = question.stableItemIds || (question.stableItemId ? [question.stableItemId] : []);
+  if (!stableIds.length) return;
+  const item = question.item || {};
+  const path = session.course_path;
+  const attemptNumber = session.sync_attempts.filter(function (attempt) {
+    return attempt.item_id === stableIds[0] && attempt.item_variant === (question.itemVariant || "");
+  }).length + 1;
+  session.sync_attempts.push({
+    client_attempt_id: createClientId(),
+    item_id: stableIds[0],
+    equivalent_item_ids: stableIds,
+    legacy_item_id: question.itemId || "",
+    item_variant: question.itemVariant || "",
+    item_type: item.type || EXERCISES[session.exerciseKey].type,
+    trajectory: path.trajectory,
+    top_category: item.top_category || path.top_category,
+    lesson: item.lesson || path.lesson,
+    block: item.block || path.block,
+    subsection: item.subsection || path.subsection,
+    exercise_key: session.exerciseKey,
+    mode: session.mode,
+    prompt: question.prompt,
+    correct_answers: question.answers.slice(),
+    was_correct: correct,
+    attempt_number: attemptNumber,
+    created_at: new Date().toISOString()
+  });
+  syncSessionSnapshot();
+}
+
+function syncSessionSnapshot() {
+  const session = state.session;
+  if (!session || session.identity_provider !== "school_code" || !window.MonParcoursSync) return;
+  const path = session.course_path;
+  window.MonParcoursSync.enqueueSession({
+    client_session_id: session.client_session_id,
+    identity_provider: session.identity_provider,
+    identity_subject: session.identity_subject,
+    session: {
+      client_session_id: session.client_session_id,
+      course_key: path.course_key,
+      trajectory: path.trajectory,
+      top_category: path.top_category,
+      lesson: path.lesson,
+      block: path.block,
+      subsection: path.subsection,
+      exercise_key: session.exerciseKey,
+      mode: session.mode,
+      question_count: session.question_count,
+      attempt_count: session.attempt_count,
+      started_at: session.startedAt,
+      finished_at: session.finishedAt || null
+    },
+    attempts: session.sync_attempts.slice()
+  });
 }
 
 function renderSummary() {
@@ -441,9 +672,18 @@ function renderSummary() {
   const correctCount = session.mode === "test" ? results.length - wrong.length : results.length;
   const score = results.length ? Math.round((correctCount / results.length) * 100) : 0;
   const heading = session.mode === "test" ? (score >= 80 ? "Sterk resultaat." : score >= 60 ? "Goed op weg." : "Nog even oefenen.") : "Sessie afgerond.";
+  const remaining = Math.max(0, session.available_count - session.question_count);
+  const coverageText = session.question_count === session.available_count
+    ? "Je oefende alle " + session.available_count + " beschikbare items."
+    : "Je oefende " + session.question_count + " van de " + session.available_count + " beschikbare items.";
+  const storageNote = session.identity_provider === "school_code"
+    ? "Je voortgang is lokaal bewaard. Online synchronisatie gebeurt automatisch."
+    : "Je voortgang is lokaal bewaard op dit toestel.";
 
   app.innerHTML =
     '<section class="summary-card"><p class="eyebrow">' + escapeHtml(modeLabel(session.mode)) + '</p><h1>' + heading + '</h1>' +
+      '<div class="summary-coverage"><strong>' + coverageText + '</strong><span>Nog niet in deze sessie geoefend: ' + remaining + '.</span><span>Aantal pogingen: ' + session.attempt_count + '.</span></div>' +
+      '<p class="sync-note">' + storageNote + '</p>' +
       '<div class="score-ring" style="--score:' + score + '"><span><strong>' + score + '%</strong><small>' + correctCount + ' van ' + results.length + ' juist</small></span></div>' +
       (wrong.length ? '<div class="review-list"><h2>Bekijk je fouten</h2>' + wrong.map(function (result) {
         return '<article><span><small>Vraag</small><strong>' + escapeHtml(result.question.prompt) + '</strong></span>' +
@@ -462,7 +702,7 @@ function practiceTestErrors() {
   const wrongQuestions = state.session.results.filter(function (result) { return !result.correct; }).map(function (result) {
     return Object.assign({}, result.question, { reviewCount: 0 });
   });
-  beginSession(shuffle(wrongQuestions), "learn", state.session.exerciseKey, "Mijn testfouten");
+  beginSession(shuffle(wrongQuestions), "learn", state.session.exerciseKey, "Mijn testfouten", { availableCount: wrongQuestions.length });
 }
 
 function renderProgress() {
@@ -507,7 +747,8 @@ function practiceDifficult() {
   const items = getDifficultItems("vocabulary");
   if (!items.length) return renderDifficult();
   state.selectedScope = { unitOrder: 0, block: "", subsection: "", title: "Mijn moeilijke woorden" };
-  beginSession(selectQuestions(buildQuestions(items, "vocab-nl-fr")), "learn", "vocab-nl-fr", "Mijn moeilijke woorden");
+  const questions = buildQuestions(items, "vocab-nl-fr");
+  beginSession(selectQuestions(questions, questions.length), "learn", "vocab-nl-fr", "Mijn moeilijke woorden", { availableCount: questions.length });
 }
 
 function continueLastSession() {
@@ -522,7 +763,9 @@ function continueLastSession() {
   const items = itemsForScope(trajectory, unit, last.scope).filter(function (item) {
     return item.type === EXERCISES[last.exerciseKey].type;
   });
-  beginSession(selectQuestions(buildQuestions(items, last.exerciseKey)), last.mode, last.exerciseKey, last.title);
+  const allQuestions = buildQuestions(items, last.exerciseKey);
+  const requestedCount = last.question_count || Math.min(20, allQuestions.length);
+  beginSession(selectQuestions(allQuestions, requestedCount), last.mode, last.exerciseKey, last.title, { availableCount: allQuestions.length });
 }
 
 function buildQuestions(items, exerciseKey) {
@@ -531,14 +774,16 @@ function buildQuestions(items, exerciseKey) {
     const base = {
       itemId: item._id,
       itemIds: [item._id],
+      stableItemId: item.id,
+      stableItemIds: [item.id],
       item: item,
       groupPath: [item._trajectoryIndex, item.top_category, item.lesson, item.block, item.subsection, item.type].join("::"),
       reviewCount: 0
     };
     if (exerciseKey === "vocab-nl-fr") questions.push(makeQuestion(base, item.nl, answerList(item.fr, item), "Vertaal naar het Frans"));
-    if (exerciseKey === "vocab-fr-nl") questions.push(makeQuestion(base, item.fr, dutchAnswers(item.nl), "Vertaal naar het Nederlands"));
+    if (exerciseKey === "vocab-fr-nl") questions.push(makeQuestion(base, item.fr, dutchAnswers(item.nl, item), "Vertaal naar het Nederlands"));
     if (exerciseKey === "verb-nl-inf") questions.push(makeQuestion(base, item.nl, [item.infinitive], "Geef de Franse infinitief"));
-    if (exerciseKey === "verb-fr-nl") questions.push(makeQuestion(base, item.infinitive, dutchAnswers(item.nl), "Vertaal naar het Nederlands"));
+    if (exerciseKey === "verb-fr-nl") questions.push(makeQuestion(base, item.infinitive, dutchAnswers(item.nl, item), "Vertaal naar het Nederlands"));
     if (exerciseKey === "phrase-nl-fr") questions.push(makeQuestion(base, item.nl, answerList(item.fr, item), "Schrijf de volledige Franse zin"));
     if (exerciseKey === "grammar") questions.push(makeQuestion(base, item.prompt, [item.answer], "Vul de regel aan · " + item.category, item.example_fr || item.example_nl || ""));
     if (exerciseKey === "number-nl-fr") questions.push(makeQuestion(base, item.nl, answerList(item.fr, item), "Schrijf het getal in het Frans"));
@@ -546,7 +791,7 @@ function buildQuestions(items, exerciseKey) {
     if (exerciseKey === "verb-nl-conj" || exerciseKey === "verb-fr-conj") {
       (item.conjugations || []).forEach(function (conjugation) {
         const prompt = (exerciseKey === "verb-nl-conj" ? item.nl : item.infinitive) + " — " + conjugation.subject;
-        questions.push(makeQuestion(base, prompt, [conjugation.form], "Vervoeg het werkwoord"));
+        questions.push(makeQuestion(Object.assign({}, base, { itemVariant: conjugation.subject }), prompt, [conjugation.form], "Vervoeg het werkwoord"));
       });
     }
   });
@@ -564,44 +809,34 @@ function mergeEquivalentQuestions(questions) {
     if (!grouped.has(key)) {
       grouped.set(key, Object.assign({}, question, {
         answers: question.answers.slice(),
-        itemIds: question.itemIds.slice()
+        itemIds: question.itemIds.slice(),
+        stableItemIds: question.stableItemIds.slice()
       }));
       return;
     }
     const existing = grouped.get(key);
     existing.answers = unique(existing.answers.concat(question.answers));
     existing.itemIds = unique(existing.itemIds.concat(question.itemIds));
+    existing.stableItemIds = unique(existing.stableItemIds.concat(question.stableItemIds));
   });
   return Array.from(grouped.values());
 }
 
 function formatAnswers(question) {
-  return unique(question.answers).slice(0, 4).join(" / ");
+  return unique(question.answers).join(", ");
 }
 
 function answerList(primary, item) {
-  const answers = [primary].concat(Array.isArray(item.accepted_answers) ? item.accepted_answers : []);
-  if (item.type === "vocabulary" && primary.includes(" / ")) {
-    primary.split(" / ").forEach(function (part) { answers.push(part.trim()); });
-  }
-  return unique(answers.reduce(function (all, answer) { return all.concat(optionalVariants(answer)); }, []));
+  const explicit = Array.isArray(item.accepted_answers) ? item.accepted_answers : [];
+  return unique(explicit.length ? explicit : [primary]);
 }
 
-function dutchAnswers(value) {
-  const answers = [value];
-  if (value.includes(",")) value.split(",").forEach(function (part) { answers.push(part.trim()); });
-  return unique(answers);
+function dutchAnswers(value, item) {
+  const explicit = item && Array.isArray(item.accepted_answers_nl) ? item.accepted_answers_nl : [];
+  return unique(explicit.length ? explicit : [value]);
 }
 
-function optionalVariants(value) {
-  const match = String(value).match(/\(([^)]+)\)/);
-  if (!match) return [String(value)];
-  const withText = String(value).replace(match[0], match[1]);
-  const withoutText = String(value).replace(match[0], "");
-  return unique([String(value)].concat(optionalVariants(withText), optionalVariants(withoutText)));
-}
-
-function selectQuestions(questions) {
+function selectQuestions(questions, requestedCount) {
   const scored = questions.map(function (question) {
     const stats = (question.itemIds || [question.itemId]).reduce(function (total, itemId) {
       const itemStats = state.progress.items[itemId] || { wrong: 0, correct: 0 };
@@ -613,7 +848,7 @@ function selectQuestions(questions) {
     return { question: question, score: Math.pow(Math.random(), 1 / weight) };
   });
   scored.sort(function (a, b) { return b.score - a.score; });
-  const limit = Math.min(20, scored.length);
+  const limit = Math.min(requestedCount == null ? 20 : requestedCount, scored.length);
   return scored.slice(0, limit).map(function (entry) {
     return Object.assign({}, entry.question, { reviewCount: 0 });
   });
@@ -630,9 +865,8 @@ function requeueQuestion(question) {
 }
 
 function isCorrect(answer, accepted) {
-  const strict = state.progress.settings.strictAccents;
-  const candidate = normalizeAnswer(answer, strict);
-  return accepted.some(function (value) { return normalizeAnswer(value, strict) === candidate; });
+  const candidate = normalizeAnswer(answer, true);
+  return accepted.some(function (value) { return normalizeAnswer(value, true) === candidate; });
 }
 
 function normalizeAnswer(value, strict) {
@@ -721,6 +955,19 @@ function itemsForScope(trajectory, unit, scope) {
   });
 }
 
+function exerciseItemsForScope(trajectory, unit, scope) {
+  return itemsForScope(trajectory, unit, scope).filter(isExerciseItem);
+}
+
+function exerciseKeysForItems(items) {
+  const available = [];
+  Object.keys(TYPE_EXERCISES).forEach(function (type) {
+    if (!items.some(function (item) { return item.type === type; })) return;
+    TYPE_EXERCISES[type].forEach(function (key) { available.push(key); });
+  });
+  return available;
+}
+
 function isExerciseItem(item) {
   return Object.prototype.hasOwnProperty.call(TYPE_EXERCISES, item.type);
 }
@@ -785,7 +1032,7 @@ function defaultProgress() {
     correct: 0,
     wrong: 0,
     items: {},
-    settings: { strictAccents: true },
+    settings: { strictAccents: true, sessionSize: 20 },
     lastSession: null,
     lastCompleted: null,
     updatedAt: null
@@ -797,7 +1044,7 @@ function loadProgress() {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
     return Object.assign(defaultProgress(), saved || {}, {
       items: (saved && saved.items) || {},
-      settings: Object.assign({ strictAccents: true }, saved && saved.settings)
+      settings: Object.assign({ sessionSize: 20 }, saved && saved.settings, { strictAccents: true })
     });
   } catch (error) {
     return defaultProgress();
@@ -818,4 +1065,5 @@ function escapeAttr(value) {
   return escapeHtml(value).replace(/\n/g, " ");
 }
 
+initializeIdentity();
 loadCourse();

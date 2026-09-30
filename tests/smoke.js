@@ -40,7 +40,7 @@ vm.runInContext(fs.readFileSync("app.js", "utf8"), context);
 
 setImmediate(function () {
   assert.equal(vm.runInContext("state.data.trajectories.length", context), 3);
-  assert.equal(vm.runInContext("state.data.trajectories.reduce((n, t) => n + t.items.length, 0)", context), 520);
+  assert.equal(vm.runInContext("state.data.trajectories.reduce((n, t) => n + t.items.length, 0)", context), 565);
   assert.match(appElement.innerHTML, /Trajet 1/);
   assert.match(appElement.innerHTML, /Atelier Parole/);
   assert.match(appElement.innerHTML, /Action !/);
@@ -51,7 +51,7 @@ setImmediate(function () {
   );
   assert.deepEqual(
     JSON.parse(JSON.stringify(typeCounts)),
-    { vocabulary: 255, verb: 52, grammar_rule: 33, phrase: 72, number: 101, sound_rule: 7 }
+    { vocabulary: 255, phrase: 117, verb: 52, grammar_rule: 33, number: 101, sound_rule: 7 }
   );
 
   const generated = vm.runInContext(
@@ -94,7 +94,7 @@ setImmediate(function () {
   assert.equal(vm.runInContext('isCorrect("école", ["école"])', context), true);
   assert.equal(vm.runInContext('isCorrect("ecole", ["école"])', context), false);
   vm.runInContext("state.progress.settings.strictAccents = false", context);
-  assert.equal(vm.runInContext('isCorrect("ecole", ["école"])', context), true);
+  assert.equal(vm.runInContext('isCorrect("ecole", ["école"])', context), false);
   assert.equal(vm.runInContext('isCorrect("âge", ["l’âge"])', context), false);
 
   assert.equal(
@@ -114,6 +114,7 @@ setImmediate(function () {
   const progress = vm.runInContext("defaultProgress()", context);
   assert.equal(progress.attempted, 0);
   assert.equal(progress.settings.strictAccents, true);
+  assert.equal(progress.settings.sessionSize, 20);
   assert.equal(typeof context.localStorage.setItem, "function");
 
   console.log("Smoke tests geslaagd: cursusstructuur, 10 oefenvormen, antwoorden, accenten, vervoegingen en voortgang.");

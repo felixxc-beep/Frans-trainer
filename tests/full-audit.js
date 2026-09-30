@@ -92,12 +92,23 @@ setImmediate(function () {
   });
 
   allItems.filter(function (item) {
-    return Array.isArray(item.accepted_answers) && ["phrase", "number"].includes(item.type);
+    return Array.isArray(item.accepted_answers) && ["vocabulary", "phrase", "number"].includes(item.type);
   }).forEach(function (item) {
     context.auditItems = [item];
     context.auditExercise = item.type === "phrase" ? "phrase-nl-fr" : "number-nl-fr";
     const questions = vm.runInContext("buildQuestions(auditItems, auditExercise)", context);
     item.accepted_answers.forEach(function (answer) {
+      assert.ok(questions[0].answers.includes(answer), item.nl + " moet " + answer + " aanvaarden");
+    });
+  });
+
+  allItems.filter(function (item) {
+    return Array.isArray(item.accepted_answers_nl) && ["vocabulary", "verb"].includes(item.type);
+  }).forEach(function (item) {
+    context.auditItems = [item];
+    context.auditExercise = item.type === "verb" ? "verb-fr-nl" : "vocab-fr-nl";
+    const questions = vm.runInContext("buildQuestions(auditItems, auditExercise)", context);
+    item.accepted_answers_nl.forEach(function (answer) {
       assert.ok(questions[0].answers.includes(answer), item.nl + " moet " + answer + " aanvaarden");
     });
   });
@@ -139,7 +150,7 @@ setImmediate(function () {
   assert.ok(fs.existsSync(".nojekyll"));
 
   console.log("VOLLEDIGE AUDIT GESLAAGD");
-  console.log("3 trajecten · 24 cursusonderdelen · 520 items");
+  console.log("3 trajecten · 24 cursusonderdelen · 565 items");
   console.log("52 werkwoorden · 312 vervoegingen · alle expliciete accepted_answers gecontroleerd");
   console.log("4 synoniemgroepen gebundeld zonder trajecten of subsecties te mengen");
   console.log("Statische, relatieve assets geschikt voor GitHub Pages");

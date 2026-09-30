@@ -1,6 +1,6 @@
 # Mon parcours — Univers français 1
 
-Een leerlingvriendelijke, statische studietool voor Franse woordenschat, zinnen, werkwoorden, grammatica en getallen. De app gebruikt uitsluitend de inhoud uit data/course.json en bewaart voortgang lokaal in de browser.
+Een leerlingvriendelijke, statische studietool voor Franse woordenschat, zinnen, werkwoorden, grammatica en getallen. De app gebruikt uitsluitend de inhoud uit `data/course.json`. Voortgang blijft altijd lokaal beschikbaar en kan optioneel naar Supabase synchroniseren.
 
 ## Wat zit erin?
 
@@ -9,7 +9,7 @@ Een leerlingvriendelijke, statische studietool voor Franse woordenschat, zinnen,
 - Woordenschat in beide richtingen.
 - Werkwoordinfinitieven en vervoegingen met alle personen uit de bron.
 - Franse zinnen, grammaticaregels en getallen.
-- Strenge of soepele beoordeling van accenten.
+- Strenge beoordeling van accenten.
 - Accentknoppen bij elk antwoordveld.
 - Fout-herhaling, moeilijke woorden, voortgang per Trajet en categorie en verder oefenen.
 - Synoniemen met dezelfde Nederlandse prompt binnen dezelfde JSON-subsectie worden als gelijkwaardige antwoorden aanvaard.
@@ -47,6 +47,9 @@ Met Node.js kun je de ingebouwde controles uitvoeren:
 1. node tests/smoke.js
 2. node tests/full-audit.js
 3. node tests/github-pages-audit.js
+4. node tests/session-regression.js
+5. node tests/phase2-sync.js
+6. node tests/phase2-security-audit.js
 
 De volledige audit controleert alle trajecten en cursusonderdelen, de koppeling van studieblokken en subsecties, alle werkwoordvervoegingen, expliciete alternatieve antwoorden en synoniemgroepen. De GitHub Pages-audit controleert de rootstructuur, relatieve assets, subpadwerking, localStorage en de afwezigheid van een backend of buildstap.
 
@@ -72,6 +75,18 @@ Voeg nieuwe cursusdata toe aan de array trajectories in data/course.json. Gebrui
 - accepted_answers wanneer meerdere antwoorden correct zijn;
 - conjugations met subject en form voor werkwoorden.
 
+Elk leeritem heeft daarnaast een permanente `id`. Voer na het toevoegen van nieuwe items één keer `node scripts/assign-stable-item-ids.js` uit. Het script vult alleen ontbrekende IDs aan vanaf het hoogste bestaande nummer en verandert nooit bestaande IDs.
+
+## Optionele Supabase-synchronisatie
+
+- `student-identity.js` is de centrale, verwisselbare identificatielaag.
+- `supabase-client.js` doet alleen begrensde RPC-aanroepen.
+- `sync-manager.js` bewaart mislukte verzendingen in `monParcoursSyncQueueV1` en probeert ze later opnieuw.
+- `config.js` bevat uitsluitend de Project URL en publishable key.
+- Zonder geldige configuratie werkt de trainer volledig lokaal verder.
+
+De volledige installatiehandleiding staat in `supabase/README.md`.
+
 De JavaScript-code hoeft voor Trajet 4, 5 enzovoort niet te worden aangepast zolang dezelfde datastructuur behouden blijft.
 
 ## Bestanden
@@ -79,7 +94,12 @@ De JavaScript-code hoeft voor Trajet 4, 5 enzovoort niet te worden aangepast zol
 - index.html — basisstructuur en instellingen
 - styles.css — vormgeving en responsive gedrag
 - app.js — navigatie, oefenlogica en localStorage
+- student-identity.js — modulaire leerlingidentiteit
+- supabase-client.js — optionele publieke Supabase-RPC-client
+- sync-manager.js — offline outbox en idempotente synchronisatie
+- config.js — publieke Supabase-configuratie
 - data/course.json — alle cursusinhoud
+- supabase/ — database, functies, RLS en optionele testdata
 - tests/full-audit.js — volledige controle tegen de cursusbron
 - tests/github-pages-audit.js — controle voor buildloze hosting onder een repositorysubpad
 - tests/smoke.js — snelle logica- en antwoordcontrole
@@ -87,4 +107,4 @@ De JavaScript-code hoeft voor Trajet 4, 5 enzovoort niet te worden aangepast zol
 
 ## Privacy
 
-Er is geen account of server. Voortgang staat alleen in localStorage van de gebruikte browser op het gebruikte toestel. Als browsergegevens worden gewist, verdwijnt die voortgang ook.
+Zonder leerlingkoppeling staat voortgang alleen in localStorage van de gebruikte browser. Bij een gekoppelde leerling worden uitsluitend pseudonieme identificatie, oefensessies en pogingen gesynchroniseerd. Er worden geen geboortedatum, privé-e-mailadres, adres of leerlingwachtwoord gevraagd. De browser bevat nooit een secret/service-role key.
