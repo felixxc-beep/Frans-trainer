@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="nl">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Leer Franse woordenschat, zinnen, werkwoorden en grammatica per Trajet.">
+    <meta name="theme-color" content="#12372a">
+    <title>Mon parcours | Univers français 1</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='15' fill='%2312372a'/%3E%3Cpath d='M18 16h28v9H28v8h15v9H28v14H18z' fill='%23fff7df'/%3E%3Ccircle cx='48' cy='49' r='7' fill='%23f4b942'/%3E%3C/svg%3E">
+    <link rel="stylesheet" href="./styles.css?v=20260930-1">
+  </head>
+  <body>
+    <header class="topbar">
+      <button class="brand" type="button" data-action="home" aria-label="Ga naar de startpagina">
+        <span class="brand-mark" aria-hidden="true">F</span>
+        <span><strong>Mon parcours</strong><small>Univers français 1</small></span>
+      </button>
+      <div class="topbar-actions">
+        <button id="identityButton" class="identity-button" type="button" data-action="open-identity" aria-label="Koppel of wissel leerling"><span id="identity-label">Lokaal</span></button>
+        <button class="icon-button" type="button" data-action="open-settings" aria-label="Instellingen">Aa</button>
+      </div>
+    </header>
+
+    <main id="app" tabindex="-1">
+      <section class="loading-state" aria-live="polite">
+        <span class="loader" aria-hidden="true"></span>
+        <p>Je cursus wordt klaargezet…</p>
+      </section>
+    </main>
+
+    <dialog id="settings-dialog">
+      <form method="dialog" class="dialog-card">
+        <div class="dialog-heading">
+          <div><p class="eyebrow">Instellingen</p><h2>Hoe wil je oefenen?</h2></div>
+          <button class="icon-button" value="cancel" aria-label="Sluiten">×</button>
+        </div>
+        <label class="switch-row">
+          <span><strong>Accenten streng beoordelen</strong><small>é en e tellen als verschillende letters</small></span>
+          <input id="strict-accents" type="checkbox" checked disabled>
+        </label>
+      </form>
+    </dialog>
+
+    <dialog id="identity-dialog">
+      <form id="identity-form" class="dialog-card">
+        <div class="dialog-heading">
+          <div><p class="eyebrow">Leerling</p><h2>Koppel je voortgang</h2></div>
+          <button class="icon-button" type="button" data-action="close-identity" aria-label="Sluiten">×</button>
+        </div>
+        <p id="identity-current" class="identity-current"></p>
+        <div id="identity-fields" class="identity-fields">
+          <label><span>Klascode</span><input name="class_code" type="text" maxlength="32" autocomplete="off" required></label>
+          <label><span>Leerlingcode</span><input name="student_code" type="text" minlength="8" maxlength="64" autocomplete="off" required></label>
+          <p class="privacy-note">Er wordt geen wachtwoord of privé-e-mailadres gevraagd.</p>
+          <button class="button button-primary" type="submit">Koppelen / wisselen</button>
+        </div>
+        <p id="identity-message" class="identity-message" aria-live="polite"></p>
+        <button class="text-button" type="button" data-action="use-local-identity">Gebruik alleen lokale voortgang</button>
+      </form>
+    </dialog>
+
+    <noscript>Deze studietool heeft JavaScript nodig.</noscript>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+    <script src="./config.js?v=20261001-3" defer></script>
+    <script src="./supabase-client.js?v=20261001-3" defer></script>
+    <script src="./student-identity.js?v=20261001-3" defer></script>
+    <script src="./sync-manager.js?v=20261001-3" defer></script>
+    <script src="./app.js?v=20261001-3" defer></script>
+  </body>
+</html>
