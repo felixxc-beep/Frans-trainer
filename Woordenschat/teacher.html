@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="nl">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Leerkrachtendashboard voor Mon parcours — Univers français 1.">
+    <meta name="theme-color" content="#12372a">
+    <title>Leerkrachtendashboard | Mon parcours</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='15' fill='%2312372a'/%3E%3Cpath d='M18 16h28v9H28v8h15v9H28v14H18z' fill='%23fff7df'/%3E%3Ccircle cx='48' cy='49' r='7' fill='%23f4b942'/%3E%3C/svg%3E">
+    <link rel="stylesheet" href="./teacher.css?v=20261001-1">
+  </head>
+  <body>
+    <header class="teacher-topbar">
+      <a class="teacher-brand" href="./index.html" aria-label="Naar de leerlingentool">
+        <span class="teacher-brand-mark" aria-hidden="true">F</span>
+        <span><strong>Mon parcours</strong><small>Leerkrachtendashboard</small></span>
+      </a>
+      <div id="accountArea" class="account-area" hidden>
+        <span id="accountLabel"></span>
+        <button id="logoutButton" class="button button-secondary" type="button">Afmelden</button>
+      </div>
+    </header>
+
+    <main class="teacher-main">
+      <section id="authView" class="auth-layout" aria-labelledby="loginTitle">
+        <div class="auth-intro">
+          <p class="eyebrow">Univers français 1</p>
+          <h1 id="loginTitle">Leerkrachtendashboard</h1>
+          <p>Bekijk de voortgang van je klassen en ontdek welke leerstof extra aandacht nodig heeft.</p>
+        </div>
+        <form id="loginForm" class="login-card">
+          <h2>Aanmelden</h2>
+          <p class="muted">Gebruik het leerkrachtenaccount dat in Supabase werd aangemaakt.</p>
+          <label><span>E-mailadres</span><input name="email" type="email" autocomplete="username" required></label>
+          <label><span>Wachtwoord</span><input name="password" type="password" autocomplete="current-password" required></label>
+          <button class="button button-primary" type="submit">Aanmelden</button>
+          <p id="loginMessage" class="form-message" role="alert" aria-live="polite"></p>
+        </form>
+      </section>
+
+      <section id="dashboardView" hidden>
+        <div class="dashboard-heading">
+          <div>
+            <p class="eyebrow">Resultaten</p>
+            <h1>Dashboard</h1>
+            <p class="muted">Correctheidspercentages zijn gebaseerd op werkelijke pogingen, inclusief herhalingen na fouten.</p>
+          </div>
+          <button id="refreshButton" class="button button-secondary" type="button">Vernieuwen</button>
+        </div>
+
+        <form id="filterBar" class="filter-bar" aria-label="Dashboardfilters">
+          <label><span>Periode</span><select id="periodFilter" name="period"><option value="all">Alles</option><option value="7">Laatste 7 dagen</option><option value="30">Laatste 30 dagen</option></select></label>
+          <label><span>Trajet</span><select id="trajectoryFilter" name="trajectory"><option value="all">Alle Trajets</option></select></label>
+          <label><span>Modus</span><select id="modeFilter" name="mode"><option value="all">Alle modi</option></select></label>
+        </form>
+
+        <div id="dashboardContent" aria-live="polite">
+          <section class="loading-state"><span class="loader" aria-hidden="true"></span><p>Dashboard wordt geladen…</p></section>
+        </div>
+      </section>
+    </main>
+
+    <noscript>Het leerkrachtendashboard heeft JavaScript nodig.</noscript>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+    <script src="./config.js?v=20261001-3" defer></script>
+    <script src="./supabase-client.js?v=20261001-4" defer></script>
+    <script src="./teacher.js?v=20261001-1" defer></script>
+  </body>
+</html>

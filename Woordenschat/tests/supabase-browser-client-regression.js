@@ -28,6 +28,7 @@ function harness(options) {
   const storage = new Map();
   const createCalls = [];
   const rpcCalls = [];
+  let initializationFailures = options.initializationFailures || 0;
   const windowObject = {
     MON_PARCOURS_CONFIG: options.config || {},
     crypto: { randomUUID() { return "11111111-1111-4111-8111-111111111111"; } },
@@ -37,6 +38,10 @@ function harness(options) {
     windowObject.supabase = {
       createClient(url, key, clientOptions) {
         createCalls.push({ url: url, key: key, options: clientOptions });
+        if (initializationFailures > 0) {
+          initializationFailures -= 1;
+          throw new Error("tijdelijke initialisatiefout");
+        }
         return {
           async rpc(functionName, parameters) {
             rpcCalls.push({ functionName: functionName, parameters: parameters });
@@ -80,11 +85,7 @@ function harness(options) {
   assert.equal(online.createCalls.length, 1, "de browserclient moet worden hergebruikt");
   assert.equal(online.createCalls[0].url, config.supabaseUrl);
   assert.equal(online.createCalls[0].key, config.supabasePublishableKey);
-  assert.deepEqual(JSON.parse(JSON.stringify(online.createCalls[0].options.auth)), {
-    persistSession: false,
-    autoRefreshToken: false,
-    detectSessionInUrl: false
-  });
+  assert.equal(online.createCalls[0].options, undefined, "createClient moet hetzelfde bewezen tweeargumentenpad gebruiken");
   assert.deepEqual(await online.window.MonParcoursSupabase.rpc("verify_student_identity", { p_class_code: "KLAS1A" }), { online: true });
   assert.equal(online.rpcCalls[0].functionName, "verify_student_identity");
 
@@ -113,6 +114,11 @@ function harness(options) {
   assert.equal(withoutConfig.window.MonParcoursSupabase.isConfigured(), false);
   assert.equal(withoutConfig.createCalls.length, 0);
   await assert.rejects(withoutConfig.window.MonParcoursSupabase.rpc("verify_student_identity", {}), /SUPABASE_NOT_CONFIGURED/);
+
+  const retryAfterFailure = harness({ config: config, library: true, initializationFailures: 1 });
+  assert.equal(retryAfterFailure.window.MonParcoursSupabase.isConfigured(), false, "een tijdelijke fout moet lokale fallback activeren");
+  assert.equal(retryAfterFailure.window.MonParcoursSupabase.isConfigured(), true, "een eerdere fout mag een latere initialisatie niet blokkeren");
+  assert.equal(retryAfterFailure.createCalls.length, 2, "na een mislukte initialisatie moet opnieuw worden geprobeerd");
 
   console.log("SUPABASE-BROWSERCLIENT-REGRESSIE GESLAAGD");
   console.log("CDN-volgorde, createClient-configuratie, online beschikbaarheid en veilige lokale fallback gecontroleerd.");

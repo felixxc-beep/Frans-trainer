@@ -2,39 +2,47 @@
   "use strict";
 
   let cachedClient = null;
-  let cachedSignature = "";
+  let cachedUrl = "";
+  let cachedPublishableKey = "";
 
   function readConfig() {
     const source = window.MON_PARCOURS_CONFIG || {};
     return {
-      url: String(source.supabaseUrl || "").trim().replace(/\/+$/, ""),
-      anonKey: String(source.supabasePublishableKey || source.supabaseAnonKey || "").trim()
+      url: String(source.supabaseUrl || "").trim(),
+      publishableKey: String(source.supabasePublishableKey || "").trim()
     };
   }
 
-  function validConfig(config) {
-    return /^https:\/\/[a-z0-9-]+\.supabase\.co$/i.test(config.url) && config.anonKey.length > 20;
+  function clearCachedClient() {
+    cachedClient = null;
+    cachedUrl = "";
+    cachedPublishableKey = "";
   }
 
   function getClient() {
     const config = readConfig();
-    const signature = config.url + "\n" + config.anonKey;
-    if (signature !== cachedSignature) {
-      cachedClient = null;
-      cachedSignature = signature;
+    const createClient = window.supabase && window.supabase.createClient;
+
+    if (!config.url || !config.publishableKey || typeof createClient !== "function") {
+      clearCachedClient();
+      return null;
     }
-    if (!validConfig(config) || !window.supabase || typeof window.supabase.createClient !== "function") return null;
-    if (!cachedClient) {
-      try {
-        cachedClient = window.supabase.createClient(config.url, config.anonKey, {
-          auth: {
-            persistSession: false,
-            autoRefreshToken: false,
-            detectSessionInUrl: false
-          }
-        });
-      } catch (error) {
-        cachedClient = null;
+
+    if (cachedClient && cachedUrl === config.url && cachedPublishableKey === config.publishableKey) {
+      return cachedClient;
+    }
+
+    clearCachedClient();
+    try {
+      const client = window.supabase.createClient(config.url, config.publishableKey);
+      if (!client) return null;
+      cachedClient = client;
+      cachedUrl = config.url;
+      cachedPublishableKey = config.publishableKey;
+    } catch (error) {
+      clearCachedClient();
+      if (window.console && typeof window.console.warn === "function") {
+        window.console.warn("Supabase-client kon niet worden geïnitialiseerd; lokale modus blijft actief.", error);
       }
     }
     return cachedClient;
