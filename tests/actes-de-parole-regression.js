@@ -45,8 +45,8 @@ function evaluate(expression) {
 }
 
 setImmediate(function () {
-  const expectedCounts = [45, 19, 53];
-  const expectedQuestionCounts = [45, 19, 52];
+  const expectedCounts = [45, 19, 53, 49, 40, 42];
+  const expectedQuestionCounts = [45, 19, 52, 49, 40, 42];
 
   course.trajectories.forEach(function (trajectory, trajectoryIndex) {
     const unit = trajectory.units.find(function (entry) { return entry.top_category === "Atelier Parole"; });
@@ -85,6 +85,51 @@ setImmediate(function () {
   });
 
   assert.deepEqual(Array.from(evaluate("sessionSizeOptions(9)")), ["all"]);
+
+  const trajectoryOneUnit = course.trajectories[0].units.find(function (unit) {
+    return unit.top_category === "Atelier Parole";
+  });
+  context.blockScope = { block: "À retenir", subsection: "", category: "", title: "À retenir" };
+  context.sePresenterScope = { block: "À retenir", subsection: "Actes de parole", category: "Se présenter", title: "Se présenter" };
+  context.presenterQuelquunScope = { block: "À retenir", subsection: "Actes de parole", category: "Présenter quelqu’un (1)", title: "Présenter quelqu’un (1)" };
+  evaluate("state.trajectoryIndex = 0; state.selectedUnitOrder = " + trajectoryOneUnit.order + "; renderUnit()");
+  const wholeUnit = evaluate("exerciseItemsForScope(currentTrajectory(), currentUnit(), { block: '', subsection: '', category: '' })");
+  const wholeBlock = evaluate("exerciseItemsForScope(currentTrajectory(), currentUnit(), blockScope)");
+  assert.equal(wholeUnit.length, 146, "Oefen alles moet de 45 zinnen bij de bestaande 101 items tellen");
+  assert.equal(wholeBlock.length, 146, "Oefen dit studieblok moet de Actes-de-parole-zinnen bevatten");
+  assert.equal(wholeBlock.filter(function (item) { return item.type === "phrase"; }).length, 45);
+  assert.equal(wholeBlock.filter(function (item) { return item.type !== "phrase"; }).length, 101);
+  assert.ok(appElement.innerHTML.includes("146 oefenitems in dit cursusonderdeel"));
+  assert.ok(appElement.innerHTML.includes("Oefen alles<small>146 items"));
+  assert.ok(appElement.innerHTML.includes("Oefen dit studieblok<small>146 items"));
+  assert.ok(appElement.innerHTML.includes('data-subsection="Actes de parole" data-category=""'));
+  assert.ok(appElement.innerHTML.includes('data-category="Se présenter"'));
+  assert.ok(appElement.innerHTML.includes('data-category="Présenter quelqu’un (1)"'));
+
+  evaluate("state.selectedScope = blockScope; renderSetup()");
+  assert.match(appElement.innerHTML, /Nederlandse zin → Franse zin/);
+  assert.equal(evaluate('questionsForSetup("phrase-nl-fr").length'), 45,
+    "Oefen dit studieblok moet alle Actes-de-parole-zinnen aanbieden");
+  context.wholeUnitScope = { block: "", subsection: "", category: "", title: trajectoryOneUnit.title };
+  evaluate("state.selectedScope = wholeUnitScope; renderSetup()");
+  assert.match(appElement.innerHTML, /Nederlandse zin → Franse zin/);
+  assert.equal(evaluate('questionsForSetup("phrase-nl-fr").length'), 45,
+    "Oefen alles moet alle Actes-de-parole-zinnen aanbieden");
+
+  const sePresenterItems = evaluate("exerciseItemsForScope(currentTrajectory(), currentUnit(), sePresenterScope)");
+  const presenterQuelquunItems = evaluate("exerciseItemsForScope(currentTrajectory(), currentUnit(), presenterQuelquunScope)");
+  assert.equal(sePresenterItems.length, 23);
+  assert.equal(presenterQuelquunItems.length, 22);
+  assert.ok(sePresenterItems.every(function (item) { return item.type === "phrase" && item.category === "Se présenter"; }));
+  assert.ok(presenterQuelquunItems.every(function (item) { return item.type === "phrase" && item.category === "Présenter quelqu’un (1)"; }));
+  evaluate("state.selectedScope = sePresenterScope; renderSetup()");
+  assert.match(appElement.innerHTML, /23 leeritems/);
+  assert.match(appElement.innerHTML, /23 oefenbare items/);
+  assert.deepEqual(Array.from(evaluate('sessionSizeOptions(questionsForSetup("phrase-nl-fr").length)')), [10, 20, "all"]);
+  evaluate("state.selectedScope = presenterQuelquunScope; renderSetup()");
+  assert.match(appElement.innerHTML, /22 leeritems/);
+  assert.match(appElement.innerHTML, /22 oefenbare items/);
+  assert.deepEqual(Array.from(evaluate('sessionSizeOptions(questionsForSetup("phrase-nl-fr").length)')), [10, 20, "all"]);
 
   const trajectoryOnePhrases = course.trajectories[0].items.filter(function (item) {
     return item.type === "phrase" && item.block === "À retenir" && item.subsection === "Actes de parole";
@@ -168,6 +213,6 @@ setImmediate(function () {
   assert.equal(Object.prototype.hasOwnProperty.call(synced.attempts[0], "submitted_answer"), false);
 
   console.log("ACTES-DE-PAROLE-REGRESSIE GESLAAGD");
-  console.log("Trajet 1: 45 · Trajet 2: 19 · Trajet 3: 53 phrase-items");
-  console.log("Navigatie, bronpatronen, selectie, sessiegroottes, accepted_answers, sync en alle drie modi gecontroleerd.");
+  console.log("Trajet 1–6: 45 · 19 · 53 · 49 · 40 · 42 phrase-items");
+  console.log("146-itemtotalen, beide subgroepen, bronpatronen, sessiegroottes, accepted_answers, sync en alle drie modi gecontroleerd.");
 });

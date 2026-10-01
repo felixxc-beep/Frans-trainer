@@ -37,7 +37,7 @@ vm.runInContext(source, context);
 setImmediate(function () {
   assert.deepEqual(
     Array.from(vm.runInContext("state.data.trajectories.map(t => t.trajectory)", context)),
-    ["Trajet 1", "Trajet 2", "Trajet 3"]
+    ["Trajet 1", "Trajet 2", "Trajet 3", "Trajet 4", "Trajet 5", "Trajet 6"]
   );
 
   course.trajectories.forEach(function (trajectory, trajectoryIndex) {
@@ -92,13 +92,13 @@ setImmediate(function () {
   });
 
   allItems.filter(function (item) {
-    return Array.isArray(item.accepted_answers) && ["vocabulary", "phrase", "number"].includes(item.type);
+    return Array.isArray(item.accepted_answers) && ["vocabulary", "phrase", "grammar_rule", "number"].includes(item.type);
   }).forEach(function (item) {
     context.auditItems = [item];
-    context.auditExercise = item.type === "phrase" ? "phrase-nl-fr" : "number-nl-fr";
+    context.auditExercise = item.type === "phrase" ? "phrase-nl-fr" : item.type === "grammar_rule" ? "grammar" : "number-nl-fr";
     const questions = vm.runInContext("buildQuestions(auditItems, auditExercise)", context);
     item.accepted_answers.forEach(function (answer) {
-      assert.ok(questions[0].answers.includes(answer), item.nl + " moet " + answer + " aanvaarden");
+      assert.ok(questions[0].answers.includes(answer), (item.nl || item.prompt) + " moet " + answer + " aanvaarden");
     });
   });
 
@@ -124,7 +124,7 @@ setImmediate(function () {
       return new Set(items.map(function (item) { return item.fr; })).size > 1;
     });
   });
-  assert.equal(synonymGroups.length, 4);
+  assert.equal(synonymGroups.length, 5);
   synonymGroups.forEach(function (items) {
     const liveItems = allItems.filter(function (item) {
       return item._trajectoryIndex === items[0].trajectoryIndex &&
@@ -142,16 +142,16 @@ setImmediate(function () {
     });
   });
 
-  assert.ok(html.includes('src="./app.js"'));
-  assert.ok(html.includes('href="./styles.css"'));
-  assert.ok(source.includes('const DATA_URL = "./data/course.json"'));
+  assert.match(html, /src="\.\/app\.js(?:\?[^"#]+)?"/);
+  assert.match(html, /href="\.\/styles\.css(?:\?[^"#]+)?"/);
+  assert.match(source, /const DATA_URL = "\.\/data\/course\.json(?:\?[^"#]+)?"/);
   assert.equal(/(?:src|href)="https?:\/\//.test(html), false);
   assert.equal(/\b(?:WebSocket|XMLHttpRequest|EventSource)\b/.test(source), false);
   assert.ok(fs.existsSync(".nojekyll"));
 
   console.log("VOLLEDIGE AUDIT GESLAAGD");
-  console.log("3 trajecten · 24 cursusonderdelen · 565 items");
-  console.log("52 werkwoorden · 312 vervoegingen · alle expliciete accepted_answers gecontroleerd");
-  console.log("4 synoniemgroepen gebundeld zonder trajecten of subsecties te mengen");
+  console.log("6 trajecten · 50 cursusonderdelen · 1036 items");
+  console.log("55 werkwoorden · 330 vervoegingen · alle expliciete accepted_answers gecontroleerd");
+  console.log("5 synoniemgroepen gebundeld zonder trajecten of subsecties te mengen");
   console.log("Statische, relatieve assets geschikt voor GitHub Pages");
 });

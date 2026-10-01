@@ -179,9 +179,9 @@ setImmediate(function () {
       itemCount: trajectory.items.length
     };
   });
-  assert.deepEqual(structure.map(function (entry) { return entry.itemCount; }), [182, 148, 235]);
-  assert.deepEqual(structure.map(function (entry) { return entry.trajectory; }), ["Trajet 1", "Trajet 2", "Trajet 3"]);
-  assert.equal(structure.reduce(function (sum, entry) { return sum + entry.units.length; }, 0), 24);
+  assert.deepEqual(structure.map(function (entry) { return entry.itemCount; }), [182, 148, 235, 170, 144, 157]);
+  assert.deepEqual(structure.map(function (entry) { return entry.trajectory; }), ["Trajet 1", "Trajet 2", "Trajet 3", "Trajet 4", "Trajet 5", "Trajet 6"]);
+  assert.equal(structure.reduce(function (sum, entry) { return sum + entry.units.length; }, 0), 50);
 
   console.log("SESSIE- EN ANTWOORDREGRESSIE GESLAAGD");
   console.log("Expliciete alternatieven, strikte accenten, 10/20/30/alle, unieke selectie en attempt_count gecontroleerd.");

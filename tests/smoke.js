@@ -39,8 +39,8 @@ const context = vm.createContext({
 vm.runInContext(fs.readFileSync("app.js", "utf8"), context);
 
 setImmediate(function () {
-  assert.equal(vm.runInContext("state.data.trajectories.length", context), 3);
-  assert.equal(vm.runInContext("state.data.trajectories.reduce((n, t) => n + t.items.length, 0)", context), 565);
+  assert.equal(vm.runInContext("state.data.trajectories.length", context), 6);
+  assert.equal(vm.runInContext("state.data.trajectories.reduce((n, t) => n + t.items.length, 0)", context), 1036);
   assert.match(appElement.innerHTML, /Trajet 1/);
   assert.match(appElement.innerHTML, /Atelier Parole/);
   assert.match(appElement.innerHTML, /Action !/);
@@ -51,7 +51,7 @@ setImmediate(function () {
   );
   assert.deepEqual(
     JSON.parse(JSON.stringify(typeCounts)),
-    { vocabulary: 255, phrase: 117, verb: 52, grammar_rule: 33, number: 101, sound_rule: 7 }
+    { vocabulary: 481, phrase: 248, verb: 55, grammar_rule: 132, number: 104, sound_rule: 16 }
   );
 
   const generated = vm.runInContext(

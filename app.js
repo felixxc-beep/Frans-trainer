@@ -1,6 +1,7 @@
-const DATA_URL = "./data/course.json";
+const DATA_URL = "./data/course.json?v=20261001-1";
 const STORAGE_KEY = "monParcoursProgressV1";
 const IDENTITY_PROMPT_KEY = "monParcoursIdentityPromptSeenV1";
+const MAX_DYNAMIC_NUMBER_ALL = 101;
 const ACCENTS = ["é", "è", "ê", "ë", "à", "â", "ç", "ù", "û", "ô", "î", "ï"];
 const EXERCISES = {
   "vocab-nl-fr": { type: "vocabulary", label: "Nederlands → Frans", short: "Woordenschat" },
@@ -34,6 +35,7 @@ const state = {
 const app = document.querySelector("#app");
 const settingsDialog = document.querySelector("#settings-dialog");
 const identityDialog = document.querySelector("#identity-dialog");
+const identityButton = document.querySelector("#identityButton");
 const strictToggle = document.querySelector("#strict-accents");
 strictToggle.checked = state.progress.settings.strictAccents;
 strictToggle.disabled = true;
@@ -41,6 +43,12 @@ strictToggle.disabled = true;
 document.addEventListener("click", handleClick);
 document.addEventListener("submit", handleSubmit);
 document.addEventListener("change", handleChange);
+if (identityButton) identityButton.addEventListener("click", handleIdentityButtonClick);
+
+function handleIdentityButtonClick(event) {
+  event.stopPropagation();
+  openIdentityDialog();
+}
 
 function handleChange(event) {
   if (event.target.name === "exercise") updateSessionSizePicker();
@@ -79,6 +87,7 @@ function handleClick(event) {
       unitOrder: Number(control.dataset.order),
       block: control.dataset.block || "",
       subsection: control.dataset.subsection || "",
+      category: control.dataset.category || "",
       title: control.dataset.title || ""
     };
     renderSetup();
@@ -155,9 +164,17 @@ async function submitStudentIdentity(form) {
     form.reset();
     if (window.MonParcoursSync) window.MonParcoursSync.scheduleFlush();
   } catch (error) {
-    if (message) message.textContent = error && error.message === "STUDENT_NOT_FOUND"
-      ? "Deze combinatie werd niet gevonden. Controleer beide codes."
-      : "Koppelen lukt nu niet. Je kunt gewoon lokaal verder oefenen.";
+    if (message) {
+      if (error && error.message === "STUDENT_NOT_FOUND") {
+        message.textContent = "Deze combinatie werd niet gevonden. Controleer beide codes.";
+      } else if (error && error.message === "INVALID_STUDENT_CODES") {
+        message.textContent = "Controleer de codes: de klascode heeft minstens 3 tekens en de leerlingcode minstens 8.";
+      } else if (error && error.message === "SUPABASE_NOT_CONFIGURED") {
+        message.textContent = "De online koppeling is nog niet ingesteld. Je kunt gewoon lokaal verder oefenen.";
+      } else {
+        message.textContent = "De codes konden nu niet worden gecontroleerd. Je kunt gewoon lokaal verder oefenen en later opnieuw proberen.";
+      }
+    }
   } finally {
     if (submit) submit.disabled = false;
   }
@@ -234,7 +251,7 @@ function renderHome() {
       '<div class="section-heading"><div><p class="eyebrow">Stap 2</p><h2 id="unit-heading">Onderdelen van ' + escapeHtml(trajectory.trajectory) + '</h2></div><span class="step-label">' + (trajectory.items || []).length + ' leeritems</span></div>' +
       '<div class="unit-list">' +
         trajectory.units.map(function (unit) {
-          const count = itemsForUnit(trajectory, unit).length;
+          const count = exerciseItemCount(itemsForUnit(trajectory, unit).filter(isExerciseItem));
           const unitStats = categoryStats(state.trajectoryIndex, unit.top_category);
           return '<button class="unit-card" type="button" data-action="select-unit" data-order="' + unit.order + '">' +
             '<span class="unit-order">' + unit.order + '</span>' +
@@ -259,13 +276,15 @@ function renderUnit() {
   state.session = null;
   const unitItems = itemsForUnit(trajectory, unit);
   const exerciseItems = unitItems.filter(isExerciseItem);
+  const exerciseCount = exerciseItemCount(exerciseItems);
   const soundItems = unitItems.filter(function (item) { return item.type === "sound_rule"; });
   const sectionsHtml = unit.study_sections.length
     ? unit.study_sections.map(function (section) {
         const blockItems = unitItems.filter(function (item) { return item.block === section.title && isExerciseItem(item); });
+        const blockCount = exerciseItemCount(blockItems);
         return '<article class="structure-card">' +
           '<div class="structure-heading"><div><p class="eyebrow">Studieblok</p><h3>' + escapeHtml(section.title) + '</h3></div>' +
-          (blockItems.length ? scopeButton(unit, section.title, "", section.title, blockItems.length, "Oefen dit studieblok") : "") + '</div>' +
+          (blockCount ? scopeButton(unit, section.title, "", section.title, blockCount, "Oefen dit studieblok") : "") + '</div>' +
           '<div class="subsection-list">' +
             section.subsections.map(function (subsection) {
               const subsectionScope = {
@@ -273,11 +292,25 @@ function renderUnit() {
                 subsection: subsection.title
               };
               const subset = exerciseItemsForScope(trajectory, unit, subsectionScope);
+              const subsetCount = exerciseItemCount(subset);
+              const categoryButtons = subsection.content_types.map(function (contentType) {
+                const categoryScope = {
+                  block: section.title,
+                  subsection: subsection.title,
+                  category: contentType
+                };
+                const categoryItems = exerciseItemsForScope(trajectory, unit, categoryScope);
+                const categoryCount = exerciseItemCount(categoryItems);
+                return categoryCount
+                  ? scopeButton(unit, section.title, subsection.title, contentType, categoryCount, "Kies", contentType)
+                  : "";
+              }).join("");
               return '<div class="subsection-row"><div><strong>' + escapeHtml(subsection.title) + '</strong>' +
                 '<div class="content-tags">' + subsection.content_types.map(function (type) {
                   return '<span>' + escapeHtml(type) + '</span>';
-                }).join("") + '</div></div>' +
-                (subset.length ? scopeButton(unit, section.title, subsection.title, subsection.title, subset.length, "Kies") : '<span class="source-only">Alleen cursusinfo</span>') +
+                }).join("") + '</div></div><div class="subsection-actions">' +
+                (subsetCount ? scopeButton(unit, section.title, subsection.title, subsection.title, subsetCount, "Kies") : '<span class="source-only">Alleen cursusinfo</span>') +
+                (categoryButtons ? '<div class="subscope-list">' + categoryButtons + '</div>' : "") + '</div>' +
               '</div>';
             }).join("") +
           '</div></article>';
@@ -287,16 +320,16 @@ function renderUnit() {
   app.innerHTML =
     breadcrumbHtml([{ label: trajectory.trajectory, action: "home" }]) +
     '<section class="unit-hero"><div><p class="eyebrow">' + escapeHtml(unit.top_category) + '</p><h1>' + escapeHtml(unit.title) + '</h1>' +
-    '<p class="lede">' + exerciseItems.length + ' oefenitems in dit cursusonderdeel.</p></div>' +
-    (exerciseItems.length ? scopeButton(unit, "", "", unit.title, exerciseItems.length, "Oefen alles") : "") + '</section>' +
+    '<p class="lede">' + exerciseCount + ' oefenitems in dit cursusonderdeel.</p></div>' +
+    (exerciseCount ? scopeButton(unit, "", "", unit.title, exerciseCount, "Oefen alles") : "") + '</section>' +
     '<section class="structure-stack" aria-label="Cursusstructuur">' + sectionsHtml + '</section>' +
     renderSoundNotes(soundItems);
   focusApp();
 }
 
-function scopeButton(unit, block, subsection, title, count, label) {
+function scopeButton(unit, block, subsection, title, count, label, category) {
   return '<button class="button button-secondary" type="button" data-action="choose-scope" data-order="' + unit.order +
-    '" data-block="' + escapeAttr(block) + '" data-subsection="' + escapeAttr(subsection) + '" data-title="' + escapeAttr(title) + '">' +
+    '" data-block="' + escapeAttr(block) + '" data-subsection="' + escapeAttr(subsection) + '" data-category="' + escapeAttr(category || "") + '" data-title="' + escapeAttr(title) + '">' +
     escapeHtml(label) + '<small>' + count + ' items</small></button>';
 }
 
@@ -304,7 +337,8 @@ function renderSoundNotes(items) {
   if (!items.length) return "";
   return '<section class="source-notes"><div class="section-heading"><div><p class="eyebrow">Uit je cursus</p><h2>Klankregels</h2></div></div>' +
     items.map(function (item) {
-      const heading = item.spelling ? item.spelling + " → " + item.sound : item.word;
+      const spelling = item.spelling || (item.spellings || []).join(", ") || item.category || item.word || "Klankregel";
+      const heading = item.sound ? spelling + " → " + item.sound : spelling;
       const text = item.rule_nl || item.example_fr || "";
       const examples = item.examples_fr || [];
       return '<article><strong>' + escapeHtml(heading) + '</strong><p>' + escapeHtml(text) + '</p>' +
@@ -328,13 +362,13 @@ function renderSetup() {
       { label: unit.top_category, action: "back-unit" }
     ]) +
     '<section class="setup-header"><p class="eyebrow">Stap 3 en 4</p><h1>' + escapeHtml(scope.title) + '</h1>' +
-    '<p class="lede">' + exerciseItems.length + ' leeritems · kies je oefenvorm en modus.</p></section>' +
+    '<p class="lede">' + exerciseItemCount(exerciseItems) + ' leeritems · kies je oefenvorm en modus.</p></section>' +
     '<section class="setup-grid"><div><div class="section-heading compact"><h2>Wat wil je oefenen?</h2></div>' +
       '<div class="choice-list" role="radiogroup">' +
         available.map(function (key, index) {
           const option = EXERCISES[key];
           const exerciseItems = items.filter(function (item) { return item.type === option.type; });
-          const count = buildQuestions(exerciseItems, key).length;
+          const count = questionCountForItems(exerciseItems, key);
           return '<label class="radio-card"><input type="radio" name="exercise" value="' + key + '"' + (index === 0 ? " checked" : "") + '>' +
             '<span><small>' + escapeHtml(option.short) + '</small><strong>' + escapeHtml(option.label) + '</strong><em>' + count + ' oefenbare items</em></span></label>';
         }).join("") +
@@ -350,12 +384,14 @@ function renderSetup() {
   focusApp();
 }
 
-function sessionSizeOptions(availableCount) {
-  return [10, 20, 30].filter(function (count) { return count <= availableCount; }).concat("all");
+function sessionSizeOptions(availableCount, includeAll) {
+  const options = [10, 20, 30].filter(function (count) { return count <= availableCount; });
+  if (includeAll !== false) options.push("all");
+  return options;
 }
 
-function preferredSessionSize(availableCount) {
-  const options = sessionSizeOptions(availableCount);
+function preferredSessionSize(availableCount, includeAll) {
+  const options = sessionSizeOptions(availableCount, includeAll);
   const preference = state.progress.settings.sessionSize;
   if (preference === "all") return "all";
   if (options.includes(Number(preference))) return Number(preference);
@@ -363,23 +399,36 @@ function preferredSessionSize(availableCount) {
   return numeric.length ? numeric[numeric.length - 1] : "all";
 }
 
-function questionsForSetup(exerciseKey) {
+function exerciseItemsForSetup(exerciseKey) {
   const trajectory = currentTrajectory();
   const unit = currentUnit();
   if (!exerciseKey || !EXERCISES[exerciseKey] || !unit || !state.selectedScope) return [];
-  const items = itemsForScope(trajectory, unit, state.selectedScope).filter(function (item) {
+  return itemsForScope(trajectory, unit, state.selectedScope).filter(function (item) {
     return item.type === EXERCISES[exerciseKey].type;
   });
-  return buildQuestions(items, exerciseKey);
+}
+
+function questionsForSetup(exerciseKey, requestedCount) {
+  return buildQuestionsForItems(exerciseItemsForSetup(exerciseKey), exerciseKey, requestedCount);
+}
+
+function availableQuestionCount(exerciseKey) {
+  return questionCountForItems(exerciseItemsForSetup(exerciseKey), exerciseKey);
+}
+
+function setupAllowsAll(exerciseKey) {
+  const items = exerciseItemsForSetup(exerciseKey);
+  return !items.some(isDynamicNumberItem) || questionCountForItems(items, exerciseKey) <= MAX_DYNAMIC_NUMBER_ALL;
 }
 
 function updateSessionSizePicker() {
   const picker = document.querySelector("#session-size-picker");
   const selectedExercise = document.querySelector('input[name="exercise"]:checked');
   if (!picker || !selectedExercise) return;
-  const availableCount = questionsForSetup(selectedExercise.value).length;
-  const preferred = preferredSessionSize(availableCount);
-  picker.innerHTML = '<div class="size-options" role="radiogroup">' + sessionSizeOptions(availableCount).map(function (option) {
+  const availableCount = availableQuestionCount(selectedExercise.value);
+  const includeAll = setupAllowsAll(selectedExercise.value);
+  const preferred = preferredSessionSize(availableCount, includeAll);
+  picker.innerHTML = '<div class="size-options" role="radiogroup">' + sessionSizeOptions(availableCount, includeAll).map(function (option) {
     const value = String(option);
     const label = option === "all" ? "Alle " + availableCount : value;
     return '<label class="size-choice"><input type="radio" name="session-size" value="' + value + '"' + (option === preferred ? " checked" : "") + '><span>' + label + '</span></label>';
@@ -392,10 +441,16 @@ function updateSessionPlan() {
   const selectedExercise = document.querySelector('input[name="exercise"]:checked');
   const selectedSize = document.querySelector('input[name="session-size"]:checked');
   if (!plan || !selectedExercise || !selectedSize) return;
-  const availableCount = questionsForSetup(selectedExercise.value).length;
-  plan.textContent = selectedSize.value === "all"
-    ? "Je oefent alle " + availableCount + " items."
-    : "Je gaat " + selectedSize.value + " van de " + availableCount + " items oefenen.";
+  const availableCount = availableQuestionCount(selectedExercise.value);
+  const dynamicNumbers = exerciseItemsForSetup(selectedExercise.value).some(isDynamicNumberItem);
+  plan.textContent = sessionPlanText(selectedSize.value, availableCount, dynamicNumbers);
+}
+
+function sessionPlanText(selectedSize, availableCount, dynamicNumbers) {
+  const noun = dynamicNumbers ? "mogelijke getallen" : "items";
+  return selectedSize === "all"
+    ? "Je oefent alle " + availableCount + " " + noun + "."
+    : "Je oefent " + selectedSize + " van " + availableCount + " " + noun + ".";
 }
 
 function modeCard(mode, title, description) {
@@ -407,11 +462,12 @@ function startSession(mode) {
   const selected = document.querySelector('input[name="exercise"]:checked');
   const selectedSize = document.querySelector('input[name="session-size"]:checked');
   if (!selected || !selectedSize) return;
-  const allQuestions = questionsForSetup(selected.value);
-  const requestedCount = selectedSize.value === "all" ? allQuestions.length : Number(selectedSize.value);
+  const availableCount = availableQuestionCount(selected.value);
+  const requestedCount = selectedSize.value === "all" ? availableCount : Number(selectedSize.value);
   state.progress.settings.sessionSize = selectedSize.value === "all" ? "all" : requestedCount;
+  const allQuestions = questionsForSetup(selected.value, requestedCount);
   const questions = selectQuestions(allQuestions, requestedCount);
-  beginSession(questions, mode, selected.value, state.selectedScope.title, { availableCount: allQuestions.length });
+  beginSession(questions, mode, selected.value, state.selectedScope.title, { availableCount: availableCount });
 }
 
 function beginSession(questions, mode, exerciseKey, title, metadata) {
@@ -763,14 +819,131 @@ function continueLastSession() {
   const items = itemsForScope(trajectory, unit, last.scope).filter(function (item) {
     return item.type === EXERCISES[last.exerciseKey].type;
   });
-  const allQuestions = buildQuestions(items, last.exerciseKey);
-  const requestedCount = last.question_count || Math.min(20, allQuestions.length);
-  beginSession(selectQuestions(allQuestions, requestedCount), last.mode, last.exerciseKey, last.title, { availableCount: allQuestions.length });
+  const availableCount = questionCountForItems(items, last.exerciseKey);
+  const requestedCount = last.question_count || Math.min(20, availableCount);
+  const allQuestions = buildQuestionsForItems(items, last.exerciseKey, requestedCount);
+  beginSession(selectQuestions(allQuestions, requestedCount), last.mode, last.exerciseKey, last.title, { availableCount: availableCount });
+}
+
+function isDynamicNumberItem(item) {
+  return item && item.type === "number" && item.dynamic_range === true && Array.isArray(item.range) && item.range.length === 2;
+}
+
+function dynamicNumberCount(item) {
+  if (!isDynamicNumberItem(item)) return 1;
+  return Math.max(0, Number(item.range[1]) - Number(item.range[0]) + 1);
+}
+
+function exerciseItemCount(items) {
+  return items.reduce(function (total, item) { return total + dynamicNumberCount(item); }, 0);
+}
+
+function questionCountForItems(items, exerciseKey) {
+  if (exerciseKey === "number-nl-fr" || exerciseKey === "number-fr-nl") {
+    return items.reduce(function (total, item) { return total + dynamicNumberCount(item); }, 0);
+  }
+  return buildQuestions(items, exerciseKey).length;
+}
+
+function buildQuestionsForItems(items, exerciseKey, requestedCount) {
+  if (exerciseKey !== "number-nl-fr" && exerciseKey !== "number-fr-nl") return buildQuestions(items, exerciseKey);
+  const regularItems = items.filter(function (item) { return !isDynamicNumberItem(item); });
+  const dynamicItems = items.filter(isDynamicNumberItem);
+  const questions = buildQuestions(regularItems, exerciseKey);
+  let remaining = Math.max(0, Number(requestedCount == null ? 30 : requestedCount) - questions.length);
+  dynamicItems.forEach(function (item, index) {
+    const remainingSpecs = dynamicItems.length - index;
+    const count = Math.min(dynamicNumberCount(item), Math.ceil(remaining / remainingSpecs));
+    questions.push.apply(questions, buildDynamicNumberQuestions(item, exerciseKey, count));
+    remaining -= count;
+  });
+  return mergeEquivalentQuestions(questions);
+}
+
+function buildDynamicNumberQuestions(item, exerciseKey, count) {
+  return dynamicNumberValues(item, count).map(function (value) {
+    const displayValue = formatNumberValue(value);
+    const french = belgianNumber(value);
+    const regional = item.accepted_regional_alternatives && item.accepted_regional_alternatives[String(value)];
+    const answers = exerciseKey === "number-nl-fr"
+      ? unique([french, regional])
+      : unique([displayValue, String(value)]);
+    const base = {
+      itemId: item._id + "::" + value,
+      itemIds: [item._id + "::" + value],
+      stableItemId: item.id,
+      stableItemIds: [item.id],
+      itemVariant: String(value),
+      item: item,
+      groupPath: [item._trajectoryIndex, item.top_category, item.lesson, item.block, item.subsection, item.type].join("::"),
+      reviewCount: 0
+    };
+    return makeQuestion(
+      base,
+      exerciseKey === "number-nl-fr" ? displayValue : french,
+      answers,
+      exerciseKey === "number-nl-fr" ? "Schrijf het getal in het Frans" : "Schrijf het cijfer"
+    );
+  });
+}
+
+function dynamicNumberValues(item, requestedCount) {
+  const minimum = Number(item.range[0]);
+  const maximum = Number(item.range[1]);
+  const available = maximum - minimum + 1;
+  const count = Math.min(available, Math.max(0, Number(requestedCount) || 0));
+  if (count === available) return Array.from({ length: available }, function (_, index) { return minimum + index; });
+  const values = new Set();
+  function add(value) {
+    const number = Number(String(value).replace(/\s/g, ""));
+    if (Number.isInteger(number) && number >= minimum && number <= maximum && values.size < count) values.add(number);
+  }
+  (item.source_examples || []).forEach(add);
+  add(minimum);
+  add(maximum);
+  Object.keys(item.accepted_regional_alternatives || {}).forEach(add);
+  while (values.size < count) add(minimum + Math.floor(Math.random() * available));
+  return Array.from(values);
+}
+
+function formatNumberValue(value) {
+  return String(value).replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+}
+
+function belgianNumber(value) {
+  const number = Number(value);
+  if (!Number.isInteger(number) || number < 0 || number > 100000) return "";
+  if (number < 1000) return belgianNumberBelowThousand(number);
+  const thousands = Math.floor(number / 1000);
+  const remainder = number % 1000;
+  let prefix = thousands === 1 ? "mille" : belgianNumberBelowThousand(thousands).replace(/(?:cents|vingts)$/, function (match) { return match.slice(0, -1); }) + "-mille";
+  return remainder ? prefix + "-" + belgianNumberBelowThousand(remainder) : prefix;
+}
+
+function belgianNumberBelowThousand(number) {
+  const small = ["zéro", "un", "deux", "trois", "quatre", "cinq", "six", "sept", "huit", "neuf", "dix", "onze", "douze", "treize", "quatorze", "quinze", "seize"];
+  if (number < small.length) return small[number];
+  if (number < 20) return "dix-" + small[number - 10];
+  if (number < 100) {
+    const tens = Math.floor(number / 10) * 10;
+    const remainder = number % 10;
+    const tensWords = { 20: "vingt", 30: "trente", 40: "quarante", 50: "cinquante", 60: "soixante", 70: "septante", 80: "quatre-vingt", 90: "nonante" };
+    if (!remainder) return tens === 80 ? "quatre-vingts" : tensWords[tens];
+    return tensWords[tens] + (remainder === 1 && tens !== 80 ? "-et-un" : "-" + small[remainder]);
+  }
+  const hundreds = Math.floor(number / 100);
+  const remainder = number % 100;
+  const prefix = hundreds === 1 ? "cent" : small[hundreds] + "-cent" + (remainder ? "" : "s");
+  return remainder ? prefix + "-" + belgianNumberBelowThousand(remainder) : prefix;
 }
 
 function buildQuestions(items, exerciseKey) {
   const questions = [];
   items.forEach(function (item) {
+    if (isDynamicNumberItem(item) && (exerciseKey === "number-nl-fr" || exerciseKey === "number-fr-nl")) {
+      questions.push.apply(questions, buildDynamicNumberQuestions(item, exerciseKey, Math.min(30, dynamicNumberCount(item))));
+      return;
+    }
     const base = {
       itemId: item._id,
       itemIds: [item._id],
@@ -785,7 +958,7 @@ function buildQuestions(items, exerciseKey) {
     if (exerciseKey === "verb-nl-inf") questions.push(makeQuestion(base, item.nl, [item.infinitive], "Geef de Franse infinitief"));
     if (exerciseKey === "verb-fr-nl") questions.push(makeQuestion(base, item.infinitive, dutchAnswers(item.nl, item), "Vertaal naar het Nederlands"));
     if (exerciseKey === "phrase-nl-fr") questions.push(makeQuestion(base, item.nl, answerList(item.fr, item), "Schrijf de volledige Franse zin"));
-    if (exerciseKey === "grammar") questions.push(makeQuestion(base, item.prompt, [item.answer], "Vul de regel aan · " + item.category, item.example_fr || item.example_nl || ""));
+    if (exerciseKey === "grammar") questions.push(makeQuestion(base, item.prompt, answerList(item.answer, item), "Vul de regel aan · " + item.category, item.example_fr || item.example_nl || ""));
     if (exerciseKey === "number-nl-fr") questions.push(makeQuestion(base, item.nl, answerList(item.fr, item), "Schrijf het getal in het Frans"));
     if (exerciseKey === "number-fr-nl") questions.push(makeQuestion(base, item.fr, [item.nl], "Schrijf het cijfer"));
     if (exerciseKey === "verb-nl-conj" || exerciseKey === "verb-fr-conj") {
@@ -951,6 +1124,7 @@ function itemsForScope(trajectory, unit, scope) {
   return itemsForUnit(trajectory, unit).filter(function (item) {
     if (scope.block && item.block !== scope.block) return false;
     if (scope.subsection && item.subsection !== scope.subsection) return false;
+    if (scope.category && item.category !== scope.category) return false;
     return true;
   });
 }

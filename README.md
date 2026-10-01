@@ -9,6 +9,7 @@ Een leerlingvriendelijke, statische studietool voor Franse woordenschat, zinnen,
 - Woordenschat in beide richtingen.
 - Werkwoordinfinitieven en vervoegingen met alle personen uit de bron.
 - Franse zinnen, grammaticaregels en getallen.
+- Zes volledige Trajets met 1.036 permanent geïdentificeerde bronitems.
 - Strenge beoordeling van accenten.
 - Accentknoppen bij elk antwoordveld.
 - Fout-herhaling, moeilijke woorden, voortgang per Trajet en categorie en verder oefenen.
@@ -50,6 +51,9 @@ Met Node.js kun je de ingebouwde controles uitvoeren:
 4. node tests/session-regression.js
 5. node tests/phase2-sync.js
 6. node tests/phase2-security-audit.js
+7. node tests/actes-de-parole-regression.js
+8. node tests/identity-button-regression.js
+9. node tests/trajectories-4-6-regression.js
 
 De volledige audit controleert alle trajecten en cursusonderdelen, de koppeling van studieblokken en subsecties, alle werkwoordvervoegingen, expliciete alternatieve antwoorden en synoniemgroepen. De GitHub Pages-audit controleert de rootstructuur, relatieve assets, subpadwerking, localStorage en de afwezigheid van een backend of buildstap.
 
@@ -74,6 +78,7 @@ Voeg nieuwe cursusdata toe aan de array trajectories in data/course.json. Gebrui
 - top_category, lesson, block en subsection om elk item aan de juiste plaats te koppelen;
 - accepted_answers wanneer meerdere antwoorden correct zijn;
 - conjugations met subject en form voor werkwoorden.
+- één dynamisch number-item met `dynamic_range`, `range` en een permanent ID voor grote getalbereiken.
 
 Elk leeritem heeft daarnaast een permanente `id`. Voer na het toevoegen van nieuwe items één keer `node scripts/assign-stable-item-ids.js` uit. Het script vult alleen ontbrekende IDs aan vanaf het hoogste bestaande nummer en verandert nooit bestaande IDs.
 
@@ -87,7 +92,7 @@ Elk leeritem heeft daarnaast een permanente `id`. Voer na het toevoegen van nieu
 
 De volledige installatiehandleiding staat in `supabase/README.md`.
 
-De JavaScript-code hoeft voor Trajet 4, 5 enzovoort niet te worden aangepast zolang dezelfde datastructuur behouden blijft.
+Gewone nieuwe Trajets vereisen geen JavaScript-aanpassing zolang dezelfde datastructuur behouden blijft. Grote getalbereiken worden tijdens een sessie gegenereerd en hoeven niet als duizenden losse JSON-items te worden opgeslagen. Bij dynamische bereiken tot en met 101 getallen kan de leerling alles kiezen; grotere bereiken bieden sessies van 10, 20 of 30 getallen aan.
 
 ## Bestanden
 
