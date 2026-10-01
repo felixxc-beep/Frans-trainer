@@ -1,6 +1,9 @@
 (function () {
   "use strict";
 
+  let cachedClient = null;
+  let cachedSignature = "";
+
   function readConfig() {
     const source = window.MON_PARCOURS_CONFIG || {};
     return {
@@ -9,39 +12,49 @@
     };
   }
 
-  function isConfigured() {
-    const config = readConfig();
+  function validConfig(config) {
     return /^https:\/\/[a-z0-9-]+\.supabase\.co$/i.test(config.url) && config.anonKey.length > 20;
   }
 
-  async function rpc(functionName, parameters) {
-    if (!isConfigured()) throw new Error("SUPABASE_NOT_CONFIGURED");
-    if (!/^[a-z][a-z0-9_]+$/.test(functionName)) throw new Error("INVALID_RPC_NAME");
+  function getClient() {
     const config = readConfig();
-    const controller = typeof AbortController === "function" ? new AbortController() : null;
-    const timeout = controller ? setTimeout(function () { controller.abort(); }, 12000) : null;
-    try {
-      const headers = {
-        apikey: config.anonKey,
-        "Content-Type": "application/json"
-      };
-      if (!config.anonKey.startsWith("sb_publishable_")) headers.Authorization = "Bearer " + config.anonKey;
-      const response = await fetch(config.url + "/rest/v1/rpc/" + functionName, {
-        method: "POST",
-        headers: headers,
-        body: JSON.stringify(parameters || {}),
-        signal: controller ? controller.signal : undefined
-      });
-      if (!response.ok) {
-        const error = new Error("SUPABASE_RPC_FAILED");
-        error.status = response.status;
-        throw error;
-      }
-      if (response.status === 204) return null;
-      return response.json();
-    } finally {
-      if (timeout) clearTimeout(timeout);
+    const signature = config.url + "\n" + config.anonKey;
+    if (signature !== cachedSignature) {
+      cachedClient = null;
+      cachedSignature = signature;
     }
+    if (!validConfig(config) || !window.supabase || typeof window.supabase.createClient !== "function") return null;
+    if (!cachedClient) {
+      try {
+        cachedClient = window.supabase.createClient(config.url, config.anonKey, {
+          auth: {
+            persistSession: false,
+            autoRefreshToken: false,
+            detectSessionInUrl: false
+          }
+        });
+      } catch (error) {
+        cachedClient = null;
+      }
+    }
+    return cachedClient;
+  }
+
+  function isConfigured() {
+    return Boolean(getClient());
+  }
+
+  async function rpc(functionName, parameters) {
+    if (!/^[a-z][a-z0-9_]+$/.test(functionName)) throw new Error("INVALID_RPC_NAME");
+    const client = getClient();
+    if (!client) throw new Error("SUPABASE_NOT_CONFIGURED");
+    const result = await client.rpc(functionName, parameters || {});
+    if (result && result.error) {
+      const error = new Error("SUPABASE_RPC_FAILED");
+      error.status = result.error.status || result.error.code || null;
+      throw error;
+    }
+    return result ? result.data : null;
   }
 
   window.MonParcoursSupabase = Object.freeze({
