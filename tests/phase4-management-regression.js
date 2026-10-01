@@ -114,6 +114,7 @@ const baseClasses = [{ id: "class-a", name: "1AA", class_code: "1AA", is_active:
 
   const singleStudents = await api.createStudentRecords(client, "class-a", ["Emma Janssens"], [], deterministicCrypto, ["K7QM4PX9RT6N"]);
   assert.equal(singleStudents[0].display_name, "Emma Janssens");
+  assert.equal(singleStudents[0].school_email, "janssensemma@camposturnhout.be");
   assert.equal(singleStudents[0].student_code, "K7QM4PX9RT6N");
   assert.equal(singleStudents[0].is_active, true);
 
@@ -186,8 +187,8 @@ const baseClasses = [{ id: "class-a", name: "1AA", class_code: "1AA", is_active:
   assert.equal(difficultRows[0][6], "variant");
   assert.doesNotMatch(JSON.stringify(difficultRows), /student_code|sync_token|submitted_answer/i);
 
-  const codeRows = api.studentCodeRows({ classes: [{ id: "class-a", name: "1AA", class_code: "1AA" }], students: [{ class_id: "class-a", display_name: "Emma", student_code: "K7QM4PX9RT6N" }] }, "class-a");
-  assert.deepEqual(JSON.parse(JSON.stringify(codeRows)), [["Emma", "1AA", "K7QM4PX9RT6N"]]);
+  const codeRows = api.studentCodeRows({ classes: [{ id: "class-a", name: "1AA", class_code: "1AA" }], students: [{ class_id: "class-a", display_name: "Emma", school_email: "janssensemma@camposturnhout.be", student_code: "K7QM4PX9RT6N" }] }, "class-a");
+  assert.deepEqual(JSON.parse(JSON.stringify(codeRows)), [["Emma", "1AA", "janssensemma@camposturnhout.be", "K7QM4PX9RT6N"]]);
   const csv = api.makeCsv(["Naam", "Waarde"], [["=2+2", "+SUM(A1:A2)"], ["-1", "@CMD"]]);
   assert.ok(csv.startsWith("\uFEFF"), "CSV moet een UTF-8 BOM bevatten");
   ["'=2+2", "'+SUM(A1:A2)", "'-1", "'@CMD"].forEach(function (safe) { assert.ok(csv.includes(safe), safe + " is niet tegen CSV-injection beschermd"); });

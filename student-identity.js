@@ -85,6 +85,44 @@
     return provider.getSyncCredential(stored);
   }
 
+  function normalizeSchoolEmail(value) {
+    return String(value || "").trim().toLowerCase();
+  }
+
+  function validSchoolEmail(value) {
+    return /^[^@\s]+@camposturnhout\.be$/.test(normalizeSchoolEmail(value));
+  }
+
+  registerProvider("school_email", {
+    readCredentials(form) {
+      const data = new FormData(form);
+      return { schoolEmail: data.get("school_email") };
+    },
+    async connect(credentials) {
+      const schoolEmail = normalizeSchoolEmail(credentials.schoolEmail);
+      if (!validSchoolEmail(schoolEmail)) throw new Error("INVALID_SCHOOL_EMAIL");
+      if (!window.MonParcoursSupabase || !window.MonParcoursSupabase.isConfigured()) throw new Error("SUPABASE_NOT_CONFIGURED");
+      const raw = await window.MonParcoursSupabase.rpc("verify_student_email", {
+        p_school_email: schoolEmail
+      });
+      const result = Array.isArray(raw) ? raw[0] : raw;
+      if (!result || result.verified !== true || !result.identity || !result.identity.subject) {
+        throw new Error("STUDENT_EMAIL_NOT_FOUND");
+      }
+      return {
+        provider: "school_email",
+        subject: result.identity.subject,
+        displayName: result.identity.display_name || "Leerling",
+        className: result.identity.class_name || "Klas",
+        verified: true,
+        verifiedAt: new Date().toISOString()
+      };
+    },
+    getSyncCredential(identity) {
+      return identity.subject;
+    }
+  });
+
   registerProvider("school_code", {
     readCredentials(form) {
       const data = new FormData(form);
@@ -126,6 +164,8 @@
     switchToLocal: switchToLocal,
     getSyncCredential: getSyncCredential,
     registerProvider: registerProvider,
+    normalizeSchoolEmail: normalizeSchoolEmail,
+    validSchoolEmail: validSchoolEmail,
     isRemoteAvailable: function () {
       return Boolean(window.MonParcoursSupabase && window.MonParcoursSupabase.isConfigured());
     }

@@ -35,7 +35,7 @@ const identityMessage = { textContent: "" };
 const submitButton = { disabled: false };
 const identityForm = {
   id: "identity-form",
-  values: { class_code: "KLAS1A", student_code: "K7M9-P4Q2" },
+  values: { identity_method: "school_code", class_code: "KLAS1A", student_code: "K7M9-P4Q2" },
   querySelector(selector) { return selector === 'button[type="submit"]' ? submitButton : null; },
   reset() { this.wasReset = true; }
 };
@@ -116,7 +116,7 @@ function waitForAsyncWork() {
   assert.equal(clickEvent.propagationStopped, true, "de gedelegeerde handler mag dezelfde klik niet dubbel verwerken");
   assert.equal(identityDialog.showCount, 1);
   assert.equal(identityFields.hidden, false);
-  assert.match(identityMessage.textContent, /Vul de codes in/);
+  assert.match(identityMessage.textContent, /schoolmail/);
 
   let prevented = false;
   documentListeners.submit[0]({ target: identityForm, preventDefault() { prevented = true; } });
@@ -142,7 +142,7 @@ function waitForAsyncWork() {
 
   verificationResult = [];
   windowObject.StudentIdentity.switchToLocal();
-  identityForm.values = { class_code: "KLAS1A", student_code: "K7M9-P4Q2" };
+  identityForm.values = { identity_method: "school_code", class_code: "KLAS1A", student_code: "K7M9-P4Q2" };
   documentListeners.submit[0]({ target: identityForm, preventDefault() {} });
   await waitForAsyncWork();
   assert.match(identityMessage.textContent, /combinatie werd niet gevonden/);

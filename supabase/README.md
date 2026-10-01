@@ -102,3 +102,16 @@ Er is geen Node-server of buildstap nodig. Supabase wordt rechtstreeks via bevei
 Voer na een back-up **handmatig** `phase4-management.sql` uit in de Supabase SQL Editor. Dit brengt de databasecontrole voor klascodes in lijn met de beheerinterface: 2–20 letters, cijfers of streepjes. Het script controleert eerst bestaande klascodes en stopt zonder wijziging wanneer een bestaande code niet aan de nieuwe regel voldoet.
 
 Deze migratie verandert geen grants, RLS-policies, leerling-RPC's, sessies of pogingen. De globale uniciteit van `class_code` blijft behouden, zodat leerlingkoppeling zonder extra school- of leerkrachtidentifier ondubbelzinnig blijft.
+
+## Fase 5A: schoolmailidentificatie
+
+Voer **handmatig** `phase5-school-email.sql` uit voordat je de fase-5A-frontend publiceert. Het script:
+
+- voegt nullable `school_email` en de gegenereerde lowercase-vergelijkingskolom toe;
+- accepteert uitsluitend `@camposturnhout.be`;
+- bewaakt globale uniciteit van de genormaliseerde schoolmail;
+- geeft authenticated leerkrachten via de bestaande RLS-policies toegang tot deze ene beheerkolom;
+- maakt de minimale publieke RPC `verify_student_email(text)` met private `SECURITY DEFINER`-implementatie;
+- wijzigt geen leerlingcodes, sync-tokens, leerling-ID's of historische resultaten.
+
+Deze login is eenvoudige identificatie, geen geverifieerde e-mailauthenticatie. Gebruik ze alleen voor dezelfde oefen- en syncmogelijkheden als de bestaande leerlingcode-login.

@@ -68,6 +68,16 @@ function handleClick(event) {
   if (action === "open-settings") settingsDialog.showModal();
   if (action === "open-identity") openIdentityDialog();
   if (action === "close-identity" && identityDialog) identityDialog.close();
+  if (action === "toggle-identity-method") setIdentityMethod(control.dataset.method || "school_email");
+  if (action === "switch-student-identity") {
+    if (window.StudentIdentity) window.StudentIdentity.switchToLocal();
+    const identityForm = document.querySelector("#identity-form");
+    if (identityForm) identityForm.reset();
+    setIdentityMethod("school_email");
+    updateIdentityUi();
+    const identityMessage = document.querySelector("#identity-message");
+    if (identityMessage) identityMessage.textContent = "De vorige leerling is afgekoppeld. Meld de nieuwe leerling aan.";
+  }
   if (action === "use-local-identity") {
     if (window.StudentIdentity) window.StudentIdentity.switchToLocal();
     updateIdentityUi();
@@ -136,6 +146,28 @@ function updateIdentityUi() {
   if (current) current.textContent = identity.provider === "local"
     ? "Je voortgang wordt alleen op dit toestel bewaard."
     : identity.displayName + " · " + identity.className;
+  const switchButton = document.querySelector("#switch-student-button");
+  if (switchButton) switchButton.hidden = identity.provider === "local";
+}
+
+function setIdentityMethod(method) {
+  const selected = method === "school_code" ? "school_code" : "school_email";
+  const form = document.querySelector("#identity-form");
+  const emailFields = document.querySelector("#school-email-fields");
+  const codeFields = document.querySelector("#school-code-fields");
+  if (form && form.elements && form.elements.identity_method) form.elements.identity_method.value = selected;
+  if (emailFields) {
+    emailFields.hidden = selected !== "school_email";
+    emailFields.querySelectorAll("input").forEach(function (input) { input.disabled = selected !== "school_email"; });
+  }
+  if (codeFields) {
+    codeFields.hidden = selected !== "school_code";
+    codeFields.querySelectorAll("input").forEach(function (input) { input.disabled = selected !== "school_code"; });
+  }
+  const message = document.querySelector("#identity-message");
+  if (message) message.textContent = selected === "school_email"
+    ? "Meld aan met je schoolmail. Je hebt geen klascode of leerlingcode nodig."
+    : "Vul de klascode en leerlingcode in die je van je leerkracht kreeg.";
 }
 
 function openIdentityDialog() {
@@ -145,28 +177,36 @@ function openIdentityDialog() {
   const message = document.querySelector("#identity-message");
   const remoteAvailable = Boolean(window.StudentIdentity && window.StudentIdentity.isRemoteAvailable());
   if (fields) fields.hidden = !remoteAvailable;
+  if (remoteAvailable) setIdentityMethod("school_email");
   if (message) message.textContent = remoteAvailable
-    ? "Vul de codes in die je van je leerkracht kreeg."
+    ? "Meld aan met je schoolmail. Je hebt geen klascode of leerlingcode nodig."
     : "De online koppeling is nog niet ingesteld. Je kunt de trainer volledig lokaal gebruiken.";
   identityDialog.showModal();
 }
 
 async function submitStudentIdentity(form) {
   const message = document.querySelector("#identity-message");
-  const submit = form.querySelector('button[type="submit"]');
+  const submits = form.querySelectorAll ? Array.from(form.querySelectorAll('button[type="submit"]')) : [form.querySelector('button[type="submit"]')].filter(Boolean);
+  const method = String(new FormData(form).get("identity_method") || "school_email");
+  const provider = method === "school_code" ? "school_code" : "school_email";
   if (!window.StudentIdentity) return;
-  if (submit) submit.disabled = true;
-  if (message) message.textContent = "Codes controleren…";
+  submits.forEach(function (submit) { submit.disabled = true; });
+  if (message) message.textContent = provider === "school_email" ? "Schoolmail controleren…" : "Codes controleren…";
   try {
-    await window.StudentIdentity.connectFromForm("school_code", form);
+    await window.StudentIdentity.connectFromForm(provider, form);
     updateIdentityUi();
-    if (message) message.textContent = "Gelukt. Nieuwe oefensessies worden veilig gesynchroniseerd.";
     form.reset();
+    setIdentityMethod("school_email");
+    if (message) message.textContent = "Gelukt. Nieuwe oefensessies worden veilig gesynchroniseerd.";
     if (window.MonParcoursSync) window.MonParcoursSync.scheduleFlush();
   } catch (error) {
     if (message) {
       if (error && error.message === "STUDENT_NOT_FOUND") {
         message.textContent = "Deze combinatie werd niet gevonden. Controleer beide codes.";
+      } else if (error && error.message === "STUDENT_EMAIL_NOT_FOUND") {
+        message.textContent = "Deze schoolmail werd niet gevonden of de leerling is niet actief. Controleer het adres of gebruik je leerlingcode.";
+      } else if (error && error.message === "INVALID_SCHOOL_EMAIL") {
+        message.textContent = "Gebruik een geldig schoolmailadres dat eindigt op @camposturnhout.be.";
       } else if (error && error.message === "INVALID_STUDENT_CODES") {
         message.textContent = "Controleer de codes: de klascode heeft minstens 3 tekens en de leerlingcode minstens 8.";
       } else if (error && error.message === "SUPABASE_NOT_CONFIGURED") {
@@ -176,7 +216,7 @@ async function submitStudentIdentity(form) {
       }
     }
   } finally {
-    if (submit) submit.disabled = false;
+    submits.forEach(function (submit) { submit.disabled = false; });
   }
 }
 
@@ -489,6 +529,7 @@ function beginSession(questions, mode, exerciseKey, title, metadata) {
     client_session_id: createClientId(),
     identity_provider: identity.provider,
     identity_subject: identity.subject,
+    identity_verified: identity.verified === true,
     course_path: sessionPath,
     sync_attempts: [],
     results: [],
@@ -659,7 +700,7 @@ function finishSession() {
 
 function recordSyncAttempt(question, correct) {
   const session = state.session;
-  if (!session || session.identity_provider !== "school_code") return;
+  if (!session || !session.identity_verified) return;
   const stableIds = question.stableItemIds || (question.stableItemId ? [question.stableItemId] : []);
   if (!stableIds.length) return;
   const item = question.item || {};
@@ -692,7 +733,7 @@ function recordSyncAttempt(question, correct) {
 
 function syncSessionSnapshot() {
   const session = state.session;
-  if (!session || session.identity_provider !== "school_code" || !window.MonParcoursSync) return;
+  if (!session || !session.identity_verified || !window.MonParcoursSync) return;
   const path = session.course_path;
   window.MonParcoursSync.enqueueSession({
     client_session_id: session.client_session_id,
@@ -732,7 +773,7 @@ function renderSummary() {
   const coverageText = session.question_count === session.available_count
     ? "Je oefende alle " + session.available_count + " beschikbare items."
     : "Je oefende " + session.question_count + " van de " + session.available_count + " beschikbare items.";
-  const storageNote = session.identity_provider === "school_code"
+  const storageNote = session.identity_verified
     ? "Je voortgang is lokaal bewaard. Online synchronisatie gebeurt automatisch."
     : "Je voortgang is lokaal bewaard op dit toestel.";
 

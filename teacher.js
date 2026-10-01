@@ -11,7 +11,7 @@
   });
   const MANAGEMENT_COLUMNS = Object.freeze({
     classes: "id,name,class_code,is_active,created_at,updated_at",
-    students: "id,class_id,display_name,student_code,is_active,created_at,updated_at"
+    students: "id,class_id,display_name,school_email,student_code,is_active,created_at,updated_at"
   });
   const STUDENT_CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
@@ -50,6 +50,29 @@
     return String(value || "").trim().toUpperCase();
   }
 
+  function normalizeSchoolEmail(value) {
+    return String(value || "").trim().toLowerCase();
+  }
+
+  function validateSchoolEmail(value, allowEmpty) {
+    const email = normalizeSchoolEmail(value);
+    if (!email && allowEmpty) return { valid: true, email: null };
+    if (!/^[^@\s]+@camposturnhout\.be$/.test(email) || email.length > 254) {
+      return { valid: false, message: "Gebruik een geldig adres dat eindigt op @camposturnhout.be." };
+    }
+    return { valid: true, email: email };
+  }
+
+  function suggestSchoolEmail(displayName) {
+    const parts = String(displayName || "").trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().split(/\s+/).map(function (part) {
+      return part.replace(/[^a-z0-9]/g, "");
+    }).filter(Boolean);
+    if (parts.length < 2) return "";
+    const familyName = parts[parts.length - 1];
+    const givenNames = parts.slice(0, -1).join("");
+    return familyName + givenNames + "@camposturnhout.be";
+  }
+
   function validateClassInput(name, code) {
     const normalizedName = String(name || "").trim();
     const normalizedCode = normalizeClassCode(code);
@@ -79,6 +102,21 @@
     return String(value || "").split(/\r?\n/).map(function (name) { return name.trim(); }).filter(function (name) {
       const key = name.toLocaleLowerCase("nl-BE");
       if (!name || name.length > 80 || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }
+
+  function parseBulkStudents(value) {
+    const seen = new Set();
+    return String(value || "").split(/\r?\n/).map(function (line) {
+      const parts = line.split(";");
+      const name = String(parts.shift() || "").trim();
+      const suppliedEmail = normalizeSchoolEmail(parts.join(";"));
+      return { name: name, schoolEmail: suppliedEmail || suggestSchoolEmail(name) };
+    }).filter(function (student) {
+      const key = student.name.toLocaleLowerCase("nl-BE");
+      if (!student.name || student.name.length > 80 || seen.has(key)) return false;
       seen.add(key);
       return true;
     });
@@ -363,7 +401,7 @@
     management.classes.forEach(function (row) { classById[row.id] = row; });
     return management.students.filter(function (student) { return !classId || student.class_id === classId; }).map(function (student) {
       const classRow = classById[student.class_id];
-      return [student.display_name || "Naamloze leerling", classRow && classRow.class_code || "", student.student_code || ""];
+      return [student.display_name || "Naamloze leerling", classRow && classRow.class_code || "", student.school_email || "", student.student_code || ""];
     });
   }
 
@@ -439,18 +477,33 @@
     return result;
   }
 
-  async function createStudentRecords(client, classId, names, existingCodes, cryptoObject, preferredCodes) {
-    const cleanNames = asArray(names).map(function (name) { return String(name || "").trim(); }).filter(Boolean);
+  async function createStudentRecords(client, classId, names, existingCodes, cryptoObject, preferredCodes, existingEmails) {
+    const students = asArray(names).map(function (entry) {
+      if (entry && typeof entry === "object") return { name: String(entry.name || "").trim(), schoolEmail: normalizeSchoolEmail(entry.schoolEmail) };
+      const name = String(entry || "").trim();
+      return { name: name, schoolEmail: suggestSchoolEmail(name) };
+    }).filter(function (student) { return Boolean(student.name); });
     if (!classId) throw new Error("Kies eerst een klas.");
-    if (!cleanNames.length) throw new Error("Geef minstens één leerlingnaam.");
-    if (cleanNames.some(function (name) { return name.length > 80; })) throw new Error("Een leerlingnaam mag maximaal 80 tekens bevatten.");
+    if (!students.length) throw new Error("Geef minstens één leerlingnaam.");
+    if (students.some(function (student) { return student.name.length > 80; })) throw new Error("Een leerlingnaam mag maximaal 80 tekens bevatten.");
+    students.forEach(function (student) {
+      const validation = validateSchoolEmail(student.schoolEmail, true);
+      if (!validation.valid) throw new Error(student.name + ": " + validation.message);
+      student.schoolEmail = validation.email;
+    });
+    const usedEmails = new Set(asArray(existingEmails).map(normalizeSchoolEmail).filter(Boolean));
+    students.forEach(function (student) {
+      if (!student.schoolEmail) return;
+      if (usedEmails.has(student.schoolEmail)) throw new Error("Deze schoolmail bestaat al: " + student.schoolEmail);
+      usedEmails.add(student.schoolEmail);
+    });
     const used = new Set(asArray(existingCodes).map(function (value) { return String(value).toUpperCase(); }));
-    let codes = asArray(preferredCodes).slice(0, cleanNames.length);
-    const preferredValid = codes.length === cleanNames.length && codes.every(function (code) {
+    let codes = asArray(preferredCodes).slice(0, students.length);
+    const preferredValid = codes.length === students.length && codes.every(function (code) {
       return /^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{12,64}$/.test(String(code)) && !used.has(String(code));
     });
-    if (!preferredValid) codes = generateUniqueStudentCodes(cleanNames.length, existingCodes, cryptoObject);
-    const records = cleanNames.map(function (name, index) { return { class_id: classId, display_name: name, student_code: codes[index], is_active: true }; });
+    if (!preferredValid) codes = generateUniqueStudentCodes(students.length, existingCodes, cryptoObject);
+    const records = students.map(function (student, index) { return { class_id: classId, display_name: student.name, school_email: student.schoolEmail, student_code: codes[index], is_active: true }; });
     const result = await client.from("students").insert(records).select(MANAGEMENT_COLUMNS.students);
     if (result.error) throw result.error;
     return asArray(result.data);
@@ -467,6 +520,11 @@
     if (Object.prototype.hasOwnProperty.call(patch, "student_code")) {
       if (!/^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{12,64}$/.test(String(patch.student_code || ""))) throw new Error("De nieuwe leerlingcode is ongeldig.");
       update.student_code = patch.student_code;
+    }
+    if (Object.prototype.hasOwnProperty.call(patch, "school_email")) {
+      const validation = validateSchoolEmail(patch.school_email, true);
+      if (!validation.valid) throw new Error(validation.message);
+      update.school_email = validation.email;
     }
     const result = await client.from("students").update(update).eq("id", studentId).select(MANAGEMENT_COLUMNS.students).single();
     if (result.error) throw result.error;
@@ -582,12 +640,12 @@
   function renderCreatedStudents(classRow) {
     if (!state.management.createdStudents.length || !classRow) return "";
     const cards = state.management.createdStudents.map(function (student) {
-      return '<div class="share-card"><h3>' + escapeHtml(student.display_name) + '</h3><p>Klascode: <span class="code-value">' + escapeHtml(classRow.class_code) + '</span><br>Leerlingcode: <span class="code-value">' + escapeHtml(student.student_code) + '</span></p><div class="share-actions"><button class="small-button" type="button" data-action="copy-student-data" data-id="' + escapeHtml(student.id) + '">Kopieer gegevens</button></div></div>';
+      return '<div class="share-card"><h3>' + escapeHtml(student.display_name) + '</h3><p>Klascode: <span class="code-value">' + escapeHtml(classRow.class_code) + '</span><br>Schoolmail: <strong>' + escapeHtml(student.school_email || "Nog niet ingesteld") + '</strong><br>Fallback-leerlingcode: <span class="code-value">' + escapeHtml(student.student_code) + '</span></p><div class="share-actions"><button class="small-button" type="button" data-action="copy-student-data" data-id="' + escapeHtml(student.id) + '">Kopieer gegevens</button></div></div>';
     }).join("");
     const bulkRows = state.management.createdStudents.map(function (student) {
-      return '<tr><td>' + escapeHtml(student.display_name) + '</td><td><span class="code-value">' + escapeHtml(classRow.class_code) + '</span></td><td><span class="code-value">' + escapeHtml(student.student_code) + '</span></td><td><button class="small-button" type="button" data-action="copy-student-data" data-id="' + escapeHtml(student.id) + '">Kopieer gegevens</button></td></tr>';
+      return '<tr><td>' + escapeHtml(student.display_name) + '</td><td><span class="code-value">' + escapeHtml(classRow.class_code) + '</span></td><td>' + escapeHtml(student.school_email || "Nog niet ingesteld") + '</td><td><span class="code-value">' + escapeHtml(student.student_code) + '</span></td><td><button class="small-button" type="button" data-action="copy-student-data" data-id="' + escapeHtml(student.id) + '">Kopieer gegevens</button></td></tr>';
     }).join("");
-    const result = state.management.createdStudents.length === 1 ? '<div class="management-stack">' + cards + '</div>' : '<div class="table-wrap"><table><thead><tr><th>Leerling</th><th>Klascode</th><th>Leerlingcode</th><th>Actie</th></tr></thead><tbody>' + bulkRows + '</tbody></table></div>';
+    const result = state.management.createdStudents.length === 1 ? '<div class="management-stack">' + cards + '</div>' : '<div class="table-wrap"><table><thead><tr><th>Leerling</th><th>Klascode</th><th>Schoolmail</th><th>Fallbackcode</th><th>Actie</th></tr></thead><tbody>' + bulkRows + '</tbody></table></div>';
     return '<section class="section-block"><div class="section-heading"><div><h2>Nieuwe leerlinggegevens</h2><p>Deel deze gegevens via een veilig kanaal.</p></div><button class="button button-secondary" type="button" data-action="export-created-codes">Download als CSV</button></div><p class="privacy-warning"><strong>Behandel leerlingcodes als wachtwoorden.</strong> Deel ze alleen met de juiste leerling.</p>' + result + '</section>';
   }
 
@@ -610,12 +668,12 @@
         return true;
       });
       const studentRows = shownStudents.map(function (student) {
-        return '<tr><td><strong>' + escapeHtml(student.display_name || "Naamloze leerling") + '</strong><br><span class="pill">' + (student.is_active === false ? "Inactief" : "Actief") + '</span></td><td><span class="code-value">' + escapeHtml(student.student_code) + '</span></td><td><div class="row-actions"><button class="small-button" type="button" data-action="copy-student-code" data-id="' + escapeHtml(student.id) + '">Kopieer leerlingcode</button><button class="small-button warning" type="button" data-action="regenerate-student-code" data-id="' + escapeHtml(student.id) + '">Nieuwe code genereren</button><button class="small-button" type="button" data-action="toggle-student-active" data-id="' + escapeHtml(student.id) + '">' + (student.is_active === false ? "Activeren" : "Deactiveren") + '</button></div></td></tr>';
+        return '<tr><td><strong>' + escapeHtml(student.display_name || "Naamloze leerling") + '</strong><br><span class="pill">' + (student.is_active === false ? "Inactief" : "Actief") + '</span></td><td><strong>' + escapeHtml(student.school_email || "Nog geen schoolmail") + '</strong><div class="row-actions"><button class="small-button" type="button" data-action="edit-student-email" data-id="' + escapeHtml(student.id) + '">' + (student.school_email ? "Schoolmail aanpassen" : "Schoolmail toevoegen") + '</button></div></td><td><details><summary>Fallbackcode tonen</summary><span class="code-value">' + escapeHtml(student.student_code) + '</span><div class="row-actions"><button class="small-button" type="button" data-action="copy-student-code" data-id="' + escapeHtml(student.id) + '">Kopieer code</button><button class="small-button warning" type="button" data-action="regenerate-student-code" data-id="' + escapeHtml(student.id) + '">Nieuwe code</button></div></details></td><td><button class="small-button" type="button" data-action="toggle-student-active" data-id="' + escapeHtml(student.id) + '">' + (student.is_active === false ? "Activeren" : "Deactiveren") + '</button></td></tr>';
       }).join("");
       detail = '<div class="management-stack"><section class="panel"><h2>' + escapeHtml(selectedClass.name) + '</h2><form class="management-form" data-form="update-class"><input type="hidden" name="class_id" value="' + escapeHtml(selectedClass.id) + '"><label><span>Klasnaam</span><input name="name" maxlength="80" value="' + escapeHtml(selectedClass.name) + '" required></label><label><span>Klascode</span><input value="' + escapeHtml(selectedClass.class_code) + '" readonly></label><label><span>Status</span><select name="is_active"><option value="true"' + (selectedClass.is_active === false ? "" : " selected") + '>Actief</option><option value="false"' + (selectedClass.is_active === false ? " selected" : "") + '>Inactief</option></select></label><button class="button button-primary" type="submit">Klas bijwerken</button><p class="muted">Deactiveren bewaart alle leerlingen en historische resultaten.</p></form></section>' +
-        '<section class="panel"><h3>Leerling toevoegen</h3><form class="management-form" data-form="add-student"><input type="hidden" name="class_id" value="' + escapeHtml(selectedClass.id) + '"><label><span>Naam</span><input name="display_name" maxlength="80" required></label><label><span>Automatisch gegenereerde code</span><input name="generated_code" value="' + escapeHtml(management.generatedCode) + '" readonly></label><button class="button button-primary" type="submit">Leerling toevoegen</button></form></section>' +
-        '<section class="panel"><h3>Meerdere leerlingen toevoegen</h3><form class="management-form" data-form="bulk-students"><input type="hidden" name="class_id" value="' + escapeHtml(selectedClass.id) + '"><label><span>Eén leerling per regel</span><textarea name="names" placeholder="Emma Janssens&#10;Noah Peeters&#10;Rube Jacobs" required></textarea></label><button class="button button-primary" type="submit">Leerlingen toevoegen</button></form></section>' +
-        '<section class="panel"><div class="section-heading"><div><h3>Leerlingen</h3><p>' + allStudents.length + ' in deze klas</p></div><div class="export-actions"><select id="managementStudentStatus" aria-label="Filter leerlingstatus"><option value="active"' + (management.studentStatus === "active" ? " selected" : "") + '>Actief</option><option value="inactive"' + (management.studentStatus === "inactive" ? " selected" : "") + '>Inactief</option><option value="all"' + (management.studentStatus === "all" ? " selected" : "") + '>Alle</option></select><button class="small-button" type="button" data-action="export-codes" data-id="' + escapeHtml(selectedClass.id) + '">Leerlingcodes CSV</button></div></div><p class="privacy-warning"><strong>Behandel leerlingcodes als wachtwoorden.</strong> Deze codes staan bewust alleen in Beheer.</p>' + (studentRows ? '<div class="table-wrap"><table><thead><tr><th>Leerling</th><th>Leerlingcode</th><th>Acties</th></tr></thead><tbody>' + studentRows + '</tbody></table></div>' : emptyState("Geen leerlingen in deze selectie", "Pas de statusfilter aan of voeg leerlingen toe.")) + '</section></div>';
+        '<section class="panel"><h3>Leerling toevoegen</h3><form class="management-form" data-form="add-student"><input type="hidden" name="class_id" value="' + escapeHtml(selectedClass.id) + '"><label><span>Naam</span><input name="display_name" maxlength="80" required></label><label><span>Schoolmail — controleer het voorstel</span><input name="school_email" type="email" placeholder="achternaamvoornaam@camposturnhout.be"></label><label><span>Automatisch gegenereerde fallbackcode</span><input name="generated_code" value="' + escapeHtml(management.generatedCode) + '" readonly></label><button class="button button-primary" type="submit">Leerling toevoegen</button></form></section>' +
+        '<section class="panel"><h3>Meerdere leerlingen toevoegen</h3><form class="management-form" data-form="bulk-students"><input type="hidden" name="class_id" value="' + escapeHtml(selectedClass.id) + '"><label><span>Eén leerling per regel: Naam of Naam;schoolmail</span><textarea name="names" placeholder="Emma Janssens;janssensemma@camposturnhout.be&#10;Noah Peeters" required></textarea></label><div class="share-actions"><button class="button button-secondary" type="button" data-action="preview-bulk-emails">E-mailvoorstellen invullen</button><button class="button button-primary" type="submit">Leerlingen toevoegen</button></div></form></section>' +
+        '<section class="panel"><div class="section-heading"><div><h3>Leerlingen</h3><p>' + allStudents.length + ' in deze klas</p></div><div class="export-actions"><select id="managementStudentStatus" aria-label="Filter leerlingstatus"><option value="active"' + (management.studentStatus === "active" ? " selected" : "") + '>Actief</option><option value="inactive"' + (management.studentStatus === "inactive" ? " selected" : "") + '>Inactief</option><option value="all"' + (management.studentStatus === "all" ? " selected" : "") + '>Alle</option></select><button class="small-button" type="button" data-action="export-codes" data-id="' + escapeHtml(selectedClass.id) + '">Login- en fallbackcodes CSV</button></div></div><p class="privacy-warning"><strong>Schoolmail is een persoonsgegeven; behandel de fallbackcode als een wachtwoord.</strong> Deze gegevens staan bewust alleen in Beheer.</p>' + (studentRows ? '<div class="table-wrap"><table><thead><tr><th>Leerling</th><th>Schoolmail</th><th>Fallbackcode</th><th>Status</th></tr></thead><tbody>' + studentRows + '</tbody></table></div>' : emptyState("Geen leerlingen in deze selectie", "Pas de statusfilter aan of voeg leerlingen toe.")) + '</section></div>';
     }
     return breadcrumbs([{ label: "Dashboard", action: "view-dashboard" }, { label: "Beheer" }]) + '<div class="page-heading"><div><p class="eyebrow">Administratie</p><h2>Klassen beheren</h2><p class="muted">Maak klassen en leerlingen aan zonder historische resultaten te verwijderen.</p></div></div><p id="managementMessage" class="management-message' + (management.messageIsError ? " error" : "") + '" aria-live="polite">' + escapeHtml(management.message) + '</p><div class="management-grid"><aside class="management-stack"><section class="panel"><h3>Nieuwe klas</h3><form class="management-form" data-form="create-class"><label><span>Klasnaam</span><input name="name" maxlength="80" placeholder="1AA" required></label><label><span>Klascode</span><input name="class_code" minlength="2" maxlength="20" pattern="[A-Za-z0-9-]{2,20}" placeholder="1AA" required></label><button class="button button-primary" type="submit">Klas aanmaken</button></form></section><section class="panel"><h3>Mijn klassen</h3><div class="management-class-list">' + (classList || emptyState("Nog geen klassen", "Maak hierboven je eerste klas aan.")) + '</div></section></aside><div>' + detail + renderCreatedStudents(selectedClass) + '</div></div>';
   }
@@ -835,15 +893,17 @@
         await reloadAfterManagementMutation();
       } else if (form.dataset.form === "add-student") {
         const existingCodes = state.management.students.map(function (student) { return student.student_code; });
-        const createdStudents = await createStudentRecords(state.client, String(values.get("class_id")), [values.get("display_name")], existingCodes, window.crypto, [values.get("generated_code")]);
+        const existingEmails = state.management.students.map(function (student) { return student.school_email; });
+        const createdStudents = await createStudentRecords(state.client, String(values.get("class_id")), [{ name: values.get("display_name"), schoolEmail: values.get("school_email") }], existingCodes, window.crypto, [values.get("generated_code")], existingEmails);
         state.management.message = "Leerling toegevoegd. Deel de code via een veilig kanaal.";
         await reloadAfterManagementMutation(createdStudents);
       } else if (form.dataset.form === "bulk-students") {
-        const names = parseBulkNames(values.get("names"));
-        if (!names.length) throw new Error("Geef minstens één geldige leerlingnaam, één per regel.");
-        if (names.length > 200) throw new Error("Voeg maximaal 200 leerlingen per keer toe.");
+        const students = parseBulkStudents(values.get("names"));
+        if (!students.length) throw new Error("Geef minstens één geldige leerlingnaam, één per regel.");
+        if (students.length > 200) throw new Error("Voeg maximaal 200 leerlingen per keer toe.");
         const existingCodes = state.management.students.map(function (student) { return student.student_code; });
-        const createdStudents = await createStudentRecords(state.client, String(values.get("class_id")), names, existingCodes, window.crypto);
+        const existingEmails = state.management.students.map(function (student) { return student.school_email; });
+        const createdStudents = await createStudentRecords(state.client, String(values.get("class_id")), students, existingCodes, window.crypto, null, existingEmails);
         state.management.message = createdStudents.length + " leerlingen toegevoegd.";
         await reloadAfterManagementMutation(createdStudents);
       }
@@ -922,14 +982,59 @@
       renderCurrent();
       return;
     }
+    if (action === "preview-bulk-emails") {
+      const form = target.closest("form");
+      const textarea = form && form.querySelector('textarea[name="names"]');
+      if (textarea) {
+        const students = parseBulkStudents(textarea.value);
+        textarea.value = students.map(function (student) { return student.name + ";" + (student.schoolEmail || ""); }).join("\n");
+        state.management.message = "E-mailvoorstellen ingevuld. Controleer en pas uitzonderingen aan vóór je opslaat.";
+        state.management.messageIsError = false;
+        const message = document.querySelector("#managementMessage");
+        if (message) message.textContent = state.management.message;
+      }
+      return;
+    }
     if (action === "copy-student-code" || action === "copy-student-data") {
       const managedStudent = state.management.students.find(function (row) { return row.id === id; });
       const managedClass = managedStudent && state.management.classes.find(function (row) { return row.id === managedStudent.class_id; });
       if (managedStudent) {
-        const copyValue = action === "copy-student-code" ? managedStudent.student_code : (managedStudent.display_name || "Naamloze leerling") + "\nKlascode: " + (managedClass && managedClass.class_code || "") + "\nLeerlingcode: " + managedStudent.student_code;
+        const copyValue = action === "copy-student-code" ? managedStudent.student_code : (managedStudent.display_name || "Naamloze leerling") + "\nKlascode: " + (managedClass && managedClass.class_code || "") + "\nSchoolmail: " + (managedStudent.school_email || "Nog niet ingesteld") + "\nFallback-leerlingcode: " + managedStudent.student_code;
         await copyText(copyValue);
         state.management.message = action === "copy-student-code" ? "Leerlingcode gekopieerd." : "Leerlinggegevens gekopieerd.";
         state.management.messageIsError = false;
+        renderCurrent();
+      }
+      return;
+    }
+    if (action === "edit-student-email") {
+      const managedStudent = state.management.students.find(function (row) { return row.id === id; });
+      if (!managedStudent) return;
+      const proposed = managedStudent.school_email || suggestSchoolEmail(managedStudent.display_name);
+      const value = window.prompt("Schoolmail voor " + (managedStudent.display_name || "deze leerling") + ". Laat leeg om te verwijderen.", proposed);
+      if (value === null) return;
+      const validation = validateSchoolEmail(value, true);
+      if (!validation.valid) {
+        state.management.message = validation.message;
+        state.management.messageIsError = true;
+        renderCurrent();
+        return;
+      }
+      const duplicate = validation.email && state.management.students.some(function (row) { return row.id !== id && normalizeSchoolEmail(row.school_email) === validation.email; });
+      if (duplicate) {
+        state.management.message = "Deze schoolmail is al aan een andere leerling gekoppeld.";
+        state.management.messageIsError = true;
+        renderCurrent();
+        return;
+      }
+      try {
+        await updateStudentRecord(state.client, id, { school_email: validation.email });
+        state.management.message = validation.email ? "Schoolmail opgeslagen." : "Schoolmail verwijderd; leerlingcode-login blijft beschikbaar.";
+        state.management.messageIsError = false;
+        await reloadAfterManagementMutation();
+      } catch (error) {
+        state.management.message = friendlyManagementError(error);
+        state.management.messageIsError = true;
         renderCurrent();
       }
       return;
@@ -968,7 +1073,7 @@
     if (action === "export-codes" || action === "export-created-codes") {
       const selectedClass = state.management.classes.find(function (row) { return row.id === state.management.selectedClassId; });
       const rows = action === "export-created-codes" ? studentCodeRows({ classes: state.management.classes, students: state.management.createdStudents }, selectedClass && selectedClass.id) : studentCodeRows(state.management, id);
-      downloadCsv("leerlingcodes-" + safeFilename(selectedClass && selectedClass.name || "klassen") + ".csv", ["Leerlingnaam", "Klascode", "Leerlingcode"], rows);
+      downloadCsv("leerlingcodes-" + safeFilename(selectedClass && selectedClass.name || "klassen") + ".csv", ["Leerlingnaam", "Klascode", "Schoolmail", "Fallback-leerlingcode"], rows);
       return;
     }
     renderCurrent();
@@ -994,6 +1099,20 @@
     if (event.target.id === "managementStudentStatus") {
       state.management.studentStatus = event.target.value;
       renderCurrent();
+    }
+  }
+
+  function handleContentInput(event) {
+    const form = event.target.closest && event.target.closest('form[data-form="add-student"]');
+    if (!form) return;
+    const email = form.querySelector('input[name="school_email"]');
+    if (!email) return;
+    if (event.target.name === "school_email") {
+      email.dataset.manuallyEdited = "true";
+      return;
+    }
+    if (event.target.name === "display_name" && email.dataset.manuallyEdited !== "true") {
+      email.value = suggestSchoolEmail(event.target.value);
     }
   }
 
@@ -1030,6 +1149,7 @@
     document.querySelector("#dashboardContent").addEventListener("click", handleContentClick);
     document.querySelector("#dashboardContent").addEventListener("submit", handleManagementSubmit);
     document.querySelector("#dashboardContent").addEventListener("change", handleContentChange);
+    document.querySelector("#dashboardContent").addEventListener("input", handleContentInput);
     document.querySelector("#teacherNav").addEventListener("click", handleContentClick);
     if (!state.client) {
       document.querySelector("#loginMessage").textContent = "Supabase is niet geconfigureerd. De leerlingentool blijft wel lokaal bruikbaar.";
@@ -1062,10 +1182,14 @@
     sessionStats: sessionStats,
     percentage: percentage,
     normalizeClassCode: normalizeClassCode,
+    normalizeSchoolEmail: normalizeSchoolEmail,
+    validateSchoolEmail: validateSchoolEmail,
+    suggestSchoolEmail: suggestSchoolEmail,
     validateClassInput: validateClassInput,
     generateStudentCode: generateStudentCode,
     generateUniqueStudentCodes: generateUniqueStudentCodes,
     parseBulkNames: parseBulkNames,
+    parseBulkStudents: parseBulkStudents,
     protectCsvValue: protectCsvValue,
     makeCsv: makeCsv,
     classOverviewRows: classOverviewRows,

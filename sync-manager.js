@@ -47,14 +47,14 @@
   }
 
   function canSyncEntry(entry, identity) {
-    return identity && identity.provider === "school_code" && entry.identity_provider === identity.provider && entry.identity_subject === identity.subject;
+    return identity && identity.verified === true && identity.provider !== "local" && entry.identity_subject === identity.subject;
   }
 
   async function flush() {
     if (flushing || !window.MonParcoursSupabase || !window.MonParcoursSupabase.isConfigured() || !window.StudentIdentity) return { sent: 0, pending: readQueue().length };
     const identity = window.StudentIdentity.getCurrentStudentIdentity();
     const credential = window.StudentIdentity.getSyncCredential();
-    if (!credential || identity.provider !== "school_code") return { sent: 0, pending: readQueue().length };
+    if (!credential || !identity.verified || identity.provider === "local") return { sent: 0, pending: readQueue().length };
     flushing = true;
     let sent = 0;
     try {

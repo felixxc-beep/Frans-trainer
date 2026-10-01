@@ -7,7 +7,7 @@
     <meta name="theme-color" content="#12372a">
     <title>Mon parcours | Univers français 1</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='15' fill='%2312372a'/%3E%3Cpath d='M18 16h28v9H28v8h15v9H28v14H18z' fill='%23fff7df'/%3E%3Ccircle cx='48' cy='49' r='7' fill='%23f4b942'/%3E%3C/svg%3E">
-    <link rel="stylesheet" href="./styles.css?v=20260930-1">
+    <link rel="stylesheet" href="./styles.css?v=20261001-2">
   </head>
   <body>
     <header class="topbar">
@@ -49,12 +49,23 @@
         </div>
         <p id="identity-current" class="identity-current"></p>
         <div id="identity-fields" class="identity-fields">
-          <label><span>Klascode</span><input name="class_code" type="text" maxlength="32" autocomplete="off" required></label>
-          <label><span>Leerlingcode</span><input name="student_code" type="text" minlength="8" maxlength="64" autocomplete="off" required></label>
-          <p class="privacy-note">Er wordt geen wachtwoord of privé-e-mailadres gevraagd.</p>
-          <button class="button button-primary" type="submit">Koppelen / wisselen</button>
+          <input name="identity_method" type="hidden" value="school_email">
+          <div id="school-email-fields" class="identity-method-fields">
+            <label><span>Schoolmail</span><input name="school_email" type="email" inputmode="email" autocomplete="username" placeholder="achternaamvoornaam@camposturnhout.be" required></label>
+            <p class="privacy-note">Je schoolmail wordt alleen gebruikt om je bestaande leerlingprofiel te vinden en wordt niet lokaal bewaard.</p>
+            <button class="button button-primary" type="submit">Aanmelden</button>
+            <button class="text-button" type="button" data-action="toggle-identity-method" data-method="school_code">Aanmelden met leerlingcode</button>
+          </div>
+          <div id="school-code-fields" class="identity-method-fields" hidden>
+            <label><span>Klascode</span><input name="class_code" type="text" maxlength="20" autocomplete="off" required disabled></label>
+            <label><span>Leerlingcode</span><input name="student_code" type="text" minlength="8" maxlength="64" autocomplete="off" required disabled></label>
+            <p class="privacy-note">Gebruik deze fallback als je nog geen schoolmail aan je profiel hebt gekoppeld.</p>
+            <button class="button button-primary" type="submit">Aanmelden met leerlingcode</button>
+            <button class="text-button" type="button" data-action="toggle-identity-method" data-method="school_email">Aanmelden met schoolmail</button>
+          </div>
         </div>
         <p id="identity-message" class="identity-message" aria-live="polite"></p>
+        <button id="switch-student-button" class="text-button" type="button" data-action="switch-student-identity" hidden>Wissel leerling</button>
         <button class="text-button" type="button" data-action="use-local-identity">Gebruik alleen lokale voortgang</button>
       </form>
     </dialog>
@@ -63,8 +74,8 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
     <script src="./config.js?v=20261001-3" defer></script>
     <script src="./supabase-client.js?v=20261001-4" defer></script>
-    <script src="./student-identity.js?v=20261001-3" defer></script>
-    <script src="./sync-manager.js?v=20261001-3" defer></script>
-    <script src="./app.js?v=20261001-3" defer></script>
+    <script src="./student-identity.js?v=20261001-4" defer></script>
+    <script src="./sync-manager.js?v=20261001-4" defer></script>
+    <script src="./app.js?v=20261001-4" defer></script>
   </body>
 </html>
