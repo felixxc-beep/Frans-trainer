@@ -145,7 +145,8 @@ setImmediate(function () {
   assert.match(html, /src="\.\/app\.js(?:\?[^"#]+)?"/);
   assert.match(html, /href="\.\/styles\.css(?:\?[^"#]+)?"/);
   assert.match(source, /const DATA_URL = "\.\/data\/course\.json(?:\?[^"#]+)?"/);
-  assert.equal(/(?:src|href)="https?:\/\//.test(html), false);
+  const externalAssets = Array.from(html.matchAll(/(?:src|href)="(https?:\/\/[^"]+)"/g)).map(function (match) { return match[1]; });
+  assert.deepEqual(externalAssets, ["https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"]);
   assert.equal(/\b(?:WebSocket|XMLHttpRequest|EventSource)\b/.test(source), false);
   assert.ok(fs.existsSync(".nojekyll"));
 

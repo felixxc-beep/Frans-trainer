@@ -95,4 +95,10 @@ Er is geen Node-server of buildstap nodig. Supabase wordt rechtstreeks via bevei
 - Een leerlingtoken kan resultaten insturen, maar geen resultaten uitlezen.
 - Getypte antwoorden worden alleen lokaal verwerkt en nooit in `practice_attempts` opgeslagen.
 - Ingelogde leerkrachten kunnen via RLS alleen klassen, leerlingen en resultaten zien waarvan `classes.owner_id` hun eigen Auth-UUID is.
-- Fase 2 maakt nog geen `teacher.html`; die interface hoort bij fase 3.
+- Het leerkrachtendashboard gebruikt voor beheer uitsluitend de bestaande `authenticated` grants en RLS-policies; resultaat-tabellen blijven read-only.
+
+## Fase 4: eenmalige klascode-migratie
+
+Voer na een back-up **handmatig** `phase4-management.sql` uit in de Supabase SQL Editor. Dit brengt de databasecontrole voor klascodes in lijn met de beheerinterface: 2–20 letters, cijfers of streepjes. Het script controleert eerst bestaande klascodes en stopt zonder wijziging wanneer een bestaande code niet aan de nieuwe regel voldoet.
+
+Deze migratie verandert geen grants, RLS-policies, leerling-RPC's, sessies of pogingen. De globale uniciteit van `class_code` blijft behouden, zodat leerlingkoppeling zonder extra school- of leerkrachtidentifier ondubbelzinnig blijft.

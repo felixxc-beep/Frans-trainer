@@ -14,8 +14,13 @@ assert.ok(fs.existsSync(path.join(root, ".nojekyll")), ".nojekyll ontbreekt");
 
 const stylesheet = html.match(/<link[^>]+rel="stylesheet"[^>]+href="([^"]+)"/)[1];
 const appScripts = Array.from(html.matchAll(/<script[^>]+src="([^"]+)"/g)).map(function (match) { return match[1]; });
+const supabaseCdn = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2";
+const localScripts = appScripts.filter(function (appScript) { return appScript !== supabaseCdn; });
 const dataUrl = script.match(/const DATA_URL = "([^"]+)"/)[1];
-const assets = [stylesheet].concat(appScripts, dataUrl);
+const assets = [stylesheet].concat(localScripts, dataUrl);
+
+assert.ok(appScripts.includes(supabaseCdn), "Supabase browserlibrary ontbreekt");
+assert.ok(appScripts.indexOf(supabaseCdn) < appScripts.findIndex(function (src) { return src.startsWith("./supabase-client.js"); }));
 
 assets.forEach(function (asset) {
   assert.ok(asset.startsWith("./"), asset + " moet expliciet relatief zijn");
@@ -25,7 +30,7 @@ assets.forEach(function (asset) {
 
 const projectBase = new URL("https://voorbeeld.github.io/frans-trainer/");
 assert.equal(new URL(stylesheet, projectBase).pathname, "/frans-trainer/styles.css");
-appScripts.forEach(function (appScript) {
+localScripts.forEach(function (appScript) {
   assert.ok(new URL(appScript, projectBase).pathname.startsWith("/frans-trainer/"));
 });
 assert.equal(new URL(dataUrl, projectBase).pathname, "/frans-trainer/data/course.json");
@@ -37,7 +42,7 @@ assert.equal(new URL(dataUrl, projectBase).pathname, "/frans-trainer/data/course
 
 assert.equal(/(?:WebSocket|EventSource|XMLHttpRequest|\/api\/)/.test(script), false, "Eigen serverafhankelijkheid gevonden");
 assert.equal(/fetch\s*\(\s*(?!DATA_URL)/.test(script), false, "Onverwachte request in de trainerkern gevonden");
-assert.ok(fs.readFileSync(path.join(root, "supabase-client.js"), "utf8").includes('/rest/v1/rpc/'));
+assert.ok(fs.readFileSync(path.join(root, "supabase-client.js"), "utf8").includes("window.supabase.createClient"));
 assert.ok(script.includes("localStorage.getItem(STORAGE_KEY)"));
 assert.ok(script.includes("localStorage.setItem(STORAGE_KEY"));
 assert.ok(script.includes("localStorage.removeItem(STORAGE_KEY)"));

@@ -15,6 +15,11 @@
         <span class="teacher-brand-mark" aria-hidden="true">F</span>
         <span><strong>Mon parcours</strong><small>Leerkrachtendashboard</small></span>
       </a>
+      <nav id="teacherNav" class="teacher-nav" aria-label="Hoofdnavigatie" hidden>
+        <button type="button" data-action="view-dashboard">Dashboard</button>
+        <button type="button" data-action="view-classes">Klassen</button>
+        <button type="button" data-action="view-management">Beheer</button>
+      </nav>
       <div id="accountArea" class="account-area" hidden>
         <span id="accountLabel"></span>
         <button id="logoutButton" class="button button-secondary" type="button">Afmelden</button>
@@ -52,6 +57,11 @@
           <label><span>Periode</span><select id="periodFilter" name="period"><option value="all">Alles</option><option value="7">Laatste 7 dagen</option><option value="30">Laatste 30 dagen</option></select></label>
           <label><span>Trajet</span><select id="trajectoryFilter" name="trajectory"><option value="all">Alle Trajets</option></select></label>
           <label><span>Modus</span><select id="modeFilter" name="mode"><option value="all">Alle modi</option></select></label>
+          <label><span>Klas</span><select id="classFilter" name="class"><option value="all">Alle klassen</option></select></label>
+          <label><span>Leerling</span><select id="studentFilter" name="student"><option value="all">Alle leerlingen</option></select></label>
+          <label><span>Leerlingstatus</span><select id="studentStatusFilter" name="student_status"><option value="active">Actief</option><option value="inactive">Inactief</option><option value="all">Alle</option></select></label>
+          <label><span>Cursusonderdeel</span><select id="categoryFilter" name="category"><option value="all">Alle onderdelen</option></select></label>
+          <label><span>Subsection</span><select id="subsectionFilter" name="subsection"><option value="all">Alle subsections</option></select></label>
         </form>
 
         <div id="dashboardContent" aria-live="polite">
@@ -64,6 +74,6 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
     <script src="./config.js?v=20261001-3" defer></script>
     <script src="./supabase-client.js?v=20261001-4" defer></script>
-    <script src="./teacher.js?v=20261001-1" defer></script>
+    <script src="./teacher.js?v=20261001-2" defer></script>
   </body>
 </html>

@@ -103,7 +103,7 @@ function waitForAsyncWork() {
 
 (async function () {
   assert.match(html, /id="identityButton"/);
-  const scriptOrder = ["config.js", "supabase-client.js", "student-identity.js", "sync-manager.js", "app.js"]
+  const scriptOrder = ["@supabase/supabase-js@2", "config.js", "supabase-client.js", "student-identity.js", "sync-manager.js", "app.js"]
     .map(function (name) { return html.indexOf(name); });
   assert.ok(scriptOrder.every(function (position, index) { return position >= 0 && (!index || position > scriptOrder[index - 1]); }));
 

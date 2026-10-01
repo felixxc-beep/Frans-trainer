@@ -9,14 +9,10 @@ let rpcMode = "verify";
 let rpcCalls = [];
 let idCounter = 0;
 
-function response(ok, body, status) {
-  return { ok: ok, status: status || (ok ? 200 : 503), json: async function () { return body; } };
-}
-
 const windowObject = {
   MON_PARCOURS_CONFIG: {
     supabaseUrl: "https://voorbeeld.supabase.co",
-    supabaseAnonKey: "public-anon-key-for-tests-1234567890"
+    supabasePublishableKey: "sb_publishable_public-key-for-tests-1234567890"
   },
   crypto: {
     randomUUID() {
@@ -24,7 +20,35 @@ const windowObject = {
       return "00000000-0000-4000-8000-" + String(idCounter).padStart(12, "0");
     }
   },
-  addEventListener() {}
+  addEventListener() {},
+  supabase: {
+    createClient(url, key) {
+      assert.equal(url, "https://voorbeeld.supabase.co");
+      assert.equal(key, "sb_publishable_public-key-for-tests-1234567890");
+      return {
+        async rpc(functionName, parameters) {
+          rpcCalls.push({ functionName: functionName, body: parameters });
+          if (functionName === "verify_student_identity") {
+            if (rpcMode === "not-found") return { data: { verified: false }, error: null };
+            return {
+              data: {
+                verified: true,
+                identity: {
+                  provider: "school_code",
+                  subject: "11111111-1111-4111-8111-111111111111",
+                  display_name: "Leerling 01",
+                  class_name: "Klas 1A"
+                }
+              },
+              error: null
+            };
+          }
+          if (rpcMode === "offline") return { data: null, error: { status: 503 } };
+          return { data: { accepted: true, attempt_count: 1 }, error: null };
+        }
+      };
+    }
+  }
 };
 
 const context = vm.createContext({
@@ -35,24 +59,6 @@ const context = vm.createContext({
     setItem(key, value) { storage.set(key, value); },
     removeItem(key) { storage.delete(key); }
   },
-  fetch: async function (url, options) {
-    rpcCalls.push({ url: url, body: JSON.parse(options.body) });
-    if (url.endsWith("/verify_student_identity")) {
-      if (rpcMode === "not-found") return response(true, { verified: false });
-      return response(true, {
-        verified: true,
-        identity: {
-          provider: "school_code",
-          subject: "11111111-1111-4111-8111-111111111111",
-          display_name: "Leerling 01",
-          class_name: "Klas 1A"
-        }
-      });
-    }
-    if (rpcMode === "offline") return response(false, {}, 503);
-    return response(true, { accepted: true, attempt_count: 1 });
-  },
-  AbortController,
   setTimeout: function () { return 1; },
   clearTimeout: function () {},
   Date,
@@ -133,7 +139,7 @@ function snapshot(attempts) {
   rpcMode = "online";
   await Sync.flush();
   assert.equal(queue().length, 0, "een geslaagde retry ruimt het outbox-item op");
-  assert.ok(rpcCalls.some(function (call) { return call.url.endsWith("/ingest_practice_bundle"); }));
+  assert.ok(rpcCalls.some(function (call) { return call.functionName === "ingest_practice_bundle"; }));
   assert.equal(storage.get("monParcoursProgressV1"), progressBefore, "bestaande voortgang mag niet worden herschreven");
 
   StudentIdentity.switchToLocal();
