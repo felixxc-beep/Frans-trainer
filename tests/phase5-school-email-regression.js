@@ -50,7 +50,7 @@ const windowObject = {
         async rpc(name, parameters) {
           rpcCalls.push({ name, parameters });
           if (name === "verify_student_email") {
-            if (lookupMode !== "active") return { data: { verified: false }, error: null };
+            if (lookupMode !== "active") return { data: { verified: false, reason: lookupMode === "inactive" ? "inactive" : "not_found" }, error: null };
             return { data: { verified: true, identity: { provider: "school_email", subject: canonicalSubject, display_name: "Emma Janssens", class_name: "1AA" } }, error: null };
           }
           if (name === "verify_student_identity") {
@@ -104,7 +104,7 @@ function queue() {
   lookupMode = "unknown";
   await assert.rejects(identity.connect("school_email", { schoolEmail: "onbekend@camposturnhout.be" }), /STUDENT_EMAIL_NOT_FOUND/);
   lookupMode = "inactive";
-  await assert.rejects(identity.connect("school_email", { schoolEmail: "inactief@camposturnhout.be" }), /STUDENT_EMAIL_NOT_FOUND/);
+  await assert.rejects(identity.connect("school_email", { schoolEmail: "inactief@camposturnhout.be" }), /STUDENT_INACTIVE/);
 
   lookupMode = "active";
   const emailIdentity = await identity.connect("school_email", { schoolEmail: "  JANSSENSEMMA@CAMPOSturnhout.be " });

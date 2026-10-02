@@ -28,6 +28,7 @@ const context = vm.createContext({
   clearTimeout,
   FormData: class {},
   document: {
+    visibilityState: "visible",
     addEventListener() {},
     querySelector(selector) {
       if (selector === "#app") return appElement;
@@ -39,7 +40,10 @@ const context = vm.createContext({
       return null;
     }
   },
-  window: { scrollTo() {}, confirm() { return false; } },
+  window: {
+    scrollTo() {}, confirm() { return false; }, addEventListener() {},
+    StudentIdentity: { getCurrentStudentIdentity() { return { provider: "school_email", subject: "test-student", displayName: "Test", className: "1A", verified: true }; } }
+  },
   localStorage: {
     getItem(key) { return storage.get(key) || null; },
     setItem(key, value) { storage.set(key, value); },
@@ -149,7 +153,7 @@ setImmediate(function () {
   context.syncSnapshots = [];
   context.window.StudentIdentity = {
     getCurrentStudentIdentity() {
-      return { provider: "school_code", subject: "11111111-1111-4111-8111-111111111111", displayName: "Leerling", className: "Klas", verified: true };
+      return { provider: "school_email", subject: "11111111-1111-4111-8111-111111111111", displayName: "Leerling", className: "Klas", verified: true };
     }
   };
   let syncId = 0;

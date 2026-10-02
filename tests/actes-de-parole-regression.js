@@ -16,6 +16,7 @@ const context = vm.createContext({
   clearTimeout,
   FormData: class {},
   document: {
+    visibilityState: "visible",
     addEventListener() {},
     querySelector(selector) {
       if (selector === "#app") return appElement;
@@ -27,7 +28,10 @@ const context = vm.createContext({
       return null;
     }
   },
-  window: { scrollTo() {}, confirm() { return false; } },
+  window: {
+    scrollTo() {}, confirm() { return false; }, addEventListener() {},
+    StudentIdentity: { getCurrentStudentIdentity() { return { provider: "school_email", subject: "test-student", displayName: "Test", className: "1A", verified: true }; } }
+  },
   localStorage: {
     getItem(key) { return storage.get(key) || null; },
     setItem(key, value) { storage.set(key, value); },
@@ -100,8 +104,8 @@ setImmediate(function () {
   assert.equal(wholeBlock.filter(function (item) { return item.type === "phrase"; }).length, 45);
   assert.equal(wholeBlock.filter(function (item) { return item.type !== "phrase"; }).length, 101);
   assert.ok(appElement.innerHTML.includes("146 oefenitems in dit cursusonderdeel"));
-  assert.ok(appElement.innerHTML.includes("Oefen alles<small>146 items"));
-  assert.ok(appElement.innerHTML.includes("Oefen dit studieblok<small>146 items"));
+  assert.match(appElement.innerHTML, /Tout travailler[\s\S]*Oefen alles[\s\S]*146 éléments[\s\S]*146 items/);
+  assert.match(appElement.innerHTML, /Travailler ce bloc[\s\S]*Oefen dit studieblok[\s\S]*146 éléments[\s\S]*146 items/);
   assert.ok(appElement.innerHTML.includes('data-subsection="Actes de parole" data-category=""'));
   assert.ok(appElement.innerHTML.includes('data-category="Se présenter"'));
   assert.ok(appElement.innerHTML.includes('data-category="Présenter quelqu’un (1)"'));
@@ -188,7 +192,7 @@ setImmediate(function () {
   context.syncSnapshots = [];
   context.window.StudentIdentity = {
     getCurrentStudentIdentity() {
-      return { provider: "school_code", subject: "11111111-1111-4111-8111-111111111111", verified: true };
+      return { provider: "school_email", subject: "11111111-1111-4111-8111-111111111111", verified: true };
     }
   };
   let syncId = 0;

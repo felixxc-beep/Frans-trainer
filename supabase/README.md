@@ -1,6 +1,6 @@
 # Supabase instellen voor Mon parcours
 
-De trainer blijft zonder deze configuratie volledig lokaal werken. Fase 2 gebruikt alleen de publieke Project URL en de publishable key. Gebruik nooit een secret key of de oude `service_role`-key in de webapp.
+De statische site blijft zonder buildstap laden, maar een nieuwe leerling moet eenmaal online via Supabase met schoolmail worden geïdentificeerd voordat oefenen mogelijk is. Een eerder gekoppelde leerling kan offline verder. De frontend gebruikt alleen de publieke Project URL en publishable key. Gebruik nooit een secret key of de oude `service_role`-key in de webapp.
 
 ## 1. Project aanmaken
 
@@ -64,7 +64,7 @@ Een publishable key mag in browsercode staan: de echte beveiliging zit in grants
 
 1. Start de website lokaal via een webserver of open de GitHub Pages-site.
 2. Klik bovenaan op **Lokaal**.
-3. Vul de klascode en leerlingcode uit de testdata in.
+3. Vul de schoolmail van een actieve testleerling in. De klas- en leerlingcode blijven alleen beschikbaar als technische hersteloptie.
 4. Na een geldige combinatie toont de knop de leerlingnaam.
 5. Start een korte oefensessie en beantwoord enkele vragen.
 6. Controleer in Supabase onder **Table Editor** dat één `practice_sessions`-regel en de bijbehorende `practice_attempts` zijn toegevoegd.
@@ -115,3 +115,16 @@ Voer **handmatig** `phase5-school-email.sql` uit voordat je de fase-5A-frontend 
 - wijzigt geen leerlingcodes, sync-tokens, leerling-ID's of historische resultaten.
 
 Deze login is eenvoudige identificatie, geen geverifieerde e-mailauthenticatie. Gebruik ze alleen voor dezelfde oefen- en syncmogelijkheden als de bestaande leerlingcode-login.
+
+## Fase 5B: actieve oefentijd
+
+Voer na `phase5-school-email.sql` **handmatig** `phase5-active-time.sql` uit voordat je de fase-5B-frontend en het bijgewerkte dashboard publiceert. Het script:
+
+- voegt de nullable/backward-compatible kolom `practice_sessions.active_duration_seconds` toe;
+- bewaart nieuwe sessietijd als een geheel aantal seconden;
+- vervangt de ingestfunctie zodat snapshots met dezelfde `client_session_id` de hoogste totale tijd bewaren en retries nooit tijd optellen;
+- laat oude sessies zonder gemeten tijd op `NULL`, zodat het dashboard daarvoor `—` toont;
+- verfijnt de schoolmail-RPC met afzonderlijke resultaten voor onbekende en inactieve leerlingen;
+- verandert geen leerling-ID's, sync-tokens, pogingen, RLS-policies of cursusdata.
+
+Publiceer de nieuwe frontend pas na deze migratie: de nieuwe dashboardquery verwacht dat de kolom bestaat.

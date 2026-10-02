@@ -107,6 +107,7 @@
       });
       const result = Array.isArray(raw) ? raw[0] : raw;
       if (!result || result.verified !== true || !result.identity || !result.identity.subject) {
+        if (result && result.reason === "inactive") throw new Error("STUDENT_INACTIVE");
         throw new Error("STUDENT_EMAIL_NOT_FOUND");
       }
       return {

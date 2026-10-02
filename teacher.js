@@ -6,7 +6,7 @@
   const TABLE_COLUMNS = Object.freeze({
     classes: "id,name,is_active,created_at",
     students: "id,class_id,display_name,is_active,created_at",
-    practice_sessions: "id,student_id,client_session_id,trajectory,top_category,lesson,block,subsection,exercise_key,mode,question_count,attempt_count,correct_count,incorrect_count,started_at,finished_at",
+    practice_sessions: "id,student_id,client_session_id,trajectory,top_category,lesson,block,subsection,exercise_key,mode,question_count,attempt_count,correct_count,incorrect_count,active_duration_seconds,started_at,finished_at",
     practice_attempts: "id,session_id,student_id,item_id,item_variant,item_type,trajectory,top_category,lesson,block,subsection,exercise_key,mode,correct_answers,was_correct,attempt_number,created_at"
   });
   const MANAGEMENT_COLUMNS = Object.freeze({
@@ -44,6 +44,22 @@
 
   function percentage(correct, total) {
     return total ? Math.round((Number(correct || 0) / total) * 100) : 0;
+  }
+
+  function formatActiveDuration(value) {
+    if (value === null || value === undefined || value === "") return "—";
+    const seconds = Math.max(0, Math.floor(Number(value) || 0));
+    if (seconds < 60) return seconds + " s";
+    if (seconds < 3600) return Math.floor(seconds / 60) + " min " + String(seconds % 60).padStart(2, "0") + " s";
+    return Math.floor(seconds / 3600) + " u " + String(Math.floor((seconds % 3600) / 60)).padStart(2, "0") + " min";
+  }
+
+  function exerciseIdentity(attempt) {
+    return String(attempt.session_id || "") + "\u001e" + String(attempt.item_id || "") + "\u001f" + String(attempt.item_variant == null ? "" : attempt.item_variant);
+  }
+
+  function completedExerciseCount(attempts) {
+    return new Set(asArray(attempts).map(exerciseIdentity)).size;
   }
 
   function normalizeClassCode(value) {
@@ -265,16 +281,21 @@
   }
 
   function summarize(sessions, attempts) {
+    const sessionRows = asArray(sessions);
     const attemptRows = asArray(attempts);
     const correct = attemptRows.filter(function (attempt) { return attempt.was_correct === true; }).length;
+    const measuredSessions = sessionRows.filter(function (session) { return session.active_duration_seconds !== null && session.active_duration_seconds !== undefined; });
     return {
-      sessions: asArray(sessions).length,
-      questions: asArray(sessions).reduce(function (sum, session) { return sum + Number(session.question_count || 0); }, 0),
+      sessions: sessionRows.length,
+      questions: sessionRows.reduce(function (sum, session) { return sum + Number(session.question_count || 0); }, 0),
+      exercisesMade: completedExerciseCount(attemptRows),
       attempts: attemptRows.length,
       correct: correct,
       incorrect: attemptRows.length - correct,
       accuracy: percentage(correct, attemptRows.length),
-      lastActivity: latestDate(sessions, ["finished_at", "started_at"])
+      activeDurationSeconds: measuredSessions.reduce(function (sum, session) { return sum + Math.max(0, Number(session.active_duration_seconds || 0)); }, 0),
+      hasMeasuredDuration: measuredSessions.length > 0,
+      lastActivity: latestDate(sessionRows, ["finished_at", "started_at"])
     };
   }
 
@@ -365,7 +386,7 @@
   function classOverviewRows(data, classId) {
     return data.students.filter(function (student) { return student.class_id === classId; }).map(function (student) {
       const stats = studentOverview(data, student);
-      return [student.display_name || "Naamloze leerling", stats.sessions, stats.questions, stats.attempts, stats.correct, stats.incorrect, stats.accuracy + "%", formatDate(stats.lastActivity)];
+      return [student.display_name || "Naamloze leerling", stats.sessions, stats.questions, stats.exercisesMade, stats.attempts, stats.correct, stats.incorrect, stats.accuracy + "%", stats.hasMeasuredDuration ? stats.activeDurationSeconds : "", stats.hasMeasuredDuration ? formatActiveDuration(stats.activeDurationSeconds) : "Niet gemeten", formatDate(stats.lastActivity)];
     });
   }
 
@@ -374,7 +395,7 @@
       return new Date(right.finished_at || right.started_at) - new Date(left.finished_at || left.started_at);
     }).map(function (session) {
       const stats = sessionStats(session, data.attempts);
-      return [formatDate(session.finished_at || session.started_at), modeLabel(session.mode), session.trajectory || "", session.top_category || "", session.lesson || "", Number(session.question_count || 0), stats.attempts, stats.correct, stats.incorrect, stats.accuracy + "%"];
+      return [formatDate(session.finished_at || session.started_at), session.finished_at ? "Voltooid" : "Onvoltooid", modeLabel(session.mode), session.trajectory || "", session.top_category || "", session.lesson || "", session.block || "", session.subsection || "", Number(session.question_count || 0), stats.exercisesMade, stats.attempts, stats.correct, stats.incorrect, stats.accuracy + "%", session.active_duration_seconds == null ? "" : Number(session.active_duration_seconds), formatActiveDuration(session.active_duration_seconds)];
     });
   }
 
@@ -554,8 +575,10 @@
       statCard("Klassen", activeClasses, "actief") +
       statCard("Leerlingen", activeStudents, "actief") +
       statCard("Sessies", summary.sessions, "geselecteerde periode") +
+      statCard("Oefeningen gemaakt", summary.exercisesMade, "werkelijk beantwoorde vragen") +
       statCard("Pogingen", summary.attempts, "inclusief herhalingen") +
       statCard("Correct", summary.accuracy + "%", summary.correct + " van " + summary.attempts + " pogingen") +
+      statCard("Actieve oefentijd", summary.hasMeasuredDuration ? formatActiveDuration(summary.activeDurationSeconds) : "—", summary.hasMeasuredDuration ? "alleen gemeten sessies" : "nog niet gemeten") +
       '</section>';
   }
 
@@ -564,7 +587,7 @@
       const overview = classOverview(data, classRow);
       return '<button class="class-card" type="button" data-action="view-class" data-id="' + escapeHtml(classRow.id) + '">' +
         '<span class="class-card-head"><span><h3>' + escapeHtml(classRow.name) + '</h3><span class="muted">Laatste activiteit: ' + escapeHtml(formatDate(overview.lastActivity)) + '</span></span><span class="pill">' + overview.activeStudents + ' leerlingen</span></span>' +
-        '<span class="class-metrics"><span><strong>' + overview.sessions + '</strong>sessies</span><span><strong>' + overview.attempts + '</strong>pogingen</span><span><strong>' + overview.accuracy + '%</strong>correct</span></span>' +
+        '<span class="class-metrics"><span><strong>' + overview.sessions + '</strong>sessies</span><span><strong>' + overview.exercisesMade + '</strong>gemaakt</span><span><strong>' + overview.attempts + '</strong>pogingen</span><span><strong>' + overview.accuracy + '%</strong>correct</span><span><strong>' + escapeHtml(overview.hasMeasuredDuration ? formatActiveDuration(overview.activeDurationSeconds) : "—") + '</strong>actieve tijd</span></span>' +
         '</button>';
     }).join("");
   }
@@ -597,16 +620,16 @@
     const classAttempts = data.attempts.filter(function (attempt) { return studentIds.has(attempt.student_id); });
     const rows = overview.students.map(function (student) {
       const result = studentOverview(data, student);
-      return '<tr><td><button class="link-button" type="button" data-action="view-student" data-id="' + escapeHtml(student.id) + '">' + escapeHtml(student.display_name || "Naamloze leerling") + '</button></td><td>' + result.sessions + '</td><td>' + result.attempts + '</td><td>' + result.accuracy + '%</td><td>' + escapeHtml(formatDate(result.lastActivity)) + '</td></tr>';
+      return '<tr><td><button class="link-button" type="button" data-action="view-student" data-id="' + escapeHtml(student.id) + '">' + escapeHtml(student.display_name || "Naamloze leerling") + '</button></td><td>' + result.sessions + '</td><td>' + result.exercisesMade + '</td><td>' + result.attempts + '</td><td>' + result.accuracy + '%</td><td>' + escapeHtml(result.hasMeasuredDuration ? formatActiveDuration(result.activeDurationSeconds) : "—") + '</td><td>' + escapeHtml(formatDate(result.lastActivity)) + '</td></tr>';
     }).join("");
     const recent = overview.students.length ? data.sessions.filter(function (session) { return studentIds.has(session.student_id); }).sort(function (left, right) { return new Date(right.finished_at || right.started_at) - new Date(left.finished_at || left.started_at); }).slice(0, 8) : [];
     const studentById = Object.create(null);
     overview.students.forEach(function (student) { studentById[student.id] = student; });
     return breadcrumbs([{ label: "Dashboard", action: "view-dashboard" }, { label: classRow.name }]) +
       '<div class="page-heading"><div><p class="eyebrow">Klasdetail</p><h2>' + escapeHtml(classRow.name) + '</h2><p class="muted">' + overview.activeStudents + ' actieve leerlingen</p></div><div class="export-actions"><button class="button button-secondary" type="button" data-action="export-class" data-id="' + escapeHtml(classRow.id) + '">Klasoverzicht CSV</button><button class="button button-secondary" type="button" data-action="export-difficult-class" data-id="' + escapeHtml(classRow.id) + '">Moeilijke items CSV</button></div></div>' +
-      '<section class="stat-grid">' + statCard("Leerlingen", overview.activeStudents, "actief") + statCard("Sessies", overview.sessions) + statCard("Vragen", overview.questions, "uniek geselecteerd") + statCard("Pogingen", overview.attempts, "incl. herhalingen") + statCard("Correct", overview.accuracy + "%") + '</section>' +
+      '<section class="stat-grid">' + statCard("Leerlingen", overview.activeStudents, "actief") + statCard("Sessies", overview.sessions) + statCard("Oefeningen gemaakt", overview.exercisesMade, "werkelijk beantwoord") + statCard("Pogingen", overview.attempts, "incl. herhalingen") + statCard("Correct", overview.accuracy + "%") + statCard("Actieve oefentijd", overview.hasMeasuredDuration ? formatActiveDuration(overview.activeDurationSeconds) : "—", overview.hasMeasuredDuration ? "alleen gemeten sessies" : "nog niet gemeten") + '</section>' +
       '<section class="section-block"><div class="section-heading"><div><h2>Leerlingen</h2><p>Klik op een leerling voor sessies en moeilijke items.</p></div></div>' +
-      (rows ? '<div class="table-wrap"><table><thead><tr><th>Leerling</th><th>Sessies</th><th>Pogingen</th><th>Correct</th><th>Laatste oefening</th></tr></thead><tbody>' + rows + '</tbody></table></div>' : emptyState("Geen leerlingen", "Supabase gaf voor deze klas geen leerlingen terug.")) + '</section>' +
+      (rows ? '<div class="table-wrap"><table><thead><tr><th>Leerling</th><th>Sessies</th><th>Gemaakt</th><th>Pogingen</th><th>Correct</th><th>Actieve tijd</th><th>Laatste oefening</th></tr></thead><tbody>' + rows + '</tbody></table></div>' : emptyState("Geen leerlingen", "Supabase gaf voor deze klas geen leerlingen terug.")) + '</section>' +
       '<div class="two-column section-block"><section class="panel"><h3>Recente activiteit</h3>' + (recent.length ? '<ul class="activity-list">' + recent.map(function (session) {
         const student = studentById[session.student_id];
         return '<li class="activity-item"><strong>' + escapeHtml(student && student.display_name || "Naamloze leerling") + ' · ' + escapeHtml(modeLabel(session.mode)) + '</strong><span>' + escapeHtml([session.trajectory, session.top_category, session.lesson].filter(Boolean).join(" › ")) + '</span><span>' + escapeHtml(formatDate(session.finished_at || session.started_at)) + '</span></li>';
@@ -621,7 +644,7 @@
       const info = describeItem(attempt, state.courseIndex);
       return '<li><span class="attempt-mark' + (attempt.was_correct ? "" : " wrong") + '" aria-label="' + (attempt.was_correct ? "Juist" : "Fout") + '">' + (attempt.was_correct ? "✓" : "!") + '</span><span class="attempt-copy"><strong>' + escapeHtml(info.title) + '</strong>' + (info.answer ? '<span>Modelantwoord: ' + escapeHtml(info.answer) + '</span>' : "") + (info.variant ? '<span>Variant: ' + escapeHtml(info.variant) + '</span>' : "") + '</span><span>Poging ' + Number(attempt.attempt_number || 1) + '</span></li>';
     }).join("") + '</ul>' : emptyState("Geen pogingsdetails", "Voor deze sessie gaf Supabase geen afzonderlijke pogingen terug.");
-    return '<details class="session-card"><summary><span class="session-title"><strong>' + escapeHtml(modeLabel(session.mode)) + ' · ' + escapeHtml(session.trajectory) + '</strong><span>' + escapeHtml(formatDate(session.finished_at || session.started_at)) + '</span></span><span class="session-metric"><small>Vragen</small><strong>' + Number(session.question_count || 0) + '</strong></span><span class="session-metric"><small>Pogingen</small><strong>' + stats.attempts + '</strong></span><span class="session-metric"><small>Juist / fout</small><strong>' + stats.correct + ' / ' + stats.incorrect + '</strong></span><span class="session-metric"><small>Correct</small><strong>' + stats.accuracy + '%</strong></span></summary><div class="session-detail"><p class="muted">' + escapeHtml(path) + '</p>' + details + '</div></details>';
+    return '<details class="session-card"><summary><span class="session-title"><strong>' + escapeHtml(modeLabel(session.mode)) + ' · ' + escapeHtml(session.trajectory) + '</strong><span>' + escapeHtml(formatDate(session.finished_at || session.started_at)) + ' · ' + (session.finished_at ? "Voltooid" : "Onvoltooid") + '</span></span><span class="session-metric"><small>Geselecteerd</small><strong>' + Number(session.question_count || 0) + '</strong></span><span class="session-metric"><small>Gemaakt</small><strong>' + stats.exercisesMade + '</strong></span><span class="session-metric"><small>Pogingen</small><strong>' + stats.attempts + '</strong></span><span class="session-metric"><small>Correct</small><strong>' + stats.accuracy + '%</strong></span><span class="session-metric"><small>Actieve tijd</small><strong>' + escapeHtml(formatActiveDuration(session.active_duration_seconds)) + '</strong></span></summary><div class="session-detail"><p class="muted">' + escapeHtml(path) + '</p><p><strong>Juist / fout:</strong> ' + stats.correct + ' / ' + stats.incorrect + '</p>' + details + '</div></details>';
   }
 
   function renderStudentDetail(data, studentId) {
@@ -632,7 +655,7 @@
     const sessions = overview.sessionRows.slice().sort(function (left, right) { return new Date(right.finished_at || right.started_at) - new Date(left.finished_at || left.started_at); });
     return breadcrumbs([{ label: "Dashboard", action: "view-dashboard" }, { label: classRow ? classRow.name : "Klas", action: "view-class", id: student.class_id }, { label: student.display_name || "Naamloze leerling" }]) +
       '<div class="page-heading"><div><p class="eyebrow">Leerlingdetail</p><h2>' + escapeHtml(student.display_name || "Naamloze leerling") + '</h2><p class="muted">' + escapeHtml(classRow ? classRow.name : "Onbekende klas") + ' · laatste activiteit ' + escapeHtml(formatDate(overview.lastActivity)) + '</p></div><div class="export-actions"><button class="button button-secondary" type="button" data-action="export-student" data-id="' + escapeHtml(student.id) + '">Sessies CSV</button><button class="button button-secondary" type="button" data-action="export-difficult-student" data-id="' + escapeHtml(student.id) + '">Moeilijke items CSV</button></div></div>' +
-      '<section class="stat-grid">' + statCard("Sessies", overview.sessions) + statCard("Vragen", overview.questions, "uniek geselecteerd") + statCard("Pogingen", overview.attempts, "incl. herhalingen") + statCard("Juist / fout", overview.correct + " / " + overview.incorrect) + statCard("Correct", overview.accuracy + "%") + '</section>' +
+      '<section class="stat-grid">' + statCard("Sessies", overview.sessions) + statCard("Oefeningen gemaakt", overview.exercisesMade, "werkelijk beantwoord") + statCard("Pogingen", overview.attempts, "incl. herhalingen") + statCard("Juist / fout", overview.correct + " / " + overview.incorrect) + statCard("Correct", overview.accuracy + "%") + statCard("Actieve oefentijd", overview.hasMeasuredDuration ? formatActiveDuration(overview.activeDurationSeconds) : "—", overview.hasMeasuredDuration ? "alleen gemeten sessies" : "nog niet gemeten") + '</section>' +
       '<section class="section-block"><div class="section-heading"><div><h2>Sessiegeschiedenis</h2><p>Open een sessie voor itemdetails en modelantwoorden.</p></div></div><div class="session-list">' + (sessions.length ? sessions.map(function (session) { return renderSessionCard(session, overview.attemptRows); }).join("") : emptyState("Nog geen sessies", "Binnen de gekozen filters zijn voor deze leerling geen sessies gevonden.")) + '</div></section>' +
       '<section class="section-block">' + renderDifficult(difficultItems(overview.attemptRows, state.courseIndex), "Moeilijk voor deze leerling") + '</section>';
   }
@@ -941,10 +964,10 @@
     const classRow = data.classes.find(function (row) { return row.id === id; }) || state.raw.classes.find(function (row) { return row.id === id; });
     const student = data.students.find(function (row) { return row.id === id; }) || state.raw.students.find(function (row) { return row.id === id; });
     if (action === "export-class" && classRow) {
-      downloadCsv("klasoverzicht-" + safeFilename(classRow.name) + ".csv", ["Leerlingnaam", "Sessies", "Unieke vragen", "Pogingen", "Correct", "Fout", "Percentage correct", "Laatste activiteit"], classOverviewRows(data, classRow.id));
+      downloadCsv("klasoverzicht-" + safeFilename(classRow.name) + ".csv", ["Leerlingnaam", "Sessies", "Geselecteerde oefeningen", "Oefeningen gemaakt", "Pogingen", "Correct", "Fout", "Percentage correct", "Actieve tijd (seconden)", "Actieve tijd", "Laatste activiteit"], classOverviewRows(data, classRow.id));
     }
     if (action === "export-student" && student) {
-      downloadCsv("sessies-" + safeFilename(student.display_name) + ".csv", ["Datum", "Modus", "Trajet", "Cursusonderdeel", "Les", "Question count", "Attempt count", "Correct", "Fout", "Percentage correct"], studentSessionRows(data, student.id));
+      downloadCsv("sessies-" + safeFilename(student.display_name) + ".csv", ["Datum", "Status", "Modus", "Trajet", "Cursusonderdeel", "Les", "Blok", "Subsection", "Geselecteerd", "Oefeningen gemaakt", "Pogingen", "Correct", "Fout", "Percentage correct", "Actieve tijd (seconden)", "Actieve tijd"], studentSessionRows(data, student.id));
     }
     if (action === "export-difficult-class" && classRow) {
       downloadCsv("moeilijke-items-" + safeFilename(classRow.name) + ".csv", ["Leerling", "Klas", "Nederlandse prompt / item", "Frans modelantwoord", "Trajet", "Onderdeel", "Itemvariant", "Pogingen", "Fout", "Foutpercentage"], difficultItemRows(data, state.courseIndex, classRow.id, null));
@@ -1181,6 +1204,8 @@
     describeItem: describeItem,
     sessionStats: sessionStats,
     percentage: percentage,
+    completedExerciseCount: completedExerciseCount,
+    formatActiveDuration: formatActiveDuration,
     normalizeClassCode: normalizeClassCode,
     normalizeSchoolEmail: normalizeSchoolEmail,
     validateSchoolEmail: validateSchoolEmail,

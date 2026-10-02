@@ -1,6 +1,6 @@
 # Mon parcours — Univers français 1
 
-Een leerlingvriendelijke, statische studietool voor Franse woordenschat, zinnen, werkwoorden, grammatica en getallen. De app gebruikt uitsluitend de inhoud uit `data/course.json`. Voortgang blijft altijd lokaal beschikbaar en kan optioneel naar Supabase synchroniseren.
+Een leerlingvriendelijke, statische en tweetalige studietool voor Franse woordenschat, zinnen, werkwoorden, grammatica en getallen. De app gebruikt uitsluitend de inhoud uit `data/course.json`. Een leerling meldt zich vóór het oefenen aan met de gekoppelde schoolmail; daarna blijft oefenen bij tijdelijke internetuitval mogelijk via localStorage en de offline syncqueue.
 
 ## Wat zit erin?
 
@@ -82,13 +82,15 @@ Voeg nieuwe cursusdata toe aan de array trajectories in data/course.json. Gebrui
 
 Elk leeritem heeft daarnaast een permanente `id`. Voer na het toevoegen van nieuwe items één keer `node scripts/assign-stable-item-ids.js` uit. Het script vult alleen ontbrekende IDs aan vanaf het hoogste bestaande nummer en verandert nooit bestaande IDs.
 
-## Optionele Supabase-synchronisatie
+## Leerlingidentificatie en Supabase-synchronisatie
 
 - `student-identity.js` is de centrale, verwisselbare identificatielaag.
 - `supabase-client.js` doet alleen begrensde RPC-aanroepen.
 - `sync-manager.js` bewaart mislukte verzendingen in `monParcoursSyncQueueV1` en probeert ze later opnieuw.
 - `config.js` bevat uitsluitend de Project URL en publishable key.
-- Zonder geldige configuratie werkt de trainer volledig lokaal verder.
+- Een nieuwe leerling moet zich eenmaal online met een actieve schoolmailidentiteit koppelen voordat oefenen mogelijk is.
+- Een eerder gekoppelde leerling kan bij tijdelijke internetuitval blijven oefenen; resultaten wachten dan in de lokale syncqueue.
+- De leerlingcode blijft uitsluitend als technische hersteloptie beschikbaar en start op zichzelf geen nieuwe normale sessie.
 
 De volledige installatiehandleiding staat in `supabase/README.md`.
 
@@ -112,4 +114,4 @@ Gewone nieuwe Trajets vereisen geen JavaScript-aanpassing zolang dezelfde datast
 
 ## Privacy
 
-Zonder leerlingkoppeling staat voortgang alleen in localStorage van de gebruikte browser. Bij een gekoppelde leerling worden uitsluitend pseudonieme identificatie, oefensessies en pogingen gesynchroniseerd. Er worden geen geboortedatum, privé-e-mailadres, adres of leerlingwachtwoord gevraagd. De browser bevat nooit een secret/service-role key.
+De schoolmail wordt alleen aan de Supabase-RPC doorgegeven om het bestaande leerlingprofiel te vinden en staat niet in localStorage, oefensessies, pogingen of de syncqueue. Centraal worden uitsluitend de interne leerling-ID, oefensessies en pogingen bewaard. Letterlijk getypte antwoorden worden niet centraal opgeslagen. De browser bevat nooit een secret/service-role key.

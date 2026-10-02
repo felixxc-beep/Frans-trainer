@@ -7,7 +7,7 @@
     <meta name="theme-color" content="#12372a">
     <title>Mon parcours | Univers français 1</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='15' fill='%2312372a'/%3E%3Cpath d='M18 16h28v9H28v8h15v9H28v14H18z' fill='%23fff7df'/%3E%3Ccircle cx='48' cy='49' r='7' fill='%23f4b942'/%3E%3C/svg%3E">
-    <link rel="stylesheet" href="./styles.css?v=20261001-2">
+    <link rel="stylesheet" href="./styles.css?v=20261002-1">
   </head>
   <body>
     <header class="topbar">
@@ -16,26 +16,27 @@
         <span><strong>Mon parcours</strong><small>Univers français 1</small></span>
       </button>
       <div class="topbar-actions">
-        <button id="identityButton" class="identity-button" type="button" data-action="open-identity" aria-label="Koppel of wissel leerling"><span id="identity-label">Lokaal</span></button>
-        <button class="icon-button" type="button" data-action="open-settings" aria-label="Instellingen">Aa</button>
+        <a class="teacher-link" href="./teacher.html"><span class="teacher-link-wide ui-bilingual"><span class="ui-fr" lang="fr">Tableau de bord enseignant</span><span class="ui-nl" lang="nl">Leerkrachtendashboard</span></span><span class="teacher-link-short ui-bilingual"><span class="ui-fr" lang="fr">Prof</span><span class="ui-nl" lang="nl">Leerkracht</span></span></a>
+        <button id="identityButton" class="identity-button" type="button" data-action="open-identity" aria-label="Connecter ou changer d'élève / Koppel of wissel leerling"><span id="identity-label"><span class="ui-bilingual"><span class="ui-fr" lang="fr">Se connecter</span><span class="ui-nl" lang="nl">Aanmelden</span></span></span></button>
+        <button class="icon-button" type="button" data-action="open-settings" aria-label="Paramètres / Instellingen">Aa</button>
       </div>
     </header>
 
     <main id="app" tabindex="-1">
       <section class="loading-state" aria-live="polite">
         <span class="loader" aria-hidden="true"></span>
-        <p>Je cursus wordt klaargezet…</p>
+        <p><span class="ui-bilingual"><span class="ui-fr" lang="fr">Ton cours se prépare…</span><span class="ui-nl" lang="nl">Je cursus wordt klaargezet…</span></span></p>
       </section>
     </main>
 
     <dialog id="settings-dialog">
       <form method="dialog" class="dialog-card">
         <div class="dialog-heading">
-          <div><p class="eyebrow">Instellingen</p><h2>Hoe wil je oefenen?</h2></div>
+          <div><p class="eyebrow"><span class="ui-bilingual"><span class="ui-fr" lang="fr">Paramètres</span><span class="ui-nl" lang="nl">Instellingen</span></span></p><h2><span class="ui-bilingual"><span class="ui-fr" lang="fr">Comment veux-tu t'entraîner ?</span><span class="ui-nl" lang="nl">Hoe wil je oefenen?</span></span></h2></div>
           <button class="icon-button" value="cancel" aria-label="Sluiten">×</button>
         </div>
         <label class="switch-row">
-          <span><strong>Accenten streng beoordelen</strong><small>é en e tellen als verschillende letters</small></span>
+          <span><strong class="ui-bilingual"><span class="ui-fr" lang="fr">Respecter les accents</span><span class="ui-nl" lang="nl">Accenten streng beoordelen</span></strong><small class="ui-bilingual"><span class="ui-fr" lang="fr">é et e sont des lettres différentes</span><span class="ui-nl" lang="nl">é en e tellen als verschillende letters</span></small></span>
           <input id="strict-accents" type="checkbox" checked disabled>
         </label>
       </form>
@@ -44,38 +45,38 @@
     <dialog id="identity-dialog">
       <form id="identity-form" class="dialog-card">
         <div class="dialog-heading">
-          <div><p class="eyebrow">Leerling</p><h2>Koppel je voortgang</h2></div>
+          <div><p class="eyebrow"><span class="ui-bilingual"><span class="ui-fr" lang="fr">Élève</span><span class="ui-nl" lang="nl">Leerling</span></span></p><h2><span class="ui-bilingual"><span class="ui-fr" lang="fr">Connecte ta progression</span><span class="ui-nl" lang="nl">Koppel je voortgang</span></span></h2></div>
           <button class="icon-button" type="button" data-action="close-identity" aria-label="Sluiten">×</button>
         </div>
         <p id="identity-current" class="identity-current"></p>
         <div id="identity-fields" class="identity-fields">
           <input name="identity_method" type="hidden" value="school_email">
           <div id="school-email-fields" class="identity-method-fields">
-            <label><span>Schoolmail</span><input name="school_email" type="email" inputmode="email" autocomplete="username" placeholder="achternaamvoornaam@camposturnhout.be" required></label>
-            <p class="privacy-note">Je schoolmail wordt alleen gebruikt om je bestaande leerlingprofiel te vinden en wordt niet lokaal bewaard.</p>
-            <button class="button button-primary" type="submit">Aanmelden</button>
-            <button class="text-button" type="button" data-action="toggle-identity-method" data-method="school_code">Aanmelden met leerlingcode</button>
+            <label><span class="ui-bilingual"><span class="ui-fr" lang="fr">Adresse e-mail scolaire</span><span class="ui-nl" lang="nl">Schoolmailadres</span></span><input name="school_email" type="email" inputmode="email" autocomplete="username" placeholder="achternaamvoornaam@camposturnhout.be" required></label>
+            <p class="privacy-note"><span class="ui-bilingual"><span class="ui-fr" lang="fr">Ton adresse sert uniquement à retrouver ton profil et n'est pas enregistrée sur cet appareil.</span><span class="ui-nl" lang="nl">Je schoolmail wordt alleen gebruikt om je bestaande leerlingprofiel te vinden en wordt niet lokaal bewaard.</span></span></p>
+            <button class="button button-primary" type="submit"><span class="ui-bilingual"><span class="ui-fr" lang="fr">Se connecter et continuer</span><span class="ui-nl" lang="nl">Aanmelden en verdergaan</span></span></button>
+            <button class="text-button" type="button" data-action="toggle-identity-method" data-method="school_code"><span class="ui-bilingual"><span class="ui-fr" lang="fr">Utiliser un code élève</span><span class="ui-nl" lang="nl">Aanmelden met leerlingcode</span></span></button>
           </div>
           <div id="school-code-fields" class="identity-method-fields" hidden>
-            <label><span>Klascode</span><input name="class_code" type="text" maxlength="20" autocomplete="off" required disabled></label>
-            <label><span>Leerlingcode</span><input name="student_code" type="text" minlength="8" maxlength="64" autocomplete="off" required disabled></label>
-            <p class="privacy-note">Gebruik deze fallback als je nog geen schoolmail aan je profiel hebt gekoppeld.</p>
-            <button class="button button-primary" type="submit">Aanmelden met leerlingcode</button>
-            <button class="text-button" type="button" data-action="toggle-identity-method" data-method="school_email">Aanmelden met schoolmail</button>
+            <label><span class="ui-bilingual"><span class="ui-fr" lang="fr">Code de classe</span><span class="ui-nl" lang="nl">Klascode</span></span><input name="class_code" type="text" maxlength="20" autocomplete="off" required disabled></label>
+            <label><span class="ui-bilingual"><span class="ui-fr" lang="fr">Code élève</span><span class="ui-nl" lang="nl">Leerlingcode</span></span><input name="student_code" type="text" minlength="8" maxlength="64" autocomplete="off" required disabled></label>
+            <p class="privacy-note"><span class="ui-bilingual"><span class="ui-fr" lang="fr">Option de dépannage. Connecte-toi ensuite avec ton adresse scolaire pour commencer une nouvelle session.</span><span class="ui-nl" lang="nl">Technische hersteloptie. Meld je daarna aan met je schoolmail om een nieuwe sessie te starten.</span></span></p>
+            <button class="button button-primary" type="submit"><span class="ui-bilingual"><span class="ui-fr" lang="fr">Se connecter avec le code</span><span class="ui-nl" lang="nl">Aanmelden met leerlingcode</span></span></button>
+            <button class="text-button" type="button" data-action="toggle-identity-method" data-method="school_email"><span class="ui-bilingual"><span class="ui-fr" lang="fr">Utiliser l'adresse scolaire</span><span class="ui-nl" lang="nl">Aanmelden met schoolmail</span></span></button>
           </div>
         </div>
         <p id="identity-message" class="identity-message" aria-live="polite"></p>
-        <button id="switch-student-button" class="text-button" type="button" data-action="switch-student-identity" hidden>Wissel leerling</button>
-        <button class="text-button" type="button" data-action="use-local-identity">Gebruik alleen lokale voortgang</button>
+        <button id="switch-student-button" class="text-button" type="button" data-action="switch-student-identity" hidden><span class="ui-bilingual"><span class="ui-fr" lang="fr">Changer d'élève</span><span class="ui-nl" lang="nl">Wissel leerling</span></span></button>
+        <button class="text-button" type="button" data-action="close-identity"><span class="ui-bilingual"><span class="ui-fr" lang="fr">Pas maintenant</span><span class="ui-nl" lang="nl">Nu niet</span></span></button>
       </form>
     </dialog>
 
-    <noscript>Deze studietool heeft JavaScript nodig.</noscript>
+    <noscript>Cette application nécessite JavaScript. / Deze studietool heeft JavaScript nodig.</noscript>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
     <script src="./config.js?v=20261001-3" defer></script>
     <script src="./supabase-client.js?v=20261001-4" defer></script>
-    <script src="./student-identity.js?v=20261001-4" defer></script>
-    <script src="./sync-manager.js?v=20261001-4" defer></script>
-    <script src="./app.js?v=20261001-4" defer></script>
+    <script src="./student-identity.js?v=20261002-1" defer></script>
+    <script src="./sync-manager.js?v=20261002-1" defer></script>
+    <script src="./app.js?v=20261002-1" defer></script>
   </body>
 </html>

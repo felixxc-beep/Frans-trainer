@@ -46,6 +46,15 @@ button { color: inherit; }
   z-index: 10;
 }
 .topbar-actions { display: flex; align-items: center; gap: .55rem; }
+.teacher-link { color: var(--muted); font-size: .8rem; font-weight: 750; text-decoration: none; }
+.teacher-link:hover { color: var(--forest); text-decoration: underline; }
+.teacher-link-short.ui-bilingual { display: none; }
+.ui-bilingual { display: inline-flex; flex-direction: column; align-items: inherit; gap: .08em; line-height: 1.2; }
+.ui-nl { color: var(--muted); font-size: .78em; font-style: italic; font-weight: 500; }
+button .ui-nl, .button .ui-nl { color: currentColor; opacity: .72; }
+.ui-block { display: flex; width: 100%; }
+.ui-message { display: flex; flex-direction: column; gap: .15rem; }
+.ui-message .ui-fr { font-weight: 650; }
 .identity-button { min-height: 42px; padding: .55rem .9rem; border: 1px solid var(--line); border-radius: 999px; background: var(--mint); color: var(--forest); cursor: pointer; font-weight: 800; }
 .identity-button::before { content: "●"; margin-right: .45rem; color: var(--forest-2); font-size: .7rem; }
 
@@ -284,8 +293,15 @@ dialog::backdrop { background: rgba(10,29,23,.45); backdrop-filter: blur(4px); }
 
 @media (max-width: 620px) {
   .topbar { height: 66px; padding-inline: 1rem; }
+  .topbar-actions { gap: .35rem; }
   #app { width: min(100% - 1.25rem, 1180px); padding-top: 1.5rem; }
-  .brand small { display: none; }
+  .brand strong, .brand small { display: none; }
+  .teacher-link-wide { display: none; }
+  .teacher-link-short.ui-bilingual { display: inline-flex; }
+  .teacher-link { font-size: .72rem; }
+  .ui-bilingual { line-height: 1.15; }
+  .identity-button { min-height: 38px; padding: .45rem .65rem; font-size: .78rem; }
+  .icon-button { min-width: 38px; min-height: 38px; }
   .unit-hero, .structure-heading { align-items: stretch; flex-direction: column; }
   .subsection-row { grid-template-columns: 1fr; }
   .subsection-row .button { width: 100%; }

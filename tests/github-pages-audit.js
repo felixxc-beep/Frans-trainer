@@ -53,5 +53,5 @@ JSON.parse(json);
 console.log("GITHUB PAGES AUDIT GESLAAGD");
 console.log("index.html staat in de root");
 console.log("CSS, JavaScript en JSON blijven onder /frans-trainer/");
-console.log("Geen lokale absolute paden, buildstap of eigen backend; Supabase blijft optioneel");
-console.log("localStorage blijft browserlokaal beschikbaar");
+console.log("Geen lokale absolute paden, buildstap of eigen backend; initiële schoolmailidentificatie verloopt via Supabase");
+console.log("Een eerder gekoppelde leerling behoudt de browserlokale offline fallback");

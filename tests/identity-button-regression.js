@@ -9,7 +9,7 @@ const storage = new Map([
   ["monParcoursProgressV1", JSON.stringify({ attempted: 7, correct: 5, wrong: 2, items: {}, settings: { strictAccents: true, sessionSize: 20 } })],
   ["monParcoursSyncQueueV1", JSON.stringify([{ client_session_id: "pending-session" }])]
 ]);
-const documentListeners = { click: [], submit: [], change: [] };
+const documentListeners = { click: [], submit: [], change: [], input: [], visibilitychange: [] };
 const buttonListeners = { click: [] };
 const appElement = { innerHTML: "", focus() {} };
 const strictToggle = { checked: true, disabled: false };
@@ -28,10 +28,10 @@ const identityButton = {
     return event;
   }
 };
-const identityLabel = { textContent: "Lokaal" };
-const identityCurrent = { textContent: "" };
+const identityLabel = { textContent: "Lokaal", innerHTML: "" };
+const identityCurrent = { textContent: "", innerHTML: "" };
 const identityFields = { hidden: false };
-const identityMessage = { textContent: "" };
+const identityMessage = { textContent: "", innerHTML: "" };
 const submitButton = { disabled: false };
 const identityForm = {
   id: "identity-form",
@@ -50,6 +50,7 @@ let flushCount = 0;
 const windowObject = {
   scrollTo() {},
   confirm() { return false; },
+  addEventListener() {},
   MonParcoursSupabase: {
     isConfigured() { return configured; },
     async rpc(name, parameters) {
@@ -85,6 +86,7 @@ const context = vm.createContext({
     removeItem(key) { storage.delete(key); }
   },
   document: {
+    visibilityState: "visible",
     querySelector(selector) { return elements[selector] || null; },
     addEventListener(type, listener) { documentListeners[type].push(listener); }
   },
@@ -116,16 +118,17 @@ function waitForAsyncWork() {
   assert.equal(clickEvent.propagationStopped, true, "de gedelegeerde handler mag dezelfde klik niet dubbel verwerken");
   assert.equal(identityDialog.showCount, 1);
   assert.equal(identityFields.hidden, false);
-  assert.match(identityMessage.textContent, /schoolmail/);
+  assert.match(identityMessage.innerHTML, /schoolmail/);
 
   let prevented = false;
   documentListeners.submit[0]({ target: identityForm, preventDefault() { prevented = true; } });
   await waitForAsyncWork();
   assert.equal(prevented, true);
   assert.equal(windowObject.StudentIdentity.getCurrentStudentIdentity().provider, "school_code");
-  assert.equal(identityLabel.textContent, "Ada");
-  assert.equal(identityCurrent.textContent, "Ada · 1A");
-  assert.match(identityMessage.textContent, /Gelukt/);
+  assert.equal(identityLabel.innerHTML, "Ada");
+  assert.match(identityCurrent.innerHTML, /Ada · 1A/);
+  assert.match(identityCurrent.innerHTML, /Herstelmodus/);
+  assert.match(identityMessage.innerHTML, /Herstelidentiteit/);
   assert.equal(identityForm.wasReset, true);
   assert.ok(flushCount >= 2, "initialisatie en koppeling moeten de syncqueue laten proberen");
 
@@ -137,27 +140,27 @@ function waitForAsyncWork() {
   }];
   documentListeners.submit[0]({ target: identityForm, preventDefault() {} });
   await waitForAsyncWork();
-  assert.equal(identityLabel.textContent, "Bruno");
-  assert.equal(identityCurrent.textContent, "Bruno · 1B");
+  assert.equal(identityLabel.innerHTML, "Bruno");
+  assert.match(identityCurrent.innerHTML, /Bruno · 1B/);
 
   verificationResult = [];
   windowObject.StudentIdentity.switchToLocal();
   identityForm.values = { identity_method: "school_code", class_code: "KLAS1A", student_code: "K7M9-P4Q2" };
   documentListeners.submit[0]({ target: identityForm, preventDefault() {} });
   await waitForAsyncWork();
-  assert.match(identityMessage.textContent, /combinatie werd niet gevonden/);
+  assert.match(identityMessage.innerHTML, /combinatie werd niet gevonden/);
 
   configured = false;
   identityButton.click();
   assert.equal(identityFields.hidden, true);
-  assert.match(identityMessage.textContent, /volledig lokaal gebruiken/);
+  assert.match(identityMessage.innerHTML, /Geen internetverbinding/);
   assert.equal(windowObject.StudentIdentity.getCurrentStudentIdentity().provider, "local");
   assert.equal(JSON.parse(storage.get("monParcoursProgressV1")).attempted, 7);
   assert.equal(JSON.parse(storage.get("monParcoursSyncQueueV1"))[0].client_session_id, "pending-session");
   assert.match(appElement.innerHTML, /Trajet 1/);
 
   console.log("IDENTITY-BUTTON-REGRESSIE GESLAAGD");
-  console.log("Directe click-handler, dialoog, verificatie, wisselen, foutmelding en lokale fallback gecontroleerd.");
+  console.log("Directe click-handler, dialoog, herstelidentiteit, wisselen, foutmelding en verplichte schoolmail gecontroleerd.");
 })().catch(function (error) {
   console.error(error);
   process.exitCode = 1;
