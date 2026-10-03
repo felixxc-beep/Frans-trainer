@@ -7,10 +7,10 @@ const ACCENTS = ["é", "è", "ê", "ë", "à", "â", "ç", "ù", "û", "ô", "î
 const EXERCISES = {
   "vocab-nl-fr": { type: "vocabulary", label: "Nederlands → Frans", labelFr: "Néerlandais → français", short: "Woordenschat", shortFr: "Vocabulaire" },
   "vocab-fr-nl": { type: "vocabulary", label: "Frans → Nederlands", labelFr: "Français → néerlandais", short: "Woordenschat", shortFr: "Vocabulaire" },
-  "verb-nl-inf": { type: "verb", label: "Nederlands → infinitief", labelFr: "Néerlandais → infinitif", short: "Werkwoorden", shortFr: "Verbes" },
-  "verb-fr-nl": { type: "verb", label: "Infinitief → Nederlands", labelFr: "Infinitif → néerlandais", short: "Werkwoorden", shortFr: "Verbes" },
-  "verb-nl-conj": { type: "verb", label: "Nederlands + persoon → vervoeging", labelFr: "Néerlandais + personne → conjugaison", short: "Vervoegen", shortFr: "Conjuguer" },
-  "verb-fr-conj": { type: "verb", label: "Infinitief + persoon → vervoeging", labelFr: "Infinitif + personne → conjugaison", short: "Vervoegen", shortFr: "Conjuguer" },
+  "verb-nl-inf": { type: "verb", label: "Nederlands → Frans", labelFr: "Néerlandais → français", short: "Werkwoorden", shortFr: "Verbes" },
+  "verb-fr-nl": { type: "verb", label: "Frans → Nederlands", labelFr: "Français → néerlandais", short: "Werkwoorden", shortFr: "Verbes" },
+  "verb-nl-conj": { type: "verb", label: "Vervoegen vanuit Nederlands", labelFr: "Conjuguer depuis le néerlandais", short: "Vervoegen", shortFr: "Conjuguer" },
+  "verb-fr-conj": { type: "verb", label: "Vervoegen vanuit Frans", labelFr: "Conjuguer depuis le français", short: "Vervoegen", shortFr: "Conjuguer" },
   "phrase-nl-fr": { type: "phrase", label: "Nederlandse zin → Franse zin", labelFr: "Phrase néerlandaise → phrase française", short: "Zinnen", shortFr: "Phrases" },
   "grammar": { type: "grammar_rule", label: "Grammaticaregel aanvullen", labelFr: "Compléter la règle de grammaire", short: "Grammatica", shortFr: "Grammaire" },
   "number-nl-fr": { type: "number", label: "Cijfer → Frans", labelFr: "Nombre → français", short: "Getallen", shortFr: "Nombres" },
@@ -101,6 +101,20 @@ function handleClick(event) {
     renderUnit();
   }
   if (action === "back-unit") {
+    leaveSessionUnfinished();
+    renderUnit();
+  }
+  if (action === "step-trajectory") {
+    leaveSessionUnfinished();
+    renderHome();
+    scrollToStepTarget("#trajectory-heading");
+  }
+  if (action === "step-part") {
+    leaveSessionUnfinished();
+    renderHome();
+    scrollToStepTarget("#unit-heading");
+  }
+  if (action === "step-content") {
     leaveSessionUnfinished();
     renderUnit();
   }
@@ -259,17 +273,10 @@ async function submitStudentIdentity(form) {
     setIdentityMethod("school_email");
     if (provider === "school_email") {
       setUiMessage(message, "Connexion réussie. Ton exercice va s'ouvrir.", "Gelukt. Je oefening wordt geopend en je voortgang wordt veilig bewaard.");
-      if (identityCompletionTimer) clearTimeout(identityCompletionTimer);
-      const connectedSubject = connectedIdentity.subject;
-      identityCompletionTimer = setTimeout(function () {
-        identityCompletionTimer = null;
-        const current = currentStudentIdentity();
-        if (!hasRequiredStudentIdentity(current) || current.subject !== connectedSubject) return;
-        const resumed = resumePendingStartAction();
-        if (!resumed && identityDialog && identityDialog.open) identityDialog.close();
-      }, 650);
+      scheduleIdentityDialogCompletion(connectedIdentity, true);
     } else if (message) {
-      setUiMessage(message, "Code de dépannage accepté. Connecte-toi maintenant avec ton adresse scolaire.", "Herstelidentiteit gekoppeld. Meld je nog aan met je schoolmail om een nieuwe oefensessie te starten.");
+      setUiMessage(message, "Code de dépannage accepté.", "Herstelidentiteit gekoppeld. Voor een nieuwe oefensessie blijft aanmelden met schoolmail verplicht.");
+      scheduleIdentityDialogCompletion(connectedIdentity, false);
     }
     if (window.MonParcoursSync) window.MonParcoursSync.scheduleFlush();
   } catch (error) {
@@ -294,6 +301,18 @@ async function submitStudentIdentity(form) {
   } finally {
     submits.forEach(function (submit) { submit.disabled = false; });
   }
+}
+
+function scheduleIdentityDialogCompletion(connectedIdentity, resumePending) {
+  if (identityCompletionTimer) clearTimeout(identityCompletionTimer);
+  const connectedSubject = connectedIdentity.subject;
+  identityCompletionTimer = setTimeout(function () {
+    identityCompletionTimer = null;
+    const current = currentStudentIdentity();
+    if (!current || current.subject !== connectedSubject) return;
+    const resumed = resumePending ? resumePendingStartAction() : false;
+    if (!resumed && identityDialog && identityDialog.open) identityDialog.close();
+  }, 650);
 }
 
 function initializeIdentity() {
@@ -340,6 +359,7 @@ function renderHome() {
       dashboardCard("Ma progression", "Mijn voortgang", accuracy + "% correct", accuracy + "% juist", state.progress.attempted + " réponses données", state.progress.attempted + " antwoorden gegeven", "view-progress", false, "chart") +
     '</section>' +
     journeySteps(1) +
+    '<div class="home-browser">' +
     '<section aria-labelledby="trajectory-heading">' +
       '<div class="section-heading home-heading"><h2 id="trajectory-heading">' + uiText("Choisis ton Trajet", "Kies je Trajet") + '</h2></div>' +
       '<div class="trajectory-grid">' +
@@ -366,7 +386,7 @@ function renderHome() {
           '</button>';
         }).join("") +
       '</div>' +
-    '</section>';
+    '</section></div>';
   focusApp();
 }
 
@@ -382,10 +402,18 @@ function journeySteps(activeStep) {
     ["Contenu", "Inhoud"],
     ["Exercice", "Oefening"]
   ];
+  const actions = ["step-trajectory", "step-part", "step-content", ""];
   return '<nav class="journey-steps" aria-label="Étapes / Stappen">' + steps.map(function (labels, index) {
     const number = index + 1;
-    return '<span class="journey-step' + (number === activeStep ? " is-active" : "") + '"' + (number === activeStep ? ' aria-current="step"' : "") + '><b>' + number + '</b>' + uiText(labels[0], labels[1]) + '</span>';
+    const content = '<b>' + number + '</b>' + uiText(labels[0], labels[1]);
+    if (number < activeStep) return '<button class="journey-step is-reached" type="button" data-action="' + actions[index] + '">' + content + '</button>';
+    return '<span class="journey-step' + (number === activeStep ? " is-active" : "") + '"' + (number === activeStep ? ' aria-current="step"' : "") + '>' + content + '</span>';
   }).join("") + '</nav>';
+}
+
+function scrollToStepTarget(selector) {
+  const target = document.querySelector(selector);
+  if (target && typeof target.scrollIntoView === "function") target.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 function renderUnit() {
@@ -425,6 +453,10 @@ function renderUnit() {
                   ? scopeChoiceCard(unit, section.title, subsection.title, contentType, categoryCount, categoryValue)
                   : "";
               }).filter(Boolean);
+              const auxiliaryItems = subset.filter(function (item) { return item.category === "être / avoir"; });
+              if (auxiliaryItems.length && !subsection.content_types.includes("être / avoir")) {
+                categoryChoices.push(scopeChoiceCard(unit, section.title, subsection.title, "Être et avoir", exerciseItemCount(auxiliaryItems), "être / avoir"));
+              }
               const categoryGrid = categoryChoices.length
                 ? '<div class="scope-choice-grid">' + categoryChoices.join("") + '</div>'
                 : (subsetCount ? '<div class="scope-choice-grid">' + scopeChoiceCard(unit, section.title, subsection.title, subsection.title, subsetCount) + '</div>' : '<span class="source-only">' + uiText("Informations du cours", "Alleen cursusinfo") + '</span>');
@@ -459,7 +491,7 @@ function compactScopeButton(unit, block, subsection, title, count, labelFr, labe
 
 function scopeChoiceCard(unit, block, subsection, title, count, category) {
   return '<button class="scope-choice-card" type="button"' + scopeAttributes(unit, block, subsection, title, category) +
-    '<strong>' + escapeHtml(displayScopeTitle(title)) + '</strong><span>' + count + ' ' + uiText("éléments", "items") + '</span></button>';
+    '<strong>' + escapeHtml(displayScopeTitle(title)) + '</strong><span>' + count + ' éléments</span><small lang="nl">' + escapeHtml(scopeLabelDutch(title)) + '</small></button>';
 }
 
 function displayScopeTitle(title) {
@@ -470,6 +502,24 @@ function displayScopeTitle(title) {
 function isUmbrellaContentType(contentType) {
   const normalized = String(contentType || "").trim().toLocaleLowerCase("fr");
   return normalized === "vocabulaire" || normalized === "nombres";
+}
+
+function scopeLabelDutch(title) {
+  const normalized = String(title || "").trim().toLocaleLowerCase("fr");
+  const labels = {
+    "vocabulaire": "Woordenschat",
+    "expressions": "Uitdrukkingen",
+    "se présenter": "Zich voorstellen",
+    "présenter quelqu’un (1)": "Iemand voorstellen (1)",
+    "présenter quelqu’un (2)": "Iemand voorstellen (2)",
+    "verbes en -er": "Werkwoorden op -ER",
+    "être et avoir": "être en avoir",
+    "adjectifs": "Bijvoeglijke naamwoorden",
+    "verbes": "Werkwoorden",
+    "mots invariables": "Onveranderlijke woorden",
+    "nombres": "Getallen"
+  };
+  return labels[normalized] || "Oefen dit onderdeel";
 }
 
 function renderSoundNotes(items) {

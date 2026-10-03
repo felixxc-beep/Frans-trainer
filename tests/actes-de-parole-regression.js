@@ -71,7 +71,7 @@ setImmediate(function () {
     assert.equal(items.length, phraseItems.length, "Actes de parole mag niet door andere types worden vervuild");
 
     assert.ok(appElement.innerHTML.includes('data-subsection="Actes de parole"'));
-    assert.match(appElement.innerHTML, new RegExp(phraseItems.length + "[\\s\\S]*items"));
+    assert.match(appElement.innerHTML, new RegExp('data-subsection="Actes de parole"[\\s\\S]*?(?:<span>' + phraseItems.length + "</span>|" + phraseItems.length + " éléments)"));
     evaluate("state.selectedScope = actesScope; renderSetup()");
     assert.match(appElement.innerHTML, /Nederlandse zin → Franse zin/);
     assert.ok(appElement.innerHTML.includes('class="choice-count">' + expectedQuestionCounts[trajectoryIndex]));

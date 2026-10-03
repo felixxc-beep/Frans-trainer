@@ -29,6 +29,7 @@ const identityForm = {
 const scheduled = [];
 let identity = { provider: "local", subject: "local", displayName: "Lokale leerling", className: "", verified: false };
 let selectedExercise = "verb-nl-inf";
+let nextIdentityProvider = "school_email";
 
 const context = vm.createContext({
   console,
@@ -69,7 +70,7 @@ const context = vm.createContext({
       getCurrentStudentIdentity() { return identity; },
       isRemoteAvailable() { return true; },
       async connectFromForm() {
-        identity = { provider: "school_email", subject: "student-1", displayName: "Hakki Anouar", className: "1AB", verified: true };
+        identity = { provider: nextIdentityProvider, subject: "student-1", displayName: "Hakki Anouar", className: "1AB", verified: true };
         return identity;
       }
     },
@@ -97,6 +98,7 @@ function evaluate(code) { return vm.runInContext(code, context); }
   assert.equal((home.match(/data-action="select-trajectory"/g) || []).length, 6, "alle zes Trajets blijven selecteerbaar");
   assert.equal((home.match(/<span class="journey-step/g) || []).length, 4, "de stappenbalk bevat vier stappen");
   assert.match(home, /journey-step is-active[^>]*aria-current="step"/);
+  assert.match(home, /class="home-browser"/);
   const firstTrajectoryCard = home.match(/<button class="trajectory-card"[\s\S]*?<\/button>/)[0];
   assert.equal((firstTrajectoryCard.match(/Trajet 1/g) || []).length, 1, "een Trajetnaam wordt niet dubbel getoond");
   assert.match(home, /class="unit-list"/);
@@ -109,17 +111,37 @@ function evaluate(code) { return vm.runInContext(code, context); }
   assert.match(parole, /Expressions/);
   assert.match(parole, /Se présenter/);
   assert.match(parole, /Présenter quelqu’un \(1\)/);
+  assert.match(parole, /Woordenschat/);
+  assert.match(parole, /Uitdrukkingen/);
+  assert.match(parole, /Zich voorstellen/);
+  assert.match(parole, /Iemand voorstellen \(1\)/);
   assert.doesNotMatch(parole, />Choisir</);
   assert.match(parole, /Tout le bloc/);
   assert.match(parole, /journey-step is-active[^>]*aria-current="step"[\s\S]*Contenu/);
 
   const verbUnit = course.trajectories[0].units.find(function (unit) { return unit.top_category === "Atelier Verbes"; });
+  evaluate("state.selectedUnitOrder = " + verbUnit.order + "; renderUnit()");
+  const verbContent = appElement.innerHTML;
+  assert.match(verbContent, /Verbes en -ER[\s\S]*22 éléments/);
+  assert.match(verbContent, /Être et avoir[\s\S]*2 éléments/);
+  assert.match(verbContent, /Tout le bloc[\s\S]*24/);
+  const erItems = evaluate("exerciseItemsForScope(currentTrajectory(), currentUnit(), { block: 'À retenir', subsection: 'On se rappelle ?', category: 'verbes en -ER' })");
+  const auxiliaryItems = evaluate("exerciseItemsForScope(currentTrajectory(), currentUnit(), { block: 'À retenir', subsection: 'On se rappelle ?', category: 'être / avoir' })");
+  assert.equal(erItems.length, 22);
+  assert.deepEqual(Array.from(auxiliaryItems, function (item) { return item.infinitive; }).sort(), ["avoir", "être"]);
+  assert.match(verbContent, /data-action="step-trajectory"/);
+  assert.match(verbContent, /data-action="step-part"/);
+  context.stepControl = { closest() { return { dataset: { action: "step-part" } }; } };
+  evaluate("handleClick({ target: stepControl })");
+  assert.match(appElement.innerHTML, /class="home-browser"/, "de stap Partie navigeert terug naar de onderdelen");
+
   evaluate("state.selectedUnitOrder = " + verbUnit.order + "; state.selectedScope = { block: 'À retenir', subsection: 'On se rappelle ?', category: '', title: 'On se rappelle ?' }; renderSetup()");
   const setup = appElement.innerHTML;
-  assert.match(setup, /Néerlandais → infinitif/);
-  assert.match(setup, /Infinitif → néerlandais/);
-  assert.match(setup, /Néerlandais \+ personne → conjugaison/);
-  assert.match(setup, /Infinitif \+ personne → conjugaison/);
+  assert.match(setup, /Néerlandais → français/);
+  assert.match(setup, /Français → néerlandais/);
+  assert.match(setup, /Conjuguer depuis le néerlandais/);
+  assert.match(setup, /Conjuguer depuis le français/);
+  assert.match(setup, /data-action="step-content"/);
   assert.equal((setup.match(/class="mode-card"/g) || []).length, 3);
   assert.match(setup, /Apprendre/);
   assert.match(setup, /S&#39;entraîner/);
@@ -130,7 +152,9 @@ function evaluate(code) { return vm.runInContext(code, context); }
 
   assert.match(css, /\.journey-steps[^}]*grid-template-columns:\s*repeat\(4, 1fr\)/);
   assert.match(css, /\.trajectory-grid[^}]*grid-template-columns:\s*repeat\(3, 1fr\)/);
-  assert.match(css, /\.scope-choice-grid[^}]*grid-template-columns:\s*repeat\(3/);
+  assert.match(css, /\.home-browser[^}]*grid-template-columns:\s*minmax\(250px, 330px\)/);
+  assert.match(css, /\.home-browser \.trajectory-grid[^}]*grid-template-columns:\s*1fr/);
+  assert.match(css, /\.scope-choice-grid[^}]*grid-template-columns:\s*repeat\(2/);
   assert.match(css, /@media \(max-width: 620px\)[\s\S]*\.trajectory-grid\s*\{[^}]*grid-template-columns:\s*1fr/);
 
   identity = { provider: "local", subject: "local", displayName: "Lokale leerling", className: "", verified: false };
@@ -147,6 +171,18 @@ function evaluate(code) { return vm.runInContext(code, context); }
   assert.equal(evaluate("state.pendingStartAction"), null, "de pending oefenactie wordt hervat");
   assert.match(appElement.innerHTML, /Se présenter/);
   assert.match(identityLabel.innerHTML, /Hakki Anouar/);
+
+  nextIdentityProvider = "school_code";
+  identityForm.values.identity_method = "school_code";
+  identityDialog.open = true;
+  identityDialog.closeCount = 0;
+  const timerCountBeforeFallback = scheduled.length;
+  await evaluate("submitStudentIdentity(identityForm)");
+  assert.match(identityMessage.innerHTML, /Code de dépannage accepté/);
+  const fallbackCompletion = scheduled.slice(timerCountBeforeFallback).find(function (timer) { return timer.delay >= 500 && timer.delay <= 800; });
+  assert.ok(fallbackCompletion, "ook fallbackcode-login plant automatisch sluiten");
+  fallbackCompletion.fn();
+  assert.equal(identityDialog.closeCount, 1, "ook fallbackcode-login sluit de modal automatisch");
 
   console.log("FINALE UX-REDESIGNREGRESSIE GESLAAGD");
   console.log("Login-afsluiting, pending actie, stappenbalk, Trajets, compacte onderdelen, expliciete scopes, Verbes, modi, aantallen en responsive CSS gecontroleerd.");

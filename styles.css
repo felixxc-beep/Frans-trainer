@@ -87,16 +87,20 @@ h2 { font-family: Georgia, "Times New Roman", serif; font-size: clamp(1.6rem, 3v
 .section-heading h2 { margin-bottom: 0; }
 .section-heading.home-heading h2 { font-size: clamp(1.35rem, 2vw, 1.8rem); }
 .step-label { color: var(--muted); font-weight: 700; font-size: .9rem; }
+.home-browser { display: grid; grid-template-columns: minmax(250px, 330px) minmax(0, 1fr); gap: 1.5rem; align-items: start; }
+.home-browser .section-heading { margin-top: .65rem; }
+.home-browser .trajectory-grid { grid-template-columns: 1fr; }
 
 .trajectory-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: .65rem; }
-.trajectory-card { border: 1px solid var(--line); border-radius: 15px; background: var(--surface); padding: .6rem .8rem; text-align: left; cursor: pointer; box-shadow: 0 4px 14px rgba(18,55,42,.035); transition: .18s ease; }
+.trajectory-card { border: 1px solid var(--line); border-radius: 15px; background: var(--surface); padding: .4rem .7rem; text-align: left; cursor: pointer; box-shadow: 0 4px 14px rgba(18,55,42,.035); transition: .18s ease; }
 .trajectory-card:hover, .trajectory-card[aria-pressed="true"] { transform: translateY(-3px); border-color: var(--forest-2); box-shadow: var(--shadow); }
 .trajectory-card[aria-pressed="true"] { background: var(--forest); color: white; }
 .trajectory-card small { display: block; color: var(--muted); }
 .trajectory-card[aria-pressed="true"] small { color: #cfe0d8; }
 .trajectory-number { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: .15rem; }
-.trajectory-number strong { font-size: .9rem; font-weight: 850; letter-spacing: .06em; text-transform: uppercase; }
-.trajectory-progress { font-size: .8rem; }
+.trajectory-number strong { font-size: .86rem; font-weight: 850; letter-spacing: .055em; text-transform: uppercase; }
+.trajectory-progress { font-size: .76rem; line-height: 1.08; }
+.trajectory-progress .ui-bilingual { gap: 0; line-height: 1.08; }
 .count-badge { display: inline-flex; align-items: center; justify-content: center; min-width: 2rem; padding: .2rem .55rem; border-radius: 999px; background: var(--mint); color: var(--forest); font-size: .75rem; font-weight: 800; }
 
 .unit-list { display: grid; border-block: 1px solid var(--line); }
@@ -113,6 +117,8 @@ h2 { font-family: Georgia, "Times New Roman", serif; font-size: clamp(1.6rem, 3v
 .journey-step { min-width: 130px; display: flex; align-items: center; gap: .5rem; padding: .34rem .55rem; border: 1px solid var(--line); border-radius: 11px; background: rgba(255,255,255,.58); color: var(--muted); font-size: .78rem; font-weight: 750; position: relative; }
 .journey-step b { width: 22px; height: 22px; flex: 0 0 auto; display: grid; place-items: center; border-radius: 7px; background: var(--mint); color: var(--forest); }
 .journey-step .ui-nl { font-size: .7em; }
+.journey-step.is-reached { cursor: pointer; font-family: inherit; text-align: left; }
+.journey-step.is-reached:hover { border-color: var(--forest-2); background: var(--surface); color: var(--forest); }
 .journey-step.is-active { border-color: var(--forest); background: var(--forest); color: white; }
 .journey-step.is-active b { background: var(--gold); }
 .journey-step.is-active .ui-nl { color: #d8e5df; }
@@ -190,11 +196,12 @@ dialog::backdrop { background: rgba(10,29,23,.45); backdrop-filter: blur(4px); }
 .source-only { color: var(--muted); font-size: .82rem; }
 .subsection-title { display: flex; align-items: center; justify-content: space-between; gap: .75rem; }
 .subsection-title h4 { margin: 0; font-size: .95rem; }
-.scope-choice-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .5rem; margin-top: .3rem; }
-.scope-choice-card { min-height: 52px; display: grid; grid-template-columns: 1fr auto; gap: .65rem; align-items: center; padding: .48rem .65rem; border: 1px solid var(--line); border-radius: 11px; background: white; color: var(--ink); text-align: left; cursor: pointer; transition: .16s ease; }
+.scope-choice-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem; margin-top: .3rem; }
+.scope-choice-card { min-height: 58px; display: grid; grid-template-columns: 1fr auto; grid-template-rows: auto auto; gap: .05rem .65rem; align-items: center; padding: .48rem .65rem; border: 1px solid var(--line); border-radius: 11px; background: white; color: var(--ink); text-align: left; cursor: pointer; transition: .16s ease; }
 .scope-choice-card:hover { border-color: var(--forest-2); background: #f8fbf9; transform: translateY(-1px); }
 .scope-choice-card strong { overflow-wrap: anywhere; font-size: .86rem; line-height: 1.22; }
-.scope-choice-card > span { color: var(--forest-2); font-size: .7rem; font-weight: 800; white-space: nowrap; }
+.scope-choice-card > span { grid-column: 2; grid-row: 1; color: var(--forest-2); font-size: .7rem; font-weight: 800; white-space: nowrap; }
+.scope-choice-card > small { grid-column: 1 / -1; color: var(--muted); font-size: .69rem; font-style: italic; }
 .scope-all-button { min-height: 36px; display: inline-flex; align-items: center; gap: .55rem; padding: .38rem .6rem; border: 1px solid var(--line); border-radius: 10px; background: transparent; color: var(--forest-2); cursor: pointer; font-size: .74rem; font-weight: 800; }
 .scope-all-button:hover { border-color: var(--forest-2); background: white; }
 .scope-all-button > span { min-width: 1.8rem; padding: .12rem .35rem; border-radius: 999px; background: var(--mint); color: var(--forest); text-align: center; }
@@ -308,6 +315,8 @@ dialog::backdrop { background: rgba(10,29,23,.45); backdrop-filter: blur(4px); }
 @media (max-width: 860px) {
   .quick-grid { grid-template-columns: repeat(2, 1fr); }
   .quick-card { min-height: auto; }
+  .home-browser { grid-template-columns: 1fr; gap: .5rem; }
+  .home-browser .trajectory-grid { grid-template-columns: repeat(2, 1fr); }
   .setup-grid { grid-template-columns: 1fr; }
   .scope-choice-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .stat-grid { grid-template-columns: repeat(2, 1fr); }
@@ -324,7 +333,7 @@ dialog::backdrop { background: rgba(10,29,23,.45); backdrop-filter: blur(4px); }
   .quick-card { min-height: 74px; }
   .journey-steps { display: flex; margin: .8rem 0; padding-bottom: .2rem; }
   .journey-step { min-width: 122px; }
-  .trajectory-grid { grid-template-columns: 1fr; gap: .5rem; }
+  .trajectory-grid, .home-browser .trajectory-grid { grid-template-columns: 1fr; gap: .5rem; }
   .trajectory-card { padding: .65rem .8rem; }
   .unit-card { grid-template-columns: 32px minmax(0, 1fr); gap: .55rem; }
   .unit-meta { grid-column: 2; white-space: normal; }
