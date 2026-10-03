@@ -26,10 +26,13 @@
     course: null,
     courseIndex: Object.create(null),
     raw: emptyDataset(),
-    filters: { period: "all", trajectory: "all", mode: "all", classId: "all", studentId: "all", studentStatus: "active", category: "all", subsection: "all" },
+    filters: { period: "today", trajectory: "all", mode: "all", classId: "all", studentId: "all", studentStatus: "active", category: "all", subsection: "all" },
+    monitorSort: "auto",
+    lastRefreshedAt: null,
+    autoRefreshTimer: null,
     route: { view: "dashboard", classId: null, studentId: null },
     management: { loaded: false, classes: [], students: [], selectedClassId: null, studentStatus: "active", generatedCode: "", createdStudents: [], message: "", messageIsError: false },
-    teacherAdmin: { loaded: false, teachers: [], assignments: [], classes: [], message: "", messageIsError: false },
+    teacherAdmin: { loaded: false, teachers: [], assignments: [], classes: [], editingTeacherId: null, message: "", messageIsError: false },
     loading: false,
     loadSequence: 0
   };
@@ -250,6 +253,28 @@
     return values;
   }
 
+  function periodBounds(period, nowValue) {
+    const now = new Date(nowValue || Date.now());
+    const end = now.getTime();
+    if (period === "15m" || period === "30m" || period === "60m") {
+      return { start: end - Number(period.slice(0, -1)) * 60 * 1000, end: end };
+    }
+    if (period === "today" || period === "yesterday") {
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+      return period === "today"
+        ? { start: today, end: end }
+        : { start: today - 24 * 60 * 60 * 1000, end: today };
+    }
+    if (period === "7" || period === "30") return { start: end - Number(period) * 24 * 60 * 60 * 1000, end: end };
+    return { start: null, end: null };
+  }
+
+  function dateWithinBounds(value, bounds) {
+    if (bounds.start === null) return true;
+    const time = new Date(value || 0).getTime();
+    return Number.isFinite(time) && time >= bounds.start && time < bounds.end;
+  }
+
   function filterDataset(raw, filters, nowValue) {
     const source = raw || emptyDataset();
     const classId = filters.classId || "all";
@@ -257,9 +282,7 @@
     const studentStatus = filters.studentStatus || "active";
     const category = filters.category || "all";
     const subsection = filters.subsection || "all";
-    const now = nowValue ? new Date(nowValue).getTime() : Date.now();
-    const days = filters.period === "7" ? 7 : filters.period === "30" ? 30 : null;
-    const threshold = days ? now - days * 24 * 60 * 60 * 1000 : null;
+    const bounds = periodBounds(filters.period, nowValue);
     const students = asArray(source.students).filter(function (student) {
       if (classId !== "all" && student.class_id !== classId) return false;
       if (studentId !== "all" && student.id !== studentId) return false;
@@ -271,10 +294,12 @@
     const classes = asArray(source.classes).filter(function (classRow) {
       return classId === "all" ? (studentId === "all" || students.some(function (student) { return student.class_id === classRow.id; })) : classRow.id === classId;
     });
+    const recentAttemptSessionIds = new Set(asArray(source.attempts).filter(function (attempt) {
+      return studentIds.has(attempt.student_id) && dateWithinBounds(attempt.created_at, bounds);
+    }).map(function (attempt) { return attempt.session_id; }));
     const sessions = asArray(source.sessions).filter(function (session) {
       if (!studentIds.has(session.student_id)) return false;
-      const sessionTime = new Date(session.finished_at || session.started_at || 0).getTime();
-      if (threshold !== null && (Number.isNaN(sessionTime) || sessionTime < threshold)) return false;
+      if (!dateWithinBounds(session.finished_at || session.started_at, bounds) && !recentAttemptSessionIds.has(session.id)) return false;
       if (filters.trajectory !== "all" && session.trajectory !== filters.trajectory) return false;
       if (filters.mode !== "all" && session.mode !== filters.mode) return false;
       if (category !== "all" && session.top_category !== category) return false;
@@ -286,7 +311,9 @@
       classes: classes,
       students: students,
       sessions: sessions,
-      attempts: asArray(source.attempts).filter(function (attempt) { return sessionIds.has(attempt.session_id); })
+      attempts: asArray(source.attempts).filter(function (attempt) {
+        return sessionIds.has(attempt.session_id) && dateWithinBounds(attempt.created_at, bounds);
+      })
     };
   }
 
@@ -305,8 +332,31 @@
       accuracy: percentage(correct, attemptRows.length),
       activeDurationSeconds: measuredSessions.reduce(function (sum, session) { return sum + Math.max(0, Number(session.active_duration_seconds || 0)); }, 0),
       hasMeasuredDuration: measuredSessions.length > 0,
-      lastActivity: latestDate(sessionRows, ["finished_at", "started_at"])
+      lastActivity: latestDate(sessionRows.concat(attemptRows), ["created_at", "finished_at", "started_at"])
     };
+  }
+
+  function classMonitor(data, classId) {
+    const students = asArray(data.students).filter(function (student) { return student.class_id === classId && student.is_active !== false; });
+    return students.map(function (student) {
+      const overview = studentOverview(data, student);
+      const unfinished = overview.sessionRows.some(function (session) { return !session.finished_at; });
+      return Object.assign({}, overview, {
+        status: unfinished ? "Bezig" : overview.exercisesMade > 0 ? "Geoefend" : "Nog niet gestart"
+      });
+    });
+  }
+
+  function sortClassMonitor(rows, sortValue) {
+    const statusOrder = { "Nog niet gestart": 0, "Bezig": 1, "Geoefend": 2 };
+    const sort = sortValue === "auto" ? "status" : sortValue;
+    return asArray(rows).slice().sort(function (left, right) {
+      if (sort === "name") return String(left.student.display_name || "").localeCompare(String(right.student.display_name || ""), "nl");
+      if (sort === "last") return new Date(right.lastActivity || 0) - new Date(left.lastActivity || 0) || String(left.student.display_name || "").localeCompare(String(right.student.display_name || ""), "nl");
+      if (sort === "made") return right.exercisesMade - left.exercisesMade || String(left.student.display_name || "").localeCompare(String(right.student.display_name || ""), "nl");
+      if (sort === "time") return right.activeDurationSeconds - left.activeDurationSeconds || String(left.student.display_name || "").localeCompare(String(right.student.display_name || ""), "nl");
+      return statusOrder[left.status] - statusOrder[right.status] || String(left.student.display_name || "").localeCompare(String(right.student.display_name || ""), "nl");
+    });
   }
 
   function classOverview(data, classRow) {
@@ -629,9 +679,36 @@
     }).join("");
   }
 
+  function periodLabel(period) {
+    return { "15m": "laatste 15 minuten", "30m": "laatste 30 minuten", "60m": "laatste 60 minuten", today: "vandaag", yesterday: "gisteren", "7": "laatste 7 dagen", "30": "laatste 30 dagen", all: "alles" }[period] || "gekozen periode";
+  }
+
+  function renderClassMonitor(classRow) {
+    const monitorFilters = Object.assign({}, state.filters, { studentId: "all", studentStatus: "active" });
+    const monitorData = filterDataset(state.raw, monitorFilters);
+    const rows = sortClassMonitor(classMonitor(monitorData, classRow.id), state.monitorSort);
+    const activity = summarize(monitorData.sessions, monitorData.attempts);
+    const practiced = rows.filter(function (row) { return row.exercisesMade > 0; }).length;
+    const notStarted = rows.length - practiced;
+    const rowHtml = rows.map(function (row) {
+      const accuracy = row.attempts ? row.accuracy + "%" : "—";
+      return '<tr class="monitor-row" tabindex="0" data-action="view-student" data-id="' + escapeHtml(row.student.id) + '"><td><strong>' + escapeHtml(row.student.display_name || "Naamloze leerling") + '</strong></td><td><span class="monitor-status status-' + row.status.toLowerCase().replace(/\s+/g, "-") + '">' + escapeHtml(row.status) + '</span></td><td>' + row.exercisesMade + '</td><td>' + escapeHtml(formatActiveDuration(row.activeDurationSeconds)) + '</td><td>' + escapeHtml(row.lastActivity ? formatDate(row.lastActivity) : "—") + '</td><td>' + accuracy + '</td></tr>';
+    }).join("");
+    return '<section class="monitor-panel"><div class="section-heading monitor-heading"><div><p class="eyebrow">Klasmonitor · ' + escapeHtml(periodLabel(state.filters.period)) + '</p><h2>' + escapeHtml(classRow.name) + '</h2><p>' + practiced + ' van ' + rows.length + ' actieve leerlingen oefenden in deze periode.</p></div><label class="monitor-sort"><span>Sorteer</span><select id="monitorSort"><option value="auto"' + (state.monitorSort === "auto" ? " selected" : "") + '>Geen activiteit eerst</option><option value="status"' + (state.monitorSort === "status" ? " selected" : "") + '>Status</option><option value="name"' + (state.monitorSort === "name" ? " selected" : "") + '>Naam</option><option value="last"' + (state.monitorSort === "last" ? " selected" : "") + '>Laatste activiteit</option><option value="made"' + (state.monitorSort === "made" ? " selected" : "") + '>Gemaakt</option><option value="time"' + (state.monitorSort === "time" ? " selected" : "") + '>Actieve tijd</option></select></label></div>' +
+      '<section class="monitor-summary" aria-label="Klassamenvatting"><span><strong>' + practiced + ' / ' + rows.length + '</strong> leerlingen geoefend</span><span><strong>' + notStarted + '</strong> nog niet gestart</span><span><strong>' + activity.exercisesMade + '</strong> oefeningen gemaakt</span><span><strong>' + escapeHtml(formatActiveDuration(activity.activeDurationSeconds)) + '</strong> actieve oefentijd</span><span><strong>' + (activity.attempts ? activity.accuracy + "%" : "—") + '</strong> correct</span></section>' +
+      (rowHtml ? '<div class="table-wrap"><table class="monitor-table"><thead><tr><th>Leerling</th><th>Status</th><th>Gemaakt</th><th>Actieve tijd</th><th>Laatste activiteit</th><th>Correct</th></tr></thead><tbody>' + rowHtml + '</tbody></table></div>' : emptyState("Geen actieve leerlingen", "Deze klas heeft nog geen actieve leerlingen.")) +
+      '<p class="refresh-note">Laatst vernieuwd: ' + escapeHtml(state.lastRefreshedAt ? new Intl.DateTimeFormat("nl-BE", { hour: "2-digit", minute: "2-digit", second: "2-digit" }).format(state.lastRefreshedAt) : "—") + '</p></section>';
+  }
+
   function renderDashboard(data) {
+    const selectedClass = state.raw.classes.find(function (row) { return row.id === state.filters.classId; });
     const cards = renderClassCards(data);
-    return renderSummaryCards(data) + '<section class="section-block"><div class="section-heading"><div><p class="eyebrow">Mijn klassen</p><h2>Klassenoverzicht</h2></div></div>' + (cards ? '<div class="class-grid">' + cards + '</div>' : emptyState("Nog geen klassen", "Supabase gaf voor dit leerkrachtenaccount geen klassen terug.")) + '</section>';
+    if (selectedClass) {
+      return renderClassMonitor(selectedClass) + '<details class="secondary-analytics"><summary>Algemene analyses en klasdetails</summary>' + renderSummaryCards(data) + '<div class="section-block"><button class="button button-secondary" type="button" data-action="view-class" data-id="' + escapeHtml(selectedClass.id) + '">Open volledige klasdetails</button></div></details>';
+    }
+    return '<section class="monitor-intro"><p class="eyebrow">Klasmonitor</p><h2>Kies een klas</h2><p class="muted">Selecteer bovenaan één klas om alle actieve leerlingen en hun activiteit in de gekozen periode te zien.</p></section>' +
+      '<section class="section-block compact-section"><div class="section-heading"><div><h2>Mijn klassen</h2></div></div>' + (cards ? '<div class="class-grid">' + cards + '</div>' : emptyState("Nog geen klassen", "Supabase gaf voor dit leerkrachtenaccount geen klassen terug.")) + '</section>' +
+      '<details class="secondary-analytics"><summary>Algemene analyses</summary>' + renderSummaryCards(data) + '</details>';
   }
 
   function renderClassesPage(data) {
@@ -700,9 +777,8 @@
 
   function studentMasterySummary(attempts) {
     if (!window.MonParcoursMastery || !state.course) return null;
-    const exerciseTypes = new Set(["vocabulary", "verb", "phrase", "grammar_rule", "number"]);
     const items = asArray(state.course.trajectories).reduce(function (all, trajectory) {
-      return all.concat(asArray(trajectory.items).filter(function (item) { return exerciseTypes.has(item.type); }));
+      return all.concat(asArray(trajectory.items));
     }, []);
     const localAttempts = asArray(attempts).map(function (attempt) {
       return Object.assign({}, attempt, {
@@ -767,14 +843,21 @@
       if (!assignmentsByTeacher[row.teacher_id]) assignmentsByTeacher[row.teacher_id] = new Set();
       assignmentsByTeacher[row.teacher_id].add(row.class_id);
     });
-    const cards = data.teachers.map(function (teacher) {
+    const rows = data.teachers.map(function (teacher) {
       const assigned = assignmentsByTeacher[teacher.auth_user_id] || new Set();
+      const classNames = data.classes.filter(function (classRow) { return assigned.has(classRow.id); }).map(function (classRow) { return classRow.name; });
+      return '<tr><td><strong>' + escapeHtml(teacher.display_name || "Naamloze leerkracht") + '</strong><br><span class="muted">' + escapeHtml(teacher.email || "Geen e-mailadres") + '</span></td><td>' + escapeHtml(teacher.role === "admin" ? "Admin" : "Teacher") + '</td><td><span class="pill">' + (teacher.is_active ? "Actief" : "Inactief") + '</span></td><td>' + escapeHtml(classNames.join(", ") || "Geen") + '</td><td><button class="small-button" type="button" data-action="edit-teacher-access" data-id="' + escapeHtml(teacher.auth_user_id) + '">Bewerken</button></td></tr>';
+    }).join("");
+    const editing = data.teachers.find(function (teacher) { return teacher.auth_user_id === data.editingTeacherId; });
+    let editor = "";
+    if (editing) {
+      const assigned = assignmentsByTeacher[editing.auth_user_id] || new Set();
       const classChoices = data.classes.map(function (classRow) {
         return '<label class="teacher-class-choice"><input type="checkbox" name="class_ids" value="' + escapeHtml(classRow.id) + '"' + (assigned.has(classRow.id) ? " checked" : "") + '><span><strong>' + escapeHtml(classRow.name) + '</strong><small>' + escapeHtml(classRow.class_code) + '</small></span></label>';
       }).join("");
-      return '<article class="panel teacher-access-card"><form class="management-form" data-form="teacher-access"><input type="hidden" name="teacher_id" value="' + escapeHtml(teacher.auth_user_id) + '"><div class="section-heading"><div><h3>' + escapeHtml(teacher.display_name || teacher.email || "Naamloze leerkracht") + '</h3><p>' + escapeHtml(teacher.email || "Geen e-mailadres") + '</p></div><span class="pill">' + escapeHtml(teacher.role === "admin" ? "Admin" : "Teacher") + '</span></div><label><span>Weergavenaam</span><input name="display_name" maxlength="120" value="' + escapeHtml(teacher.display_name || "") + '"></label><div class="teacher-access-fields"><label><span>Rol</span><select name="role"><option value="teacher"' + (teacher.role === "teacher" ? " selected" : "") + '>Teacher</option><option value="admin"' + (teacher.role === "admin" ? " selected" : "") + '>Admin</option></select></label><label><span>Status</span><select name="is_active"><option value="true"' + (teacher.is_active ? " selected" : "") + '>Actief</option><option value="false"' + (teacher.is_active ? "" : " selected") + '>Inactief</option></select></label></div><fieldset><legend>Toegewezen klassen</legend><div class="teacher-class-grid">' + (classChoices || '<p class="muted">Maak eerst een klas aan.</p>') + '</div></fieldset><button class="button button-primary" type="submit">Toegang opslaan</button></form></article>';
-    }).join("");
-    return breadcrumbs([{ label: "Dashboard", action: "view-dashboard" }, { label: "Leerkrachten" }]) + '<div class="page-heading"><div><p class="eyebrow">Administratie</p><h2>Leerkrachten</h2><p class="muted">Activeer accounts en wijs één of meerdere klassen toe. Nieuwe Auth-accounts starten altijd inactief.</p></div></div><p id="teacherAdminMessage" class="management-message' + (data.messageIsError ? " error" : "") + '" aria-live="polite">' + escapeHtml(data.message) + '</p><div class="teacher-access-list">' + (cards || emptyState("Nog geen leerkrachten", "Nodig eerst een collega uit via Supabase Authentication.")) + '</div>';
+      editor = '<article class="panel teacher-access-card"><form class="management-form" data-form="teacher-access"><input type="hidden" name="teacher_id" value="' + escapeHtml(editing.auth_user_id) + '"><div class="section-heading"><div><h3>' + escapeHtml(editing.display_name || editing.email || "Naamloze leerkracht") + '</h3><p>' + escapeHtml(editing.email || "Geen e-mailadres") + '</p></div><button class="small-button" type="button" data-action="close-teacher-editor">Sluiten</button></div><label><span>Weergavenaam</span><input name="display_name" maxlength="120" value="' + escapeHtml(editing.display_name || "") + '"></label><div class="teacher-access-fields"><label><span>Rol</span><select name="role"><option value="teacher"' + (editing.role === "teacher" ? " selected" : "") + '>Teacher</option><option value="admin"' + (editing.role === "admin" ? " selected" : "") + '>Admin</option></select></label><label><span>Status</span><select name="is_active"><option value="true"' + (editing.is_active ? " selected" : "") + '>Actief</option><option value="false"' + (editing.is_active ? "" : " selected") + '>Inactief</option></select></label></div><fieldset><legend>Toegewezen klassen</legend><div class="teacher-class-grid">' + (classChoices || '<p class="muted">Maak eerst een klas aan.</p>') + '</div></fieldset><button class="button button-primary" type="submit">Toegang opslaan</button></form></article>';
+    }
+    return breadcrumbs([{ label: "Dashboard", action: "view-dashboard" }, { label: "Leerkrachten" }]) + '<div class="page-heading"><div><p class="eyebrow">Administratie</p><h2>Leerkrachten</h2><p class="muted">Compact overzicht van accounts, rollen en klastoegang.</p></div></div><p id="teacherAdminMessage" class="management-message' + (data.messageIsError ? " error" : "") + '" aria-live="polite">' + escapeHtml(data.message) + '</p>' + (rows ? '<div class="table-wrap"><table><thead><tr><th>Leerkracht</th><th>Rol</th><th>Status</th><th>Klassen</th><th></th></tr></thead><tbody>' + rows + '</tbody></table></div>' : emptyState("Nog geen leerkrachten", "Nodig eerst een collega uit via Supabase Authentication.")) + editor;
   }
 
   function currentFilteredData() {
@@ -837,12 +920,44 @@
     });
   }
 
+  function isShortPeriod(period) {
+    return period === "15m" || period === "30m" || period === "60m";
+  }
+
+  function clearAutoRefresh() {
+    if (state.autoRefreshTimer) window.clearTimeout(state.autoRefreshTimer);
+    state.autoRefreshTimer = null;
+  }
+
+  function scheduleAutoRefresh() {
+    clearAutoRefresh();
+    if (!state.user || state.route.view !== "dashboard" || !isShortPeriod(state.filters.period)) return;
+    state.autoRefreshTimer = window.setTimeout(async function () {
+      state.autoRefreshTimer = null;
+      if (document.hidden || state.loading || !state.user) {
+        scheduleAutoRefresh();
+        return;
+      }
+      state.loading = true;
+      try {
+        state.raw = await loadRlsDataset(state.client);
+        state.lastRefreshedAt = new Date();
+        populateFilters();
+        renderCurrent();
+      } finally {
+        state.loading = false;
+        scheduleAutoRefresh();
+      }
+    }, 30000);
+  }
+
   function showLogin(message) {
+    clearAutoRefresh();
     state.user = null;
     state.teacherProfile = null;
     state.raw = emptyDataset();
     state.management = { loaded: false, classes: [], students: [], selectedClassId: null, studentStatus: "active", generatedCode: "", createdStudents: [], message: "", messageIsError: false };
-    state.teacherAdmin = { loaded: false, teachers: [], assignments: [], classes: [], message: "", messageIsError: false };
+    state.teacherAdmin = { loaded: false, teachers: [], assignments: [], classes: [], editingTeacherId: null, message: "", messageIsError: false };
     state.route = { view: "dashboard", classId: null, studentId: null };
     document.querySelector("#authView").hidden = false;
     document.querySelector("#dashboardView").hidden = true;
@@ -893,6 +1008,7 @@
     if (sameUser && state.loading && !forceReload) return;
     if (sameUser && !forceReload && state.raw.classes.length + state.raw.students.length + state.raw.sessions.length + state.raw.attempts.length > 0) {
       renderCurrent();
+      scheduleAutoRefresh();
       return;
     }
     const sequence = ++state.loadSequence;
@@ -902,8 +1018,10 @@
       const dataset = await loadRlsDataset(state.client);
       if (sequence !== state.loadSequence || !state.user) return;
       state.raw = dataset;
+      state.lastRefreshedAt = new Date();
       populateFilters();
       renderCurrent();
+      scheduleAutoRefresh();
     } catch (error) {
       if (sequence !== state.loadSequence) return;
       document.querySelector("#dashboardContent").innerHTML = '<div class="error-state"><strong>Dashboard kon niet worden geladen.</strong><p>Controleer je verbinding en de RLS-toegang in Supabase en probeer opnieuw.</p></div>';
@@ -988,6 +1106,7 @@
       state.teacherAdmin.assignments = data.assignments;
       state.teacherAdmin.classes = data.classes;
       state.teacherAdmin.loaded = true;
+      state.teacherAdmin.editingTeacherId = null;
       renderCurrent();
     } catch (error) {
       document.querySelector("#dashboardContent").innerHTML = '<div class="error-state"><strong>Leerkrachten konden niet worden geladen.</strong><p>Alleen een actieve admin heeft toegang tot dit onderdeel.</p></div>';
@@ -1008,6 +1127,7 @@
 
   function friendlyManagementError(error) {
     const message = String(error && error.message || "");
+    if (/last active admin|laatste actieve admin/i.test(message)) return "De laatste actieve beheerder kan niet worden gedeactiveerd of gewijzigd naar leerkracht.";
     if (/duplicate|unique/i.test(message)) return "Deze klas- of leerlingcode bestaat al. Probeer opnieuw.";
     if (/row-level security|permission|policy/i.test(message)) return "Supabase heeft deze wijziging via RLS geweigerd.";
     return message && !/^[A-Z_]+$/.test(message) ? message : "De wijziging kon niet worden opgeslagen. Probeer opnieuw.";
@@ -1043,6 +1163,7 @@
         state.teacherAdmin.assignments = data.assignments;
         state.teacherAdmin.classes = data.classes;
         state.teacherAdmin.loaded = true;
+        state.teacherAdmin.editingTeacherId = null;
         state.teacherAdmin.message = "Leerkrachtentoegang opgeslagen.";
         state.teacherAdmin.messageIsError = false;
         renderCurrent();
@@ -1134,6 +1255,18 @@
     if (action === "view-teachers") {
       await openTeachers(false);
       window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+    if (action === "edit-teacher-access") {
+      state.teacherAdmin.editingTeacherId = id;
+      state.teacherAdmin.message = "";
+      state.teacherAdmin.messageIsError = false;
+      renderCurrent();
+      return;
+    }
+    if (action === "close-teacher-editor") {
+      state.teacherAdmin.editingTeacherId = null;
+      renderCurrent();
       return;
     }
     if (action === "view-management") {
@@ -1274,6 +1407,14 @@
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
+  function handleContentKeydown(event) {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    const row = event.target.closest && event.target.closest(".monitor-row[data-action]");
+    if (!row) return;
+    event.preventDefault();
+    handleContentClick({ target: row });
+  }
+
   function handleFilters() {
     state.filters = {
       period: document.querySelector("#periodFilter").value,
@@ -1286,12 +1427,23 @@
       subsection: document.querySelector("#subsectionFilter").value
     };
     populateFilters();
+    if (state.filters.studentId !== "all") {
+      const selectedStudent = state.raw.students.find(function (student) { return student.id === state.filters.studentId; });
+      state.route = { view: "student", classId: selectedStudent && selectedStudent.class_id || null, studentId: state.filters.studentId };
+    } else if (state.route.view === "student") {
+      state.route = { view: "dashboard", classId: null, studentId: null };
+    }
     renderCurrent();
+    scheduleAutoRefresh();
   }
 
   function handleContentChange(event) {
     if (event.target.id === "managementStudentStatus") {
       state.management.studentStatus = event.target.value;
+      renderCurrent();
+    }
+    if (event.target.id === "monitorSort") {
+      state.monitorSort = event.target.value;
       renderCurrent();
     }
   }
@@ -1342,6 +1494,7 @@
     });
     document.querySelector("#filterBar").addEventListener("change", handleFilters);
     document.querySelector("#dashboardContent").addEventListener("click", handleContentClick);
+    document.querySelector("#dashboardContent").addEventListener("keydown", handleContentKeydown);
     document.querySelector("#dashboardContent").addEventListener("submit", handleManagementSubmit);
     document.querySelector("#dashboardContent").addEventListener("change", handleContentChange);
     document.querySelector("#dashboardContent").addEventListener("input", handleContentInput);
@@ -1368,8 +1521,11 @@
 
   window.MonParcoursTeacher = Object.freeze({
     buildCourseIndex: buildCourseIndex,
+    periodBounds: periodBounds,
     filterDataset: filterDataset,
     summarize: summarize,
+    classMonitor: classMonitor,
+    sortClassMonitor: sortClassMonitor,
     classOverview: classOverview,
     studentOverview: studentOverview,
     studentMasterySummary: studentMasterySummary,

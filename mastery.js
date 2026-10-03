@@ -140,10 +140,6 @@
     return combined;
   }
 
-  function isDynamicNumber(item) {
-    return item && item.type === "number" && item.dynamic_range === true && Array.isArray(item.range) && item.range.length === 2;
-  }
-
   function roundedPercentages(counts, total) {
     if (!total) return { new: 0, learning: 0, acquired: 0 };
     const names = [STATUS.NEW, STATUS.LEARNING, STATUS.ACQUIRED];
@@ -164,34 +160,9 @@
       const itemId = String(item && item.id || "");
       if (!itemId || seen.has(itemId)) return;
       seen.add(itemId);
-      if (isDynamicNumber(item)) {
-        const minimum = Number(item.range[0]);
-        const maximum = Number(item.range[1]);
-        const total = Math.max(0, maximum - minimum + 1);
-        let practiced = 0;
-        records.forEach(function (record) {
-          if (record.itemId !== itemId || record.itemVariant === "") return;
-          const numericVariant = Number(record.itemVariant);
-          if (!Number.isInteger(numericVariant) || numericVariant < minimum || numericVariant > maximum) return;
-          const status = getMasteryStatus(record);
-          counts[status] += 1;
-          masteryScoreTotal += getMasteryLevel(record);
-          practiced += 1;
-        });
-        counts.new += Math.max(0, total - practiced);
-        return;
-      }
-      const variants = item && item.type === "verb" && Array.isArray(item.conjugations)
-        ? Array.from(new Set(item.conjugations.map(function (entry) { return String(entry && entry.subject || ""); }).filter(Boolean)))
-        : [];
-      const baseRecord = records.get(keyFor(itemId, ""));
-      counts[getMasteryStatus(baseRecord)] += 1;
-      masteryScoreTotal += getMasteryLevel(baseRecord);
-      variants.forEach(function (variant) {
-        const variantRecord = records.get(keyFor(itemId, variant));
-        counts[getMasteryStatus(variantRecord)] += 1;
-        masteryScoreTotal += getMasteryLevel(variantRecord);
-      });
+      const combined = combineItemRecords(records, itemId);
+      counts[getMasteryStatus(combined)] += 1;
+      masteryScoreTotal += getMasteryLevel(combined);
     });
     const total = counts.new + counts.learning + counts.acquired;
     return {

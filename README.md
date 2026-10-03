@@ -57,6 +57,14 @@ Met Node.js kun je de ingebouwde controles uitvoeren:
 8. node tests/identity-button-regression.js
 9. node tests/trajectories-4-6-regression.js
 10. node tests/mastery-regression.js
+11. node tests/teacher-dashboard-regression.js
+12. node tests/phase4-management-regression.js
+13. node tests/phase5-school-email-regression.js
+14. node tests/phase5b-active-time-regression.js
+15. node tests/phase6-multi-teacher-regression.js
+16. node tests/bilingual-student-ui-regression.js
+17. node tests/final-ux-redesign-regression.js
+18. node tests/supabase-browser-client-regression.js
 
 De volledige audit controleert alle trajecten en cursusonderdelen, de koppeling van studieblokken en subsecties, alle werkwoordvervoegingen, expliciete alternatieve antwoorden en synoniemgroepen. De GitHub Pages-audit controleert de rootstructuur, relatieve assets, subpadwerking, localStorage en de afwezigheid van een backend of buildstap.
 
@@ -90,8 +98,9 @@ Elk leeritem heeft daarnaast een permanente `id`. Voer na het toevoegen van nieu
 - `student-identity.js` is de centrale, verwisselbare identificatielaag.
 - `supabase-client.js` doet alleen begrensde RPC-aanroepen.
 - `sync-manager.js` bewaart mislukte verzendingen in `monParcoursSyncQueueV1` en probeert ze later opnieuw.
-- `mastery.js` bevat zowel de gedeelde statusdefinitie als het continue beheersingsniveau. De bewijswaarde is 10% na alleen Leren, 40% na één, 60% na twee en 75% na drie correcte zelfstandige antwoorden; extra correcte antwoorden bouwen beperkt verder op. Die waarde wordt vermenigvuldigd met de zelfstandige nauwkeurigheid, blijft voor niet-Gekende items tussen 10% en 90%, en wordt alleen bij status Gekend 100%. `monParcoursMasteryAttemptsV1` bewaart alleen de minimale lokale, nog te verzoenen pogingsmetadata en nooit getypte antwoorden.
+- `mastery.js` bevat zowel de gedeelde statusdefinitie als het continue beheersingsniveau. De bewijswaarde is 10% na alleen Leren, 40% na één, 60% na twee en 75% na drie correcte zelfstandige antwoorden; extra correcte antwoorden bouwen beperkt verder op. Die waarde wordt vermenigvuldigd met de zelfstandige nauwkeurigheid, blijft voor niet-Gekende items tussen 10% en 90%, en wordt alleen bij status Gekend 100%. De zichtbare noemer telt elk permanent `item.id` exact één keer; oefenrichtingen, vervoegingspersonen en dynamische getalvarianten leveren bewijs voor dat item maar maken geen extra leeritems. `monParcoursMasteryAttemptsV1` bewaart alleen de minimale lokale, nog te verzoenen pogingsmetadata en nooit getypte antwoorden.
 - Het leerkrachtendashboard gebruikt Supabase Auth met server-side rollen en many-to-many klastoegang via `teachers` en `class_teachers`.
+- De klasmonitor kan 15, 30 of 60 minuten, vandaag, gisteren, 7 dagen, 30 dagen of alle resultaten tonen. Bij een gekozen klas blijven alle actieve leerlingen zichtbaar, ook zonder activiteit; korte periodes vernieuwen om de 30 seconden zolang het tabblad zichtbaar is.
 - `config.js` bevat uitsluitend de Project URL en publishable key.
 - Een nieuwe leerling moet zich eenmaal online met een actieve schoolmailidentiteit koppelen voordat oefenen mogelijk is.
 - Een eerder gekoppelde leerling kan bij tijdelijke internetuitval blijven oefenen; resultaten wachten dan in de lokale syncqueue.

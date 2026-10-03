@@ -33,6 +33,12 @@ assert.match(html, /id="logoutButton"/);
 assert.match(html, /id="periodFilter"/);
 assert.match(html, /id="trajectoryFilter"/);
 assert.match(html, /id="modeFilter"/);
+assert.match(html, /value="15m"[^>]*>Laatste 15 minuten/);
+assert.match(html, /value="30m"[^>]*>Laatste 30 minuten/);
+assert.match(html, /value="60m"[^>]*>Laatste 60 minuten/);
+assert.match(html, /value="today"[^>]*selected>Vandaag/);
+assert.match(html, /value="yesterday"[^>]*>Gisteren/);
+assert.match(html, /<summary>Meer filters<\/summary>/);
 assert.match(html, /\.\/teacher\.css/);
 assert.doesNotMatch(html, /(?:href|src)="\/(?!\/)/, "lokale assets moeten onder een GitHub Pages-subpad werken");
 assert.doesNotMatch(html, /registreren|account aanmaken/i, "er mag geen registratie-interface zijn");
@@ -48,6 +54,8 @@ assert.match(source, /Sessiegeschiedenis/);
 assert.match(source, /Geen moeilijke leerstof/);
 assert.match(source, /Geen leerlingen/);
 assert.match(source, /Geen recente activiteit/);
+assert.match(source, /setTimeout[\s\S]*30000/, "korte periodes moeten automatisch vernieuwen");
+assert.match(source, /document\.hidden/, "automatisch vernieuwen moet pauzeren als het tabblad verborgen is");
 assert.match(css, /@media \(max-width:/, "dashboard moet mobiel bruikbaar zijn");
 
 const frontend = html + "\n" + source + "\n" + css;
@@ -122,6 +130,16 @@ const attempts = [
 ];
 const raw = { classes, students, sessions, attempts };
 
+[["15m", 15 * 60 * 1000], ["30m", 30 * 60 * 1000], ["60m", 60 * 60 * 1000], ["7", 7 * 24 * 60 * 60 * 1000], ["30", 30 * 24 * 60 * 60 * 1000]].forEach(function (entry) {
+  const bounds = api.periodBounds(entry[0], "2026-10-01T12:00:00Z");
+  assert.equal(bounds.end - bounds.start, entry[1], entry[0] + " heeft een onjuiste periode");
+});
+const todayBounds = api.periodBounds("today", "2026-10-01T12:00:00Z");
+assert.ok(todayBounds.end > todayBounds.start && todayBounds.end - todayBounds.start <= 24 * 60 * 60 * 1000);
+const yesterdayBounds = api.periodBounds("yesterday", "2026-10-01T12:00:00Z");
+assert.equal(yesterdayBounds.end - yesterdayBounds.start, 24 * 60 * 60 * 1000);
+assert.deepEqual(JSON.parse(JSON.stringify(api.periodBounds("all", "2026-10-01T12:00:00Z"))), { start: null, end: null });
+
 const lastSeven = api.filterDataset(raw, { period: "7", trajectory: "all", mode: "all" }, "2026-10-01T12:00:00Z");
 assert.equal(lastSeven.sessions.length, 2, "periodefilter werkt niet");
 const trajectoryFiltered = api.filterDataset(raw, { period: "all", trajectory: "Trajet 9", mode: "all" }, "2026-10-01T12:00:00Z");
@@ -139,6 +157,39 @@ assert.equal(summary.incorrect, 5);
 assert.equal(summary.accuracy, 29, "percentage moet op was_correct van pogingen steunen");
 assert.equal(api.classOverview(modeFiltered, classes[0]).attempts, 7);
 assert.equal(api.studentOverview(modeFiltered, students[0]).questions, 20);
+
+const monitorStudents = Array.from({ length: 15 }, function (_, index) {
+  return { id: "monitor-student-" + index, class_id: "monitor-class", display_name: "Leerling " + String(index + 1).padStart(2, "0"), is_active: true };
+});
+const monitorSessions = monitorStudents.slice(0, 9).map(function (student, index) {
+  return { id: "monitor-session-" + index, student_id: student.id, started_at: "2026-10-01T11:" + String(40 + index).padStart(2, "0") + ":00Z", finished_at: index === 0 ? null : "2026-10-01T11:" + String(41 + index).padStart(2, "0") + ":00Z", active_duration_seconds: 60 };
+});
+const monitorAttempts = monitorSessions.map(function (session, index) {
+  return { id: "monitor-attempt-" + index, session_id: session.id, student_id: session.student_id, item_id: "item-" + index, item_variant: "", was_correct: index % 2 === 0, created_at: "2026-10-01T11:" + String(41 + index).padStart(2, "0") + ":00Z" };
+});
+const monitorData = api.filterDataset({ classes: [{ id: "monitor-class", name: "1A", is_active: true }], students: monitorStudents, sessions: monitorSessions, attempts: monitorAttempts }, { period: "60m", trajectory: "all", mode: "all", classId: "monitor-class", studentId: "all", studentStatus: "active", category: "all", subsection: "all" }, "2026-10-01T12:00:00Z");
+const monitorRows = api.classMonitor(monitorData, "monitor-class");
+assert.equal(monitorRows.length, 15, "de klasmonitor behoudt alle actieve leerlingen, ook zonder activiteit");
+assert.equal(monitorRows.filter(function (row) { return row.exercisesMade > 0; }).length, 9, "9 van 15 leerlingen hebben in de periode geoefend");
+assert.equal(monitorRows.filter(function (row) { return row.status === "Nog niet gestart"; }).length, 6);
+assert.equal(monitorRows.filter(function (row) { return row.status === "Bezig"; }).length, 1);
+const idleMonitorRow = monitorRows.find(function (row) { return row.status === "Nog niet gestart"; });
+assert.equal(idleMonitorRow.exercisesMade, 0);
+assert.equal(idleMonitorRow.activeDurationSeconds, 0);
+assert.equal(idleMonitorRow.attempts, 0);
+assert.equal(api.sortClassMonitor(monitorRows, "auto")[0].status, "Nog niet gestart", "standaardsortering zet leerlingen zonder activiteit eerst");
+
+const spanningData = api.filterDataset({
+  classes: [{ id: "monitor-class", name: "1A", is_active: true }],
+  students: [monitorStudents[0]],
+  sessions: [{ id: "spanning-session", student_id: monitorStudents[0].id, started_at: "2026-10-01T10:00:00Z", finished_at: null }],
+  attempts: [
+    { id: "outside", session_id: "spanning-session", student_id: monitorStudents[0].id, created_at: "2026-10-01T10:30:00Z" },
+    { id: "inside", session_id: "spanning-session", student_id: monitorStudents[0].id, created_at: "2026-10-01T11:55:00Z" }
+  ]
+}, { period: "60m", trajectory: "all", mode: "all", classId: "monitor-class", studentId: "all", studentStatus: "active", category: "all", subsection: "all" }, "2026-10-01T12:00:00Z");
+assert.equal(spanningData.sessions.length, 1, "een lopende sessie met recente activiteit blijft in de rolling periode zichtbaar");
+assert.deepEqual(Array.from(spanningData.attempts, function (row) { return row.id; }), ["inside"], "alleen pogingen binnen de gekozen periode tellen mee");
 
 const difficult = api.difficultItems(modeFiltered.attempts, courseIndex);
 assert.equal(difficult.length, 3, "vocabulaire en beide getalvarianten moeten afzonderlijk moeilijk zijn");

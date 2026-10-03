@@ -116,7 +116,7 @@ function evaluate(code) { return vm.runInContext(code, context); }
   assert.match(parole, /Zich voorstellen/);
   assert.match(parole, /Iemand voorstellen \(1\)/);
   assert.doesNotMatch(parole, />Choisir</);
-  assert.match(parole, /Tout le bloc/);
+  assert.doesNotMatch(parole, /Tout le bloc/, "een blok met exact dezelfde itemset als de partie krijgt geen dubbele actie");
   assert.match(parole, /journey-step is-active[^>]*aria-current="step"[\s\S]*Contenu/);
 
   const verbUnit = course.trajectories[0].units.find(function (unit) { return unit.top_category === "Atelier Verbes"; });
@@ -124,7 +124,7 @@ function evaluate(code) { return vm.runInContext(code, context); }
   const verbContent = appElement.innerHTML;
   assert.match(verbContent, /Verbes en -ER[\s\S]*22 éléments/);
   assert.match(verbContent, /Être et avoir[\s\S]*2 éléments/);
-  assert.match(verbContent, /Tout le bloc[\s\S]*24/);
+  assert.doesNotMatch(verbContent, /Tout le bloc[\s\S]*24/, "ook de 24 werkwoorden krijgen geen dubbele partie- en blokactie");
   const erItems = evaluate("exerciseItemsForScope(currentTrajectory(), currentUnit(), { block: 'À retenir', subsection: 'On se rappelle ?', category: 'verbes en -ER' })");
   const auxiliaryItems = evaluate("exerciseItemsForScope(currentTrajectory(), currentUnit(), { block: 'À retenir', subsection: 'On se rappelle ?', category: 'être / avoir' })");
   assert.equal(erItems.length, 22);

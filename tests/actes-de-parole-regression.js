@@ -103,9 +103,9 @@ setImmediate(function () {
   assert.equal(wholeBlock.length, 146, "Oefen dit studieblok moet de Actes-de-parole-zinnen bevatten");
   assert.equal(wholeBlock.filter(function (item) { return item.type === "phrase"; }).length, 45);
   assert.equal(wholeBlock.filter(function (item) { return item.type !== "phrase"; }).length, 101);
-  assert.match(appElement.innerHTML, /146[\s\S]*exercices[\s\S]*oefeningen/);
+  assert.match(appElement.innerHTML, /146[\s\S]*éléments d’exercice[\s\S]*oefenitems/);
   assert.match(appElement.innerHTML, /Toute la partie[\s\S]*Hele onderdeel[\s\S]*146/);
-  assert.match(appElement.innerHTML, /Tout le bloc[\s\S]*Hele blok[\s\S]*146/);
+  assert.doesNotMatch(appElement.innerHTML, /Tout le bloc[\s\S]*Hele blok[\s\S]*146/, "de identieke blokactie wordt niet dubbel getoond");
   assert.ok(appElement.innerHTML.includes('data-subsection="Actes de parole" data-category=""'));
   assert.ok(appElement.innerHTML.includes('data-category="Se présenter"'));
   assert.ok(appElement.innerHTML.includes('data-category="Présenter quelqu’un (1)"'));

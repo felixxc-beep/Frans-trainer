@@ -203,6 +203,7 @@ dialog::backdrop { background: rgba(10,29,23,.45); backdrop-filter: blur(4px); }
 .scope-choice-card strong { overflow-wrap: anywhere; font-size: .86rem; line-height: 1.22; }
 .scope-choice-card > span:not(.mastery-bar) { grid-column: 2; grid-row: 1; color: var(--forest-2); font-size: .7rem; font-weight: 800; white-space: nowrap; }
 .scope-choice-card > small { grid-column: 1 / -1; color: var(--muted); font-size: .69rem; font-style: italic; }
+.scope-choice-card > .scope-mastery { grid-column: 1 / -1; margin-top: .12rem; color: var(--forest-2); font-size: .66rem; font-style: normal; font-weight: 750; }
 .scope-all-button { min-height: 36px; display: inline-flex; align-items: center; gap: .55rem; padding: .38rem .6rem; border: 1px solid var(--line); border-radius: 10px; background: transparent; color: var(--forest-2); cursor: pointer; font-size: .74rem; font-weight: 800; }
 .scope-all-button:hover { border-color: var(--forest-2); background: white; }
 .scope-all-button > span { min-width: 1.8rem; padding: .12rem .35rem; border-radius: 999px; background: var(--mint); color: var(--forest); text-align: center; }
@@ -291,10 +292,7 @@ dialog::backdrop { background: rgba(10,29,23,.45); backdrop-filter: blur(4px); }
 .mastery-inline { display: block; margin-top: .28rem; min-width: 150px; }
 .mastery-inline .mastery-bar { max-width: 210px; }
 .mastery-inline small { margin-top: .18rem; color: var(--muted); font-size: .65rem; font-weight: 650; letter-spacing: 0; text-transform: none; }
-.scope-choice-card > .mastery-bar { grid-column: 1 / -1; grid-row: 3; margin-top: .28rem; }
-.scope-choice-card > .mastery-level { grid-column: 1 / -1; grid-row: 3; }
-.scope-choice-card > .mastery-bar { grid-row: 4; }
-.scope-choice-card > .mastery-acquired { grid-column: 1 / -1; grid-row: 5; }
+.mastery-compact-line { display: block; margin-top: .12rem; color: var(--muted); font-size: .68rem; font-weight: 650; }
 .mastery-feedback { margin: .25rem 0 .55rem !important; color: var(--forest-2); font-size: .78rem; font-weight: 750; }
 .mastery-feedback.is-newly-acquired { color: #145b2b; }
 .mastery-overview { margin-bottom: 1rem; padding: 1rem; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); }

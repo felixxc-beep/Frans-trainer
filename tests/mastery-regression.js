@@ -100,10 +100,16 @@ const dynamicItem = { id: "uf1-number-spec", type: "number", dynamic_range: true
 const first = attempt("n1", "s1", "practice", true, "2026-10-03T10:00:01Z", "17");
 first.item_id = "uf1-number-spec"; first.equivalent_item_ids = ["uf1-number-spec"];
 const dynamicSummary = mastery.calculateMasterySummary([dynamicItem], mastery.mergeMasterySources([], [first], [], []));
-assert.equal(dynamicSummary.total, 100001);
-assert.equal(dynamicSummary.new, 100000, "het grote bereik wordt rekenkundig geteld zonder 100001 records te maken");
+assert.equal(dynamicSummary.total, 1, "één permanente number_spec blijft één zichtbaar mastery-item");
+assert.equal(dynamicSummary.new, 0);
+assert.equal(dynamicSummary.learning, 1);
 assert.equal(dynamicSummary.percentages.new + dynamicSummary.percentages.learning + dynamicSummary.percentages.acquired, 100);
-assert.equal(dynamicSummary.masteryLevel, 0, "één gedeeltelijk getal in 100001 mogelijke getallen rondt scopebreed af naar 0 zonder records te materialiseren");
+assert.equal(dynamicSummary.masteryLevel, 40, "een getalvariant levert bewijs voor de ene permanente number_spec");
+
+const anotherVariant = Object.assign({}, attempt("n2", "s1", "practice", true, "2026-10-03T10:00:02Z", "999"), { item_id: "uf1-number-spec", equivalent_item_ids: ["uf1-number-spec"] });
+const multiVariantSummary = mastery.calculateMasterySummary([dynamicItem], mastery.mergeMasterySources([], [first, anotherVariant], [], []));
+assert.equal(multiVariantSummary.total, 1, "meerdere getalvarianten vergroten de zichtbare noemer niet");
+assert.equal(multiVariantSummary.masteryLevel, 60, "bewijs van varianten wordt op het permanente item gecombineerd");
 
 const secondItemAttempt = Object.assign({}, attempt("scope-1", "scope-session", "practice", true), { item_id: "scope-a", equivalent_item_ids: ["scope-a"] });
 const scopeRecords = mastery.mergeMasterySources([], [secondItemAttempt], [], []);
@@ -111,7 +117,7 @@ const scopeSummary = mastery.calculateMasterySummary([{ id: "scope-a", type: "vo
 assert.equal(scopeSummary.masteryLevel, 20, "scopepercentage is het gemiddelde van 40% en een niet-geoefend item van 0%");
 
 const verbSummary = mastery.calculateMasterySummary([{ id: "uf1-verb", type: "verb", conjugations: [{ subject: "je" }, { subject: "tu" }] }], new Map());
-assert.equal(verbSummary.total, 3, "infinitief en inhoudelijk afzonderlijke vervoegingsvarianten zijn aparte mastery-eenheden");
+assert.equal(verbSummary.total, 1, "vervoegingspersonen zijn bewijsvarianten en geen zichtbare mastery-items");
 
 const root = path.join(__dirname, "..");
 const sql = fs.readFileSync(path.join(root, "supabase", "phase5-mastery.sql"), "utf8");
@@ -121,6 +127,10 @@ const course = JSON.parse(fs.readFileSync(path.join(root, "data", "course.json")
 const ids = course.trajectories.flatMap(function (trajectory) { return trajectory.items.map(function (item) { return item.id; }); });
 assert.equal(ids.length, 1036, "alle 1036 permanente course-items blijven aanwezig");
 assert.equal(new Set(ids).size, 1036, "permanente IDs blijven uniek");
+assert.deepEqual(course.trajectories.map(function (trajectory) { return trajectory.items.length; }), [182, 148, 235, 170, 144, 157], "de zichtbare noemers per Trajet volgen exact de permanente cursusitems");
+const trajectoryOne = course.trajectories[0];
+assert.equal(trajectoryOne.items.filter(function (item) { return item.top_category === "Atelier Verbes"; }).length, 24, "Trajet 1 Atelier Verbes toont exact 24 permanente items");
+assert.equal(trajectoryOne.items.filter(function (item) { return item.top_category === "Atelier Parole" && item.block === "À retenir" && item.subsection === "On se rappelle ?"; }).length, 59, "Trajet 1 On se rappelle toont exact 59 permanente items");
 assert.match(sql, /security definer[\s\S]*set search_path = ''/i);
 assert.match(sql, /where pa\.student_id = matched_student_id/i);
 assert.doesNotMatch(sql, /submitted_answer/i);
