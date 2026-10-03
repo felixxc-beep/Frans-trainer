@@ -38,6 +38,7 @@ const app = document.querySelector("#app");
 const settingsDialog = document.querySelector("#settings-dialog");
 const identityDialog = document.querySelector("#identity-dialog");
 const identityButton = document.querySelector("#identityButton");
+let identityCompletionTimer = null;
 const strictToggle = document.querySelector("#strict-accents");
 strictToggle.checked = state.progress.settings.strictAccents;
 strictToggle.disabled = true;
@@ -79,6 +80,8 @@ function handleClick(event) {
   if (action === "close-identity" && identityDialog) identityDialog.close();
   if (action === "toggle-identity-method") setIdentityMethod(control.dataset.method || "school_email");
   if (action === "switch-student-identity") {
+    if (identityCompletionTimer) clearTimeout(identityCompletionTimer);
+    identityCompletionTimer = null;
     leaveSessionUnfinished();
     if (window.StudentIdentity) window.StudentIdentity.switchToLocal();
     state.pendingStartAction = null;
@@ -256,7 +259,15 @@ async function submitStudentIdentity(form) {
     setIdentityMethod("school_email");
     if (provider === "school_email") {
       setUiMessage(message, "Connexion réussie. Ton exercice va s'ouvrir.", "Gelukt. Je oefening wordt geopend en je voortgang wordt veilig bewaard.");
-      resumePendingStartAction();
+      if (identityCompletionTimer) clearTimeout(identityCompletionTimer);
+      const connectedSubject = connectedIdentity.subject;
+      identityCompletionTimer = setTimeout(function () {
+        identityCompletionTimer = null;
+        const current = currentStudentIdentity();
+        if (!hasRequiredStudentIdentity(current) || current.subject !== connectedSubject) return;
+        const resumed = resumePendingStartAction();
+        if (!resumed && identityDialog && identityDialog.open) identityDialog.close();
+      }, 650);
     } else if (message) {
       setUiMessage(message, "Code de dépannage accepté. Connecte-toi maintenant avec ton adresse scolaire.", "Herstelidentiteit gekoppeld. Meld je nog aan met je schoolmail om een nieuwe oefensessie te starten.");
     }
@@ -313,9 +324,6 @@ function renderHome() {
   if (!state.data) return;
   state.session = null;
   const trajectory = state.data.trajectories[state.trajectoryIndex];
-  const totalItems = state.data.trajectories.reduce(function (sum, entry) {
-    return sum + (entry.items || []).length;
-  }, 0);
   const last = state.progress.lastSession;
   const difficultCount = getDifficultItems("vocabulary").length;
   const accuracy = state.progress.attempted
@@ -324,30 +332,29 @@ function renderHome() {
 
   app.innerHTML =
     '<section class="hero">' +
-      '<div><p class="eyebrow">' + uiText("Apprends le français à ton rythme", "Frans leren op jouw tempo") + '</p><h1>' + uiText("Choisis ce que tu veux renforcer aujourd'hui.", "Kies waar je vandaag sterker in wilt worden.") + '</h1>' +
-      '<p class="lede">' + uiText("Suis le même ordre que dans ton cours, une étape à la fois.", "Oefen de leerstof in precies dezelfde volgorde als in je cursus. Eén duidelijke stap per keer.") + '</p></div>' +
-      '<aside class="hero-note" aria-label="Aperçu du cours / Cursusoverzicht"><strong>' + state.data.trajectories.length + ' Trajets</strong>' +
-      '<span>' + uiText(totalItems + " éléments du cours", totalItems + " leeritems uit je cursus") + '</span></aside>' +
+      '<div><h1>' + uiText("Que veux-tu travailler ?", "Wat wil je oefenen?") + '</h1></div>' +
     '</section>' +
     '<section class="quick-grid" aria-label="Jouw overzicht">' +
       dashboardCard("Continuer", "Verder oefenen", last ? (last.titleFr || last.title) : "Choisis d'abord une partie", last ? (last.titleNl || last.title) : "Kies eerst een onderdeel", last ? "Reprends où tu t'es arrêté" : "Ta dernière session apparaîtra ici", last ? "Ga door waar je stopte" : "Je laatste sessie verschijnt hier", "continue-session", !last, "play") +
       dashboardCard("Mes mots difficiles", "Mijn moeilijke woorden", difficultCount + (difficultCount === 1 ? " mot" : " mots"), difficultCount + " " + (difficultCount === 1 ? "woord" : "woorden"), "Répète ce qui n'est pas encore acquis", "Herhaal wat nog niet vlot gaat", "view-difficult", false, "spark") +
       dashboardCard("Ma progression", "Mijn voortgang", accuracy + "% correct", accuracy + "% juist", state.progress.attempted + " réponses données", state.progress.attempted + " antwoorden gegeven", "view-progress", false, "chart") +
     '</section>' +
+    journeySteps(1) +
     '<section aria-labelledby="trajectory-heading">' +
-      '<div class="section-heading"><div><p class="eyebrow">' + uiText("Étape 1", "Stap 1") + '</p><h2 id="trajectory-heading">' + uiText("Choisis ton Trajet", "Kies je Trajet") + '</h2></div></div>' +
+      '<div class="section-heading home-heading"><h2 id="trajectory-heading">' + uiText("Choisis ton Trajet", "Kies je Trajet") + '</h2></div>' +
       '<div class="trajectory-grid">' +
         state.data.trajectories.map(function (entry, index) {
           const stats = trajectoryStats(index);
+          const total = (entry.items || []).length;
           return '<button class="trajectory-card" type="button" data-action="select-trajectory" data-index="' + index + '" aria-pressed="' + (index === state.trajectoryIndex) + '">' +
-            '<span class="trajectory-number"><span>' + escapeHtml(entry.trajectory) + '</span><span class="count-badge">' + (entry.items || []).length + '</span></span>' +
-            '<strong>' + escapeHtml(entry.trajectory) + '</strong><small>' + uiText(entry.units.length + " parties · " + stats.practiced + " travaillées", entry.units.length + " cursusonderdelen · " + stats.practiced + " geoefend") + '</small>' +
+            '<span class="trajectory-number"><strong>' + escapeHtml(entry.trajectory) + '</strong><span class="count-badge">' + total + '</span></span>' +
+            '<small class="trajectory-progress">' + uiText(stats.practiced + " / " + total + " travaillés", stats.practiced + " / " + total + " geoefend") + '</small>' +
           '</button>';
         }).join("") +
       '</div>' +
     '</section>' +
     '<section aria-labelledby="unit-heading">' +
-      '<div class="section-heading"><div><p class="eyebrow">' + uiText("Étape 2", "Stap 2") + '</p><h2 id="unit-heading">' + uiText("Parties de " + trajectory.trajectory, "Onderdelen van " + trajectory.trajectory) + '</h2></div><span class="step-label">' + uiText((trajectory.items || []).length + " éléments", (trajectory.items || []).length + " leeritems") + '</span></div>' +
+      '<div class="section-heading home-heading"><h2 id="unit-heading">' + uiText("Parties de " + trajectory.trajectory, "Onderdelen van " + trajectory.trajectory) + '</h2><span class="step-label">' + (trajectory.items || []).length + '</span></div>' +
       '<div class="unit-list">' +
         trajectory.units.map(function (unit) {
           const count = exerciseItemCount(itemsForUnit(trajectory, unit).filter(isExerciseItem));
@@ -355,7 +362,7 @@ function renderHome() {
           return '<button class="unit-card" type="button" data-action="select-unit" data-order="' + unit.order + '">' +
             '<span class="unit-order">' + unit.order + '</span>' +
             '<span class="unit-copy"><strong>' + escapeHtml(unit.top_category) + '</strong><small>' + escapeHtml(unit.title) + '</small></span>' +
-            '<span class="unit-meta">' + (count ? uiText(count + " éléments · " + unitStats.practiced + " travaillés", count + " items · " + unitStats.practiced + " geoefend") : uiText("Informations", "Cursusinfo")) + '</span>' +
+            '<span class="unit-meta">' + (count ? uiText(unitStats.practiced + " / " + count + " travaillés", unitStats.practiced + " / " + count + " geoefend") : uiText("Information", "Cursusinfo")) + '</span>' +
           '</button>';
         }).join("") +
       '</div>' +
@@ -366,6 +373,19 @@ function renderHome() {
 function dashboardCard(titleFr, titleNl, valueFr, valueNl, descriptionFr, descriptionNl, action, disabled, icon) {
   return '<button class="quick-card" type="button" data-action="' + action + '"' + (disabled ? " disabled" : "") + '>' +
     '<span class="quick-icon ' + icon + '" aria-hidden="true"></span><span><small>' + uiText(titleFr, titleNl) + '</small><strong>' + uiText(valueFr, valueNl) + '</strong><em>' + uiText(descriptionFr, descriptionNl) + '</em></span></button>';
+}
+
+function journeySteps(activeStep) {
+  const steps = [
+    ["Trajet", "Trajet"],
+    ["Partie", "Onderdeel"],
+    ["Contenu", "Inhoud"],
+    ["Exercice", "Oefening"]
+  ];
+  return '<nav class="journey-steps" aria-label="Étapes / Stappen">' + steps.map(function (labels, index) {
+    const number = index + 1;
+    return '<span class="journey-step' + (number === activeStep ? " is-active" : "") + '"' + (number === activeStep ? ' aria-current="step"' : "") + '><b>' + number + '</b>' + uiText(labels[0], labels[1]) + '</span>';
+  }).join("") + '</nav>';
 }
 
 function renderUnit() {
@@ -382,8 +402,8 @@ function renderUnit() {
         const blockItems = unitItems.filter(function (item) { return item.block === section.title && isExerciseItem(item); });
         const blockCount = exerciseItemCount(blockItems);
         return '<article class="structure-card">' +
-          '<div class="structure-heading"><div><p class="eyebrow">' + uiText("Bloc d'étude", "Studieblok") + '</p><h3>' + escapeHtml(section.title) + '</h3></div>' +
-          (blockCount ? scopeButton(unit, section.title, "", section.title, blockCount, "Oefen dit studieblok") : "") + '</div>' +
+          '<div class="structure-heading"><div><small>' + uiText("Bloc d'étude", "Studieblok") + '</small><h3>' + escapeHtml(section.title) + '</h3></div>' +
+          (blockCount ? compactScopeButton(unit, section.title, "", section.title, blockCount, "Tout le bloc", "Hele blok") : "") + '</div>' +
           '<div class="subsection-list">' +
             section.subsections.map(function (subsection) {
               const subsectionScope = {
@@ -392,25 +412,25 @@ function renderUnit() {
               };
               const subset = exerciseItemsForScope(trajectory, unit, subsectionScope);
               const subsetCount = exerciseItemCount(subset);
-              const categoryButtons = subsection.content_types.map(function (contentType) {
+              const categoryChoices = subsection.content_types.map(function (contentType) {
+                const categoryValue = isUmbrellaContentType(contentType) ? "" : contentType;
                 const categoryScope = {
                   block: section.title,
                   subsection: subsection.title,
-                  category: contentType
+                  category: categoryValue
                 };
                 const categoryItems = exerciseItemsForScope(trajectory, unit, categoryScope);
                 const categoryCount = exerciseItemCount(categoryItems);
                 return categoryCount
-                  ? scopeButton(unit, section.title, subsection.title, contentType, categoryCount, "Kies", contentType)
+                  ? scopeChoiceCard(unit, section.title, subsection.title, contentType, categoryCount, categoryValue)
                   : "";
-              }).join("");
-              return '<div class="subsection-row"><div><strong>' + escapeHtml(subsection.title) + '</strong>' +
-                '<div class="content-tags">' + subsection.content_types.map(function (type) {
-                  return '<span>' + escapeHtml(type) + '</span>';
-                }).join("") + '</div></div><div class="subsection-actions">' +
-                (subsetCount ? scopeButton(unit, section.title, subsection.title, subsection.title, subsetCount, "Kies") : '<span class="source-only">' + uiText("Informations du cours", "Alleen cursusinfo") + '</span>') +
-                (categoryButtons ? '<div class="subscope-list">' + categoryButtons + '</div>' : "") + '</div>' +
-              '</div>';
+              }).filter(Boolean);
+              const categoryGrid = categoryChoices.length
+                ? '<div class="scope-choice-grid">' + categoryChoices.join("") + '</div>'
+                : (subsetCount ? '<div class="scope-choice-grid">' + scopeChoiceCard(unit, section.title, subsection.title, subsection.title, subsetCount) + '</div>' : '<span class="source-only">' + uiText("Informations du cours", "Alleen cursusinfo") + '</span>');
+              return '<section class="subsection-row"><div class="subsection-title"><h4>' + escapeHtml(subsection.title) + '</h4>' +
+                (subsetCount && categoryChoices.length > 1 ? compactScopeButton(unit, section.title, subsection.title, subsection.title, subsetCount, "Tout ce contenu", "Alles hiervan") : "") +
+                '</div>' + categoryGrid + '</section>';
             }).join("") +
           '</div></article>';
       }).join("")
@@ -418,19 +438,38 @@ function renderUnit() {
 
   app.innerHTML =
     breadcrumbHtml([{ label: trajectory.trajectory, action: "home" }]) +
+    journeySteps(3) +
     '<section class="unit-hero"><div><p class="eyebrow">' + escapeHtml(unit.top_category) + '</p><h1>' + escapeHtml(unit.title) + '</h1>' +
-    '<p class="lede">' + uiText(exerciseCount + " exercices dans cette partie.", exerciseCount + " oefenitems in dit cursusonderdeel.") + '</p></div>' +
-    (exerciseCount ? scopeButton(unit, "", "", unit.title, exerciseCount, "Oefen alles") : "") + '</section>' +
+    '<p class="lede">' + exerciseCount + ' ' + uiText("exercices", "oefeningen") + '</p></div>' +
+    (exerciseCount ? compactScopeButton(unit, "", "", unit.title, exerciseCount, "Toute la partie", "Hele onderdeel") : "") + '</section>' +
     '<section class="structure-stack" aria-label="Cursusstructuur">' + sectionsHtml + '</section>' +
     renderSoundNotes(soundItems);
   focusApp();
 }
 
-function scopeButton(unit, block, subsection, title, count, label, category) {
-  const labelFr = label === "Oefen alles" ? "Tout travailler" : label === "Oefen dit studieblok" ? "Travailler ce bloc" : "Choisir";
-  return '<button class="button button-secondary" type="button" data-action="choose-scope" data-order="' + unit.order +
-    '" data-block="' + escapeAttr(block) + '" data-subsection="' + escapeAttr(subsection) + '" data-category="' + escapeAttr(category || "") + '" data-title="' + escapeAttr(title) + '">' +
-    uiText(labelFr, label) + '<small>' + uiText(count + " éléments", count + " items") + '</small></button>';
+function scopeAttributes(unit, block, subsection, title, category) {
+  return ' data-action="choose-scope" data-order="' + unit.order +
+    '" data-block="' + escapeAttr(block) + '" data-subsection="' + escapeAttr(subsection) + '" data-category="' + escapeAttr(category || "") + '" data-title="' + escapeAttr(title) + '">';
+}
+
+function compactScopeButton(unit, block, subsection, title, count, labelFr, labelNl, category) {
+  return '<button class="scope-all-button" type="button"' + scopeAttributes(unit, block, subsection, title, category) +
+    uiText(labelFr, labelNl) + '<span>' + count + '</span></button>';
+}
+
+function scopeChoiceCard(unit, block, subsection, title, count, category) {
+  return '<button class="scope-choice-card" type="button"' + scopeAttributes(unit, block, subsection, title, category) +
+    '<strong>' + escapeHtml(displayScopeTitle(title)) + '</strong><span>' + count + ' ' + uiText("éléments", "items") + '</span></button>';
+}
+
+function displayScopeTitle(title) {
+  const text = String(title || "");
+  return text ? text.charAt(0).toLocaleUpperCase("fr") + text.slice(1) : text;
+}
+
+function isUmbrellaContentType(contentType) {
+  const normalized = String(contentType || "").trim().toLocaleLowerCase("fr");
+  return normalized === "vocabulaire" || normalized === "nombres";
 }
 
 function renderSoundNotes(items) {
@@ -461,24 +500,24 @@ function renderSetup() {
       { label: trajectory.trajectory, action: "home" },
       { label: unit.top_category, action: "back-unit" }
     ]) +
-    '<section class="setup-header"><p class="eyebrow">' + uiText("Étapes 3 et 4", "Stap 3 en 4") + '</p><h1>' + escapeHtml(scope.title) + '</h1>' +
-    '<p class="lede">' + uiText(exerciseItemCount(exerciseItems) + " éléments · choisis le type et le mode.", exerciseItemCount(exerciseItems) + " leeritems · kies je oefenvorm en modus.") + '</p></section>' +
-    '<section class="setup-grid"><div><div class="section-heading compact"><h2>' + uiText("Que veux-tu travailler ?", "Wat wil je oefenen?") + '</h2></div>' +
+    journeySteps(4) +
+    '<section class="setup-header"><h1>' + escapeHtml(scope.title) + '</h1><span class="setup-total">' + exerciseItemCount(exerciseItems) + ' ' + uiText("éléments", "items") + '</span></section>' +
+    '<section class="setup-grid"><div class="setup-choices"><div class="section-heading compact"><h2>' + uiText("Que veux-tu travailler ?", "Wat wil je oefenen?") + '</h2></div>' +
       '<div class="choice-list" role="radiogroup">' +
         available.map(function (key, index) {
           const option = EXERCISES[key];
           const exerciseItems = items.filter(function (item) { return item.type === option.type; });
           const count = questionCountForItems(exerciseItems, key);
           return '<label class="radio-card"><input type="radio" name="exercise" value="' + key + '"' + (index === 0 ? " checked" : "") + '>' +
-            '<span><small>' + uiText(option.shortFr, option.short) + '</small><strong>' + uiText(option.labelFr, option.label) + '</strong><em>' + uiText(count + " exercices disponibles", count + " oefenbare items") + '</em></span></label>';
+            '<span><strong>' + uiText(option.labelFr, option.label) + '</strong><b class="choice-count">' + count + '</b></span></label>';
         }).join("") +
       '</div><section class="session-size-panel" aria-labelledby="session-size-heading"><div class="section-heading compact"><h2 id="session-size-heading">' + uiText("Combien veux-tu travailler ?", "Hoeveel wil je oefenen?") + '</h2></div>' +
         '<div id="session-size-picker"></div></section></div>' +
-      '<div><div class="section-heading compact"><h2>' + uiText("Choisis ton mode", "Kies je modus") + '</h2></div><div class="mode-list">' +
-        modeCard("learn", "Apprendre", "Leren", "Tu vois la réponse et tu la retapes.", "Je ziet het juiste antwoord en typt het daarna zelf.") +
-        modeCard("practice", "S'entraîner", "Oefenen", "Tu réessaies avant de voir la réponse.", "Je probeert opnieuw; pas na de tweede fout verschijnt het antwoord.") +
-        modeCard("test", "Se tester", "Test jezelf", "Pas d'indice pendant le test.", "Geen feedback onderweg. Je resultaat verschijnt op het einde.") +
-      '</div><p class="session-note">' + uiText("La première sélection ne contient pas de doublons. Les erreurs peuvent revenir plus tard.", "De eerste selectie bevat geen dubbels. Moeilijke items krijgen voorrang; fouten kunnen later opnieuw verschijnen.") + '</p></div>' +
+      '<div class="setup-modes"><div class="section-heading compact"><h2>' + uiText("Choisis ton mode", "Kies je modus") + '</h2></div><div class="mode-list">' +
+        modeCard("learn", "Apprendre", "Leren", "Vois la réponse, puis retape-la.", "Bekijk het antwoord en typ het na.") +
+        modeCard("practice", "S'entraîner", "Oefenen", "Réessaie après une erreur.", "Probeer opnieuw na een fout.") +
+        modeCard("test", "Se tester", "Test jezelf", "Découvre ton résultat à la fin.", "Bekijk je resultaat op het einde.") +
+      '</div><p class="session-note">' + uiText("Les erreurs peuvent revenir plus tard.", "Fouten kunnen later opnieuw verschijnen.") + '</p></div>' +
     '</section>';
   updateSessionSizePicker();
   focusApp();
@@ -532,7 +571,8 @@ function updateSessionSizePicker() {
     const value = String(option);
     const labelNl = option === "all" ? "Alle " + availableCount : value;
     const labelFr = option === "all" ? "Tous les " + availableCount : value;
-    return '<label class="size-choice"><input type="radio" name="session-size" value="' + value + '"' + (option === preferred ? " checked" : "") + '><span>' + uiText(labelFr, labelNl) + '</span></label>';
+    const optionLabel = option === "all" ? uiText(labelFr, labelNl) : escapeHtml(value);
+    return '<label class="size-choice"><input type="radio" name="session-size" value="' + value + '"' + (option === preferred ? " checked" : "") + '><span>' + optionLabel + '</span></label>';
   }).join("") + '</div><p id="session-plan" class="session-plan" aria-live="polite"></p>';
   updateSessionPlan();
 }

@@ -71,10 +71,10 @@ setImmediate(function () {
     assert.equal(items.length, phraseItems.length, "Actes de parole mag niet door andere types worden vervuild");
 
     assert.ok(appElement.innerHTML.includes('data-subsection="Actes de parole"'));
-    assert.ok(appElement.innerHTML.includes(phraseItems.length + " items"));
+    assert.match(appElement.innerHTML, new RegExp(phraseItems.length + "[\\s\\S]*items"));
     evaluate("state.selectedScope = actesScope; renderSetup()");
     assert.match(appElement.innerHTML, /Nederlandse zin → Franse zin/);
-    assert.ok(appElement.innerHTML.includes(expectedQuestionCounts[trajectoryIndex] + " oefenbare items"));
+    assert.ok(appElement.innerHTML.includes('class="choice-count">' + expectedQuestionCounts[trajectoryIndex]));
 
     const questions = evaluate('questionsForSetup("phrase-nl-fr")');
     assert.equal(questions.length, expectedQuestionCounts[trajectoryIndex]);
@@ -103,9 +103,9 @@ setImmediate(function () {
   assert.equal(wholeBlock.length, 146, "Oefen dit studieblok moet de Actes-de-parole-zinnen bevatten");
   assert.equal(wholeBlock.filter(function (item) { return item.type === "phrase"; }).length, 45);
   assert.equal(wholeBlock.filter(function (item) { return item.type !== "phrase"; }).length, 101);
-  assert.ok(appElement.innerHTML.includes("146 oefenitems in dit cursusonderdeel"));
-  assert.match(appElement.innerHTML, /Tout travailler[\s\S]*Oefen alles[\s\S]*146 éléments[\s\S]*146 items/);
-  assert.match(appElement.innerHTML, /Travailler ce bloc[\s\S]*Oefen dit studieblok[\s\S]*146 éléments[\s\S]*146 items/);
+  assert.match(appElement.innerHTML, /146[\s\S]*exercices[\s\S]*oefeningen/);
+  assert.match(appElement.innerHTML, /Toute la partie[\s\S]*Hele onderdeel[\s\S]*146/);
+  assert.match(appElement.innerHTML, /Tout le bloc[\s\S]*Hele blok[\s\S]*146/);
   assert.ok(appElement.innerHTML.includes('data-subsection="Actes de parole" data-category=""'));
   assert.ok(appElement.innerHTML.includes('data-category="Se présenter"'));
   assert.ok(appElement.innerHTML.includes('data-category="Présenter quelqu’un (1)"'));
@@ -127,12 +127,12 @@ setImmediate(function () {
   assert.ok(sePresenterItems.every(function (item) { return item.type === "phrase" && item.category === "Se présenter"; }));
   assert.ok(presenterQuelquunItems.every(function (item) { return item.type === "phrase" && item.category === "Présenter quelqu’un (1)"; }));
   evaluate("state.selectedScope = sePresenterScope; renderSetup()");
-  assert.match(appElement.innerHTML, /23 leeritems/);
-  assert.match(appElement.innerHTML, /23 oefenbare items/);
+  assert.match(appElement.innerHTML, /23[\s\S]*éléments[\s\S]*items/);
+  assert.ok(appElement.innerHTML.includes('class="choice-count">23'));
   assert.deepEqual(Array.from(evaluate('sessionSizeOptions(questionsForSetup("phrase-nl-fr").length)')), [10, 20, "all"]);
   evaluate("state.selectedScope = presenterQuelquunScope; renderSetup()");
-  assert.match(appElement.innerHTML, /22 leeritems/);
-  assert.match(appElement.innerHTML, /22 oefenbare items/);
+  assert.match(appElement.innerHTML, /22[\s\S]*éléments[\s\S]*items/);
+  assert.ok(appElement.innerHTML.includes('class="choice-count">22'));
   assert.deepEqual(Array.from(evaluate('sessionSizeOptions(questionsForSetup("phrase-nl-fr").length)')), [10, 20, "all"]);
 
   const trajectoryOnePhrases = course.trajectories[0].items.filter(function (item) {
