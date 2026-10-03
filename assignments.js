@@ -27,9 +27,10 @@
     return (items || []).map(function (item, index) {
       const evidence = mastery.getItemMastery(item.id, records || new Map());
       const rank = evidence.status === "new" ? 0 : evidence.status === "learning" ? 1 : 2;
-      return { item: item, rank: rank, level: evidence.level, index: index };
+      return { item: item, rank: rank, recentWrong: evidence.latestIndependentCorrect === false ? 0 : 1,
+        level: evidence.level, index: index };
     }).sort(function (left, right) {
-      return left.rank - right.rank || left.level - right.level || left.index - right.index;
+      return left.rank - right.rank || left.recentWrong - right.recentWrong || left.level - right.level || left.index - right.index;
     }).map(function (row) { return row.item; });
   }
 

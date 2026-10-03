@@ -234,7 +234,7 @@ begin
   insert into public.assignment_items(assignment_id,item_id,item_order)
   select v_id,x,ord::integer from unnest(v_items) with ordinality as t(x,ord);
   if v_status='published' then
-    for v_class in array v_classes loop
+    foreach v_class in array v_classes loop
       perform private.register_assignment_completion(v_id,s.id)
       from public.students s where s.class_id=v_class and s.is_active=true;
     end loop;

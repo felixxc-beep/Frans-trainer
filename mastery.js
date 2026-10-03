@@ -142,7 +142,8 @@
 
   function getItemMastery(itemId, records) {
     const record = combineItemRecords(records || new Map(), String(itemId || ""));
-    return { status: getMasteryStatus(record), level: getMasteryLevel(record), practicedAttempts: record.practicedAttempts };
+    return { status: getMasteryStatus(record), level: getMasteryLevel(record), practicedAttempts: record.practicedAttempts,
+      latestIndependentCorrect: record.latestIndependentCorrect, latestIndependentAt: record.latestIndependentAt };
   }
 
   function roundedPercentages(counts, total) {

@@ -65,7 +65,7 @@ setImmediate(function () {
   const conjugationCount = course.trajectories
     .flatMap(function (trajectory) { return trajectory.items; })
     .filter(function (item) { return item.type === "verb"; })
-    .reduce(function (sum, item) { return sum + item.conjugations.length; }, 0);
+    .reduce(function (sum, item) { return sum + item.conjugations.reduce(function (total, row) { return total + row.subject.split("/").length; }, 0); }, 0);
   assert.equal(Object.fromEntries(generated)["verb-fr-conj"], conjugationCount);
   assert.equal(Object.fromEntries(generated)["verb-nl-conj"], conjugationCount);
 

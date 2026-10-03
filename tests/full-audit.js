@@ -82,12 +82,20 @@ setImmediate(function () {
     ["verb-nl-conj", "verb-fr-conj"].forEach(function (exercise) {
       context.auditExercise = exercise;
       const questions = vm.runInContext("buildQuestions(auditItems, auditExercise)", context);
-      assert.equal(questions.length, verb.conjugations.length);
-      verb.conjugations.forEach(function (conjugation) {
-        assert.ok(questions.some(function (question) {
-          return question.prompt.endsWith("— " + conjugation.subject) && question.answers.includes(conjugation.form);
-        }), verb.infinitive + " / " + conjugation.subject);
+      const expected = verb.conjugations.flatMap(function (conjugation) {
+        const subjects = conjugation.subject.split("/");
+        const ending = subjects.length > 1 ? conjugation.form.slice(conjugation.subject.length).trim() : null;
+        return subjects.map(function (subject) { return {
+          subject: subject, form: ending ? subject + " " + ending : conjugation.form
+        }; });
       });
+      assert.equal(questions.length, expected.length);
+      expected.forEach(function (variant) {
+        assert.ok(questions.some(function (question) {
+          return question.prompt.endsWith("— " + variant.subject) && question.answers.includes(variant.form);
+        }), verb.infinitive + " / " + variant.subject);
+      });
+      assert.ok(questions.every(function (question) { return !question.itemVariant.includes("/") && question.answers.every(function (answer) { return !answer.includes("/"); }); }));
     });
   });
 
@@ -152,7 +160,7 @@ setImmediate(function () {
 
   console.log("VOLLEDIGE AUDIT GESLAAGD");
   console.log("6 trajecten · 50 cursusonderdelen · 1036 items");
-  console.log("55 werkwoorden · 330 vervoegingen · alle expliciete accepted_answers gecontroleerd");
+  console.log("55 werkwoorden · 330 bronrijen · 495 concrete vervoegingsvragen · alle expliciete accepted_answers gecontroleerd");
   console.log("5 synoniemgroepen gebundeld zonder trajecten of subsecties te mengen");
   console.log("Statische, relatieve assets geschikt voor GitHub Pages");
 });

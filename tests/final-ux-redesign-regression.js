@@ -102,6 +102,12 @@ function evaluate(code) { return vm.runInContext(code, context); }
   const firstTrajectoryCard = home.match(/<button class="trajectory-card"[\s\S]*?<\/button>/)[0];
   assert.equal((firstTrajectoryCard.match(/Trajet 1/g) || []).length, 1, "een Trajetnaam wordt niet dubbel getoond");
   assert.match(home, /class="unit-list"/);
+  assert.match(home, /Aucun devoir|Connecte-toi pour voir tes devoirs/);
+  assert.equal((home.match(/class="assignment-home-row"/g) || []).length, 0, "zonder taken blijft de homepage-taakzone één rij");
+  assert.ok(home.indexOf('class="assignments-home"') < home.indexOf('class="home-browser"'), "Trajets blijven direct na het compacte overzicht bereikbaar");
+  assert.equal((firstTrajectoryCard.match(/mastery-bar/g) || []).length, 1, "Trajet heeft precies één masterybalk");
+  assert.doesNotMatch(firstTrajectoryCard, /mastery-acquired|acquis<\/span>/, "geen Acquisdetail op Trajetkaart");
+  assert.doesNotMatch(home.match(/<button class="unit-card"[\s\S]*?<\/button>/)[0], /mastery-bar/, "onderdeelrij heeft geen extra balk");
 
   const paroleUnit = course.trajectories[0].units.find(function (unit) { return unit.top_category === "Atelier Parole"; });
   evaluate("state.trajectoryIndex = 0; state.selectedUnitOrder = " + paroleUnit.order + "; renderUnit()");
@@ -115,6 +121,13 @@ function evaluate(code) { return vm.runInContext(code, context); }
   assert.match(parole, /Uitdrukkingen/);
   assert.match(parole, /Zich voorstellen/);
   assert.match(parole, /Iemand voorstellen \(1\)/);
+  assert.match(parole, /class="content-icon-wrap"/);
+  assert.match(parole, /class="scope-count"/);
+  assert.match(parole, /class="mastery-compact-line">\d+\/\d+ · \d+%/);
+  const vocabCard = parole.match(/<button class="scope-choice-card"[^>]*data-title="[Vv]ocabulaire"[\s\S]*?<\/button>/);
+  const expressionsCard = parole.match(/<button class="scope-choice-card"[^>]*data-title="[Ee]xpressions"[\s\S]*?<\/button>/);
+  assert.ok(vocabCard && expressionsCard, "beide contenttypes blijven afzonderlijk klikbaar");
+  assert.notEqual(vocabCard[0].match(/<svg[^>]*>[\s\S]*?<\/svg>/)[0], expressionsCard[0].match(/<svg[^>]*>[\s\S]*?<\/svg>/)[0], "Vocabulaire en Expressions hebben verschillende vaste iconen");
   assert.doesNotMatch(parole, />Choisir</);
   assert.doesNotMatch(parole, /Tout le bloc/, "een blok met exact dezelfde itemset als de partie krijgt geen dubbele actie");
   assert.match(parole, /journey-step is-active[^>]*aria-current="step"[\s\S]*Contenu/);
@@ -122,8 +135,8 @@ function evaluate(code) { return vm.runInContext(code, context); }
   const verbUnit = course.trajectories[0].units.find(function (unit) { return unit.top_category === "Atelier Verbes"; });
   evaluate("state.selectedUnitOrder = " + verbUnit.order + "; renderUnit()");
   const verbContent = appElement.innerHTML;
-  assert.match(verbContent, /Verbes en -ER[\s\S]*22 éléments/);
-  assert.match(verbContent, /Être et avoir[\s\S]*2 éléments/);
+  assert.match(verbContent, /Verbes en -ER<\/strong><b class="scope-count">22<\/b>/);
+  assert.match(verbContent, /Être et avoir<\/strong><b class="scope-count">2<\/b>/);
   assert.doesNotMatch(verbContent, /Tout le bloc[\s\S]*24/, "ook de 24 werkwoorden krijgen geen dubbele partie- en blokactie");
   const erItems = evaluate("exerciseItemsForScope(currentTrajectory(), currentUnit(), { block: 'À retenir', subsection: 'On se rappelle ?', category: 'verbes en -ER' })");
   const auxiliaryItems = evaluate("exerciseItemsForScope(currentTrajectory(), currentUnit(), { block: 'À retenir', subsection: 'On se rappelle ?', category: 'être / avoir' })");
@@ -156,6 +169,7 @@ function evaluate(code) { return vm.runInContext(code, context); }
   assert.match(css, /\.home-browser \.trajectory-grid[^}]*grid-template-columns:\s*1fr/);
   assert.match(css, /\.scope-choice-grid[^}]*grid-template-columns:\s*repeat\(2/);
   assert.match(css, /@media \(max-width: 620px\)[\s\S]*\.trajectory-grid\s*\{[^}]*grid-template-columns:\s*1fr/);
+  assert.match(css, /@media \(max-width: 620px\)[\s\S]*\.scope-choice-grid, \.choice-list \{ grid-template-columns: 1fr/);
 
   identity = { provider: "local", subject: "local", displayName: "Lokale leerling", className: "", verified: false };
   identityDialog.open = true;

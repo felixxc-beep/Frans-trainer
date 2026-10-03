@@ -135,7 +135,7 @@ setImmediate(function () {
   assert.deepEqual(trajectoryFourVerbs.map(function (item) { return item.infinitive; }), ["prendre", "mettre", "faire"]);
   trajectoryFourVerbs.forEach(function (verb) {
     context.auditItems = [verb];
-    assert.equal(evaluate('buildQuestions(auditItems, "verb-fr-conj").length'), 6);
+    assert.equal(evaluate('buildQuestions(auditItems, "verb-fr-conj").length'), 9);
   });
   assert.equal(trajectories[1].items.filter(function (item) { return item.type === "verb"; }).length, 0);
   assert.equal(trajectories[2].items.filter(function (item) { return item.type === "verb"; }).length, 0);

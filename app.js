@@ -95,8 +95,8 @@ function handleClick(event) {
     renderHome();
   }
   if (action === "view-assignments") renderAssignments();
-  if (action === "view-assignment") renderAssignmentDetail(control.dataset.id);
-  if (action === "assignment-setup") openAssignmentSetup(control.dataset.id);
+  if (action === "view-assignment") launchAssignment(control.dataset.id);
+  if (action === "launch-assignment") launchAssignment(control.dataset.id);
   if (action === "open-settings") settingsDialog.showModal();
   if (action === "open-identity") openIdentityDialog();
   if (action === "close-identity" && identityDialog) identityDialog.close();
@@ -291,11 +291,12 @@ function resumePendingStartAction() {
     return true;
   }
   if (pending.kind === "assignment") {
-    renderAssignmentDetail(pending.id);
+    if (pending.id) launchAssignment(pending.id);
+    else renderAssignments();
     return true;
   }
-  if (pending.kind === "assignment_setup") {
-    openAssignmentSetup(pending.id);
+  if (pending.kind === "assignment_launch") {
+    launchAssignment(pending.id);
     return true;
   }
   return false;
@@ -424,8 +425,7 @@ function renderHome() {
           return '<button class="trajectory-card" type="button" data-action="select-trajectory" data-index="' + index + '" aria-pressed="' + (index === state.trajectoryIndex) + '">' +
             '<span class="trajectory-number"><strong>' + escapeHtml(entry.trajectory) + '</strong><span class="count-badge">' + total + '</span></span>' +
             '<small class="trajectory-progress">' + uiText(stats.practiced + " / " + total + " travaillés", stats.practiced + " / " + total + " geoefend") + '</small>' + masteryBar(mastery, true) +
-            '<small class="mastery-level">' + uiText("Niveau de maîtrise : " + mastery.masteryLevel + "%", "Beheersing: " + mastery.masteryLevel + "%") + '</small>' +
-            '<small class="mastery-acquired">' + uiText(mastery.percentages.acquired + "% acquis", mastery.percentages.acquired + "% gekend") + '</small>' +
+            '<small class="mastery-level">' + uiText(mastery.masteryLevel + "% maîtrise", "beheerst") + '</small>' +
           '</button>';
         }).join("") +
       '</div>' +
@@ -439,8 +439,8 @@ function renderHome() {
           const mastery = masterySummaryForItems(itemsForUnit(trajectory, unit));
           return '<button class="unit-card" type="button" data-action="select-unit" data-order="' + unit.order + '">' +
             '<span class="unit-order">' + unit.order + '</span>' +
-            '<span class="unit-copy"><strong>' + escapeHtml(unit.top_category) + '</strong><small>' + escapeHtml(unit.title) + '</small></span>' +
-            '<span class="unit-meta">' + (mastery.total ? uiText(unitStats.practiced + " / " + mastery.total + " travaillés · " + mastery.masteryLevel + "% maîtrise", unitStats.practiced + " / " + mastery.total + " geoefend · " + mastery.masteryLevel + "% beheersing") + masteryBar(mastery, true) : uiText("Information", "Cursusinfo")) + '</span>' +
+            '<span class="unit-copy"><strong>' + contentIcon(contentTypeKey(unit.top_category)) + escapeHtml(unit.top_category) + '</strong><small>' + escapeHtml(unit.title) + '</small></span>' +
+            '<span class="unit-meta">' + (mastery.total ? '<strong>' + unitStats.practiced + '/' + mastery.total + ' · ' + mastery.masteryLevel + '%</strong><span class="sr-only">' + uiText("travaillés · maîtrise", "geoefend · beheerst") + '</span>' : uiText("Information", "Cursusinfo")) + '</span>' +
           '</button>';
         }).join("") +
       '</div>' +
@@ -517,19 +517,62 @@ function assignmentStatus(progress) {
 function assignmentCard(assignment) {
   const progress = assignmentProgress(assignment);
   return '<button class="assignment-card" type="button" data-action="view-assignment" data-id="' + escapeAttr(assignment.id) + '">' +
-    '<strong>' + escapeHtml(assignment.title) + '</strong><span>' + assignmentDue(assignment) + '</span>' +
+    '<strong class="assignment-card-title">' + assignmentContentIcon(assignment) + escapeHtml(assignment.title) + '</strong><span>' + assignmentDue(assignment) + '</span>' +
     '<span>' + assignmentStatus(progress) + ' · ' + progress.practiced + '/' + progress.total + ' ' + uiText("travaillés", "geoefend") + '</span>' +
     '<span>' + uiText("Niveau de maîtrise : " + progress.masteryLevel + "%", "Beheersingsniveau: " + progress.masteryLevel + "%") + '</span>' +
     '<span>' + progress.acquired + '/' + progress.total + ' ' + uiText("acquis · objectif " + progress.target + "%", "gekend · doel " + progress.target + "%") + '</span>' +
-    masteryBar(progress, true) + '</button>';
+    masteryBar(progress, true) + '<span class="assignment-card-cta">' + uiText(progress.practiced ? "Continuer" : "Commencer", progress.practiced ? "Verder oefenen" : "Starten") + ' →</span></button>';
+}
+
+// One quiet, fixed icon vocabulary for every student-facing content surface.
+function contentTypeKey(label, itemType) {
+  const text = String(label || "").toLocaleLowerCase("fr");
+  if (/expressions?/.test(text)) return "expressions";
+  if (/actes de parole|se présenter|présenter quelqu/.test(text) || itemType === "phrase") return "speaking";
+  if (/verbes?|être et avoir/.test(text) || itemType === "verb") return "verbs";
+  if (/grammaire|adjectifs|mots invariables/.test(text) || itemType === "grammar_rule") return "grammar";
+  if (/nombres?|chiffres/.test(text) || itemType === "number") return "numbers";
+  if (/sons?|prononciation|comment dire/.test(text) || itemType === "sound_rule") return "sounds";
+  return "vocabulary";
+}
+
+function contentIcon(kind) {
+  const paths = {
+    vocabulary: '<path d="M12 5c-2.5-1.5-5-1.7-8-1v15c3-.7 5.5-.5 8 1m0-15c2.5-1.5 5-1.7 8-1v15c-3-.7-5.5-.5-8 1m0-15v15"/>',
+    expressions: '<path d="M4 5h16v11H9l-5 4V5Z"/><path d="M8 9h8m-8 3h5"/>',
+    verbs: '<path d="M4 8h14m-4-4 4 4-4 4M20 16H6m4-4-4 4 4 4"/>',
+    grammar: '<rect x="3" y="4" width="7" height="7" rx="1"/><rect x="14" y="4" width="7" height="7" rx="1"/><rect x="8.5" y="15" width="7" height="6" rx="1"/><path d="M6.5 11v2h11v-2m-5.5 2v2"/>',
+    speaking: '<path d="M3 5h12v9H8l-4 3V5Zm13 4h5v9h-4l-3 3v-5"/>',
+    numbers: '<path d="M5 7h3v10m-3 0h6m3-8c0-1.2 1-2 2.5-2S19 8 19 9.5c0 3-5 4-5 7.5h6"/>',
+    sounds: '<path d="M4 10h4l5-4v12l-5-4H4v-4Zm12-1c1.5 1 1.5 5 0 6m2-9c3 2 3 10 0 12"/>'
+  };
+  return '<svg class="content-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (paths[kind] || paths.vocabulary) + '</svg>';
+}
+
+function assignmentContentIcon(assignment) {
+  const first = assignmentCourseItems(assignment)[0];
+  return contentIcon(contentTypeKey(first && first.category, first && first.type));
+}
+
+function assignmentHomeRow(assignment) {
+  const progress = assignmentProgress(assignment);
+  const due = assignment.due_at ? new Date(assignment.due_at) : null;
+  const dueText = due && !Number.isNaN(due.getTime())
+    ? uiText("Pour le " + due.toLocaleDateString("fr-BE", { day: "numeric", month: "short", timeZone: "Europe/Brussels" }), "Tegen " + due.toLocaleDateString("nl-BE", { day: "numeric", month: "short", timeZone: "Europe/Brussels" }))
+    : uiText("Sans échéance", "Geen deadline");
+  return '<button class="assignment-home-row" type="button" data-action="view-assignment" data-id="' + escapeAttr(assignment.id) + '">' +
+    '<span class="content-icon-wrap">' + assignmentContentIcon(assignment) + '</span>' +
+    '<span class="assignment-home-copy"><strong>' + escapeHtml(assignment.title) + '</strong><small>' + progress.acquired + '/' + progress.total + ' ' + uiText("acquis · objectif " + progress.target + "%", "gekend · doel " + progress.target + "%") + '</small></span>' +
+    '<span class="assignment-home-due">' + dueText + '</span>' +
+    '<span class="assignment-home-cta">' + uiText("Continuer", "Verdergaan") + ' →</span></button>';
 }
 
 function assignmentHomeSection() {
   const identity = currentStudentIdentity();
-  const items = state.assignments.items.filter(function (item) { return item.status === "published" && !item.completed_at; }).slice(0, 3);
+  const items = state.assignments.items.filter(function (item) { return item.status === "published" && !item.completed_at; });
   return '<section class="assignments-home" aria-labelledby="assignments-heading"><div class="section-heading"><h2 id="assignments-heading">' + uiText("Mes devoirs", "Mijn taken") + '</h2>' +
     '<button class="text-button" type="button" data-action="view-assignments">' + uiText("Voir tout", "Alles bekijken") + '</button></div>' +
-    (items.length ? '<div class="assignment-list">' + items.map(assignmentCard).join("") + '</div>' :
+    (items.length ? '<div class="assignment-home-list">' + items.slice(0, 2).map(assignmentHomeRow).join("") + '</div>' :
       '<p class="muted">' + (identity.verified && !state.assignments.loaded ? uiText("Connecte-toi à Internet pour charger tes devoirs.", "Maak verbinding met internet om je taken op te halen.") : identity.verified ? uiText("Aucun devoir à faire pour le moment.", "Momenteel geen openstaande taken.") :
         uiText("Connecte-toi pour voir tes devoirs.", "Meld je aan om je taken te zien.")) + '</p>') + '</section>';
 }
@@ -554,7 +597,7 @@ function renderAssignmentDetail(id) {
   state.view = "assignment-detail";
   const progress = assignmentProgress(assignment);
   app.innerHTML = breadcrumbHtml([{ label: "Mon parcours", action: "home" }, { label: "Mes devoirs", action: "view-assignments" }]) +
-    '<section class="assignment-detail"><p class="eyebrow">' + assignmentStatus(progress) + '</p><h1>' + escapeHtml(assignment.title) + '</h1>' +
+    '<section class="assignment-detail"><p class="eyebrow">' + assignmentStatus(progress) + '</p><h1>' + assignmentContentIcon(assignment) + escapeHtml(assignment.title) + '</h1>' +
     '<p>' + assignmentDue(assignment) + '</p>' +
     (assignment.instructions ? '<p class="assignment-instructions">' + escapeHtml(assignment.instructions) + '</p>' : '') +
     '<div class="assignment-stats"><strong>' + progress.practiced + '/' + progress.total + ' ' + uiText("travaillés", "geoefend") + '</strong>' +
@@ -563,34 +606,44 @@ function renderAssignmentDetail(id) {
     (progress.completedAt ? '<p class="perfect-note">' + uiText("Objectif atteint ! Le " + new Date(progress.completedAt).toLocaleDateString("fr-BE") + ".", "Doel behaald! Op " + new Date(progress.completedAt).toLocaleDateString("nl-BE") + ".") + '</p>' :
       progress.reachedLocally ? '<p class="sync-note">' + uiText("Objectif atteint sur cet appareil. Confirmation après synchronisation.", "Doel op dit toestel behaald. Bevestiging volgt na synchronisatie.") + '</p>' :
       '<p>' + uiText("La tâche est terminée quand tous les éléments ont été travaillés et que le pourcentage acquis atteint l’objectif.", "De taak is klaar als alle items geoefend zijn en het gekend-percentage het doel bereikt.") + '</p>') +
-    '<button class="button button-primary" type="button" data-action="assignment-setup" data-id="' + escapeAttr(id) + '">' + uiText(progress.practiced ? "Continuer" : "Commencer", progress.practiced ? "Verder oefenen" : "Starten") + '</button></section>';
+    '<button class="button button-primary" type="button" data-action="launch-assignment" data-id="' + escapeAttr(id) + '">' + uiText(progress.practiced ? "Continuer" : "Commencer", progress.practiced ? "Verder oefenen" : "Starten") + '</button></section>';
   focusApp();
 }
 
-function openAssignmentSetup(id) {
-  if (!hasRequiredStudentIdentity()) return requestRequiredIdentity({ kind: "assignment_setup", id: id });
+function launchAssignment(id) {
+  if (!hasRequiredStudentIdentity()) return requestRequiredIdentity({ kind: "assignment_launch", id: id });
   const assignment = assignmentById(id);
-  const first = assignmentCourseItems(assignment)[0];
+  const allItems = assignmentCourseItems(assignment);
+  const first = allItems[0];
   if (!assignment || !first) return renderAssignments();
   state.activeAssignmentId = id;
   state.trajectoryIndex = first._trajectoryIndex;
   const unit = currentTrajectory().units.find(function (row) { return row.top_category === first.top_category; });
   state.selectedUnitOrder = unit && unit.order;
   state.selectedScope = { unitOrder: state.selectedUnitOrder, block: first.block || "", subsection: first.subsection || "", category: first.category || "", title: assignment.title };
-  renderSetup();
+  const selectedItems = window.MonParcoursAssignments.selectItems(allItems, currentMasteryRecords(), 20);
+  const mode = selectedItems.some(function (item) {
+    return window.MonParcoursMastery.getItemMastery(item.id, currentMasteryRecords()).status === "new";
+  }) ? "learn" : "practice";
+  const questions = taskQuestionsForItems(selectedItems, "assignment-mixed");
+  beginSession(questions, mode, "assignment-mixed", assignment.title, { availableCount: allItems.length, assignmentId: id });
 }
 
 function dashboardCard(titleFr, titleNl, valueFr, valueNl, descriptionFr, descriptionNl, action, disabled, icon) {
   return '<button class="quick-card" type="button" data-action="' + action + '"' + (disabled ? " disabled" : "") + '>' +
-    '<span class="quick-icon ' + icon + '" aria-hidden="true"></span><span><small>' + uiText(titleFr, titleNl) + '</small><strong>' + uiText(valueFr, valueNl) + '</strong><em>' + uiText(descriptionFr, descriptionNl) + '</em></span></button>';
+    '<span class="quick-icon ' + icon + '" aria-hidden="true">' + dashboardIcon(icon) + '</span><span><small>' + uiText(titleFr, titleNl) + '</small><strong>' + uiText(valueFr, valueNl) + '</strong><em>' + uiText(descriptionFr, descriptionNl) + '</em></span></button>';
+}
+
+function dashboardIcon(kind) {
+  if (kind === "spark") return contentIcon("vocabulary");
+  const path = kind === "play" ? '<path d="m9 5 10 7-10 7V5Z"/>' : '<path d="M4 19V5m0 14h16M8 16v-4m5 4V8m5 8V6"/>';
+  return '<svg class="content-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + path + '</svg>';
 }
 
 function masteryDashboardCard(summary) {
   return '<button class="quick-card mastery-dashboard-card" type="button" data-action="view-progress">' +
-    '<span class="quick-icon chart" aria-hidden="true"></span><span><small>' + uiText("Ma progression", "Mijn voortgang") + '</small>' +
-    '<strong>' + uiText("Niveau de maîtrise : " + summary.masteryLevel + "%", "Beheersingsniveau: " + summary.masteryLevel + "%") + '</strong>' +
-    masteryBar(summary, false) +
-    '<em class="mastery-legend">' + uiText(summary.percentages.new + "% nouveau · " + summary.percentages.learning + "% en cours · " + summary.percentages.acquired + "% acquis", summary.percentages.new + "% nieuw · " + summary.percentages.learning + "% aan het leren · " + summary.percentages.acquired + "% gekend") + '</em></span></button>';
+    '<span class="quick-icon chart" aria-hidden="true">' + dashboardIcon("chart") + '</span><span><small>' + uiText("Ma progression", "Mijn voortgang") + '</small>' +
+    '<strong>' + uiText("Niveau de maîtrise : " + summary.masteryLevel + "%", "Beheersingsniveau: " + summary.masteryLevel + "%") + '</strong>' + masteryBar(summary, true) + '</span></button>';
 }
 
 function masteryBar(summary, compact) {
@@ -681,7 +734,7 @@ function renderUnit() {
   app.innerHTML =
     breadcrumbHtml([{ label: trajectory.trajectory, action: "home" }]) +
     journeySteps(3) +
-    '<section class="unit-hero"><div><p class="eyebrow">' + escapeHtml(unit.top_category) + '</p><h1>' + escapeHtml(unit.title) + '</h1>' +
+    '<section class="unit-hero"><div><p class="eyebrow unit-kind">' + contentIcon(contentTypeKey(unit.top_category)) + escapeHtml(unit.top_category) + '</p><h1>' + escapeHtml(unit.title) + '</h1>' +
     '<p class="lede">' + exerciseCount + ' ' + uiText("éléments d’exercice", "oefenitems") + '</p>' + masteryPageSummary(unitMastery) + '</div>' +
     (exerciseCount ? compactScopeButton(unit, "", "", unit.title, exerciseCount, "Toute la partie", "Hele onderdeel") : "") + '</section>' +
     '<section class="structure-stack" aria-label="Cursusstructuur">' + sectionsHtml + '</section>' +
@@ -700,18 +753,19 @@ function compactScopeButton(unit, block, subsection, title, count, labelFr, labe
 }
 
 function scopeChoiceCard(unit, block, subsection, title, count, category, mastery) {
+  const kind = contentTypeKey(title === subsection ? subsection : title);
   return '<button class="scope-choice-card" type="button"' + scopeAttributes(unit, block, subsection, title, category) +
-    '<strong>' + escapeHtml(displayScopeTitle(title)) + '</strong><span>' + count + ' éléments</span><small lang="nl">' + escapeHtml(scopeLabelDutch(title)) + '</small>' + (mastery ? '<small class="scope-mastery">' + uiText(mastery.masteryLevel + "% maîtrise", mastery.masteryLevel + "% beheersing") + '</small>' : "") + '</button>';
+    '<span class="content-icon-wrap">' + contentIcon(kind) + '</span><strong>' + escapeHtml(displayScopeTitle(title)) + '</strong><b class="scope-count">' + count + '</b><small lang="nl">' + escapeHtml(scopeLabelDutch(title)) + '</small>' + (mastery ? '<small class="scope-mastery">' + uiText(mastery.masteryLevel + "% maîtrise", "beheerst") + '</small>' : "") + '</button>';
 }
 
 function masteryPageSummary(summary) {
   if (!summary || !summary.total) return "";
-  return '<span class="mastery-inline"><strong class="mastery-level">' + uiText("Niveau de maîtrise : " + summary.masteryLevel + "%", "Beheersingsniveau: " + summary.masteryLevel + "%") + '</strong>' + masteryBar(summary, true) + '<small>' + uiText(summary.practiced + " / " + summary.total + " travaillés · " + summary.acquired + " acquis", summary.practiced + " / " + summary.total + " geoefend · " + summary.acquired + " gekend") + '</small></span>';
+  return '<span class="unit-summary">' + uiText(summary.masteryLevel + "% maîtrise", "beheerst") + '</span>';
 }
 
 function masteryCompactLine(summary) {
   if (!summary || !summary.total) return "";
-  return '<small class="mastery-compact-line">' + uiText(summary.practiced + " / " + summary.total + " travaillés · " + summary.masteryLevel + "% maîtrise", summary.practiced + " / " + summary.total + " geoefend · " + summary.masteryLevel + "% beheersing") + '</small>';
+  return '<small class="mastery-compact-line">' + summary.practiced + '/' + summary.total + ' · ' + summary.masteryLevel + '%<span class="sr-only">' + uiText("travaillés · maîtrise", "geoefend · beheerst") + '</span></small>';
 }
 
 function samePermanentItemSet(left, right) {
@@ -751,7 +805,7 @@ function scopeLabelDutch(title) {
 
 function renderSoundNotes(items) {
   if (!items.length) return "";
-  return '<section class="source-notes"><div class="section-heading"><div><p class="eyebrow">' + uiText("De ton cours", "Uit je cursus") + '</p><h2>' + uiText("Règles de prononciation", "Klankregels") + '</h2></div></div>' +
+  return '<section class="source-notes"><div class="section-heading"><div><p class="eyebrow">' + uiText("De ton cours", "Uit je cursus") + '</p><h2>' + contentIcon("sounds") + uiText("Règles de prononciation", "Klankregels") + '</h2></div></div>' +
     items.map(function (item) {
       const spelling = item.spelling || (item.spellings || []).join(", ") || item.category || item.word || "Klankregel";
       const heading = item.sound ? spelling + " → " + item.sound : spelling;
@@ -780,7 +834,7 @@ function renderSetup() {
       { label: assignment ? "Mes devoirs" : unit.top_category, action: assignment ? "view-assignments" : "back-unit" }
     ]) +
     journeySteps(4) +
-    '<section class="setup-header"><h1>' + escapeHtml(scope.title) + '</h1><span class="setup-total">' + exerciseItemCount(exerciseItems) + ' ' + uiText("éléments", "items") + '</span></section>' +
+    '<section class="setup-header"><h1>' + contentIcon(contentTypeKey(scope.category || scope.title)) + escapeHtml(scope.title) + '</h1><span class="setup-total">' + exerciseItemCount(exerciseItems) + ' ' + uiText("éléments", "items") + '</span></section>' +
     '<section class="setup-grid"><div class="setup-choices"><div class="section-heading compact"><h2>' + uiText("Que veux-tu travailler ?", "Wat wil je oefenen?") + '</h2></div>' +
       '<div class="choice-list" role="radiogroup">' +
         available.map(function (key, index) {
@@ -788,7 +842,7 @@ function renderSetup() {
           const exerciseItems = option.type === "mixed" ? items : items.filter(function (item) { return item.type === option.type; });
           const count = assignment ? exerciseItems.length : questionCountForItems(exerciseItems, key);
           return '<label class="radio-card"><input type="radio" name="exercise" value="' + key + '"' + (index === 0 ? " checked" : "") + '>' +
-            '<span><strong>' + uiText(option.labelFr, option.label) + '</strong><b class="choice-count">' + count + '</b></span></label>';
+            '<span><strong>' + contentIcon(contentTypeKey(scope.category || scope.title, option.type)) + uiText(option.labelFr, option.label) + '</strong><b class="choice-count">' + count + '</b></span></label>';
         }).join("") +
       '</div><section class="session-size-panel" aria-labelledby="session-size-heading"><div class="section-heading compact"><h2 id="session-size-heading">' + uiText("Combien veux-tu travailler ?", "Hoeveel wil je oefenen?") + '</h2></div>' +
         '<div id="session-size-picker"></div></section></div>' +
@@ -833,15 +887,19 @@ function exerciseItemsForSetup(exerciseKey) {
 function questionsForSetup(exerciseKey, requestedCount) {
   if (assignmentById(state.activeAssignmentId)) {
     const items = window.MonParcoursAssignments.selectItems(exerciseItemsForSetup(exerciseKey), currentMasteryRecords(), requestedCount);
-    return items.map(function (item) {
+    return taskQuestionsForItems(items, exerciseKey);
+  }
+  return buildQuestionsForItems(exerciseItemsForSetup(exerciseKey), exerciseKey, requestedCount);
+}
+
+function taskQuestionsForItems(items, exerciseKey) {
+  return items.map(function (item) {
       const key = exerciseKey === "assignment-mixed" ?
         { vocabulary: "vocab-nl-fr", verb: "verb-nl-conj", phrase: "phrase-nl-fr", grammar_rule: "grammar", number: "number-nl-fr" }[item.type] : exerciseKey;
       if (!key) return null;
       const questions = buildQuestionsForItems([item], key, 1);
       return questions[Math.floor(Math.random() * questions.length)] || null;
-    }).filter(Boolean);
-  }
-  return buildQuestionsForItems(exerciseItemsForSetup(exerciseKey), exerciseKey, requestedCount);
+  }).filter(Boolean);
 }
 
 function availableQuestionCount(exerciseKey) {
@@ -1135,8 +1193,9 @@ function renderQuestion(message) {
       '<header class="practice-header"><button class="text-button" type="button" data-action="back-unit">' + uiText("Arrêter", "Stoppen") + '</button>' +
       '<div class="practice-progress" aria-label="Voortgang"><span style="width:' + progress + '%"></span></div>' +
       '<strong>' + (session.index + 1) + ' / ' + session.questions.length + '</strong></header>' +
+      taskPracticeContextHtml(session) +
       '<article class="question-card">' +
-        '<div class="question-meta"><span>' + uiText(modeLabelFr(session.mode), modeLabel(session.mode)) + '</span><span>' + uiText(EXERCISES[session.exerciseKey].labelFr, EXERCISES[session.exerciseKey].label) + '</span></div>' +
+        '<div class="question-meta"><span>' + uiText(modeLabelFr(session.mode), modeLabel(session.mode)) + '</span><span>' + contentIcon(contentTypeKey(question.item && question.item.category || state.selectedScope && (state.selectedScope.category || state.selectedScope.title), question.item && question.item.type || EXERCISES[session.exerciseKey].type)) + uiText(EXERCISES[session.exerciseKey].labelFr, EXERCISES[session.exerciseKey].label) + '</span></div>' +
         '<p class="prompt-label">' + uiText(instructionFrench(question.instruction), question.instruction) + '</p><h1 class="question-prompt">' + escapeHtml(question.prompt) + '</h1>' +
         (question.context ? '<p class="question-context">' + escapeHtml(question.context) + '</p>' : "") +
         '<form id="answer-form" autocomplete="off"><label for="answer-input" class="sr-only">Ta réponse / Jouw antwoord</label>' +
@@ -1151,6 +1210,17 @@ function renderQuestion(message) {
       '</article>' +
     '</section>';
   focusAnswer();
+}
+
+function taskPracticeContextHtml(session) {
+  const assignment = assignmentById(session.assignment_id);
+  if (!assignment) return "";
+  const progress = assignmentProgress(assignment);
+  return '<aside class="task-practice-context" aria-label="Devoir / Taak"><strong>' + escapeHtml(assignment.title) + '</strong><span>' +
+    uiText(progress.practiced + ' / ' + progress.total + ' travaillés', progress.practiced + ' / ' + progress.total + ' geoefend') + '</span><span>' +
+    uiText('Niveau de maîtrise : ' + progress.masteryLevel + '%', 'Beheersingsniveau: ' + progress.masteryLevel + '%') + '</span><span>' +
+    uiText(progress.acquired + ' / ' + progress.total + ' acquis', progress.acquired + ' / ' + progress.total + ' gekend') + '</span><span>' +
+    uiText('Objectif : ' + progress.target + '%', 'Doel: ' + progress.target + '%') + '</span></aside>';
 }
 
 function submitAnswer(rawAnswer) {
@@ -1426,7 +1496,7 @@ function renderProgress() {
           '<div class="category-progress">' + trajectory.units.map(function (unit) {
             const category = categoryStats(trajectoryIndex, unit.top_category);
             const unitMastery = masterySummaryForItems(itemsForUnit(trajectory, unit));
-            return '<div><span>' + escapeHtml(unit.top_category) + '</span><strong>' + unitMastery.masteryLevel + '% ' + uiText("maîtrise", "beheersing") + ' · ' + unitMastery.acquired + ' ' + uiText("acquis", "gekend") + '</strong></div>';
+            return '<div><span>' + contentIcon(contentTypeKey(unit.top_category)) + escapeHtml(unit.top_category) + '</span><strong>' + unitMastery.masteryLevel + '% ' + uiText("maîtrise", "beheersing") + ' · ' + unitMastery.acquired + ' ' + uiText("acquis", "gekend") + '</strong></div>';
           }).join("") + '</div></article>';
       }).join("") +
     '</section><button class="text-button danger" type="button" data-action="reset-progress">' + uiText("Effacer ma progression locale", "Wis mijn lokale voortgang") + '</button>';
@@ -1460,7 +1530,7 @@ function continueLastSession() {
   const last = state.progress.lastSession;
   if (!last) return;
   if (last.assignmentId) {
-    openAssignmentSetup(last.assignmentId);
+    launchAssignment(last.assignmentId);
     return;
   }
   state.trajectoryIndex = last.trajectoryIndex;
@@ -1617,12 +1687,26 @@ function buildQuestions(items, exerciseKey) {
     if (exerciseKey === "number-fr-nl") questions.push(makeQuestion(base, item.fr, [item.nl], "Schrijf het cijfer"));
     if (exerciseKey === "verb-nl-conj" || exerciseKey === "verb-fr-conj") {
       (item.conjugations || []).forEach(function (conjugation) {
-        const prompt = (exerciseKey === "verb-nl-conj" ? item.nl : item.infinitive) + " — " + conjugation.subject;
-        questions.push(makeQuestion(Object.assign({}, base, { itemVariant: conjugation.subject }), prompt, [conjugation.form], "Vervoeg het werkwoord"));
+        concreteConjugations(conjugation).forEach(function (variant) {
+          const prompt = (exerciseKey === "verb-nl-conj" ? item.nl : item.infinitive) + " — " + variant.subject;
+          questions.push(makeQuestion(Object.assign({}, base, { itemVariant: variant.subject }), prompt, [variant.form], "Vervoeg het werkwoord"));
+        });
       });
     }
   });
   return mergeEquivalentQuestions(questions);
+}
+
+function concreteConjugations(conjugation) {
+  const subject = String(conjugation.subject || "").trim();
+  const form = String(conjugation.form || "").trim();
+  if (!subject.includes("/")) return [{ subject: subject, form: form }];
+  if (!form.startsWith(subject + " ")) return [];
+  const ending = form.slice(subject.length).trim();
+  return subject.split("/").map(function (person) {
+    const name = person.trim();
+    return { subject: name, form: name + " " + ending };
+  });
 }
 
 function makeQuestion(base, prompt, answers, instruction, context) {

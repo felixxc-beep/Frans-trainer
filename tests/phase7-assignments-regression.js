@@ -26,6 +26,14 @@ assert.equal(progress.practiced, 10);
 assert.equal(progress.status, "in_progress");
 const ordered = assignments.selectItems(task.item_ids.map(id => ({ id })), records, 10);
 assert.deepEqual(ordered.map(item => item.id), task.item_ids.slice(10), "tweede reeks kiest eerst de tien nieuwe items");
+const priorityAttempts = [
+  { client_attempt_id: "weak", client_session_id: "w1", item_id: "weak", mode: "practice", was_correct: false, created_at: "2026-10-03T10:00:00Z" },
+  { client_attempt_id: "steady", client_session_id: "s1", item_id: "steady", mode: "practice", was_correct: true, created_at: "2026-10-03T10:00:00Z" },
+  ...["a", "b", "c"].map((suffix, index) => ({ client_attempt_id: "known-" + suffix, client_session_id: index === 2 ? "k2" : "k1", item_id: "known", mode: "practice", was_correct: true, created_at: "2026-10-03T10:00:0" + index + "Z" }))
+];
+const priorityRecords = mastery.mergeMasterySources([], priorityAttempts, [], []);
+assert.deepEqual(assignments.prioritizedItems([{ id: "steady" }, { id: "known" }, { id: "weak" }], priorityRecords).map(item => item.id),
+  ["weak", "steady", "known"], "na volledige dekking komen recente fouten vóór andere En cours-items en Acquis laatst");
 for (const [index, id] of task.item_ids.slice(10).entries()) add(id, index + 10, "second", "learn", true);
 records = mastery.mergeMasterySources([], evidence, [], []);
 progress = assignments.progress(task, records);
@@ -123,22 +131,91 @@ setImmediate(async () => {
   await queueWindow.MonParcoursSync.flush();
   assert.equal(JSON.parse(queueStorage.get("monParcoursSyncQueueV1")).length, 0);
   assert.equal(ingestCount, 1, "herstel verzendt dezelfde task-session éénmaal");
-  const first20 = course.trajectories[0].items.filter(item => item.type === "vocabulary").slice(0, 20);
-  const taskData = { id: "00000000-0000-4000-8000-000000000002", title: "Testtaak", status: "published", item_ids: first20.map(item => item.id), target_acquired_percentage: 80 };
+  const expectedVerbs = {
+    parler: { je: "je parle", tu: "tu parles", il: "il parle", elle: "elle parle", on: "on parle", nous: "nous parlons", vous: "vous parlez", ils: "ils parlent", elles: "elles parlent" },
+    aimer: { je: "j’aime", tu: "tu aimes", il: "il aime", elle: "elle aime", on: "on aime", nous: "nous aimons", vous: "vous aimez", ils: "ils aiment", elles: "elles aiment" },
+    être: { je: "je suis", tu: "tu es", il: "il est", elle: "elle est", on: "on est", nous: "nous sommes", vous: "vous êtes", ils: "ils sont", elles: "elles sont" },
+    avoir: { je: "j’ai", tu: "tu as", il: "il a", elle: "elle a", on: "on a", nous: "nous avons", vous: "vous avez", ils: "ils ont", elles: "elles ont" }
+  };
+  for (const [infinitive, forms] of Object.entries(expectedVerbs)) {
+    const verb = vm.runInContext("state.data.trajectories.flatMap(t=>t.items).find(i=>i.type==='verb'&&i.infinitive===" + JSON.stringify(infinitive) + ")", context);
+    context.auditVerb = verb;
+    for (const direction of ["verb-fr-conj", "verb-nl-conj"]) {
+      context.auditDirection = direction;
+      const generated = vm.runInContext("buildQuestions([auditVerb],auditDirection)", context);
+      assert.equal(generated.length, 9, infinitive + " / " + direction);
+      for (const [person, form] of Object.entries(forms)) {
+        const question = generated.find(row => row.itemVariant === person);
+        assert.ok(question, infinitive + " / " + person);
+        assert.ok(question.prompt.endsWith("— " + person));
+        assert.deepEqual(Array.from(question.answers), [form]);
+        assert.equal(vm.runInContext("isCorrect(" + JSON.stringify(form) + "," + JSON.stringify(question.answers) + ")", context), true);
+      }
+      assert.ok(generated.every(row => !row.itemVariant.includes("/") && row.answers.every(answer => !answer.includes("/"))));
+    }
+  }
+  assert.equal(vm.runInContext('isCorrect("il/elle/on aime",["il aime"])', context), false);
+  const first59 = course.trajectories[0].items.filter(item => item.type === "vocabulary").slice(0, 59);
+  const taskData = { id: "00000000-0000-4000-8000-000000000002", title: "Testtaak", status: "published", item_ids: first59.slice(0, 20).map(item => item.id), target_acquired_percentage: 80 };
   context.taskData = taskData;
-  vm.runInContext("state.assignments.items=[taskData]; openAssignmentSetup(taskData.id)", context);
+  context.fakeControl = { dataset: { action: "view-assignment", id: taskData.id }, closest() { return null; } };
+  vm.runInContext("state.assignments.items=[taskData]; renderHome()", context);
+  assert.match(appElement.innerHTML, /Continuer|Commencer/);
+  assert.equal((appElement.innerHTML.match(/class="assignment-home-row"/g) || []).length, 1, "één taak is één compacte rij");
+  assert.equal((appElement.innerHTML.match(/class="assignment-card"/g) || []).length, 0, "grote taakkaarten staan niet op de homepage");
+  const extraTasks = [2, 3].map(index => ({ ...taskData, id: "00000000-0000-4000-8000-00000000000" + index, title: "Taak " + index }));
+  context.extraTasks = extraTasks;
+  vm.runInContext("state.assignments.items=[taskData,...extraTasks]; renderHome()", context);
+  assert.equal((appElement.innerHTML.match(/class="assignment-home-row"/g) || []).length, 2, "meer dan twee taken toont er maximaal twee");
+  assert.match(appElement.innerHTML, /Voir tout/);
+  assert.doesNotMatch(appElement.innerHTML, /Taak 3/);
+  assert.match(appElement.innerHTML, /class="home-browser"/, "Trajetkeuze blijft aanwezig onder de taken");
+  vm.runInContext("state.assignments.items=[taskData]; renderHome()", context);
+  vm.runInContext("handleClick({target:{closest:()=>fakeControl}})", context);
   assert.match(appElement.innerHTML, /Testtaak/);
-  const questions = vm.runInContext('questionsForSetup("assignment-mixed", 10)', context);
-  assert.equal(questions.length, 10);
-  assert.equal(new Set(questions.map(question => question.stableItemId)).size, 10);
+  assert.doesNotMatch(appElement.innerHTML, /Que veux-tu travailler \?/);
+  assert.doesNotMatch(appElement.innerHTML, /Choisis ton mode/);
+  assert.match(appElement.innerHTML, /Niveau de maîtrise/);
+  const questions = vm.runInContext("state.session.questions", context);
+  assert.equal(questions.length, 20);
+  assert.equal(new Set(questions.map(question => question.stableItemId)).size, 20);
   assert.ok(questions.every(question => taskData.item_ids.includes(question.stableItemId)));
-  const reverse = vm.runInContext('questionsForSetup("vocab-fr-nl", 10)', context);
-  assert.equal(reverse.length, 10, "bestaande omgekeerde richting blijft in een taak beschikbaar");
-  assert.ok(reverse.every(question => taskData.item_ids.includes(question.stableItemId)));
-  context.questions = questions;
-  vm.runInContext('beginSession(questions, "practice", "assignment-mixed", "Testtaak", {availableCount:20,assignmentId:taskData.id})', context);
+  assert.equal(vm.runInContext("state.session.mode", context), "learn", "nieuwe taakitems starten met kennismaking");
   assert.equal(payload.session.assignment_id, taskData.id);
-  assert.equal(payload.session.question_count, 10);
+  assert.equal(payload.session.question_count, 20);
   assert.equal(payload.session.attempt_count, 0);
+  assert.equal(vm.runInContext("(() => { const original=state.session.client_session_id; persistActiveSession(); state.session=null; state.activeAssignmentId=null; return restoreActiveSession() && state.session.client_session_id===original && state.session.assignment_id===taskData.id; })()", context), true,
+    "refresh hervat dezelfde task-sessie met dezelfde idempotente ID");
+  vm.runInContext("leaveSessionUnfinished()", context);
+  taskData.item_ids = first59.map(item => item.id);
+  vm.runInContext("launchAssignment(taskData.id)", context);
+  const firstLarge = vm.runInContext("state.session.questions.map(q=>q.stableItemId)", context);
+  assert.equal(firstLarge.length, 20);
+  assert.ok(firstLarge.every(id => taskData.item_ids.includes(id)));
+  vm.runInContext("leaveSessionUnfinished()", context);
+  const learned = (idsToMark) => idsToMark.map((id, index) => ({ client_attempt_id: "learn-" + id, client_session_id: "learn-session-" + index,
+    identity_subject: "student-1", item_id: id, equivalent_item_ids: [id], item_variant: "", mode: "learn", was_correct: true,
+    created_at: "2026-10-03T10:00:00Z" }));
+  context.learned = learned(firstLarge);
+  vm.runInContext("state.mastery.localAttempts=learned; invalidateMasteryRecords(); launchAssignment(taskData.id)", context);
+  const secondLarge = vm.runInContext("state.session.questions.map(q=>q.stableItemId)", context);
+  assert.equal(secondLarge.length, 20);
+  assert.ok(secondLarge.every(id => !firstLarge.includes(id)), "na eerste sessie worden nieuwe taakitems gekozen");
+  vm.runInContext("leaveSessionUnfinished()", context);
+  context.learned = learned(firstLarge.concat(secondLarge));
+  vm.runInContext("state.mastery.localAttempts=learned; invalidateMasteryRecords(); launchAssignment(taskData.id)", context);
+  const thirdLarge = vm.runInContext("state.session.questions.map(q=>q.stableItemId)", context);
+  assert.equal(thirdLarge.length, 20);
+  assert.equal(thirdLarge.filter(id => !firstLarge.includes(id) && !secondLarge.includes(id)).length, 19,
+    "derde sessie bevat eerst alle 19 resterende nieuwe items en eventueel één herhaling");
+  vm.runInContext("leaveSessionUnfinished()", context);
+  context.learned = learned(taskData.item_ids);
+  vm.runInContext("state.mastery.localAttempts=learned; invalidateMasteryRecords(); launchAssignment(taskData.id)", context);
+  assert.equal(vm.runInContext("state.session.mode", context), "practice", "na kennismaking volgen zelfstandige pogingen");
+  assert.equal(vm.runInContext("state.session.questions.length", context), 20);
+  assert.equal(payload.session.assignment_id, taskData.id);
+  vm.runInContext("leaveSessionUnfinished(); state.activeAssignmentId=null; renderSetup()", context);
+  assert.match(appElement.innerHTML, /Que veux-tu travailler \?/);
+  assert.match(appElement.innerHTML, /Choisis ton mode/);
   console.log("FASE 7 TAKENREGRESSIE GESLAAGD");
 });
