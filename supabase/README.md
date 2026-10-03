@@ -175,3 +175,17 @@ Nieuwe collega toevoegen:
 5. De collega kan daarna met het eigen Auth-account inloggen en ziet uitsluitend die klassen.
 
 De frontend bevat geen Admin API, service-role-key of uitnodigingsfunctionaliteit. Het intrekken van toegang gebeurt door het teacherprofiel inactief te zetten; historische data en klastoewijzingen blijven bestaan. De laatste actieve admin kan server-side niet worden gedeactiveerd, verwijderd of naar teacher worden teruggezet.
+
+## Fase 7: taken op basis van beheersing
+
+Voer **handmatig en éénmalig** `supabase/phase7-assignments.sql` uit in de Supabase SQL Editor, ná `phase6-multi-teacher.sql` en vóór publicatie van de fase-7-frontend. Het script is een migratie en is niet bedoeld om twee keer uit te voeren. Maak vooraf een databaseback-up. De migratie maakt `assignments`, `assignment_classes`, `assignment_items`, `assignment_completions` en een register van de huidige 1.036 permanente item-ID's. Ze voegt een nullable `assignment_id` aan `practice_sessions` toe en vervangt de **private** `ingest_practice_bundle_impl`; de publieke ingest-RPC behoudt zijn signatuur.
+
+Daarna kun je optioneel `supabase/phase7-verification.sql` uitvoeren: dit is alleen-lezen en controleert ID-aantal, RLS, tabelrechten en RPC-rechten. De migratie zelf is hier niet automatisch op jouw project uitgevoerd.
+
+Taken gebruiken uitsluitend vaste item-ID's en geen gekopieerde cursusinhoud. Bij nieuwe Trajets moet het ID-register uitsluitend worden **aangevuld** met nieuwe permanente ID's; bestaande ID's blijven staan. Een taak kan meerdere klassen hebben. De huidige mastery wordt uit alle pogingen op die items berekend, ook buiten de taak; eerste voltooiing wordt server-side éénmaal in `assignment_completions` vastgelegd. Task-gestarte sessies dragen `assignment_id` en leveren actieve taaktijd. De bestaande offline queue synchroniseert ze idempotent.
+
+Een gearchiveerde taak wordt niet meer aan leerlingen uitgedeeld. Om reeds lokaal gestarte/offline sessies niet kwijt te raken, accepteert ingest nog geldige task-sessies van een eerder gepubliceerde, inmiddels gearchiveerde taak. Alleen task-gelinkte pogingen kunnen dan nog een historische completion vastleggen; gewone oefenpogingen activeren na archivering geen nieuwe completion.
+
+Nieuwe publieke RPC's zijn `get_student_assignments(text)` (alleen na verificatie van het eigen sync-token), `get_teacher_assignments()`, `get_teacher_assignment_detail(uuid)` en `save_assignment(jsonb)`. Privileged functies blijven in `private`, met `search_path = ''`. Er is geen publieke tabel-SELECT voor leerlingen of frontend-service-role. Actieve admins beheren alle taken; actieve leerkrachten maken taken alleen voor klassen met toegang. Alleen de maker of een admin kan wijzigen of archiveren; co-teachers met klastoegang kunnen details lezen, uitsluitend voor hun toegestane leerlingen. Bij een gepubliceerde taak met activiteit blokkeert de server een wijziging van klassen of items. Archiveren verwijdert geen historische resultaten.
+
+Publiceer na de SQL-migratie `index.html`, `teacher.html`, `app.js`, `teacher.js`, `assignments.js`, beide CSS-bestanden en de overige repositorybestanden naar GitHub Pages. Test met een concept (onzichtbaar voor leerlingen), een gepubliceerde taak voor twee klassen, een offline leerling, een co-teacher en een teacher zonder toegang tot een van die klassen. De taakdefinitie is op de leerlingbrowser per identiteit gecachet; nieuw gepubliceerde taken vereisen eerst internet. De eerste definitieve voltooiing verschijnt pas na synchronisatie.

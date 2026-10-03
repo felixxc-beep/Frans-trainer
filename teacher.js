@@ -33,6 +33,7 @@
     route: { view: "dashboard", classId: null, studentId: null },
     management: { loaded: false, classes: [], students: [], selectedClassId: null, studentStatus: "active", generatedCode: "", createdStudents: [], message: "", messageIsError: false },
     teacherAdmin: { loaded: false, teachers: [], assignments: [], classes: [], editingTeacherId: null, message: "", messageIsError: false },
+    tasks: { loaded: false, list: [], detail: [], selectedId: null, draft: null, filter: "all", message: "", error: false },
     loading: false,
     loadSequence: 0
   };
@@ -864,13 +865,166 @@
     return filterDataset(state.raw, state.filters);
   }
 
+  function taskDraftDefaults(source) {
+    const first = asArray(state.course && state.course.trajectories)[0];
+    return {
+      id: source && source.id || null,
+      title: source && source.title || "",
+      instructions: source && source.instructions || "",
+      due_at: source && source.due_at ? taskDeadlineLocal(source.due_at) : "",
+      target_acquired_percentage: source && source.target_acquired_percentage || 80,
+      status: source && source.status || "draft",
+      class_ids: asArray(source && source.class_ids).map(String),
+      trajectory: first && first.trajectory || "",
+      top_category: "", lesson: "", block: "", subsection: "", category: "",
+      range_start: 1, range_end: null,
+      fixed_item_ids: source && source.id ? asArray(source.item_ids).map(String) : null
+    };
+  }
+
+  function taskDeadlineLocal(value) {
+    const parts = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Brussels", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).formatToParts(new Date(value));
+    const map = Object.fromEntries(parts.map(function (part) { return [part.type, part.value]; }));
+    return map.year + "-" + map.month + "-" + map.day + "T" + map.hour + ":" + map.minute;
+  }
+
+  function taskDeadlineUtc(value) {
+    if (!value) return null;
+    const desired = Date.parse(value + "Z");
+    if (!Number.isFinite(desired)) throw new Error("Ongeldige deadline");
+    let guess = desired;
+    for (let index = 0; index < 3; index += 1) {
+      const observed = Date.parse(taskDeadlineLocal(new Date(guess).toISOString()) + "Z");
+      guess += desired - observed;
+    }
+    const result = new Date(guess).toISOString();
+    if (taskDeadlineLocal(result) !== value) throw new Error("Dit tijdstip bestaat niet in Europe/Brussels wegens de uurwisseling.");
+    return result;
+  }
+
+  function taskSuggestedTitle(draft) {
+    const scope = draft.category || draft.subsection || draft.block || draft.lesson || draft.top_category || "Leerstof";
+    const items = taskScopeItems(draft);
+    const start = Math.max(1, Number(draft.range_start) || 1);
+    const end = Math.min(items.length, Number(draft.range_end) || items.length);
+    return draft.trajectory + " · " + scope + (items.length ? " " + start + "–" + end : "");
+  }
+
+  function taskScopeItems(draft) {
+    if (draft.fixed_item_ids) return draft.fixed_item_ids.map(function (id) { return state.courseIndex[id]; }).filter(function (item) { return item && item.type !== "sound_rule"; });
+    return window.MonParcoursAssignments.scopeItems(state.course || { trajectories: [] }, draft).filter(function (item) {
+      return item && item.id && ["vocabulary", "verb", "phrase", "grammar_rule", "number"].includes(item.type);
+    });
+  }
+
+  function taskSelectedItems(draft) {
+    const items = taskScopeItems(draft);
+    const start = Math.max(1, Number(draft.range_start) || 1);
+    const end = Math.min(items.length, Number(draft.range_end) || items.length);
+    return items.slice(start - 1, end);
+  }
+
+  function taskSelect(name, label, values, selected) {
+    return '<label><span>' + label + '</span><select name="' + name + '"><option value="">Alles</option>' + values.map(function (value) {
+      return '<option value="' + escapeHtml(value) + '"' + (value === selected ? ' selected' : '') + '>' + escapeHtml(value) + '</option>';
+    }).join("") + '</select></label>';
+  }
+
+  function taskScopeChoices(draft, field) {
+    const order = ["top_category", "lesson", "block", "subsection", "category"];
+    const position = order.indexOf(field);
+    const path = { trajectory: draft.trajectory };
+    order.slice(0, position).forEach(function (key) { path[key] = draft[key]; });
+    const values = new Set();
+    const trajectory = asArray(state.course && state.course.trajectories).find(function (row) { return row.trajectory === draft.trajectory; });
+    asArray(trajectory && trajectory.items).forEach(function (item) {
+      if (!item.id || item.type === "sound_rule") return;
+      if (order.slice(0, position).some(function (key) { return path[key] && item[key] !== path[key]; })) return;
+      if (item[field]) values.add(item[field]);
+    });
+    return Array.from(values);
+  }
+
+  function renderTasksPage() {
+    const groups = ["draft", "published", "archived"];
+    const labels = { draft: "Concepten", published: "Gepubliceerd", archived: "Gearchiveerd" };
+    return '<div class="page-heading"><div><p class="eyebrow">Beheersing</p><h2>Taken</h2><p class="muted">Vaste itemselecties, voortgang en eerste voltooiing.</p></div><button class="button button-primary" type="button" data-action="new-task">Nieuwe taak</button></div>' +
+      (state.tasks.message ? '<p class="form-message" role="alert">' + escapeHtml(state.tasks.message) + '</p>' : '') +
+      groups.map(function (group) {
+        const rows = state.tasks.list.filter(function (task) { return task.status === group; });
+        return '<section class="section-block"><h3>' + labels[group] + ' (' + rows.length + ')</h3>' +
+          (rows.length ? '<div class="task-list">' + rows.map(function (task) {
+            const classes = asArray(task.classes).map(function (row) { return row.name; }).join(", ");
+            return '<button class="task-card" type="button" data-action="open-task" data-id="' + escapeHtml(task.id) + '"><strong>' + escapeHtml(task.title) + '</strong><span>' + escapeHtml(classes || "Geen toegankelijke klassen") + '</span><span>' + asArray(task.item_ids).length + ' items · ' + Number(task.completed_count || 0) + '/' + Number(task.student_count || 0) + ' afgerond' + (task.due_at ? ' · ' + escapeHtml(formatDate(task.due_at, false)) : '') + '</span></button>';
+          }).join("") + '</div>' : '<p class="muted">Geen taken.</p>') + '</section>';
+      }).join("");
+  }
+
+  function renderTaskEditor() {
+    const draft = state.tasks.draft;
+    if (!draft) return renderTasksPage();
+    const scopeItems = taskScopeItems(draft);
+    const selectedItems = taskSelectedItems(draft);
+    const trajectories = asArray(state.course && state.course.trajectories).map(function (row) { return row.trajectory; });
+    const ranges = window.MonParcoursAssignments.numberedRanges(scopeItems.length);
+    const classChoices = state.raw.classes.filter(function (row) { return row.is_active !== false; }).map(function (row) {
+      return '<label class="task-class"><input type="checkbox" name="class_ids" value="' + escapeHtml(row.id) + '"' + (draft.class_ids.includes(row.id) ? ' checked' : '') + '><span>' + escapeHtml(row.name) + '</span></label>';
+    }).join("");
+    return '<div class="page-heading"><div><p class="eyebrow">Taken</p><h2>' + (draft.id ? "Taak bewerken" : "Nieuwe taak") + '</h2></div><button class="button button-secondary" type="button" data-action="view-tasks">Terug</button></div>' +
+      (state.tasks.message ? '<p class="form-message" role="alert">' + escapeHtml(state.tasks.message) + '</p>' : '') +
+      '<form class="task-form management-form" data-form="task-editor">' +
+      '<fieldset><legend>1 · Klassen</legend><div class="task-class-grid">' + (classChoices || '<p>Geen actieve klassen beschikbaar.</p>') + '</div></fieldset>' +
+      '<fieldset><legend>2 · Cursusonderdeel</legend>' +
+        (draft.fixed_item_ids ? '<p class="muted">Deze bestaande taak behoudt zijn vaste itemselectie. Maak een nieuwe taak voor een andere selectie.</p>' :
+        '<div class="task-fields"><label><span>Trajet</span><select name="trajectory">' + trajectories.map(function (value) { return '<option value="' + escapeHtml(value) + '"' + (value === draft.trajectory ? ' selected' : '') + '>' + escapeHtml(value) + '</option>'; }).join("") + '</select></label>' +
+        taskSelect("top_category", "Onderdeel", taskScopeChoices(draft, "top_category"), draft.top_category) +
+        taskSelect("lesson", "Les / inhoud", taskScopeChoices(draft, "lesson"), draft.lesson) +
+        taskSelect("block", "Blok", taskScopeChoices(draft, "block"), draft.block) +
+        taskSelect("subsection", "Subsection", taskScopeChoices(draft, "subsection"), draft.subsection) +
+        taskSelect("category", "Categorie", taskScopeChoices(draft, "category"), draft.category) + '</div>') + '</fieldset>' +
+      '<fieldset><legend>3 · Itemselectie</legend><p>' + scopeItems.length + ' oefenbare items in dit onderdeel.</p>' +
+        (draft.fixed_item_ids ? '' : '<div class="task-fields"><label><span>Van item</span><input name="range_start" type="number" min="1" max="' + scopeItems.length + '" value="' + draft.range_start + '"></label><label><span>Tot item</span><input name="range_end" type="number" min="1" max="' + scopeItems.length + '" value="' + (draft.range_end || scopeItems.length) + '"></label></div><div class="export-actions"><button class="small-button" type="button" data-action="task-range" data-start="1" data-end="' + scopeItems.length + '">Alle ' + scopeItems.length + '</button>' + ranges.map(function (range) { return '<button class="small-button" type="button" data-action="task-range" data-start="' + range.start + '" data-end="' + range.end + '">' + range.start + '–' + range.end + '</button>'; }).join("") + '</div>') +
+        '<p><strong>Voorbeeld: ' + selectedItems.length + ' geselecteerd.</strong></p><ol class="task-preview">' + selectedItems.slice(0, 20).map(function (item) { return '<li>' + escapeHtml(item.nl || item.prompt || item.infinitive || item.id) + ' — ' + escapeHtml(item.fr || item.answer || item.infinitive || '') + '</li>'; }).join("") + '</ol>' + (selectedItems.length > 20 ? '<p>… en ' + (selectedItems.length - 20) + ' meer.</p>' : '') + '</fieldset>' +
+      '<fieldset><legend>4 · Doel en deadline</legend><div class="task-fields"><label><span>Titel</span><input name="title" maxlength="160" required value="' + escapeHtml(draft.title) + '"></label><label><span>Deadline (optioneel, lokale tijd)</span><input name="due_at" type="datetime-local" value="' + escapeHtml(draft.due_at) + '"></label><label><span>Doel: % gekend</span><input name="target_acquired_percentage" type="number" min="1" max="100" value="' + draft.target_acquired_percentage + '"></label></div><div class="export-actions">' + [70,80,90,100].map(function (value) { return '<button class="small-button" type="button" data-action="task-target" data-value="' + value + '">' + value + '%</button>'; }).join("") + '</div><p>Voltooid wanneer alle items minstens eenmaal geoefend zijn én het doelpercentage gekend is.</p><label><span>Instructies (optioneel)</span><textarea name="instructions" maxlength="1000">' + escapeHtml(draft.instructions) + '</textarea></label></fieldset>' +
+      '<fieldset><legend>5 · Controleren en publiceren</legend><p>' + selectedItems.length + ' vaste permanente item-ID’s · ' + draft.class_ids.length + ' klassen · doel ' + draft.target_acquired_percentage + '%.</p><div class="export-actions">' + (draft.status === "draft" ? '<button class="button button-secondary" type="submit" name="task_status" value="draft">Concept opslaan</button>' : '') + '<button class="button button-primary" type="submit" name="task_status" value="published">' + (draft.status === "published" ? "Wijzigingen opslaan" : "Publiceren") + '</button></div></fieldset></form>';
+  }
+
+  function renderTaskDetail() {
+    const task = state.tasks.list.find(function (row) { return row.id === state.tasks.selectedId; });
+    if (!task) return renderTasksPage();
+    const editable = task.status !== "archived" && (currentTeacherIsAdmin() || task.created_by_teacher_id === state.user.id);
+    const rows = asArray(state.tasks.detail);
+    const statusFor = function (row) {
+      if (row.completed_at) return "completed";
+      if (task.due_at && new Date(task.due_at) < new Date()) return "late";
+      return Number(row.progress && row.progress.practiced || 0) ? "in_progress" : "not_started";
+    };
+    const statuses = { completed: "Afgerond", late: "Te laat", in_progress: "Bezig", not_started: "Niet gestart" };
+    const filteredRows = state.tasks.filter === "all" ? rows : rows.filter(function (row) { return statusFor(row) === state.tasks.filter; });
+    const completedCount = rows.filter(function (row) { return row.completed_at; }).length;
+    const startedCount = rows.filter(function (row) { return !row.completed_at && Number(row.progress && row.progress.practiced || 0) > 0; }).length;
+    const averageMastery = rows.length ? Math.round(rows.reduce(function (total, row) { return total + Number(row.progress && row.progress.mastery_level || 0); }, 0) / rows.length) : 0;
+    return '<div class="page-heading"><div><p class="eyebrow">Taak · ' + escapeHtml(task.status) + '</p><h2>' + escapeHtml(task.title) + '</h2><p class="muted">' + asArray(task.item_ids).length + ' items · doel ' + task.target_acquired_percentage + '% gekend · ' + escapeHtml(task.due_at ? formatDate(task.due_at) : "Geen deadline") + '</p></div><div class="export-actions"><button class="button button-secondary" type="button" data-action="view-tasks">Terug</button><button class="button button-secondary" type="button" data-action="export-task">CSV</button>' + (editable ? '<button class="button button-primary" type="button" data-action="edit-task">Bewerken</button><button class="button button-secondary" type="button" data-action="archive-task">Archiveren</button>' : '') + '</div></div>' +
+      (task.instructions ? '<p>' + escapeHtml(task.instructions) + '</p>' : '') +
+      '<div class="task-summary"><span><strong>' + completedCount + '/' + rows.length + '</strong> afgerond</span><span><strong>' + startedCount + '</strong> bezig</span><span><strong>' + (rows.length - completedCount - startedCount) + '</strong> niet gestart</span><span><strong>' + averageMastery + '%</strong> gemiddelde beheersing</span></div>' +
+      '<label class="task-filter"><span>Status</span><select id="taskStatusFilter"><option value="all"' + (state.tasks.filter === "all" ? ' selected' : '') + '>Alle</option>' + Object.entries(statuses).map(function (entry) { return '<option value="' + entry[0] + '"' + (state.tasks.filter === entry[0] ? ' selected' : '') + '>' + entry[1] + '</option>'; }).join("") + '</select></label>' +
+      '<div class="table-wrap"><table><thead><tr><th>Klas / leerling</th><th>Status</th><th>Geoefend</th><th>Beheersing</th><th>Gekend</th><th>Doel</th><th>Laatste activiteit</th><th>Actieve taaktijd</th></tr></thead><tbody>' + filteredRows.map(function (row) {
+        const progress = row.progress || {};
+        const status = statuses[statusFor(row)];
+        return '<tr><td>' + escapeHtml(row.class_name) + ' · <strong>' + escapeHtml(row.student_name) + '</strong></td><td>' + status + (row.completed_at ? ' · ' + escapeHtml(formatDate(row.completed_at)) : '') + '</td><td>' + Number(progress.practiced || 0) + '/' + Number(progress.total || 0) + '</td><td>' + Number(progress.mastery_level || 0) + '%</td><td>' + Number(progress.acquired || 0) + '/' + Number(progress.total || 0) + ' · ' + (Number(progress.total || 0) ? Math.round(Number(progress.acquired || 0) * 100 / Number(progress.total)) : 0) + '%</td><td>' + task.target_acquired_percentage + '%</td><td>' + escapeHtml(progress.last_activity ? formatDate(progress.last_activity) : "—") + '</td><td>' + formatActiveDuration(row.active_task_time) + '</td></tr>';
+      }).join("") + '</tbody></table></div>';
+  }
+
   function renderCurrent() {
     const content = document.querySelector("#dashboardContent");
     if (!content || !state.user) return;
     const data = currentFilteredData();
-    document.querySelector("#filterBar").hidden = state.route.view === "management" || state.route.view === "teachers";
+    document.querySelector("#filterBar").hidden = state.route.view === "management" || state.route.view === "teachers" || state.route.view.indexOf("task") === 0;
     if (state.route.view === "management") content.innerHTML = renderManagement();
     else if (state.route.view === "teachers") content.innerHTML = renderTeachersPage();
+    else if (state.route.view === "tasks") content.innerHTML = renderTasksPage();
+    else if (state.route.view === "task-detail") content.innerHTML = renderTaskDetail();
+    else if (state.route.view === "task-editor") content.innerHTML = renderTaskEditor();
     else if (state.route.view === "classes") content.innerHTML = renderClassesPage(data);
     else if (state.route.view === "class") content.innerHTML = renderClassDetail(data, state.route.classId);
     else if (state.route.view === "student") content.innerHTML = renderStudentDetail(data, state.route.studentId);
@@ -913,7 +1067,7 @@
   }
 
   function updateNavigation() {
-    const current = state.route.view === "management" ? "view-management" : state.route.view === "teachers" ? "view-teachers" : state.route.view === "dashboard" ? "view-dashboard" : "view-classes";
+    const current = state.route.view === "management" ? "view-management" : state.route.view === "teachers" ? "view-teachers" : state.route.view.indexOf("task") === 0 ? "view-tasks" : state.route.view === "dashboard" ? "view-dashboard" : "view-classes";
     document.querySelectorAll("#teacherNav [data-action]").forEach(function (button) {
       if (button.dataset.action === current) button.setAttribute("aria-current", "page");
       else button.removeAttribute("aria-current");
@@ -958,6 +1112,7 @@
     state.raw = emptyDataset();
     state.management = { loaded: false, classes: [], students: [], selectedClassId: null, studentStatus: "active", generatedCode: "", createdStudents: [], message: "", messageIsError: false };
     state.teacherAdmin = { loaded: false, teachers: [], assignments: [], classes: [], editingTeacherId: null, message: "", messageIsError: false };
+    state.tasks = { loaded: false, list: [], detail: [], selectedId: null, draft: null, filter: "all", message: "", error: false };
     state.route = { view: "dashboard", classId: null, studentId: null };
     document.querySelector("#authView").hidden = false;
     document.querySelector("#dashboardView").hidden = true;
@@ -1113,6 +1268,84 @@
     }
   }
 
+  async function openTasks(forceReload) {
+    state.route = { view: "tasks", classId: null, studentId: null };
+    document.querySelector("#filterBar").hidden = true;
+    if (state.tasks.loaded && !forceReload) return renderCurrent();
+    document.querySelector("#dashboardContent").innerHTML = '<section class="loading-state"><span class="loader" aria-hidden="true"></span><p>Taken worden veilig geladen…</p></section>';
+    updateNavigation();
+    try {
+      const result = await state.client.rpc("get_teacher_assignments");
+      if (result.error) throw result.error;
+      state.tasks.list = asArray(result.data);
+      state.tasks.loaded = true;
+      state.tasks.message = "";
+      renderCurrent();
+    } catch (error) {
+      document.querySelector("#dashboardContent").innerHTML = '<div class="error-state"><strong>Taken konden niet worden geladen.</strong><p>Controleer je verbinding en of fase 7 in Supabase is uitgevoerd.</p></div>';
+    }
+  }
+
+  async function openTaskDetail(id) {
+    const task = state.tasks.list.find(function (row) { return row.id === id; });
+    if (!task) return openTasks(true);
+    state.tasks.selectedId = id;
+    state.route = { view: "task-detail", classId: null, studentId: null };
+    document.querySelector("#dashboardContent").innerHTML = '<section class="loading-state"><span class="loader" aria-hidden="true"></span><p>Leerlingvoortgang wordt geladen…</p></section>';
+    updateNavigation();
+    try {
+      const result = await state.client.rpc("get_teacher_assignment_detail", { p_assignment_id: id });
+      if (result.error) throw result.error;
+      state.tasks.detail = asArray(result.data);
+      renderCurrent();
+    } catch (error) {
+      document.querySelector("#dashboardContent").innerHTML = '<div class="error-state"><strong>Taakdetails konden niet worden geladen.</strong><p>Probeer opnieuw.</p></div>';
+    }
+  }
+
+  function updateTaskDraftFromForm(form) {
+    const draft = state.tasks.draft;
+    if (!draft || !form) return;
+    ["title", "instructions", "due_at", "target_acquired_percentage", "trajectory", "top_category", "lesson", "block", "subsection", "category", "range_start", "range_end"].forEach(function (name) {
+      const field = form.elements.namedItem(name);
+      if (field) draft[name] = field.value;
+    });
+    draft.class_ids = Array.from(form.querySelectorAll('input[name="class_ids"]:checked')).map(function (field) { return field.value; });
+  }
+
+  async function saveTask(event, form) {
+    event.preventDefault();
+    updateTaskDraftFromForm(form);
+    const draft = state.tasks.draft;
+    const status = event.submitter && event.submitter.value || "draft";
+    const items = taskSelectedItems(draft);
+    if (!draft.class_ids.length || !items.length || !draft.title.trim()) {
+      state.tasks.message = "Kies minstens één klas en één item en vul een titel in.";
+      return renderCurrent();
+    }
+    let deadline;
+    try { deadline = taskDeadlineUtc(draft.due_at); }
+    catch (error) { state.tasks.message = error.message; return renderCurrent(); }
+    const payload = {
+      id: draft.id, title: draft.title.trim(), instructions: draft.instructions.trim(),
+      due_at: deadline,
+      target_acquired_percentage: Number(draft.target_acquired_percentage),
+      class_ids: draft.class_ids, item_ids: items.map(function (item) { return item.id; }), status: status
+    };
+    const buttons = form.querySelectorAll('button[type="submit"]');
+    buttons.forEach(function (button) { button.disabled = true; });
+    try {
+      const result = await state.client.rpc("save_assignment", { p_payload: payload });
+      if (result.error) throw result.error;
+      await openTasks(true);
+      state.tasks.message = status === "published" ? "Taak gepubliceerd." : "Concept opgeslagen.";
+      renderCurrent();
+    } catch (error) {
+      state.tasks.message = /scope locked/i.test(String(error.message)) ? "De itemselectie van deze taak is vergrendeld na leerlingactiviteit." : "Taak opslaan mislukt. Controleer je rechten en probeer opnieuw.";
+      renderCurrent();
+    }
+  }
+
   async function reloadAfterManagementMutation(createdStudents) {
     const results = await Promise.all([loadManagementDataset(state.client), loadRlsDataset(state.client)]);
     state.management.classes = results[0].classes;
@@ -1136,6 +1369,7 @@
   async function handleManagementSubmit(event) {
     const form = event.target.closest("form[data-form]");
     if (!form) return;
+    if (form.dataset.form === "task-editor") return saveTask(event, form);
     event.preventDefault();
     const submit = form.querySelector('button[type="submit"]');
     const values = new FormData(form);
@@ -1252,6 +1486,60 @@
     if (!target) return;
     const action = target.dataset.action;
     const id = target.dataset.id;
+    if (action === "view-tasks") {
+      await openTasks(false);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+    if (action === "new-task") {
+      state.tasks.draft = taskDraftDefaults();
+      state.tasks.draft.autoTitle = taskSuggestedTitle(state.tasks.draft);
+      state.tasks.draft.title = state.tasks.draft.autoTitle;
+      state.tasks.message = "";
+      state.route = { view: "task-editor", classId: null, studentId: null };
+      renderCurrent();
+      return;
+    }
+    if (action === "task-range" && state.tasks.draft) {
+      updateTaskDraftFromForm(target.closest("form"));
+      const wasAuto = state.tasks.draft.title === state.tasks.draft.autoTitle;
+      state.tasks.draft.range_start = Number(target.dataset.start);
+      state.tasks.draft.range_end = Number(target.dataset.end);
+      state.tasks.draft.autoTitle = taskSuggestedTitle(state.tasks.draft);
+      if (wasAuto) state.tasks.draft.title = state.tasks.draft.autoTitle;
+      return renderCurrent();
+    }
+    if (action === "task-target" && state.tasks.draft) {
+      updateTaskDraftFromForm(target.closest("form"));
+      state.tasks.draft.target_acquired_percentage = Number(target.dataset.value);
+      return renderCurrent();
+    }
+    if (action === "open-task") return openTaskDetail(id);
+    if (action === "edit-task") {
+      const task = state.tasks.list.find(function (row) { return row.id === state.tasks.selectedId; });
+      if (!task || !(currentTeacherIsAdmin() || task.created_by_teacher_id === state.user.id)) return;
+      state.tasks.draft = taskDraftDefaults(task);
+      state.tasks.message = "";
+      state.route = { view: "task-editor", classId: null, studentId: null };
+      return renderCurrent();
+    }
+    if (action === "archive-task") {
+      const task = state.tasks.list.find(function (row) { return row.id === state.tasks.selectedId; });
+      if (!task || !(currentTeacherIsAdmin() || task.created_by_teacher_id === state.user.id)) return;
+      if (!window.confirm("Deze taak archiveren? Historische voltooiingen blijven bewaard.")) return;
+      const payload = { id: task.id, title: task.title, instructions: task.instructions, due_at: task.due_at,
+        target_acquired_percentage: task.target_acquired_percentage, class_ids: task.class_ids, item_ids: task.item_ids, status: "archived" };
+      const result = await state.client.rpc("save_assignment", { p_payload: payload });
+      if (result.error) { state.tasks.message = "Archiveren mislukt."; return renderCurrent(); }
+      return openTasks(true);
+    }
+    if (action === "export-task") {
+      const task = state.tasks.list.find(function (row) { return row.id === state.tasks.selectedId; });
+      if (!task) return;
+      downloadCsv("taak-" + safeFilename(task.title) + ".csv", ["Taak", "Klas", "Leerling", "Status", "Items geoefend", "Items totaal", "Beheersing %", "Gekend", "Gekend %", "Doel %", "Voltooid op", "Laatste activiteit", "Actieve taaktijd (s)"],
+        asArray(state.tasks.detail).map(function (row) { const p = row.progress || {}; const status = row.completed_at ? "Afgerond" : task.due_at && new Date(task.due_at) < new Date() ? "Te laat" : Number(p.practiced || 0) ? "Bezig" : "Niet gestart"; return [task.title, row.class_name, row.student_name, status, p.practiced, p.total, p.mastery_level, p.acquired, Number(p.total || 0) ? Math.round(Number(p.acquired || 0) * 100 / Number(p.total)) : 0, task.target_acquired_percentage, row.completed_at || "", p.last_activity || "", row.active_task_time || 0]; }));
+      return;
+    }
     if (action === "view-teachers") {
       await openTeachers(false);
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -1438,6 +1726,25 @@
   }
 
   function handleContentChange(event) {
+    if (event.target.id === "taskStatusFilter") {
+      state.tasks.filter = event.target.value;
+      return renderCurrent();
+    }
+    const taskForm = event.target.closest && event.target.closest('form[data-form="task-editor"]');
+    if (taskForm) {
+      updateTaskDraftFromForm(taskForm);
+      if (["trajectory", "top_category", "lesson", "block", "subsection", "category"].includes(event.target.name)) {
+        const wasAuto = state.tasks.draft.title === state.tasks.draft.autoTitle;
+        const order = ["trajectory", "top_category", "lesson", "block", "subsection", "category"];
+        order.slice(order.indexOf(event.target.name) + 1).forEach(function (name) { state.tasks.draft[name] = ""; });
+        state.tasks.draft.range_start = 1;
+        state.tasks.draft.range_end = null;
+        state.tasks.draft.autoTitle = taskSuggestedTitle(state.tasks.draft);
+        if (wasAuto) state.tasks.draft.title = state.tasks.draft.autoTitle;
+      }
+      renderCurrent();
+      return;
+    }
     if (event.target.id === "managementStudentStatus") {
       state.management.studentStatus = event.target.value;
       renderCurrent();
@@ -1449,6 +1756,11 @@
   }
 
   function handleContentInput(event) {
+    const taskForm = event.target.closest && event.target.closest('form[data-form="task-editor"]');
+    if (taskForm) {
+      updateTaskDraftFromForm(taskForm);
+      return;
+    }
     const form = event.target.closest && event.target.closest('form[data-form="add-student"]');
     if (!form) return;
     const email = form.querySelector('input[name="school_email"]');
@@ -1490,6 +1802,7 @@
       if (!state.user) return;
       if (state.route.view === "management") openManagement(true);
       else if (state.route.view === "teachers") openTeachers(true);
+      else if (state.route.view.indexOf("task") === 0) openTasks(true);
       else showDashboardForSession({ user: state.user }, true);
     });
     document.querySelector("#filterBar").addEventListener("change", handleFilters);
@@ -1560,6 +1873,8 @@
     createStudentRecords: createStudentRecords,
     updateStudentRecord: updateStudentRecord,
     createTeacherClient: createTeacherClient,
+    taskDeadlineLocal: taskDeadlineLocal,
+    taskDeadlineUtc: taskDeadlineUtc,
     tableColumns: TABLE_COLUMNS,
     managementColumns: MANAGEMENT_COLUMNS,
     accessColumns: ACCESS_COLUMNS

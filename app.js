@@ -3,10 +3,12 @@ const STORAGE_KEY = "monParcoursProgressV1";
 const ACTIVE_SESSION_KEY = "monParcoursActiveSessionV1";
 const MASTERY_ATTEMPTS_KEY = "monParcoursMasteryAttemptsV1";
 const MASTERY_SERVER_CACHE_KEY = "monParcoursMasteryServerCacheV1";
+const ASSIGNMENTS_CACHE_KEY = "monParcoursAssignmentsCacheV1";
 const INACTIVITY_TIMEOUT_MS = 60000;
 const MAX_DYNAMIC_NUMBER_ALL = 101;
 const ACCENTS = ["é", "è", "ê", "ë", "à", "â", "ç", "ù", "û", "ô", "î", "ï"];
 const EXERCISES = {
+  "assignment-mixed": { type: "mixed", label: "Taakitems", labelFr: "Éléments du devoir", short: "Taak", shortFr: "Devoir" },
   "vocab-nl-fr": { type: "vocabulary", label: "Nederlands → Frans", labelFr: "Néerlandais → français", short: "Woordenschat", shortFr: "Vocabulaire" },
   "vocab-fr-nl": { type: "vocabulary", label: "Frans → Nederlands", labelFr: "Français → néerlandais", short: "Woordenschat", shortFr: "Vocabulaire" },
   "verb-nl-inf": { type: "verb", label: "Nederlands → Frans", labelFr: "Néerlandais → français", short: "Werkwoorden", shortFr: "Verbes" },
@@ -33,6 +35,8 @@ const state = {
   selectedScope: null,
   session: null,
   pendingStartAction: null,
+  activeAssignmentId: null,
+  assignments: { items: [], loading: false, loaded: false },
   progress: loadProgress(),
   mastery: {
     localAttempts: loadMasteryAttempts(),
@@ -59,7 +63,10 @@ document.addEventListener("change", handleChange);
 document.addEventListener("input", handlePracticeActivity);
 document.addEventListener("visibilitychange", handleVisibilityChange);
 if (window.addEventListener) window.addEventListener("pagehide", handlePageHide);
-if (window.addEventListener) window.addEventListener("monparcours:sync-complete", refreshMasteryFromServer);
+if (window.addEventListener) window.addEventListener("monparcours:sync-complete", function () {
+  refreshMasteryFromServer();
+  refreshStudentAssignments();
+});
 if (identityButton) identityButton.addEventListener("click", handleIdentityButtonClick);
 
 function handleIdentityButtonClick(event) {
@@ -84,8 +91,12 @@ function handleClick(event) {
 
   if (action === "home") {
     leaveSessionUnfinished();
+    state.activeAssignmentId = null;
     renderHome();
   }
+  if (action === "view-assignments") renderAssignments();
+  if (action === "view-assignment") renderAssignmentDetail(control.dataset.id);
+  if (action === "assignment-setup") openAssignmentSetup(control.dataset.id);
   if (action === "open-settings") settingsDialog.showModal();
   if (action === "open-identity") openIdentityDialog();
   if (action === "close-identity" && identityDialog) identityDialog.close();
@@ -99,6 +110,9 @@ function handleClick(event) {
     state.mastery.acceptedAttemptIds = [];
     invalidateMasteryRecords();
     state.pendingStartAction = null;
+    state.assignments = { items: [], loading: false, loaded: false };
+    state.activeAssignmentId = null;
+    localStorage.removeItem(ASSIGNMENTS_CACHE_KEY);
     const identityForm = document.querySelector("#identity-form");
     if (identityForm) identityForm.reset();
     setIdentityMethod("school_email");
@@ -111,12 +125,14 @@ function handleClick(event) {
     renderHome();
   }
   if (action === "select-unit") {
+    state.activeAssignmentId = null;
     state.selectedUnitOrder = Number(control.dataset.order);
     renderUnit();
   }
   if (action === "back-unit") {
     leaveSessionUnfinished();
-    renderUnit();
+    if (state.activeAssignmentId) renderAssignmentDetail(state.activeAssignmentId);
+    else renderUnit();
   }
   if (action === "step-trajectory") {
     leaveSessionUnfinished();
@@ -133,6 +149,7 @@ function handleClick(event) {
     renderUnit();
   }
   if (action === "choose-scope") {
+    state.activeAssignmentId = null;
     state.selectedScope = {
       unitOrder: Number(control.dataset.order),
       block: control.dataset.block || "",
@@ -273,6 +290,14 @@ function resumePendingStartAction() {
     beginSession(pending.questions, pending.mode, pending.exerciseKey, pending.title, pending.metadata);
     return true;
   }
+  if (pending.kind === "assignment") {
+    renderAssignmentDetail(pending.id);
+    return true;
+  }
+  if (pending.kind === "assignment_setup") {
+    openAssignmentSetup(pending.id);
+    return true;
+  }
   return false;
 }
 
@@ -290,6 +315,8 @@ async function submitStudentIdentity(form) {
     if (state.session && state.session.identity_subject !== connectedIdentity.subject) leaveSessionUnfinished();
     restoreMasteryServerCache();
     refreshMasteryFromServer();
+    restoreAssignmentCache();
+    refreshStudentAssignments();
     updateIdentityUi();
     form.reset();
     setIdentityMethod("school_email");
@@ -340,6 +367,7 @@ function scheduleIdentityDialogCompletion(connectedIdentity, resumePending) {
 function initializeIdentity() {
   updateIdentityUi();
   restoreMasteryServerCache();
+  restoreAssignmentCache();
   if (window.MonParcoursSync) window.MonParcoursSync.scheduleFlush();
 }
 
@@ -359,6 +387,7 @@ async function loadCourse() {
     invalidateMasteryRecords();
     if (!restoreActiveSession()) renderHome();
     refreshMasteryFromServer();
+    refreshStudentAssignments();
   } catch (error) {
     app.innerHTML = '<section class="error-card"><p class="eyebrow">' + uiText("Échec du chargement", "Laden mislukt") + '</p><h1>' + uiText("Le cours n'a pas pu être ouvert.", "De cursus kon niet worden geopend.") + '</h1><p>' + uiText("Vérifie ta connexion puis recharge la page.", "Controleer je verbinding en laad de pagina opnieuw.") + '</p><p>' + uiText("Ouvre cette application via un serveur web local.", "Open deze map via een lokale webserver; dubbelklikken op index.html is niet voldoende.") + '</p></section>';
   }
@@ -377,6 +406,7 @@ function renderHome() {
     '<section class="hero">' +
       '<div><h1>' + uiText("Que veux-tu travailler ?", "Wat wil je oefenen?") + '</h1><p class="brand-tagline">' + uiText("Apprendre. S’entraîner. Progresser.", "Leren. Oefenen. Vooruitgaan.") + '</p></div>' +
     '</section>' +
+    assignmentHomeSection() +
     '<section class="quick-grid" aria-label="Jouw overzicht">' +
       dashboardCard("Continuer", "Verder oefenen", last ? (last.titleFr || last.title) : "Choisis d'abord une partie", last ? (last.titleNl || last.title) : "Kies eerst een onderdeel", last ? "Reprends où tu t'es arrêté" : "Ta dernière session apparaîtra ici", last ? "Ga door waar je stopte" : "Je laatste sessie verschijnt hier", "continue-session", !last, "play") +
       dashboardCard("Mes mots difficiles", "Mijn moeilijke woorden", difficultCount + (difficultCount === 1 ? " mot" : " mots"), difficultCount + " " + (difficultCount === 1 ? "woord" : "woorden"), "Répète ce qui n'est pas encore acquis", "Herhaal wat nog niet vlot gaat", "view-difficult", false, "spark") +
@@ -416,6 +446,138 @@ function renderHome() {
       '</div>' +
     '</section></div>';
   focusApp();
+}
+
+function restoreAssignmentCache() {
+  const identity = currentStudentIdentity();
+  try {
+    const cache = JSON.parse(localStorage.getItem(ASSIGNMENTS_CACHE_KEY));
+    state.assignments.items = cache && cache.identity_subject === identity.subject && Array.isArray(cache.items) ? cache.items : [];
+    state.assignments.loaded = Boolean(cache && cache.identity_subject === identity.subject);
+  } catch (error) {
+    state.assignments.items = [];
+    state.assignments.loaded = false;
+  }
+}
+
+async function refreshStudentAssignments() {
+  if (state.assignments.loading || !state.data || !window.MonParcoursSupabase || !window.MonParcoursSupabase.isConfigured()) return false;
+  const identity = currentStudentIdentity();
+  const token = window.StudentIdentity && window.StudentIdentity.getSyncCredential && window.StudentIdentity.getSyncCredential();
+  if (!identity.verified || !token) return false;
+  state.assignments.loading = true;
+  try {
+    const items = await window.MonParcoursSupabase.rpc("get_student_assignments", { p_identity_token: token });
+    if (!Array.isArray(items) || currentStudentIdentity().subject !== identity.subject) return false;
+    state.assignments.items = items;
+    state.assignments.loaded = true;
+    localStorage.setItem(ASSIGNMENTS_CACHE_KEY, JSON.stringify({ identity_subject: identity.subject, items: items, updated_at: new Date().toISOString() }));
+    if (state.view === "home") renderHome();
+    else if (state.view === "assignments") renderAssignments();
+    else if (state.view === "assignment-detail") renderAssignmentDetail(state.activeAssignmentId);
+    return true;
+  } catch (error) {
+    return false;
+  } finally {
+    state.assignments.loading = false;
+  }
+}
+
+function assignmentById(id) {
+  return state.assignments.items.find(function (assignment) { return assignment.id === id; });
+}
+
+function assignmentCourseItems(assignment) {
+  if (!assignment || !state.data) return [];
+  const index = new Map(allCourseItems().filter(isExerciseItem).map(function (item) { return [item.id, item]; }));
+  return (assignment.item_ids || []).map(function (id) { return index.get(id); }).filter(Boolean);
+}
+
+function assignmentProgress(assignment) {
+  return window.MonParcoursAssignments.progress(assignment, currentMasteryRecords());
+}
+
+function assignmentDue(assignment) {
+  if (!assignment.due_at) return uiText("Sans échéance", "Geen deadline");
+  const date = new Date(assignment.due_at);
+  const format = { weekday: "long", day: "numeric", month: "long", timeZone: "Europe/Brussels" };
+  return uiText("À faire pour " + date.toLocaleDateString("fr-BE", format), "Te maken tegen " + date.toLocaleDateString("nl-BE", format));
+}
+
+function assignmentStatus(progress) {
+  const labels = {
+    completed: ["Terminée", "Afgerond"],
+    late: ["En retard", "Te laat"],
+    in_progress: ["En cours", "Bezig"],
+    not_started: ["Pas commencé", "Nog niet gestart"]
+  };
+  return uiText.apply(null, labels[progress.status] || labels.not_started);
+}
+
+function assignmentCard(assignment) {
+  const progress = assignmentProgress(assignment);
+  return '<button class="assignment-card" type="button" data-action="view-assignment" data-id="' + escapeAttr(assignment.id) + '">' +
+    '<strong>' + escapeHtml(assignment.title) + '</strong><span>' + assignmentDue(assignment) + '</span>' +
+    '<span>' + assignmentStatus(progress) + ' · ' + progress.practiced + '/' + progress.total + ' ' + uiText("travaillés", "geoefend") + '</span>' +
+    '<span>' + uiText("Niveau de maîtrise : " + progress.masteryLevel + "%", "Beheersingsniveau: " + progress.masteryLevel + "%") + '</span>' +
+    '<span>' + progress.acquired + '/' + progress.total + ' ' + uiText("acquis · objectif " + progress.target + "%", "gekend · doel " + progress.target + "%") + '</span>' +
+    masteryBar(progress, true) + '</button>';
+}
+
+function assignmentHomeSection() {
+  const identity = currentStudentIdentity();
+  const items = state.assignments.items.filter(function (item) { return item.status === "published" && !item.completed_at; }).slice(0, 3);
+  return '<section class="assignments-home" aria-labelledby="assignments-heading"><div class="section-heading"><h2 id="assignments-heading">' + uiText("Mes devoirs", "Mijn taken") + '</h2>' +
+    '<button class="text-button" type="button" data-action="view-assignments">' + uiText("Voir tout", "Alles bekijken") + '</button></div>' +
+    (items.length ? '<div class="assignment-list">' + items.map(assignmentCard).join("") + '</div>' :
+      '<p class="muted">' + (identity.verified && !state.assignments.loaded ? uiText("Connecte-toi à Internet pour charger tes devoirs.", "Maak verbinding met internet om je taken op te halen.") : identity.verified ? uiText("Aucun devoir à faire pour le moment.", "Momenteel geen openstaande taken.") :
+        uiText("Connecte-toi pour voir tes devoirs.", "Meld je aan om je taken te zien.")) + '</p>') + '</section>';
+}
+
+function renderAssignments() {
+  if (!hasRequiredStudentIdentity()) return requestRequiredIdentity({ kind: "assignment", id: null });
+  state.view = "assignments";
+  const items = state.assignments.items.filter(function (item) { return item.status === "published"; });
+  app.innerHTML = breadcrumbHtml([{ label: "Mon parcours", action: "home" }]) +
+    '<section class="setup-header"><h1>' + uiText("Mes devoirs", "Mijn taken") + '</h1></section>' +
+    (items.length ? '<div class="assignment-list">' + items.map(assignmentCard).join("") + '</div>' :
+      '<p class="muted">' + (state.assignments.loaded ? uiText("Aucun devoir disponible.", "Geen taken beschikbaar.") : uiText("Connecte-toi à Internet pour charger tes devoirs.", "Maak verbinding met internet om je taken op te halen.")) + '</p>');
+  focusApp();
+}
+
+function renderAssignmentDetail(id) {
+  if (!id) return renderAssignments();
+  if (!hasRequiredStudentIdentity()) return requestRequiredIdentity({ kind: "assignment", id: id });
+  const assignment = assignmentById(id);
+  if (!assignment) return renderAssignments();
+  state.activeAssignmentId = id;
+  state.view = "assignment-detail";
+  const progress = assignmentProgress(assignment);
+  app.innerHTML = breadcrumbHtml([{ label: "Mon parcours", action: "home" }, { label: "Mes devoirs", action: "view-assignments" }]) +
+    '<section class="assignment-detail"><p class="eyebrow">' + assignmentStatus(progress) + '</p><h1>' + escapeHtml(assignment.title) + '</h1>' +
+    '<p>' + assignmentDue(assignment) + '</p>' +
+    (assignment.instructions ? '<p class="assignment-instructions">' + escapeHtml(assignment.instructions) + '</p>' : '') +
+    '<div class="assignment-stats"><strong>' + progress.practiced + '/' + progress.total + ' ' + uiText("travaillés", "geoefend") + '</strong>' +
+    '<strong>' + progress.acquired + '/' + progress.total + ' ' + uiText("acquis", "gekend") + '</strong>' +
+    '<strong>' + progress.acquiredPercentage + '% / ' + progress.target + '% ' + uiText("objectif", "doel") + '</strong></div>' + masteryBar(progress, false) +
+    (progress.completedAt ? '<p class="perfect-note">' + uiText("Objectif atteint ! Le " + new Date(progress.completedAt).toLocaleDateString("fr-BE") + ".", "Doel behaald! Op " + new Date(progress.completedAt).toLocaleDateString("nl-BE") + ".") + '</p>' :
+      progress.reachedLocally ? '<p class="sync-note">' + uiText("Objectif atteint sur cet appareil. Confirmation après synchronisation.", "Doel op dit toestel behaald. Bevestiging volgt na synchronisatie.") + '</p>' :
+      '<p>' + uiText("La tâche est terminée quand tous les éléments ont été travaillés et que le pourcentage acquis atteint l’objectif.", "De taak is klaar als alle items geoefend zijn en het gekend-percentage het doel bereikt.") + '</p>') +
+    '<button class="button button-primary" type="button" data-action="assignment-setup" data-id="' + escapeAttr(id) + '">' + uiText(progress.practiced ? "Continuer" : "Commencer", progress.practiced ? "Verder oefenen" : "Starten") + '</button></section>';
+  focusApp();
+}
+
+function openAssignmentSetup(id) {
+  if (!hasRequiredStudentIdentity()) return requestRequiredIdentity({ kind: "assignment_setup", id: id });
+  const assignment = assignmentById(id);
+  const first = assignmentCourseItems(assignment)[0];
+  if (!assignment || !first) return renderAssignments();
+  state.activeAssignmentId = id;
+  state.trajectoryIndex = first._trajectoryIndex;
+  const unit = currentTrajectory().units.find(function (row) { return row.top_category === first.top_category; });
+  state.selectedUnitOrder = unit && unit.order;
+  state.selectedScope = { unitOrder: state.selectedUnitOrder, block: first.block || "", subsection: first.subsection || "", category: first.category || "", title: assignment.title };
+  renderSetup();
 }
 
 function dashboardCard(titleFr, titleNl, valueFr, valueNl, descriptionFr, descriptionNl, action, disabled, icon) {
@@ -606,15 +768,16 @@ function renderSetup() {
   const unit = currentUnit();
   const scope = state.selectedScope;
   if (!scope || !unit) return renderUnit();
-  const items = itemsForScope(trajectory, unit, scope);
+  const assignment = assignmentById(state.activeAssignmentId);
+  const items = assignment ? assignmentCourseItems(assignment) : itemsForScope(trajectory, unit, scope);
   const exerciseItems = items.filter(isExerciseItem);
-  const available = exerciseKeysForItems(exerciseItems);
+  const available = assignment ? ["assignment-mixed"].concat(exerciseKeysForItems(exerciseItems)) : exerciseKeysForItems(exerciseItems);
   if (!available.length) return renderUnit();
 
   app.innerHTML =
     breadcrumbHtml([
       { label: trajectory.trajectory, action: "home" },
-      { label: unit.top_category, action: "back-unit" }
+      { label: assignment ? "Mes devoirs" : unit.top_category, action: assignment ? "view-assignments" : "back-unit" }
     ]) +
     journeySteps(4) +
     '<section class="setup-header"><h1>' + escapeHtml(scope.title) + '</h1><span class="setup-total">' + exerciseItemCount(exerciseItems) + ' ' + uiText("éléments", "items") + '</span></section>' +
@@ -622,8 +785,8 @@ function renderSetup() {
       '<div class="choice-list" role="radiogroup">' +
         available.map(function (key, index) {
           const option = EXERCISES[key];
-          const exerciseItems = items.filter(function (item) { return item.type === option.type; });
-          const count = questionCountForItems(exerciseItems, key);
+          const exerciseItems = option.type === "mixed" ? items : items.filter(function (item) { return item.type === option.type; });
+          const count = assignment ? exerciseItems.length : questionCountForItems(exerciseItems, key);
           return '<label class="radio-card"><input type="radio" name="exercise" value="' + key + '"' + (index === 0 ? " checked" : "") + '>' +
             '<span><strong>' + uiText(option.labelFr, option.label) + '</strong><b class="choice-count">' + count + '</b></span></label>';
         }).join("") +
@@ -655,6 +818,10 @@ function preferredSessionSize(availableCount, includeAll) {
 }
 
 function exerciseItemsForSetup(exerciseKey) {
+  const assignment = assignmentById(state.activeAssignmentId);
+  if (assignment && EXERCISES[exerciseKey]) return assignmentCourseItems(assignment).filter(function (item) {
+    return exerciseKey === "assignment-mixed" || item.type === EXERCISES[exerciseKey].type;
+  });
   const trajectory = currentTrajectory();
   const unit = currentUnit();
   if (!exerciseKey || !EXERCISES[exerciseKey] || !unit || !state.selectedScope) return [];
@@ -664,14 +831,26 @@ function exerciseItemsForSetup(exerciseKey) {
 }
 
 function questionsForSetup(exerciseKey, requestedCount) {
+  if (assignmentById(state.activeAssignmentId)) {
+    const items = window.MonParcoursAssignments.selectItems(exerciseItemsForSetup(exerciseKey), currentMasteryRecords(), requestedCount);
+    return items.map(function (item) {
+      const key = exerciseKey === "assignment-mixed" ?
+        { vocabulary: "vocab-nl-fr", verb: "verb-nl-conj", phrase: "phrase-nl-fr", grammar_rule: "grammar", number: "number-nl-fr" }[item.type] : exerciseKey;
+      if (!key) return null;
+      const questions = buildQuestionsForItems([item], key, 1);
+      return questions[Math.floor(Math.random() * questions.length)] || null;
+    }).filter(Boolean);
+  }
   return buildQuestionsForItems(exerciseItemsForSetup(exerciseKey), exerciseKey, requestedCount);
 }
 
 function availableQuestionCount(exerciseKey) {
+  if (assignmentById(state.activeAssignmentId)) return exerciseItemsForSetup(exerciseKey).length;
   return questionCountForItems(exerciseItemsForSetup(exerciseKey), exerciseKey);
 }
 
 function setupAllowsAll(exerciseKey) {
+  if (assignmentById(state.activeAssignmentId)) return true;
   const items = exerciseItemsForSetup(exerciseKey);
   return !items.some(isDynamicNumberItem) || questionCountForItems(items, exerciseKey) <= MAX_DYNAMIC_NUMBER_ALL;
 }
@@ -746,8 +925,9 @@ function startSession(mode) {
   const requestedCount = sizeValue === "all" ? availableCount : Number(sizeValue);
   state.progress.settings.sessionSize = sizeValue === "all" ? "all" : requestedCount;
   const allQuestions = questionsForSetup(exerciseKey, requestedCount);
-  const questions = selectQuestions(allQuestions, requestedCount);
-  beginSession(questions, mode, exerciseKey, state.selectedScope.title, { availableCount: availableCount });
+  const taskSession = Boolean(assignmentById(state.activeAssignmentId));
+  const questions = taskSession ? allQuestions : selectQuestions(allQuestions, requestedCount);
+  beginSession(questions, mode, exerciseKey, state.selectedScope.title, { availableCount: availableCount, assignmentId: taskSession ? state.activeAssignmentId : null });
 }
 
 function beginSession(questions, mode, exerciseKey, title, metadata) {
@@ -780,6 +960,7 @@ function beginSession(questions, mode, exerciseKey, title, metadata) {
     question_count: questions.length,
     attempt_count: 0,
     available_count: availableCount,
+    assignment_id: metadata && metadata.assignmentId || null,
     client_session_id: createClientId(),
     identity_provider: identity.provider,
     identity_subject: identity.subject,
@@ -805,6 +986,7 @@ function beginSession(questions, mode, exerciseKey, title, metadata) {
     titleNl: metadata && metadata.titleNl ? metadata.titleNl : title,
     question_count: questions.length,
     available_count: availableCount,
+    assignmentId: metadata && metadata.assignmentId || null,
     at: new Date().toISOString()
   };
   saveProgress();
@@ -907,6 +1089,7 @@ function restoreActiveSession() {
   saved.activeClockLastInteraction = null;
   saved.activeClockRunning = false;
   state.session = saved;
+  state.activeAssignmentId = saved.assignment_id || null;
   renderQuestion('<span class="resume-note">' + uiText("Ta session inachevée a été reprise.", "Je onvoltooide sessie is veilig hervat.") + '</span>');
   return true;
 }
@@ -1128,6 +1311,7 @@ function syncSessionSnapshot() {
     identity_subject: session.identity_subject,
     session: {
       client_session_id: session.client_session_id,
+      assignment_id: session.assignment_id,
       course_key: path.course_key,
       trajectory: path.trajectory,
       top_category: path.top_category,
@@ -1218,7 +1402,7 @@ function practiceTestErrors() {
   const wrongQuestions = state.session.results.filter(function (result) { return !result.correct; }).map(function (result) {
     return Object.assign({}, result.question, { reviewCount: 0 });
   });
-  beginSession(shuffle(wrongQuestions), "learn", state.session.exerciseKey, "Mes erreurs de test", { availableCount: wrongQuestions.length, titleFr: "Mes erreurs de test", titleNl: "Mijn testfouten" });
+  beginSession(shuffle(wrongQuestions), "learn", state.session.exerciseKey, "Mes erreurs de test", { availableCount: wrongQuestions.length, titleFr: "Mes erreurs de test", titleNl: "Mijn testfouten", assignmentId: state.session.assignment_id });
 }
 
 function renderProgress() {
@@ -1275,6 +1459,10 @@ function practiceDifficult() {
 function continueLastSession() {
   const last = state.progress.lastSession;
   if (!last) return;
+  if (last.assignmentId) {
+    openAssignmentSetup(last.assignmentId);
+    return;
+  }
   state.trajectoryIndex = last.trajectoryIndex;
   state.selectedUnitOrder = last.unitOrder;
   state.selectedScope = last.scope;
@@ -1304,6 +1492,7 @@ function exerciseItemCount(items) {
 }
 
 function questionCountForItems(items, exerciseKey) {
+  if (exerciseKey === "assignment-mixed") return items.length;
   if (exerciseKey === "number-nl-fr" || exerciseKey === "number-fr-nl") {
     return items.reduce(function (total, item) { return total + dynamicNumberCount(item); }, 0);
   }
@@ -1719,6 +1908,7 @@ async function refreshMasteryFromServer() {
     invalidateMasteryRecords();
     if (state.view === "home") renderHome();
     else if (state.view === "unit") renderUnit();
+    else if (state.view === "assignment-detail") renderAssignmentDetail(state.activeAssignmentId);
     return true;
   } catch (error) {
     return false;

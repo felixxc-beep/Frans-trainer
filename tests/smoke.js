@@ -55,7 +55,7 @@ setImmediate(function () {
   );
 
   const generated = vm.runInContext(
-    "Object.keys(EXERCISES).map(key => [key, buildQuestions(state.data.trajectories.flatMap(t => t.items).filter(i => i.type === EXERCISES[key].type), key).length])",
+    "Object.keys(EXERCISES).filter(key => key !== 'assignment-mixed').map(key => [key, buildQuestions(state.data.trajectories.flatMap(t => t.items).filter(i => i.type === EXERCISES[key].type), key).length])",
     context
   );
   generated.forEach(function (entry) {

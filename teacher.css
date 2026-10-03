@@ -217,3 +217,12 @@ tr:last-child td { border-bottom: 0; }
 .teacher-class-choice input { width: auto !important; margin: 0; }
 .teacher-class-choice span, .teacher-class-choice small { display: block; }
 @media (max-width: 700px) { .teacher-access-fields { grid-template-columns: 1fr; } }
+.task-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 270px), 1fr)); gap: .8rem; }
+.task-card { display: grid; gap: .35rem; padding: 1rem; border: 1px solid var(--line); border-radius: 13px; background: #fff; color: var(--forest); text-align: left; cursor: pointer; }
+.task-card:hover, .task-card:focus-visible { border-color: var(--forest); }
+.task-card span { color: var(--muted); font-size: .88rem; }
+.task-form fieldset { margin: 0 0 1rem; padding: 1rem; border: 1px solid var(--line); border-radius: 14px; background: #fff; }
+.task-form legend { padding: 0 .4rem; font-weight: 800; }
+.task-fields, .task-class-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); gap: .8rem; }
+.task-class { display: flex !important; align-items: center; gap: .5rem; }
+.task-class input { width: auto !important; }

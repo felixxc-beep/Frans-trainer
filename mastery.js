@@ -140,6 +140,11 @@
     return combined;
   }
 
+  function getItemMastery(itemId, records) {
+    const record = combineItemRecords(records || new Map(), String(itemId || ""));
+    return { status: getMasteryStatus(record), level: getMasteryLevel(record), practicedAttempts: record.practicedAttempts };
+  }
+
   function roundedPercentages(counts, total) {
     if (!total) return { new: 0, learning: 0, acquired: 0 };
     const names = [STATUS.NEW, STATUS.LEARNING, STATUS.ACQUIRED];
@@ -187,6 +192,7 @@
     keyFor: keyFor,
     getMasteryStatus: getMasteryStatus,
     getMasteryLevel: getMasteryLevel,
+    getItemMastery: getItemMastery,
     mergeMasterySources: mergeMasterySources,
     calculateMasterySummary: calculateMasterySummary,
     getMasteryCounts: getMasteryCounts
