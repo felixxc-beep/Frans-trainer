@@ -277,11 +277,13 @@ dialog::backdrop { background: rgba(10,29,23,.45); backdrop-filter: blur(4px); }
 .mastery-learning { background: #d8b966; }
 .mastery-known { background: var(--forest-2); }
 .mastery-acquired { margin-top: .18rem; color: var(--forest-2) !important; font-size: .67rem !important; font-weight: 750; }
+.mastery-level { display: block; margin-top: .18rem; color: var(--forest); font-size: .72rem; font-weight: 850; }
 .trajectory-card[aria-pressed="true"] .mastery-bar { border-color: rgba(255,255,255,.28); background: rgba(255,255,255,.18); }
 .trajectory-card[aria-pressed="true"] .mastery-new { background: #bdc9c3; }
 .trajectory-card[aria-pressed="true"] .mastery-learning { background: #ead38f; }
 .trajectory-card[aria-pressed="true"] .mastery-known { background: #86b49e; }
 .trajectory-card[aria-pressed="true"] .mastery-acquired { color: #dce9e3 !important; }
+.trajectory-card[aria-pressed="true"] .mastery-level { color: #fff; }
 .mastery-dashboard-card .mastery-bar { margin: .36rem 0 .22rem; }
 .quick-card .mastery-legend { display: block; color: var(--muted); font-size: .63rem; font-style: normal; line-height: 1.25; }
 .unit-meta { min-width: 118px; }
@@ -290,11 +292,15 @@ dialog::backdrop { background: rgba(10,29,23,.45); backdrop-filter: blur(4px); }
 .mastery-inline .mastery-bar { max-width: 210px; }
 .mastery-inline small { margin-top: .18rem; color: var(--muted); font-size: .65rem; font-weight: 650; letter-spacing: 0; text-transform: none; }
 .scope-choice-card > .mastery-bar { grid-column: 1 / -1; grid-row: 3; margin-top: .28rem; }
-.scope-choice-card > .mastery-acquired { grid-column: 1 / -1; grid-row: 4; }
+.scope-choice-card > .mastery-level { grid-column: 1 / -1; grid-row: 3; }
+.scope-choice-card > .mastery-bar { grid-row: 4; }
+.scope-choice-card > .mastery-acquired { grid-column: 1 / -1; grid-row: 5; }
 .mastery-feedback { margin: .25rem 0 .55rem !important; color: var(--forest-2); font-size: .78rem; font-weight: 750; }
 .mastery-feedback.is-newly-acquired { color: #145b2b; }
 .mastery-overview { margin-bottom: 1rem; padding: 1rem; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); }
 .mastery-overview h2 { margin: 0 0 .55rem; font-size: 1.25rem; }
+.mastery-overview > small { color: var(--muted); font-weight: 800; }
+.mastery-acquired-total { margin: .45rem 0 0; color: var(--forest-2); font-size: .78rem; font-weight: 750; }
 .mastery-counts { display: grid; grid-template-columns: repeat(3, 1fr); gap: .65rem; margin-top: .65rem; }
 .mastery-counts > span { color: var(--muted); font-size: .75rem; }
 .mastery-counts strong { display: block; margin-top: .1rem; color: var(--ink); font-size: 1rem; }

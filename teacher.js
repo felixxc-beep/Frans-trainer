@@ -13,17 +13,23 @@
     classes: "id,name,class_code,is_active,created_at,updated_at",
     students: "id,class_id,display_name,school_email,student_code,is_active,created_at,updated_at"
   });
+  const ACCESS_COLUMNS = Object.freeze({
+    teachers: "auth_user_id,email,display_name,role,is_active,created_at,updated_at",
+    class_teachers: "class_id,teacher_id,created_at"
+  });
   const STUDENT_CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
   const state = {
     client: null,
     user: null,
+    teacherProfile: null,
     course: null,
     courseIndex: Object.create(null),
     raw: emptyDataset(),
     filters: { period: "all", trajectory: "all", mode: "all", classId: "all", studentId: "all", studentStatus: "active", category: "all", subsection: "all" },
     route: { view: "dashboard", classId: null, studentId: null },
     management: { loaded: false, classes: [], students: [], selectedClassId: null, studentStatus: "active", generatedCode: "", createdStudents: [], message: "", messageIsError: false },
+    teacherAdmin: { loaded: false, teachers: [], assignments: [], classes: [], message: "", messageIsError: false },
     loading: false,
     loadSequence: 0
   };
@@ -40,6 +46,10 @@
 
   function asArray(value) {
     return Array.isArray(value) ? value : [];
+  }
+
+  function currentTeacherIsAdmin() {
+    return Boolean(state.teacherProfile && state.teacherProfile.is_active === true && state.teacherProfile.role === "admin");
   }
 
   function percentage(correct, total) {
@@ -458,6 +468,33 @@
     return { classes: results[0], students: results[1] };
   }
 
+  async function loadTeacherProfile(client, userId) {
+    const result = await client.from("teachers").select(ACCESS_COLUMNS.teachers).eq("auth_user_id", userId).maybeSingle();
+    if (result.error) throw result.error;
+    return result.data || null;
+  }
+
+  async function loadTeacherAdminDataset(client) {
+    const results = await Promise.all([
+      fetchAll(client, "teachers", ACCESS_COLUMNS.teachers),
+      fetchAll(client, "class_teachers", ACCESS_COLUMNS.class_teachers),
+      fetchAll(client, "classes", MANAGEMENT_COLUMNS.classes)
+    ]);
+    return { teachers: results[0], assignments: results[1], classes: results[2] };
+  }
+
+  async function updateTeacherAccess(client, input) {
+    const result = await client.rpc("admin_update_teacher_access", {
+      p_teacher_id: input.teacherId,
+      p_display_name: input.displayName,
+      p_role: input.role,
+      p_is_active: input.isActive,
+      p_class_ids: asArray(input.classIds)
+    });
+    if (result.error) throw result.error;
+    return result.data;
+  }
+
   function ensureAuthenticatedUser(user) {
     if (!user || !user.id) throw new Error("AUTH_REQUIRED");
   }
@@ -656,7 +693,7 @@
     const sessions = overview.sessionRows.slice().sort(function (left, right) { return new Date(right.finished_at || right.started_at) - new Date(left.finished_at || left.started_at); });
     return breadcrumbs([{ label: "Dashboard", action: "view-dashboard" }, { label: classRow ? classRow.name : "Klas", action: "view-class", id: student.class_id }, { label: student.display_name || "Naamloze leerling" }]) +
       '<div class="page-heading"><div><p class="eyebrow">Leerlingdetail</p><h2>' + escapeHtml(student.display_name || "Naamloze leerling") + '</h2><p class="muted">' + escapeHtml(classRow ? classRow.name : "Onbekende klas") + ' · laatste activiteit ' + escapeHtml(formatDate(overview.lastActivity)) + '</p></div><div class="export-actions"><button class="button button-secondary" type="button" data-action="export-student" data-id="' + escapeHtml(student.id) + '">Sessies CSV</button><button class="button button-secondary" type="button" data-action="export-difficult-student" data-id="' + escapeHtml(student.id) + '">Moeilijke items CSV</button></div></div>' +
-      '<section class="stat-grid">' + statCard("Sessies", overview.sessions) + statCard("Oefeningen gemaakt", overview.exercisesMade, "werkelijk beantwoord") + statCard("Pogingen", overview.attempts, "incl. herhalingen") + statCard("Juist / fout", overview.correct + " / " + overview.incorrect) + statCard("Correct", overview.accuracy + "%") + statCard("Gekend", mastery ? mastery.percentages.acquired + "%" : "—", mastery ? mastery.acquired + " gekend · " + mastery.learning + " aan het leren · " + mastery.new + " nieuw" : "mastery.js niet beschikbaar") + statCard("Actieve oefentijd", overview.hasMeasuredDuration ? formatActiveDuration(overview.activeDurationSeconds) : "—", overview.hasMeasuredDuration ? "alleen gemeten sessies" : "nog niet gemeten") + '</section>' +
+      '<section class="stat-grid">' + statCard("Sessies", overview.sessions) + statCard("Oefeningen gemaakt", overview.exercisesMade, "werkelijk beantwoord") + statCard("Pogingen", overview.attempts, "incl. herhalingen") + statCard("Juist / fout", overview.correct + " / " + overview.incorrect) + statCard("Correct", overview.accuracy + "%") + statCard("Beheersingsniveau", mastery ? mastery.masteryLevel + "%" : "—", "continue voortgang") + statCard("Gekend", mastery ? mastery.acquired + " / " + mastery.total : "—", mastery ? mastery.percentages.acquired + "% streng beheerst" : "mastery.js niet beschikbaar") + statCard("Actieve oefentijd", overview.hasMeasuredDuration ? formatActiveDuration(overview.activeDurationSeconds) : "—", overview.hasMeasuredDuration ? "alleen gemeten sessies" : "nog niet gemeten") + '</section>' +
       '<section class="section-block"><div class="section-heading"><div><h2>Sessiegeschiedenis</h2><p>Open een sessie voor itemdetails en modelantwoorden.</p></div></div><div class="session-list">' + (sessions.length ? sessions.map(function (session) { return renderSessionCard(session, overview.attemptRows); }).join("") : emptyState("Nog geen sessies", "Binnen de gekozen filters zijn voor deze leerling geen sessies gevonden.")) + '</div></section>' +
       '<section class="section-block">' + renderDifficult(difficultItems(overview.attemptRows, state.courseIndex), "Moeilijk voor deze leerling") + '</section>';
   }
@@ -708,14 +745,36 @@
         return true;
       });
       const studentRows = shownStudents.map(function (student) {
-        return '<tr><td><strong>' + escapeHtml(student.display_name || "Naamloze leerling") + '</strong><br><span class="pill">' + (student.is_active === false ? "Inactief" : "Actief") + '</span></td><td><strong>' + escapeHtml(student.school_email || "Nog geen schoolmail") + '</strong><div class="row-actions"><button class="small-button" type="button" data-action="edit-student-email" data-id="' + escapeHtml(student.id) + '">' + (student.school_email ? "Schoolmail aanpassen" : "Schoolmail toevoegen") + '</button></div></td><td><details><summary>Fallbackcode tonen</summary><span class="code-value">' + escapeHtml(student.student_code) + '</span><div class="row-actions"><button class="small-button" type="button" data-action="copy-student-code" data-id="' + escapeHtml(student.id) + '">Kopieer code</button><button class="small-button warning" type="button" data-action="regenerate-student-code" data-id="' + escapeHtml(student.id) + '">Nieuwe code</button></div></details></td><td><button class="small-button" type="button" data-action="toggle-student-active" data-id="' + escapeHtml(student.id) + '">' + (student.is_active === false ? "Activeren" : "Deactiveren") + '</button></td></tr>';
+        return '<tr><td><strong>' + escapeHtml(student.display_name || "Naamloze leerling") + '</strong><br><span class="pill">' + (student.is_active === false ? "Inactief" : "Actief") + '</span><div class="row-actions"><button class="small-button" type="button" data-action="edit-student-name" data-id="' + escapeHtml(student.id) + '">Naam aanpassen</button></div></td><td><strong>' + escapeHtml(student.school_email || "Nog geen schoolmail") + '</strong><div class="row-actions"><button class="small-button" type="button" data-action="edit-student-email" data-id="' + escapeHtml(student.id) + '">' + (student.school_email ? "Schoolmail aanpassen" : "Schoolmail toevoegen") + '</button></div></td><td><details><summary>Fallbackcode tonen</summary><span class="code-value">' + escapeHtml(student.student_code) + '</span><div class="row-actions"><button class="small-button" type="button" data-action="copy-student-code" data-id="' + escapeHtml(student.id) + '">Kopieer code</button><button class="small-button warning" type="button" data-action="regenerate-student-code" data-id="' + escapeHtml(student.id) + '">Nieuwe code</button></div></details></td><td><button class="small-button" type="button" data-action="toggle-student-active" data-id="' + escapeHtml(student.id) + '">' + (student.is_active === false ? "Activeren" : "Deactiveren") + '</button></td></tr>';
       }).join("");
-      detail = '<div class="management-stack"><section class="panel"><h2>' + escapeHtml(selectedClass.name) + '</h2><form class="management-form" data-form="update-class"><input type="hidden" name="class_id" value="' + escapeHtml(selectedClass.id) + '"><label><span>Klasnaam</span><input name="name" maxlength="80" value="' + escapeHtml(selectedClass.name) + '" required></label><label><span>Klascode</span><input value="' + escapeHtml(selectedClass.class_code) + '" readonly></label><label><span>Status</span><select name="is_active"><option value="true"' + (selectedClass.is_active === false ? "" : " selected") + '>Actief</option><option value="false"' + (selectedClass.is_active === false ? " selected" : "") + '>Inactief</option></select></label><button class="button button-primary" type="submit">Klas bijwerken</button><p class="muted">Deactiveren bewaart alle leerlingen en historische resultaten.</p></form></section>' +
+      const classPanel = currentTeacherIsAdmin()
+        ? '<section class="panel"><h2>' + escapeHtml(selectedClass.name) + '</h2><form class="management-form" data-form="update-class"><input type="hidden" name="class_id" value="' + escapeHtml(selectedClass.id) + '"><label><span>Klasnaam</span><input name="name" maxlength="80" value="' + escapeHtml(selectedClass.name) + '" required></label><label><span>Klascode</span><input value="' + escapeHtml(selectedClass.class_code) + '" readonly></label><label><span>Status</span><select name="is_active"><option value="true"' + (selectedClass.is_active === false ? "" : " selected") + '>Actief</option><option value="false"' + (selectedClass.is_active === false ? " selected" : "") + '>Inactief</option></select></label><button class="button button-primary" type="submit">Klas bijwerken</button><p class="muted">Deactiveren bewaart alle leerlingen en historische resultaten.</p></form></section>'
+        : '<section class="panel"><h2>' + escapeHtml(selectedClass.name) + '</h2><p class="muted">Klascode: ' + escapeHtml(selectedClass.class_code) + ' · ' + (selectedClass.is_active === false ? "inactief" : "actief") + '</p><p>Je kunt leerlingen in deze toegewezen klas beheren. Alleen een admin beheert de klas zelf.</p></section>';
+      detail = '<div class="management-stack">' + classPanel +
         '<section class="panel"><h3>Leerling toevoegen</h3><form class="management-form" data-form="add-student"><input type="hidden" name="class_id" value="' + escapeHtml(selectedClass.id) + '"><label><span>Naam</span><input name="display_name" maxlength="80" required></label><label><span>Schoolmail — controleer het voorstel</span><input name="school_email" type="email" placeholder="achternaamvoornaam@camposturnhout.be"></label><label><span>Automatisch gegenereerde fallbackcode</span><input name="generated_code" value="' + escapeHtml(management.generatedCode) + '" readonly></label><button class="button button-primary" type="submit">Leerling toevoegen</button></form></section>' +
         '<section class="panel"><h3>Meerdere leerlingen toevoegen</h3><form class="management-form" data-form="bulk-students"><input type="hidden" name="class_id" value="' + escapeHtml(selectedClass.id) + '"><label><span>Eén leerling per regel: Naam of Naam;schoolmail</span><textarea name="names" placeholder="Emma Janssens;janssensemma@camposturnhout.be&#10;Noah Peeters" required></textarea></label><div class="share-actions"><button class="button button-secondary" type="button" data-action="preview-bulk-emails">E-mailvoorstellen invullen</button><button class="button button-primary" type="submit">Leerlingen toevoegen</button></div></form></section>' +
         '<section class="panel"><div class="section-heading"><div><h3>Leerlingen</h3><p>' + allStudents.length + ' in deze klas</p></div><div class="export-actions"><select id="managementStudentStatus" aria-label="Filter leerlingstatus"><option value="active"' + (management.studentStatus === "active" ? " selected" : "") + '>Actief</option><option value="inactive"' + (management.studentStatus === "inactive" ? " selected" : "") + '>Inactief</option><option value="all"' + (management.studentStatus === "all" ? " selected" : "") + '>Alle</option></select><button class="small-button" type="button" data-action="export-codes" data-id="' + escapeHtml(selectedClass.id) + '">Login- en fallbackcodes CSV</button></div></div><p class="privacy-warning"><strong>Schoolmail is een persoonsgegeven; behandel de fallbackcode als een wachtwoord.</strong> Deze gegevens staan bewust alleen in Beheer.</p>' + (studentRows ? '<div class="table-wrap"><table><thead><tr><th>Leerling</th><th>Schoolmail</th><th>Fallbackcode</th><th>Status</th></tr></thead><tbody>' + studentRows + '</tbody></table></div>' : emptyState("Geen leerlingen in deze selectie", "Pas de statusfilter aan of voeg leerlingen toe.")) + '</section></div>';
     }
-    return breadcrumbs([{ label: "Dashboard", action: "view-dashboard" }, { label: "Beheer" }]) + '<div class="page-heading"><div><p class="eyebrow">Administratie</p><h2>Klassen beheren</h2><p class="muted">Maak klassen en leerlingen aan zonder historische resultaten te verwijderen.</p></div></div><p id="managementMessage" class="management-message' + (management.messageIsError ? " error" : "") + '" aria-live="polite">' + escapeHtml(management.message) + '</p><div class="management-grid"><aside class="management-stack"><section class="panel"><h3>Nieuwe klas</h3><form class="management-form" data-form="create-class"><label><span>Klasnaam</span><input name="name" maxlength="80" placeholder="1AA" required></label><label><span>Klascode</span><input name="class_code" minlength="2" maxlength="20" pattern="[A-Za-z0-9-]{2,20}" placeholder="1AA" required></label><button class="button button-primary" type="submit">Klas aanmaken</button></form></section><section class="panel"><h3>Mijn klassen</h3><div class="management-class-list">' + (classList || emptyState("Nog geen klassen", "Maak hierboven je eerste klas aan.")) + '</div></section></aside><div>' + detail + renderCreatedStudents(selectedClass) + '</div></div>';
+    const createClassPanel = currentTeacherIsAdmin() ? '<section class="panel"><h3>Nieuwe klas</h3><form class="management-form" data-form="create-class"><label><span>Klasnaam</span><input name="name" maxlength="80" placeholder="1AA" required></label><label><span>Klascode</span><input name="class_code" minlength="2" maxlength="20" pattern="[A-Za-z0-9-]{2,20}" placeholder="1AA" required></label><button class="button button-primary" type="submit">Klas aanmaken</button></form></section>' : "";
+    return breadcrumbs([{ label: "Dashboard", action: "view-dashboard" }, { label: "Beheer" }]) + '<div class="page-heading"><div><p class="eyebrow">Administratie</p><h2>Klassen beheren</h2><p class="muted">Beheer leerlingen binnen de klassen waartoe je toegang hebt.</p></div></div><p id="managementMessage" class="management-message' + (management.messageIsError ? " error" : "") + '" aria-live="polite">' + escapeHtml(management.message) + '</p><div class="management-grid"><aside class="management-stack">' + createClassPanel + '<section class="panel"><h3>Mijn klassen</h3><div class="management-class-list">' + (classList || emptyState("Geen toegewezen klassen", "Vraag een admin om minstens één klas toe te wijzen.")) + '</div></section></aside><div>' + detail + renderCreatedStudents(selectedClass) + '</div></div>';
+  }
+
+  function renderTeachersPage() {
+    if (!currentTeacherIsAdmin()) return emptyState("Geen toegang", "Alleen admins kunnen leerkrachten beheren.");
+    const data = state.teacherAdmin;
+    const assignmentsByTeacher = Object.create(null);
+    data.assignments.forEach(function (row) {
+      if (!assignmentsByTeacher[row.teacher_id]) assignmentsByTeacher[row.teacher_id] = new Set();
+      assignmentsByTeacher[row.teacher_id].add(row.class_id);
+    });
+    const cards = data.teachers.map(function (teacher) {
+      const assigned = assignmentsByTeacher[teacher.auth_user_id] || new Set();
+      const classChoices = data.classes.map(function (classRow) {
+        return '<label class="teacher-class-choice"><input type="checkbox" name="class_ids" value="' + escapeHtml(classRow.id) + '"' + (assigned.has(classRow.id) ? " checked" : "") + '><span><strong>' + escapeHtml(classRow.name) + '</strong><small>' + escapeHtml(classRow.class_code) + '</small></span></label>';
+      }).join("");
+      return '<article class="panel teacher-access-card"><form class="management-form" data-form="teacher-access"><input type="hidden" name="teacher_id" value="' + escapeHtml(teacher.auth_user_id) + '"><div class="section-heading"><div><h3>' + escapeHtml(teacher.display_name || teacher.email || "Naamloze leerkracht") + '</h3><p>' + escapeHtml(teacher.email || "Geen e-mailadres") + '</p></div><span class="pill">' + escapeHtml(teacher.role === "admin" ? "Admin" : "Teacher") + '</span></div><label><span>Weergavenaam</span><input name="display_name" maxlength="120" value="' + escapeHtml(teacher.display_name || "") + '"></label><div class="teacher-access-fields"><label><span>Rol</span><select name="role"><option value="teacher"' + (teacher.role === "teacher" ? " selected" : "") + '>Teacher</option><option value="admin"' + (teacher.role === "admin" ? " selected" : "") + '>Admin</option></select></label><label><span>Status</span><select name="is_active"><option value="true"' + (teacher.is_active ? " selected" : "") + '>Actief</option><option value="false"' + (teacher.is_active ? "" : " selected") + '>Inactief</option></select></label></div><fieldset><legend>Toegewezen klassen</legend><div class="teacher-class-grid">' + (classChoices || '<p class="muted">Maak eerst een klas aan.</p>') + '</div></fieldset><button class="button button-primary" type="submit">Toegang opslaan</button></form></article>';
+    }).join("");
+    return breadcrumbs([{ label: "Dashboard", action: "view-dashboard" }, { label: "Leerkrachten" }]) + '<div class="page-heading"><div><p class="eyebrow">Administratie</p><h2>Leerkrachten</h2><p class="muted">Activeer accounts en wijs één of meerdere klassen toe. Nieuwe Auth-accounts starten altijd inactief.</p></div></div><p id="teacherAdminMessage" class="management-message' + (data.messageIsError ? " error" : "") + '" aria-live="polite">' + escapeHtml(data.message) + '</p><div class="teacher-access-list">' + (cards || emptyState("Nog geen leerkrachten", "Nodig eerst een collega uit via Supabase Authentication.")) + '</div>';
   }
 
   function currentFilteredData() {
@@ -726,8 +785,9 @@
     const content = document.querySelector("#dashboardContent");
     if (!content || !state.user) return;
     const data = currentFilteredData();
-    document.querySelector("#filterBar").hidden = state.route.view === "management";
+    document.querySelector("#filterBar").hidden = state.route.view === "management" || state.route.view === "teachers";
     if (state.route.view === "management") content.innerHTML = renderManagement();
+    else if (state.route.view === "teachers") content.innerHTML = renderTeachersPage();
     else if (state.route.view === "classes") content.innerHTML = renderClassesPage(data);
     else if (state.route.view === "class") content.innerHTML = renderClassDetail(data, state.route.classId);
     else if (state.route.view === "student") content.innerHTML = renderStudentDetail(data, state.route.studentId);
@@ -770,7 +830,7 @@
   }
 
   function updateNavigation() {
-    const current = state.route.view === "management" ? "view-management" : state.route.view === "dashboard" ? "view-dashboard" : "view-classes";
+    const current = state.route.view === "management" ? "view-management" : state.route.view === "teachers" ? "view-teachers" : state.route.view === "dashboard" ? "view-dashboard" : "view-classes";
     document.querySelectorAll("#teacherNav [data-action]").forEach(function (button) {
       if (button.dataset.action === current) button.setAttribute("aria-current", "page");
       else button.removeAttribute("aria-current");
@@ -779,13 +839,16 @@
 
   function showLogin(message) {
     state.user = null;
+    state.teacherProfile = null;
     state.raw = emptyDataset();
     state.management = { loaded: false, classes: [], students: [], selectedClassId: null, studentStatus: "active", generatedCode: "", createdStudents: [], message: "", messageIsError: false };
+    state.teacherAdmin = { loaded: false, teachers: [], assignments: [], classes: [], message: "", messageIsError: false };
     state.route = { view: "dashboard", classId: null, studentId: null };
     document.querySelector("#authView").hidden = false;
     document.querySelector("#dashboardView").hidden = true;
     document.querySelector("#accountArea").hidden = true;
     document.querySelector("#teacherNav").hidden = true;
+    document.querySelector("#teachersNavButton").hidden = true;
     document.querySelector("#dashboardContent").innerHTML = "";
     document.querySelector("#loginMessage").textContent = message || "";
   }
@@ -802,13 +865,30 @@
       showLogin();
       return;
     }
+    document.querySelector("#dashboardView").hidden = true;
+    document.querySelector("#teacherNav").hidden = true;
+    let profile;
+    try {
+      profile = await loadTeacherProfile(state.client, session.user.id);
+    } catch (error) {
+      await state.client.auth.signOut();
+      showLogin("Je leerkrachtenaccount kon niet veilig worden gecontroleerd. Probeer later opnieuw.");
+      return;
+    }
+    if (!profile || profile.is_active !== true) {
+      await state.client.auth.signOut();
+      showLogin("Je leerkrachtenaccount heeft nog geen toegang. Neem contact op met de beheerder.");
+      return;
+    }
     const sameUser = state.user && state.user.id === session.user.id;
     state.user = session.user;
+    state.teacherProfile = profile;
     document.querySelector("#authView").hidden = true;
     document.querySelector("#dashboardView").hidden = false;
     document.querySelector("#accountArea").hidden = false;
     document.querySelector("#teacherNav").hidden = false;
-    document.querySelector("#accountLabel").textContent = displayNameForUser(session.user);
+    document.querySelector("#accountLabel").textContent = (profile.display_name || profile.email || displayNameForUser(session.user)) + (profile.role === "admin" ? " · admin" : "");
+    document.querySelector("#teachersNavButton").hidden = profile.role !== "admin";
     document.querySelector("#loginMessage").textContent = "";
     if (sameUser && state.loading && !forceReload) return;
     if (sameUser && !forceReload && state.raw.classes.length + state.raw.students.length + state.raw.sessions.length + state.raw.attempts.length > 0) {
@@ -892,6 +972,28 @@
     }
   }
 
+  async function openTeachers(forceReload) {
+    if (!currentTeacherIsAdmin()) return;
+    state.route = { view: "teachers", classId: null, studentId: null };
+    document.querySelector("#filterBar").hidden = true;
+    if (state.teacherAdmin.loaded && !forceReload) {
+      renderCurrent();
+      return;
+    }
+    document.querySelector("#dashboardContent").innerHTML = '<section class="loading-state"><span class="loader" aria-hidden="true"></span><p>Leerkrachtentoegang wordt veilig geladen…</p></section>';
+    updateNavigation();
+    try {
+      const data = await loadTeacherAdminDataset(state.client);
+      state.teacherAdmin.teachers = data.teachers;
+      state.teacherAdmin.assignments = data.assignments;
+      state.teacherAdmin.classes = data.classes;
+      state.teacherAdmin.loaded = true;
+      renderCurrent();
+    } catch (error) {
+      document.querySelector("#dashboardContent").innerHTML = '<div class="error-state"><strong>Leerkrachten konden niet worden geladen.</strong><p>Alleen een actieve admin heeft toegang tot dit onderdeel.</p></div>';
+    }
+  }
+
   async function reloadAfterManagementMutation(createdStudents) {
     const results = await Promise.all([loadManagementDataset(state.client), loadRlsDataset(state.client)]);
     state.management.classes = results[0].classes;
@@ -918,16 +1020,41 @@
     const submit = form.querySelector('button[type="submit"]');
     const values = new FormData(form);
     submit.disabled = true;
-    state.management.message = "Opslaan…";
-    state.management.messageIsError = false;
+    const teacherAccessForm = form.dataset.form === "teacher-access";
+    if (teacherAccessForm) {
+      state.teacherAdmin.message = "Opslaan…";
+      state.teacherAdmin.messageIsError = false;
+    } else {
+      state.management.message = "Opslaan…";
+      state.management.messageIsError = false;
+    }
     try {
-      if (form.dataset.form === "create-class") {
+      if (teacherAccessForm) {
+        if (!currentTeacherIsAdmin()) throw new Error("Alleen admins kunnen leerkrachtentoegang wijzigen.");
+        await updateTeacherAccess(state.client, {
+          teacherId: String(values.get("teacher_id")),
+          displayName: String(values.get("display_name") || ""),
+          role: String(values.get("role") || "teacher"),
+          isActive: values.get("is_active") === "true",
+          classIds: values.getAll("class_ids").map(String)
+        });
+        const data = await loadTeacherAdminDataset(state.client);
+        state.teacherAdmin.teachers = data.teachers;
+        state.teacherAdmin.assignments = data.assignments;
+        state.teacherAdmin.classes = data.classes;
+        state.teacherAdmin.loaded = true;
+        state.teacherAdmin.message = "Leerkrachtentoegang opgeslagen.";
+        state.teacherAdmin.messageIsError = false;
+        renderCurrent();
+      } else if (form.dataset.form === "create-class") {
+        if (!currentTeacherIsAdmin()) throw new Error("Alleen admins kunnen klassen aanmaken.");
         const created = await createClassRecord(state.client, state.user, { name: values.get("name"), classCode: values.get("class_code") }, state.management.classes);
         state.management.selectedClassId = created.id;
         state.management.createdStudents = [];
         state.management.message = "Klas aangemaakt.";
         await reloadAfterManagementMutation();
       } else if (form.dataset.form === "update-class") {
+        if (!currentTeacherIsAdmin()) throw new Error("Alleen admins kunnen klassen wijzigen.");
         await updateClassRecord(state.client, String(values.get("class_id")), { name: values.get("name"), is_active: values.get("is_active") === "true" });
         state.management.message = "Klas bijgewerkt. Historische resultaten zijn behouden.";
         await reloadAfterManagementMutation();
@@ -948,8 +1075,13 @@
         await reloadAfterManagementMutation(createdStudents);
       }
     } catch (error) {
-      state.management.message = friendlyManagementError(error);
-      state.management.messageIsError = true;
+      if (teacherAccessForm) {
+        state.teacherAdmin.message = friendlyManagementError(error);
+        state.teacherAdmin.messageIsError = true;
+      } else {
+        state.management.message = friendlyManagementError(error);
+        state.management.messageIsError = true;
+      }
       renderCurrent();
     } finally {
       submit.disabled = false;
@@ -999,6 +1131,11 @@
     if (!target) return;
     const action = target.dataset.action;
     const id = target.dataset.id;
+    if (action === "view-teachers") {
+      await openTeachers(false);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
     if (action === "view-management") {
       await openManagement(false);
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -1070,6 +1207,23 @@
       try {
         await updateStudentRecord(state.client, id, { school_email: validation.email });
         state.management.message = validation.email ? "Schoolmail opgeslagen." : "Schoolmail verwijderd; leerlingcode-login blijft beschikbaar.";
+        state.management.messageIsError = false;
+        await reloadAfterManagementMutation();
+      } catch (error) {
+        state.management.message = friendlyManagementError(error);
+        state.management.messageIsError = true;
+        renderCurrent();
+      }
+      return;
+    }
+    if (action === "edit-student-name") {
+      const managedStudent = state.management.students.find(function (row) { return row.id === id; });
+      if (!managedStudent) return;
+      const value = window.prompt("Naam van de leerling", managedStudent.display_name || "");
+      if (value === null) return;
+      try {
+        await updateStudentRecord(state.client, id, { display_name: value });
+        state.management.message = "Leerlingnaam opgeslagen.";
         state.management.messageIsError = false;
         await reloadAfterManagementMutation();
       } catch (error) {
@@ -1183,6 +1337,7 @@
     document.querySelector("#refreshButton").addEventListener("click", function () {
       if (!state.user) return;
       if (state.route.view === "management") openManagement(true);
+      else if (state.route.view === "teachers") openTeachers(true);
       else showDashboardForSession({ user: state.user }, true);
     });
     document.querySelector("#filterBar").addEventListener("change", handleFilters);
@@ -1241,13 +1396,17 @@
     studentCodeRows: studentCodeRows,
     loadRlsDataset: loadRlsDataset,
     loadManagementDataset: loadManagementDataset,
+    loadTeacherProfile: loadTeacherProfile,
+    loadTeacherAdminDataset: loadTeacherAdminDataset,
+    updateTeacherAccess: updateTeacherAccess,
     createClassRecord: createClassRecord,
     updateClassRecord: updateClassRecord,
     createStudentRecords: createStudentRecords,
     updateStudentRecord: updateStudentRecord,
     createTeacherClient: createTeacherClient,
     tableColumns: TABLE_COLUMNS,
-    managementColumns: MANAGEMENT_COLUMNS
+    managementColumns: MANAGEMENT_COLUMNS,
+    accessColumns: ACCESS_COLUMNS
   });
 
   if (!window.MON_PARCOURS_TEACHER_TEST) {

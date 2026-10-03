@@ -90,7 +90,7 @@ Er is geen Node-server of buildstap nodig. Supabase wordt rechtstreeks via bevei
 ## Beveiligingscontrole
 
 - `anon` krijgt geen SELECT-, INSERT-, UPDATE- of DELETE-recht op leerlingtabellen.
-- Alleen `verify_student_identity` en `ingest_practice_bundle` zijn voor de publieke client uitvoerbaar.
+- Leerling-RPC’s blijven afzonderlijk begrensd; teacherbeheer gebruikt alleen authenticated toegang en de gecontroleerde admin-RPC.
 - Deze publieke functies zijn dunne `SECURITY INVOKER`-wrappers. De bevoorrechte `SECURITY DEFINER`-logica staat in het niet-blootgestelde `private` schema met `search_path = ''`.
 - Een leerlingtoken kan resultaten insturen, maar geen resultaten uitlezen.
 - Getypte antwoorden worden alleen lokaal verwerkt en nooit in `practice_attempts` opgeslagen.
@@ -148,3 +148,30 @@ Live procedure:
 4. Publiceer daarna `mastery.js`, de bijgewerkte HTML/CSS/JavaScriptbestanden en de overige repositorybestanden naar GitHub Pages.
 5. Meld een testleerling aan, maak zelfstandige pogingen in minstens twee sessies en vernieuw de pagina.
 6. Controleer dat de voortgang behouden blijft, dat offline gemaakte pogingen onmiddellijk meetellen en dat `monParcoursSyncQueueV1` na herverbinden leegloopt zonder dubbele databasepogingen.
+
+## Fase 6: meerdere leerkrachten en klastoegang
+
+Voer **handmatig** `phase6-multi-teacher.sql` uit na alle eerdere migraties en vóór publicatie van het nieuwe dashboard. De migratie maakt `teachers` en `class_teachers`, activeert RLS, vervangt de oude `classes.owner_id`-policies door many-to-many klastoegang en voegt de admin-RPC voor leerkrachtentoegang toe. Leerlingidentificatie, ingest, mastery en historische resultaten worden niet gewijzigd.
+
+Bootstrap:
+
+- Is er exact één bestaande Auth-user en zijn er nog geen teacherprofielen, dan wordt die gebruiker automatisch actieve admin.
+- Zijn er meerdere bestaande Auth-users, dan raadt de migratie niemand als admin. Voer dan in de SQL Editor onderstaande instructie uit met het juiste e-mailadres:
+
+```sql
+update public.teachers t
+set role = 'admin', is_active = true
+from auth.users u
+where t.auth_user_id = u.id
+  and lower(u.email) = lower('VUL-HIER-HET-ADMIN-EMAILADRES-IN');
+```
+
+Nieuwe collega toevoegen:
+
+1. Open Supabase → **Authentication → Users** en nodig de collega uit of maak het Auth-account aan.
+2. De database-trigger maakt automatisch een profiel met `role = teacher` en `is_active = false`.
+3. Meld aan als admin en open **Leerkrachten**.
+4. Controleer de naam, activeer het account en vink één of meerdere klassen aan.
+5. De collega kan daarna met het eigen Auth-account inloggen en ziet uitsluitend die klassen.
+
+De frontend bevat geen Admin API, service-role-key of uitnodigingsfunctionaliteit. Het intrekken van toegang gebeurt door het teacherprofiel inactief te zetten; historische data en klastoewijzingen blijven bestaan. De laatste actieve admin kan server-side niet worden gedeactiveerd, verwijderd of naar teacher worden teruggezet.

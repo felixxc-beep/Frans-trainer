@@ -181,3 +181,13 @@ tr:last-child td { border-bottom: 0; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
+.teacher-access-list { display: grid; gap: 1rem; }
+.teacher-access-card .section-heading { padding: 0; background: transparent; }
+.teacher-access-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .8rem; }
+.teacher-access-card fieldset { margin: 0; padding: .8rem; border: 1px solid var(--line); border-radius: 12px; }
+.teacher-access-card legend { padding: 0 .3rem; font-weight: 800; }
+.teacher-class-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: .5rem; }
+.teacher-class-choice { display: flex !important; align-items: center; gap: .55rem; padding: .5rem; border: 1px solid var(--line); border-radius: 9px; background: #fff; }
+.teacher-class-choice input { width: auto !important; margin: 0; }
+.teacher-class-choice span, .teacher-class-choice small { display: block; }
+@media (max-width: 700px) { .teacher-access-fields { grid-template-columns: 1fr; } }

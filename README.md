@@ -14,6 +14,7 @@ Een leerlingvriendelijke, statische en tweetalige studietool voor Franse woorden
 - Accentknoppen bij elk antwoordveld.
 - Fout-herhaling, moeilijke woorden, voortgang per Trajet en categorie en verder oefenen.
 - Een afgeleid beheersingsmodel met Nieuw, Aan het leren en Gekend; Gekend vereist drie correcte zelfstandige antwoorden, 75% correct, twee sessies en een laatste juiste poging.
+- Een afzonderlijk continu beheersingsniveau van 0–100 dat al tijdens de eerste sessie stijgt, fouten meeweegt en alleen voor strikt Gekende items 100% bereikt.
 - Synoniemen met dezelfde Nederlandse prompt binnen dezelfde JSON-subsectie worden als gelijkwaardige antwoorden aanvaard.
 - Responsive ontwerp voor laptop, Chromebook, tablet en smartphone.
 
@@ -89,7 +90,8 @@ Elk leeritem heeft daarnaast een permanente `id`. Voer na het toevoegen van nieu
 - `student-identity.js` is de centrale, verwisselbare identificatielaag.
 - `supabase-client.js` doet alleen begrensde RPC-aanroepen.
 - `sync-manager.js` bewaart mislukte verzendingen in `monParcoursSyncQueueV1` en probeert ze later opnieuw.
-- `mastery.js` bevat de gedeelde statusdefinitie voor leerlingtool en dashboard; `monParcoursMasteryAttemptsV1` bewaart alleen de minimale lokale, nog te verzoenen pogingsmetadata en nooit getypte antwoorden.
+- `mastery.js` bevat zowel de gedeelde statusdefinitie als het continue beheersingsniveau. De bewijswaarde is 10% na alleen Leren, 40% na één, 60% na twee en 75% na drie correcte zelfstandige antwoorden; extra correcte antwoorden bouwen beperkt verder op. Die waarde wordt vermenigvuldigd met de zelfstandige nauwkeurigheid, blijft voor niet-Gekende items tussen 10% en 90%, en wordt alleen bij status Gekend 100%. `monParcoursMasteryAttemptsV1` bewaart alleen de minimale lokale, nog te verzoenen pogingsmetadata en nooit getypte antwoorden.
+- Het leerkrachtendashboard gebruikt Supabase Auth met server-side rollen en many-to-many klastoegang via `teachers` en `class_teachers`.
 - `config.js` bevat uitsluitend de Project URL en publishable key.
 - Een nieuwe leerling moet zich eenmaal online met een actieve schoolmailidentiteit koppelen voordat oefenen mogelijk is.
 - Een eerder gekoppelde leerling kan bij tijdelijke internetuitval blijven oefenen; resultaten wachten dan in de lokale syncqueue.

@@ -63,6 +63,20 @@
       : STATUS.LEARNING;
   }
 
+  function getMasteryLevel(record) {
+    const value = record ? asRecord(record) : emptyRecord("", "");
+    if (getMasteryStatus(value) === STATUS.ACQUIRED) return 100;
+    if (value.practicedAttempts < 1) return 0;
+    if (value.independentAttempts < 1) return 10;
+    const correct = value.independentCorrect;
+    const evidence = correct < 1 ? 10
+      : correct === 1 ? 40
+      : correct === 2 ? 60
+      : Math.min(90, 75 + (correct - 3) * 3);
+    const accuracy = correct / value.independentAttempts;
+    return Math.max(10, Math.min(90, Math.round(evidence * accuracy)));
+  }
+
   function addAttempt(records, attempt) {
     const ids = Array.from(new Set([attempt.item_id].concat(attempt.equivalent_item_ids || []).filter(Boolean).map(String)));
     const variant = String(attempt.item_variant || "");
@@ -144,6 +158,7 @@
 
   function calculateMasterySummary(items, records) {
     const counts = { new: 0, learning: 0, acquired: 0 };
+    let masteryScoreTotal = 0;
     const seen = new Set();
     (items || []).forEach(function (item) {
       const itemId = String(item && item.id || "");
@@ -160,6 +175,7 @@
           if (!Number.isInteger(numericVariant) || numericVariant < minimum || numericVariant > maximum) return;
           const status = getMasteryStatus(record);
           counts[status] += 1;
+          masteryScoreTotal += getMasteryLevel(record);
           practiced += 1;
         });
         counts.new += Math.max(0, total - practiced);
@@ -168,9 +184,13 @@
       const variants = item && item.type === "verb" && Array.isArray(item.conjugations)
         ? Array.from(new Set(item.conjugations.map(function (entry) { return String(entry && entry.subject || ""); }).filter(Boolean)))
         : [];
-      counts[getMasteryStatus(records.get(keyFor(itemId, "")))] += 1;
+      const baseRecord = records.get(keyFor(itemId, ""));
+      counts[getMasteryStatus(baseRecord)] += 1;
+      masteryScoreTotal += getMasteryLevel(baseRecord);
       variants.forEach(function (variant) {
-        counts[getMasteryStatus(records.get(keyFor(itemId, variant)))] += 1;
+        const variantRecord = records.get(keyFor(itemId, variant));
+        counts[getMasteryStatus(variantRecord)] += 1;
+        masteryScoreTotal += getMasteryLevel(variantRecord);
       });
     });
     const total = counts.new + counts.learning + counts.acquired;
@@ -180,6 +200,8 @@
       new: counts.new,
       learning: counts.learning,
       acquired: counts.acquired,
+      masteryLevel: total ? Math.round(masteryScoreTotal / total) : 0,
+      masteryScoreTotal: masteryScoreTotal,
       percentages: roundedPercentages(counts, total)
     };
   }
@@ -193,6 +215,7 @@
     STATUS: STATUS,
     keyFor: keyFor,
     getMasteryStatus: getMasteryStatus,
+    getMasteryLevel: getMasteryLevel,
     mergeMasterySources: mergeMasterySources,
     calculateMasterySummary: calculateMasterySummary,
     getMasteryCounts: getMasteryCounts

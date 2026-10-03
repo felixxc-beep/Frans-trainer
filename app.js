@@ -394,7 +394,8 @@ function renderHome() {
           return '<button class="trajectory-card" type="button" data-action="select-trajectory" data-index="' + index + '" aria-pressed="' + (index === state.trajectoryIndex) + '">' +
             '<span class="trajectory-number"><strong>' + escapeHtml(entry.trajectory) + '</strong><span class="count-badge">' + total + '</span></span>' +
             '<small class="trajectory-progress">' + uiText(stats.practiced + " / " + total + " travaillés", stats.practiced + " / " + total + " geoefend") + '</small>' + masteryBar(mastery, true) +
-            '<small class="mastery-acquired">' + uiText(mastery.percentages.acquired + "% acquis", mastery.percentages.acquired + "% gekend") + '</small>' +
+            '<small class="mastery-level">' + uiText("Niveau de maîtrise : " + mastery.masteryLevel + "%", "Beheersingsniveau: " + mastery.masteryLevel + "%") + '</small>' +
+            '<small class="mastery-acquired">' + uiText(mastery.acquired + " / " + mastery.total + " acquis", mastery.acquired + " / " + mastery.total + " gekend") + '</small>' +
           '</button>';
         }).join("") +
       '</div>' +
@@ -409,7 +410,7 @@ function renderHome() {
           return '<button class="unit-card" type="button" data-action="select-unit" data-order="' + unit.order + '">' +
             '<span class="unit-order">' + unit.order + '</span>' +
             '<span class="unit-copy"><strong>' + escapeHtml(unit.top_category) + '</strong><small>' + escapeHtml(unit.title) + '</small></span>' +
-            '<span class="unit-meta">' + (count ? uiText(unitStats.practiced + " / " + count + " travaillés", unitStats.practiced + " / " + count + " geoefend") + masteryBar(mastery, true) + '<small class="mastery-acquired">' + uiText(mastery.percentages.acquired + "% acquis", mastery.percentages.acquired + "% gekend") + '</small>' : uiText("Information", "Cursusinfo")) + '</span>' +
+            '<span class="unit-meta">' + (count ? uiText(unitStats.practiced + " / " + count + " travaillés", unitStats.practiced + " / " + count + " geoefend") + '<strong class="mastery-level">' + uiText(mastery.masteryLevel + "% maîtrise", mastery.masteryLevel + "% beheersing") + '</strong>' + masteryBar(mastery, true) + '<small class="mastery-acquired">' + uiText(mastery.acquired + " / " + mastery.total + " acquis", mastery.acquired + " / " + mastery.total + " gekend") + '</small>' : uiText("Information", "Cursusinfo")) + '</span>' +
           '</button>';
         }).join("") +
       '</div>' +
@@ -425,9 +426,9 @@ function dashboardCard(titleFr, titleNl, valueFr, valueNl, descriptionFr, descri
 function masteryDashboardCard(summary) {
   return '<button class="quick-card mastery-dashboard-card" type="button" data-action="view-progress">' +
     '<span class="quick-icon chart" aria-hidden="true"></span><span><small>' + uiText("Ma progression", "Mijn voortgang") + '</small>' +
-    '<strong>' + uiText(summary.percentages.acquired + "% acquis", summary.percentages.acquired + "% gekend") + '</strong>' +
+    '<strong>' + uiText("Niveau de maîtrise : " + summary.masteryLevel + "%", "Beheersingsniveau: " + summary.masteryLevel + "%") + '</strong>' +
     masteryBar(summary, false) +
-    '<em class="mastery-legend">' + uiText(summary.percentages.new + "% nouveau · " + summary.percentages.learning + "% en cours · " + summary.percentages.acquired + "% acquis", summary.percentages.new + "% nieuw · " + summary.percentages.learning + "% aan het leren · " + summary.percentages.acquired + "% gekend") + '</em></span></button>';
+    '<em class="mastery-legend">' + uiText(summary.new + " nouveau · " + summary.learning + " en cours · " + summary.acquired + " acquis", summary.new + " nieuw · " + summary.learning + " aan het leren · " + summary.acquired + " gekend") + '</em></span></button>';
 }
 
 function masteryBar(summary, compact) {
@@ -537,12 +538,12 @@ function compactScopeButton(unit, block, subsection, title, count, labelFr, labe
 
 function scopeChoiceCard(unit, block, subsection, title, count, category, mastery) {
   return '<button class="scope-choice-card" type="button"' + scopeAttributes(unit, block, subsection, title, category) +
-    '<strong>' + escapeHtml(displayScopeTitle(title)) + '</strong><span>' + count + ' éléments</span><small lang="nl">' + escapeHtml(scopeLabelDutch(title)) + '</small>' + (mastery ? masteryBar(mastery, true) + '<small class="mastery-acquired">' + uiText(mastery.acquired + " acquis", mastery.acquired + " gekend") + '</small>' : "") + '</button>';
+    '<strong>' + escapeHtml(displayScopeTitle(title)) + '</strong><span>' + count + ' éléments</span><small lang="nl">' + escapeHtml(scopeLabelDutch(title)) + '</small>' + (mastery ? '<strong class="mastery-level">' + uiText(mastery.masteryLevel + "% maîtrise", mastery.masteryLevel + "% beheersing") + '</strong>' + masteryBar(mastery, true) + '<small class="mastery-acquired">' + uiText(mastery.acquired + " / " + mastery.total + " acquis", mastery.acquired + " / " + mastery.total + " gekend") + '</small>' : "") + '</button>';
 }
 
 function masteryInline(summary) {
   if (!summary || !summary.total) return "";
-  return '<span class="mastery-inline">' + masteryBar(summary, true) + '<small>' + uiText(summary.practiced + " / " + summary.total + " travaillés · " + summary.percentages.acquired + "% acquis", summary.practiced + " / " + summary.total + " geoefend · " + summary.percentages.acquired + "% gekend") + '</small></span>';
+  return '<span class="mastery-inline"><strong class="mastery-level">' + uiText("Niveau de maîtrise : " + summary.masteryLevel + "%", "Beheersingsniveau: " + summary.masteryLevel + "%") + '</strong>' + masteryBar(summary, true) + '<small>' + uiText(summary.practiced + " / " + summary.total + " travaillés · " + summary.acquired + " acquis", summary.practiced + " / " + summary.total + " geoefend · " + summary.acquired + " gekend") + '</small></span>';
 }
 
 function displayScopeTitle(title) {
@@ -1071,6 +1072,7 @@ function recordSyncAttempt(question, correct) {
     return attempt.item_id === stableIds[0] && attempt.item_variant === (question.itemVariant || "");
   }).length + 1;
   const before = masteryStatusForQuestion(question);
+  const beforeLevel = masteryLevelForQuestion(question);
   const attempt = {
     client_attempt_id: createClientId(),
     item_id: stableIds[0],
@@ -1096,8 +1098,9 @@ function recordSyncAttempt(question, correct) {
   session.sync_attempts.push(attempt);
   appendMasteryAttempt(attempt);
   const after = masteryStatusForQuestion(question);
+  const afterLevel = masteryLevelForQuestion(question);
   syncSessionSnapshot();
-  return { before: before, after: after };
+  return { before: before, after: after, beforeLevel: beforeLevel, afterLevel: afterLevel };
 }
 
 function syncSessionSnapshot() {
@@ -1212,7 +1215,7 @@ function renderProgress() {
   app.innerHTML =
     breadcrumbHtml([{ label: "Start", labelFr: "Accueil", action: "home" }]) +
     '<section class="page-heading"><p class="eyebrow">' + uiText("Sur cet appareil", "Op dit toestel") + '</p><h1>' + uiText("Ma progression", "Mijn voortgang") + '</h1><p class="lede">' + uiText("Tes résultats restent enregistrés dans ce navigateur.", "Je resultaten blijven bewaard in deze browser.") + '</p></section>' +
-    '<section class="mastery-overview"><h2>' + uiText(overall.percentages.acquired + "% acquis", overall.percentages.acquired + "% gekend") + '</h2>' + masteryBar(overall, false) + '<div class="mastery-counts"><span>' + uiText("Nouveau", "Nieuw") + '<strong>' + overall.new + '</strong></span><span>' + uiText("En cours", "Aan het leren") + '<strong>' + overall.learning + '</strong></span><span>' + uiText("Acquis", "Gekend") + '<strong>' + overall.acquired + '</strong></span></div></section>' +
+    '<section class="mastery-overview"><small>' + uiText("Niveau de maîtrise", "Beheersingsniveau") + '</small><h2>' + overall.masteryLevel + '%</h2>' + masteryBar(overall, false) + '<p class="mastery-acquired-total">' + uiText(overall.acquired + " / " + overall.total + " acquis", overall.acquired + " / " + overall.total + " gekend") + '</p><div class="mastery-counts"><span>' + uiText("Nouveau", "Nieuw") + '<strong>' + overall.new + '</strong></span><span>' + uiText("En cours", "Aan het leren") + '<strong>' + overall.learning + '</strong></span><span>' + uiText("Acquis", "Gekend") + '<strong>' + overall.acquired + '</strong></span></div></section>' +
     '<section class="stat-grid"><article><small>' + uiText("Réponses", "Antwoorden") + '</small><strong>' + state.progress.attempted + '</strong></article>' +
       '<article><small>' + uiText("Correctes", "Juist") + '</small><strong>' + state.progress.correct + '</strong></article>' +
       '<article><small>' + uiText("Erreurs", "Fouten") + '</small><strong>' + state.progress.wrong + '</strong></article>' +
@@ -1221,12 +1224,12 @@ function renderProgress() {
       state.data.trajectories.map(function (trajectory, trajectoryIndex) {
         const stats = trajectoryStats(trajectoryIndex);
         const trajectoryMastery = masterySummaryForItems((trajectory.items || []).filter(isExerciseItem));
-        return '<article class="progress-card"><header><div><p class="eyebrow">' + escapeHtml(trajectory.trajectory) + '</p><h2>' + uiText(stats.practiced + " éléments travaillés", stats.practiced + " items geoefend") + '</h2></div><strong>' + trajectoryMastery.percentages.acquired + '% ' + uiText("acquis", "gekend") + '</strong></header>' +
+        return '<article class="progress-card"><header><div><p class="eyebrow">' + escapeHtml(trajectory.trajectory) + '</p><h2>' + uiText("Niveau de maîtrise : " + trajectoryMastery.masteryLevel + "%", "Beheersingsniveau: " + trajectoryMastery.masteryLevel + "%") + '</h2></div><strong>' + trajectoryMastery.acquired + ' / ' + trajectoryMastery.total + ' ' + uiText("acquis", "gekend") + '</strong></header>' +
           masteryBar(trajectoryMastery, false) +
           '<div class="category-progress">' + trajectory.units.map(function (unit) {
             const category = categoryStats(trajectoryIndex, unit.top_category);
             const unitMastery = masterySummaryForItems(itemsForUnit(trajectory, unit).filter(isExerciseItem));
-            return '<div><span>' + escapeHtml(unit.top_category) + '</span><strong>' + category.practiced + ' · ' + unitMastery.percentages.acquired + '% ' + uiText("acquis", "gekend") + '</strong></div>';
+            return '<div><span>' + escapeHtml(unit.top_category) + '</span><strong>' + unitMastery.masteryLevel + '% ' + uiText("maîtrise", "beheersing") + ' · ' + unitMastery.acquired + ' ' + uiText("acquis", "gekend") + '</strong></div>';
           }).join("") + '</div></article>';
       }).join("") +
     '</section><button class="text-button danger" type="button" data-action="reset-progress">' + uiText("Effacer ma progression locale", "Wis mijn lokale voortgang") + '</button>';
@@ -1617,7 +1620,7 @@ function masterySummaryForItems(items) {
   const api = window.MonParcoursMastery;
   if (api) return api.calculateMasterySummary(items || [], currentMasteryRecords());
   const total = exerciseItemCount(items || []);
-  return { total: total, practiced: 0, new: total, learning: 0, acquired: 0, percentages: { new: total ? 100 : 0, learning: 0, acquired: 0 } };
+  return { total: total, practiced: 0, new: total, learning: 0, acquired: 0, masteryLevel: 0, masteryScoreTotal: 0, percentages: { new: total ? 100 : 0, learning: 0, acquired: 0 } };
 }
 
 function masteryStatusForQuestion(question) {
@@ -1628,10 +1631,24 @@ function masteryStatusForQuestion(question) {
   return api.getMasteryStatus(record);
 }
 
+function masteryLevelForQuestion(question) {
+  const api = window.MonParcoursMastery;
+  if (!api || !question) return 0;
+  const itemId = question.stableItemId || (question.stableItemIds || [])[0];
+  const record = currentMasteryRecords().get(api.keyFor(itemId, question.itemVariant || ""));
+  return api.getMasteryLevel(record);
+}
+
 function masteryFeedbackHtml(change) {
   if (!change) return "";
+  const levelFr = change.beforeLevel === change.afterLevel
+    ? "Niveau de maîtrise : " + change.afterLevel + "%"
+    : "Niveau de maîtrise : " + change.beforeLevel + "% → " + change.afterLevel + "%";
+  const levelNl = change.beforeLevel === change.afterLevel
+    ? "Beheersingsniveau: " + change.afterLevel + "%"
+    : "Beheersingsniveau: " + change.beforeLevel + "% → " + change.afterLevel + "%";
   if (change.before === "learning" && change.after === "acquired") {
-    return '<p class="mastery-feedback is-newly-acquired">' + uiText("Acquis !", "Nu gekend!") + '</p>';
+    return '<p class="mastery-feedback is-newly-acquired">' + uiText("Acquis ! · " + levelFr, "Nu gekend! · " + levelNl) + '</p>';
   }
   const labels = {
     new: ["Nouveau", "Nieuw"],
@@ -1639,7 +1656,7 @@ function masteryFeedbackHtml(change) {
     acquired: ["Statut : Acquis", "Status: Gekend"]
   };
   const label = labels[change.after] || labels.learning;
-  return '<p class="mastery-feedback">' + uiText(label[0], label[1]) + '</p>';
+  return '<p class="mastery-feedback">' + uiText(levelFr + " · " + label[0], levelNl + " · " + label[1]) + '</p>';
 }
 
 function restoreMasteryServerCache() {

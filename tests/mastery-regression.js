@@ -21,7 +21,18 @@ function status(attempts) {
   return mastery.getMasteryStatus(records.get(mastery.keyFor("uf1-item-test", "")));
 }
 
+function level(attempts) {
+  const records = mastery.mergeMasterySources([], attempts, [], []);
+  return mastery.getMasteryLevel(records.get(mastery.keyFor("uf1-item-test", "")));
+}
+
 assert.equal(status([]), "new", "0 pogingen blijft Nieuw");
+assert.equal(level([]), 0, "nooit geoefend geeft 0% beheersingsniveau");
+assert.equal(level([attempt("l1", "s1", "learn", true)]), 10, "alleen Leren geeft 10%");
+assert.equal(level([attempt("c1", "s1", "practice", true)]), 40, "1/1 zelfstandig correct geeft 40%");
+assert.equal(level([attempt("c1", "s1", "practice", true), attempt("c2", "s1", "practice", true)]), 60, "2/2 zelfstandig correct geeft 60%");
+assert.equal(level([attempt("c1", "s1", "practice", true), attempt("c2", "s1", "practice", true), attempt("c3", "s1", "practice", true)]), 75, "3/3 zonder sessiespreiding geeft 75%");
+assert.equal(level([attempt("w1", "s1", "practice", true), attempt("w2", "s1", "practice", false), attempt("w3", "s1", "practice", false), attempt("w4", "s1", "practice", false)]), 10, "1/4 wordt door de nauwkeurigheid duidelijk lager dan 1/1");
 assert.equal(status([attempt("a1", "s1", "practice", true)]), "learning", "1/1 is nog niet Gekend");
 assert.equal(status([
   attempt("a1", "s1", "practice", true, "2026-10-03T10:00:01Z"),
@@ -72,6 +83,9 @@ const recovered = [
 ];
 assert.equal(status(recovered.slice(0, 4)), "learning");
 assert.equal(status(recovered), "acquired", "na een nieuwe correcte poging kan het item opnieuw Gekend worden");
+assert.equal(level(recovered.slice(0, 3)), 100, "alleen een strikt Gekend item krijgt 100%");
+assert.equal(level(recovered.slice(0, 4)), 56, "een nieuwe fout verlaagt het continue niveau en laat Gekend terugvallen");
+assert.equal(level(recovered), 100, "herstel naar Gekend geeft opnieuw 100%");
 
 const server = [{
   item_id: "uf1-item-test", item_variant: "", practiced_attempts: 3,
@@ -83,18 +97,18 @@ const deduped = mastery.mergeMasterySources(server, [attempt("accepted", "s2", "
 assert.equal(deduped.get(mastery.keyFor("uf1-item-test", "")).independentAttempts, 3, "bevestigde lokale poging telt niet dubbel");
 
 const dynamicItem = { id: "uf1-number-spec", type: "number", dynamic_range: true, range: [0, 100000] };
-const dynamicRecords = mastery.mergeMasterySources([], [
-  attempt("n1", "s1", "practice", true, "2026-10-03T10:00:01Z", "17"),
-  Object.assign(attempt("n2", "s2", "practice", true, "2026-10-03T10:00:02Z", "83"), { item_id: "uf1-number-spec", equivalent_item_ids: ["uf1-number-spec"] })
-], [], []);
-// Zet ook de eerste poging op dezelfde number-spec.
 const first = attempt("n1", "s1", "practice", true, "2026-10-03T10:00:01Z", "17");
 first.item_id = "uf1-number-spec"; first.equivalent_item_ids = ["uf1-number-spec"];
-const scalableRecords = mastery.mergeMasterySources([], [first, Object.assign({}, Array.from(dynamicRecords.values())[0] || {})], [], []);
 const dynamicSummary = mastery.calculateMasterySummary([dynamicItem], mastery.mergeMasterySources([], [first], [], []));
 assert.equal(dynamicSummary.total, 100001);
 assert.equal(dynamicSummary.new, 100000, "het grote bereik wordt rekenkundig geteld zonder 100001 records te maken");
 assert.equal(dynamicSummary.percentages.new + dynamicSummary.percentages.learning + dynamicSummary.percentages.acquired, 100);
+assert.equal(dynamicSummary.masteryLevel, 0, "één gedeeltelijk getal in 100001 mogelijke getallen rondt scopebreed af naar 0 zonder records te materialiseren");
+
+const secondItemAttempt = Object.assign({}, attempt("scope-1", "scope-session", "practice", true), { item_id: "scope-a", equivalent_item_ids: ["scope-a"] });
+const scopeRecords = mastery.mergeMasterySources([], [secondItemAttempt], [], []);
+const scopeSummary = mastery.calculateMasterySummary([{ id: "scope-a", type: "vocabulary" }, { id: "scope-b", type: "vocabulary" }], scopeRecords);
+assert.equal(scopeSummary.masteryLevel, 20, "scopepercentage is het gemiddelde van 40% en een niet-geoefend item van 0%");
 
 const verbSummary = mastery.calculateMasterySummary([{ id: "uf1-verb", type: "verb", conjugations: [{ subject: "je" }, { subject: "tu" }] }], new Map());
 assert.equal(verbSummary.total, 3, "infinitief en inhoudelijk afzonderlijke vervoegingsvarianten zijn aparte mastery-eenheden");
