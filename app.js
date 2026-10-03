@@ -1,6 +1,8 @@
 const DATA_URL = "./data/course.json?v=20261001-1";
 const STORAGE_KEY = "monParcoursProgressV1";
 const ACTIVE_SESSION_KEY = "monParcoursActiveSessionV1";
+const MASTERY_ATTEMPTS_KEY = "monParcoursMasteryAttemptsV1";
+const MASTERY_SERVER_CACHE_KEY = "monParcoursMasteryServerCacheV1";
 const INACTIVITY_TIMEOUT_MS = 60000;
 const MAX_DYNAMIC_NUMBER_ALL = 101;
 const ACCENTS = ["é", "è", "ê", "ë", "à", "â", "ç", "ù", "û", "ô", "î", "ï"];
@@ -31,7 +33,15 @@ const state = {
   selectedScope: null,
   session: null,
   pendingStartAction: null,
-  progress: loadProgress()
+  progress: loadProgress(),
+  mastery: {
+    localAttempts: loadMasteryAttempts(),
+    serverRows: [],
+    acceptedAttemptIds: [],
+    records: null,
+    refreshing: false
+  },
+  view: "loading"
 };
 
 const app = document.querySelector("#app");
@@ -49,6 +59,7 @@ document.addEventListener("change", handleChange);
 document.addEventListener("input", handlePracticeActivity);
 document.addEventListener("visibilitychange", handleVisibilityChange);
 if (window.addEventListener) window.addEventListener("pagehide", handlePageHide);
+if (window.addEventListener) window.addEventListener("monparcours:sync-complete", refreshMasteryFromServer);
 if (identityButton) identityButton.addEventListener("click", handleIdentityButtonClick);
 
 function handleIdentityButtonClick(event) {
@@ -84,6 +95,9 @@ function handleClick(event) {
     identityCompletionTimer = null;
     leaveSessionUnfinished();
     if (window.StudentIdentity) window.StudentIdentity.switchToLocal();
+    state.mastery.serverRows = [];
+    state.mastery.acceptedAttemptIds = [];
+    invalidateMasteryRecords();
     state.pendingStartAction = null;
     const identityForm = document.querySelector("#identity-form");
     if (identityForm) identityForm.reset();
@@ -145,7 +159,13 @@ function handleClick(event) {
   if (action === "reset-progress") {
     if (window.confirm("Veux-tu effacer toute ta progression locale ?\n\nWil je alle lokale voortgang op dit toestel wissen?")) {
       localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(MASTERY_ATTEMPTS_KEY);
+      localStorage.removeItem(MASTERY_SERVER_CACHE_KEY);
       state.progress = defaultProgress();
+      state.mastery.localAttempts = [];
+      state.mastery.serverRows = [];
+      state.mastery.acceptedAttemptIds = [];
+      invalidateMasteryRecords();
       strictToggle.checked = true;
       settingsDialog.close();
       renderHome();
@@ -268,6 +288,8 @@ async function submitStudentIdentity(form) {
   try {
     const connectedIdentity = await window.StudentIdentity.connectFromForm(provider, form);
     if (state.session && state.session.identity_subject !== connectedIdentity.subject) leaveSessionUnfinished();
+    restoreMasteryServerCache();
+    refreshMasteryFromServer();
     updateIdentityUi();
     form.reset();
     setIdentityMethod("school_email");
@@ -317,6 +339,7 @@ function scheduleIdentityDialogCompletion(connectedIdentity, resumePending) {
 
 function initializeIdentity() {
   updateIdentityUi();
+  restoreMasteryServerCache();
   if (window.MonParcoursSync) window.MonParcoursSync.scheduleFlush();
 }
 
@@ -333,7 +356,9 @@ async function loadCourse() {
       });
     });
     state.data = data;
+    invalidateMasteryRecords();
     if (!restoreActiveSession()) renderHome();
+    refreshMasteryFromServer();
   } catch (error) {
     app.innerHTML = '<section class="error-card"><p class="eyebrow">' + uiText("Échec du chargement", "Laden mislukt") + '</p><h1>' + uiText("Le cours n'a pas pu être ouvert.", "De cursus kon niet worden geopend.") + '</h1><p>' + uiText("Vérifie ta connexion puis recharge la page.", "Controleer je verbinding en laad de pagina opnieuw.") + '</p><p>' + uiText("Ouvre cette application via un serveur web local.", "Open deze map via een lokale webserver; dubbelklikken op index.html is niet voldoende.") + '</p></section>';
   }
@@ -341,22 +366,21 @@ async function loadCourse() {
 
 function renderHome() {
   if (!state.data) return;
+  state.view = "home";
   state.session = null;
   const trajectory = state.data.trajectories[state.trajectoryIndex];
   const last = state.progress.lastSession;
   const difficultCount = getDifficultItems("vocabulary").length;
-  const accuracy = state.progress.attempted
-    ? Math.round((state.progress.correct / state.progress.attempted) * 100)
-    : 0;
+  const overallMastery = masterySummaryForItems(allExerciseItems());
 
   app.innerHTML =
     '<section class="hero">' +
-      '<div><h1>' + uiText("Que veux-tu travailler ?", "Wat wil je oefenen?") + '</h1></div>' +
+      '<div><h1>' + uiText("Que veux-tu travailler ?", "Wat wil je oefenen?") + '</h1><p class="brand-tagline">' + uiText("Apprendre. S’entraîner. Progresser.", "Leren. Oefenen. Vooruitgaan.") + '</p></div>' +
     '</section>' +
     '<section class="quick-grid" aria-label="Jouw overzicht">' +
       dashboardCard("Continuer", "Verder oefenen", last ? (last.titleFr || last.title) : "Choisis d'abord une partie", last ? (last.titleNl || last.title) : "Kies eerst een onderdeel", last ? "Reprends où tu t'es arrêté" : "Ta dernière session apparaîtra ici", last ? "Ga door waar je stopte" : "Je laatste sessie verschijnt hier", "continue-session", !last, "play") +
       dashboardCard("Mes mots difficiles", "Mijn moeilijke woorden", difficultCount + (difficultCount === 1 ? " mot" : " mots"), difficultCount + " " + (difficultCount === 1 ? "woord" : "woorden"), "Répète ce qui n'est pas encore acquis", "Herhaal wat nog niet vlot gaat", "view-difficult", false, "spark") +
-      dashboardCard("Ma progression", "Mijn voortgang", accuracy + "% correct", accuracy + "% juist", state.progress.attempted + " réponses données", state.progress.attempted + " antwoorden gegeven", "view-progress", false, "chart") +
+      masteryDashboardCard(overallMastery) +
     '</section>' +
     journeySteps(1) +
     '<div class="home-browser">' +
@@ -366,9 +390,11 @@ function renderHome() {
         state.data.trajectories.map(function (entry, index) {
           const stats = trajectoryStats(index);
           const total = (entry.items || []).length;
+          const mastery = masterySummaryForItems((entry.items || []).filter(isExerciseItem));
           return '<button class="trajectory-card" type="button" data-action="select-trajectory" data-index="' + index + '" aria-pressed="' + (index === state.trajectoryIndex) + '">' +
             '<span class="trajectory-number"><strong>' + escapeHtml(entry.trajectory) + '</strong><span class="count-badge">' + total + '</span></span>' +
-            '<small class="trajectory-progress">' + uiText(stats.practiced + " / " + total + " travaillés", stats.practiced + " / " + total + " geoefend") + '</small>' +
+            '<small class="trajectory-progress">' + uiText(stats.practiced + " / " + total + " travaillés", stats.practiced + " / " + total + " geoefend") + '</small>' + masteryBar(mastery, true) +
+            '<small class="mastery-acquired">' + uiText(mastery.percentages.acquired + "% acquis", mastery.percentages.acquired + "% gekend") + '</small>' +
           '</button>';
         }).join("") +
       '</div>' +
@@ -379,10 +405,11 @@ function renderHome() {
         trajectory.units.map(function (unit) {
           const count = exerciseItemCount(itemsForUnit(trajectory, unit).filter(isExerciseItem));
           const unitStats = categoryStats(state.trajectoryIndex, unit.top_category);
+          const mastery = masterySummaryForItems(itemsForUnit(trajectory, unit).filter(isExerciseItem));
           return '<button class="unit-card" type="button" data-action="select-unit" data-order="' + unit.order + '">' +
             '<span class="unit-order">' + unit.order + '</span>' +
             '<span class="unit-copy"><strong>' + escapeHtml(unit.top_category) + '</strong><small>' + escapeHtml(unit.title) + '</small></span>' +
-            '<span class="unit-meta">' + (count ? uiText(unitStats.practiced + " / " + count + " travaillés", unitStats.practiced + " / " + count + " geoefend") : uiText("Information", "Cursusinfo")) + '</span>' +
+            '<span class="unit-meta">' + (count ? uiText(unitStats.practiced + " / " + count + " travaillés", unitStats.practiced + " / " + count + " geoefend") + masteryBar(mastery, true) + '<small class="mastery-acquired">' + uiText(mastery.percentages.acquired + "% acquis", mastery.percentages.acquired + "% gekend") + '</small>' : uiText("Information", "Cursusinfo")) + '</span>' +
           '</button>';
         }).join("") +
       '</div>' +
@@ -393,6 +420,23 @@ function renderHome() {
 function dashboardCard(titleFr, titleNl, valueFr, valueNl, descriptionFr, descriptionNl, action, disabled, icon) {
   return '<button class="quick-card" type="button" data-action="' + action + '"' + (disabled ? " disabled" : "") + '>' +
     '<span class="quick-icon ' + icon + '" aria-hidden="true"></span><span><small>' + uiText(titleFr, titleNl) + '</small><strong>' + uiText(valueFr, valueNl) + '</strong><em>' + uiText(descriptionFr, descriptionNl) + '</em></span></button>';
+}
+
+function masteryDashboardCard(summary) {
+  return '<button class="quick-card mastery-dashboard-card" type="button" data-action="view-progress">' +
+    '<span class="quick-icon chart" aria-hidden="true"></span><span><small>' + uiText("Ma progression", "Mijn voortgang") + '</small>' +
+    '<strong>' + uiText(summary.percentages.acquired + "% acquis", summary.percentages.acquired + "% gekend") + '</strong>' +
+    masteryBar(summary, false) +
+    '<em class="mastery-legend">' + uiText(summary.percentages.new + "% nouveau · " + summary.percentages.learning + "% en cours · " + summary.percentages.acquired + "% acquis", summary.percentages.new + "% nieuw · " + summary.percentages.learning + "% aan het leren · " + summary.percentages.acquired + "% gekend") + '</em></span></button>';
+}
+
+function masteryBar(summary, compact) {
+  const percentages = summary && summary.percentages ? summary.percentages : { new: 100, learning: 0, acquired: 0 };
+  const label = percentages.new + "% nouveau, " + percentages.learning + "% en cours, " + percentages.acquired + "% acquis";
+  return '<span class="mastery-bar' + (compact ? " is-compact" : "") + '" role="img" aria-label="' + escapeAttr(label) + '">' +
+    '<i class="mastery-new" style="width:' + percentages.new + '%"></i>' +
+    '<i class="mastery-learning" style="width:' + percentages.learning + '%"></i>' +
+    '<i class="mastery-known" style="width:' + percentages.acquired + '%"></i></span>';
 }
 
 function journeySteps(activeStep) {
@@ -417,6 +461,7 @@ function scrollToStepTarget(selector) {
 }
 
 function renderUnit() {
+  state.view = "unit";
   const trajectory = currentTrajectory();
   const unit = currentUnit();
   if (!unit) return renderHome();
@@ -424,13 +469,14 @@ function renderUnit() {
   const unitItems = itemsForUnit(trajectory, unit);
   const exerciseItems = unitItems.filter(isExerciseItem);
   const exerciseCount = exerciseItemCount(exerciseItems);
+  const unitMastery = masterySummaryForItems(exerciseItems);
   const soundItems = unitItems.filter(function (item) { return item.type === "sound_rule"; });
   const sectionsHtml = unit.study_sections.length
     ? unit.study_sections.map(function (section) {
         const blockItems = unitItems.filter(function (item) { return item.block === section.title && isExerciseItem(item); });
         const blockCount = exerciseItemCount(blockItems);
         return '<article class="structure-card">' +
-          '<div class="structure-heading"><div><small>' + uiText("Bloc d'étude", "Studieblok") + '</small><h3>' + escapeHtml(section.title) + '</h3></div>' +
+          '<div class="structure-heading"><div><small>' + uiText("Bloc d'étude", "Studieblok") + '</small><h3>' + escapeHtml(section.title) + '</h3>' + masteryInline(masterySummaryForItems(blockItems)) + '</div>' +
           (blockCount ? compactScopeButton(unit, section.title, "", section.title, blockCount, "Tout le bloc", "Hele blok") : "") + '</div>' +
           '<div class="subsection-list">' +
             section.subsections.map(function (subsection) {
@@ -450,17 +496,17 @@ function renderUnit() {
                 const categoryItems = exerciseItemsForScope(trajectory, unit, categoryScope);
                 const categoryCount = exerciseItemCount(categoryItems);
                 return categoryCount
-                  ? scopeChoiceCard(unit, section.title, subsection.title, contentType, categoryCount, categoryValue)
+                  ? scopeChoiceCard(unit, section.title, subsection.title, contentType, categoryCount, categoryValue, masterySummaryForItems(categoryItems))
                   : "";
               }).filter(Boolean);
               const auxiliaryItems = subset.filter(function (item) { return item.category === "être / avoir"; });
               if (auxiliaryItems.length && !subsection.content_types.includes("être / avoir")) {
-                categoryChoices.push(scopeChoiceCard(unit, section.title, subsection.title, "Être et avoir", exerciseItemCount(auxiliaryItems), "être / avoir"));
+                categoryChoices.push(scopeChoiceCard(unit, section.title, subsection.title, "Être et avoir", exerciseItemCount(auxiliaryItems), "être / avoir", masterySummaryForItems(auxiliaryItems)));
               }
               const categoryGrid = categoryChoices.length
                 ? '<div class="scope-choice-grid">' + categoryChoices.join("") + '</div>'
-                : (subsetCount ? '<div class="scope-choice-grid">' + scopeChoiceCard(unit, section.title, subsection.title, subsection.title, subsetCount) + '</div>' : '<span class="source-only">' + uiText("Informations du cours", "Alleen cursusinfo") + '</span>');
-              return '<section class="subsection-row"><div class="subsection-title"><h4>' + escapeHtml(subsection.title) + '</h4>' +
+                : (subsetCount ? '<div class="scope-choice-grid">' + scopeChoiceCard(unit, section.title, subsection.title, subsection.title, subsetCount, "", masterySummaryForItems(subset)) + '</div>' : '<span class="source-only">' + uiText("Informations du cours", "Alleen cursusinfo") + '</span>');
+              return '<section class="subsection-row"><div class="subsection-title"><div><h4>' + escapeHtml(subsection.title) + '</h4>' + (subsetCount ? masteryInline(masterySummaryForItems(subset)) : "") + '</div>' +
                 (subsetCount && categoryChoices.length > 1 ? compactScopeButton(unit, section.title, subsection.title, subsection.title, subsetCount, "Tout ce contenu", "Alles hiervan") : "") +
                 '</div>' + categoryGrid + '</section>';
             }).join("") +
@@ -472,7 +518,7 @@ function renderUnit() {
     breadcrumbHtml([{ label: trajectory.trajectory, action: "home" }]) +
     journeySteps(3) +
     '<section class="unit-hero"><div><p class="eyebrow">' + escapeHtml(unit.top_category) + '</p><h1>' + escapeHtml(unit.title) + '</h1>' +
-    '<p class="lede">' + exerciseCount + ' ' + uiText("exercices", "oefeningen") + '</p></div>' +
+    '<p class="lede">' + exerciseCount + ' ' + uiText("exercices", "oefeningen") + '</p>' + masteryInline(unitMastery) + '</div>' +
     (exerciseCount ? compactScopeButton(unit, "", "", unit.title, exerciseCount, "Toute la partie", "Hele onderdeel") : "") + '</section>' +
     '<section class="structure-stack" aria-label="Cursusstructuur">' + sectionsHtml + '</section>' +
     renderSoundNotes(soundItems);
@@ -489,9 +535,14 @@ function compactScopeButton(unit, block, subsection, title, count, labelFr, labe
     uiText(labelFr, labelNl) + '<span>' + count + '</span></button>';
 }
 
-function scopeChoiceCard(unit, block, subsection, title, count, category) {
+function scopeChoiceCard(unit, block, subsection, title, count, category, mastery) {
   return '<button class="scope-choice-card" type="button"' + scopeAttributes(unit, block, subsection, title, category) +
-    '<strong>' + escapeHtml(displayScopeTitle(title)) + '</strong><span>' + count + ' éléments</span><small lang="nl">' + escapeHtml(scopeLabelDutch(title)) + '</small></button>';
+    '<strong>' + escapeHtml(displayScopeTitle(title)) + '</strong><span>' + count + ' éléments</span><small lang="nl">' + escapeHtml(scopeLabelDutch(title)) + '</small>' + (mastery ? masteryBar(mastery, true) + '<small class="mastery-acquired">' + uiText(mastery.acquired + " acquis", mastery.acquired + " gekend") + '</small>' : "") + '</button>';
+}
+
+function masteryInline(summary) {
+  if (!summary || !summary.total) return "";
+  return '<span class="mastery-inline">' + masteryBar(summary, true) + '<small>' + uiText(summary.practiced + " / " + summary.total + " travaillés · " + summary.percentages.acquired + "% acquis", summary.practiced + " / " + summary.total + " geoefend · " + summary.percentages.acquired + "% gekend") + '</small></span>';
 }
 
 function displayScopeTitle(title) {
@@ -536,6 +587,7 @@ function renderSoundNotes(items) {
 }
 
 function renderSetup() {
+  state.view = "setup";
   const trajectory = currentTrajectory();
   const unit = currentUnit();
   const scope = state.selectedScope;
@@ -875,6 +927,7 @@ function createClientId() {
 }
 
 function renderQuestion(message) {
+  state.view = "practice";
   const session = state.session;
   const question = session.questions[session.index];
   if (!question) return finishSession();
@@ -910,7 +963,7 @@ function submitAnswer(rawAnswer) {
   markPracticeActivity();
   session.attempt_count += 1;
   const correct = isCorrect(rawAnswer, question.answers);
-  recordSyncAttempt(question, correct);
+  session.lastMasteryFeedback = recordSyncAttempt(question, correct);
 
   if (session.mode === "test") {
     session.results.push({ question: question, answer: rawAnswer, correct: correct });
@@ -963,6 +1016,7 @@ function showFeedback(correct, messageFr, messageNl, allowNext, clearInput) {
   const submit = document.querySelector(".submit-button");
   feedback.className = "feedback visible " + (correct ? "correct" : "wrong");
   feedback.innerHTML = '<span class="feedback-mark" aria-hidden="true">' + (correct ? "✓" : "!") + '</span><div><p>' + uiHtml(messageFr, messageNl) + '</p>' +
+    masteryFeedbackHtml(state.session && state.session.lastMasteryFeedback) +
     (allowNext ? '<button class="button button-primary" type="button" data-action="next-question">' + uiText("Suivant", "Volgende") + '</button>' : "") + '</div>';
   if (allowNext) {
     input.disabled = true;
@@ -1008,15 +1062,16 @@ function finishSession() {
 
 function recordSyncAttempt(question, correct) {
   const session = state.session;
-  if (!session || !session.identity_verified) return;
+  if (!session || !session.identity_verified) return null;
   const stableIds = question.stableItemIds || (question.stableItemId ? [question.stableItemId] : []);
-  if (!stableIds.length) return;
+  if (!stableIds.length) return null;
   const item = question.item || {};
   const path = session.course_path;
   const attemptNumber = session.sync_attempts.filter(function (attempt) {
     return attempt.item_id === stableIds[0] && attempt.item_variant === (question.itemVariant || "");
   }).length + 1;
-  session.sync_attempts.push({
+  const before = masteryStatusForQuestion(question);
+  const attempt = {
     client_attempt_id: createClientId(),
     item_id: stableIds[0],
     equivalent_item_ids: stableIds,
@@ -1034,9 +1089,15 @@ function recordSyncAttempt(question, correct) {
     correct_answers: question.answers.slice(),
     was_correct: correct,
     attempt_number: attemptNumber,
-    created_at: new Date().toISOString()
-  });
+    created_at: new Date().toISOString(),
+    client_session_id: session.client_session_id,
+    identity_subject: session.identity_subject
+  };
+  session.sync_attempts.push(attempt);
+  appendMasteryAttempt(attempt);
+  const after = masteryStatusForQuestion(question);
   syncSessionSnapshot();
+  return { before: before, after: after };
 }
 
 function syncSessionSnapshot() {
@@ -1070,6 +1131,7 @@ function syncSessionSnapshot() {
 }
 
 function renderSummary() {
+  state.view = "summary";
   const session = state.session;
   const results = session.mode === "test"
     ? session.results
@@ -1144,10 +1206,13 @@ function practiceTestErrors() {
 }
 
 function renderProgress() {
+  state.view = "progress";
   const accuracy = state.progress.attempted ? Math.round((state.progress.correct / state.progress.attempted) * 100) : 0;
+  const overall = masterySummaryForItems(allExerciseItems());
   app.innerHTML =
     breadcrumbHtml([{ label: "Start", labelFr: "Accueil", action: "home" }]) +
     '<section class="page-heading"><p class="eyebrow">' + uiText("Sur cet appareil", "Op dit toestel") + '</p><h1>' + uiText("Ma progression", "Mijn voortgang") + '</h1><p class="lede">' + uiText("Tes résultats restent enregistrés dans ce navigateur.", "Je resultaten blijven bewaard in deze browser.") + '</p></section>' +
+    '<section class="mastery-overview"><h2>' + uiText(overall.percentages.acquired + "% acquis", overall.percentages.acquired + "% gekend") + '</h2>' + masteryBar(overall, false) + '<div class="mastery-counts"><span>' + uiText("Nouveau", "Nieuw") + '<strong>' + overall.new + '</strong></span><span>' + uiText("En cours", "Aan het leren") + '<strong>' + overall.learning + '</strong></span><span>' + uiText("Acquis", "Gekend") + '<strong>' + overall.acquired + '</strong></span></div></section>' +
     '<section class="stat-grid"><article><small>' + uiText("Réponses", "Antwoorden") + '</small><strong>' + state.progress.attempted + '</strong></article>' +
       '<article><small>' + uiText("Correctes", "Juist") + '</small><strong>' + state.progress.correct + '</strong></article>' +
       '<article><small>' + uiText("Erreurs", "Fouten") + '</small><strong>' + state.progress.wrong + '</strong></article>' +
@@ -1155,11 +1220,13 @@ function renderProgress() {
     '<section class="progress-stack">' +
       state.data.trajectories.map(function (trajectory, trajectoryIndex) {
         const stats = trajectoryStats(trajectoryIndex);
-        return '<article class="progress-card"><header><div><p class="eyebrow">' + escapeHtml(trajectory.trajectory) + '</p><h2>' + uiText(stats.practiced + " éléments travaillés", stats.practiced + " items geoefend") + '</h2></div><strong>' + stats.accuracy + '%</strong></header>' +
-          '<div class="bar"><span style="width:' + stats.coverage + '%"></span></div>' +
+        const trajectoryMastery = masterySummaryForItems((trajectory.items || []).filter(isExerciseItem));
+        return '<article class="progress-card"><header><div><p class="eyebrow">' + escapeHtml(trajectory.trajectory) + '</p><h2>' + uiText(stats.practiced + " éléments travaillés", stats.practiced + " items geoefend") + '</h2></div><strong>' + trajectoryMastery.percentages.acquired + '% ' + uiText("acquis", "gekend") + '</strong></header>' +
+          masteryBar(trajectoryMastery, false) +
           '<div class="category-progress">' + trajectory.units.map(function (unit) {
             const category = categoryStats(trajectoryIndex, unit.top_category);
-            return '<div><span>' + escapeHtml(unit.top_category) + '</span><strong>' + category.practiced + '</strong></div>';
+            const unitMastery = masterySummaryForItems(itemsForUnit(trajectory, unit).filter(isExerciseItem));
+            return '<div><span>' + escapeHtml(unit.top_category) + '</span><strong>' + category.practiced + ' · ' + unitMastery.percentages.acquired + '% ' + uiText("acquis", "gekend") + '</strong></div>';
           }).join("") + '</div></article>';
       }).join("") +
     '</section><button class="text-button danger" type="button" data-action="reset-progress">' + uiText("Effacer ma progression locale", "Wis mijn lokale voortgang") + '</button>';
@@ -1453,6 +1520,177 @@ function recordAttempt(question, correct) {
   progress.wrong += correct ? 0 : 1;
   progress.updatedAt = now;
   saveProgress();
+}
+
+function allExerciseItems() {
+  if (!state.data) return [];
+  return state.data.trajectories.reduce(function (items, trajectory) {
+    return items.concat((trajectory.items || []).filter(isExerciseItem));
+  }, []);
+}
+
+function loadMasteryAttempts() {
+  try {
+    const stored = JSON.parse(localStorage.getItem(MASTERY_ATTEMPTS_KEY));
+    return Array.isArray(stored) ? stored : [];
+  } catch (error) {
+    return [];
+  }
+}
+
+function saveMasteryAttempts() {
+  localStorage.setItem(MASTERY_ATTEMPTS_KEY, JSON.stringify(state.mastery.localAttempts));
+}
+
+function invalidateMasteryRecords() {
+  if (state.mastery) state.mastery.records = null;
+}
+
+function appendMasteryAttempt(attempt) {
+  if (!attempt || !attempt.client_attempt_id) return;
+  if (state.mastery.localAttempts.some(function (entry) { return entry.client_attempt_id === attempt.client_attempt_id; })) return;
+  state.mastery.localAttempts.push({
+    client_attempt_id: attempt.client_attempt_id,
+    client_session_id: attempt.client_session_id,
+    identity_subject: attempt.identity_subject,
+    item_id: attempt.item_id,
+    equivalent_item_ids: (attempt.equivalent_item_ids || []).slice(),
+    item_variant: attempt.item_variant || "",
+    mode: attempt.mode,
+    was_correct: attempt.was_correct === true,
+    created_at: attempt.created_at
+  });
+  saveMasteryAttempts();
+  invalidateMasteryRecords();
+}
+
+function legacyMasteryRows() {
+  if (!state.data) return [];
+  const byLegacy = new Map();
+  allExerciseItems().forEach(function (item) { byLegacy.set(item._id, item); });
+  const rows = [];
+  Object.keys(state.progress.items || {}).forEach(function (legacyId) {
+    const direct = byLegacy.get(legacyId);
+    let item = direct;
+    let variant = "";
+    if (!item) {
+      byLegacy.forEach(function (candidate, candidateId) {
+        if (!item && legacyId.indexOf(candidateId + "::") === 0) {
+          item = candidate;
+          variant = legacyId.slice(candidateId.length + 2);
+        }
+      });
+    }
+    const stats = state.progress.items[legacyId];
+    if (!item || !stats || !stats.attempts) return;
+    rows.push({
+      item_id: item.id,
+      item_variant: variant,
+      practiced_attempts: stats.attempts,
+      independent_attempts: 0,
+      independent_correct: 0,
+      independent_session_count: 0,
+      latest_independent_correct: null
+    });
+  });
+  return rows;
+}
+
+function currentMasteryRecords() {
+  if (state.mastery.records) return state.mastery.records;
+  const api = window.MonParcoursMastery;
+  if (!api) return new Map();
+  const identity = currentStudentIdentity();
+  const attempts = state.mastery.localAttempts.filter(function (attempt) {
+    return !attempt.identity_subject || attempt.identity_subject === identity.subject;
+  });
+  state.mastery.records = api.mergeMasterySources(
+    state.mastery.serverRows,
+    attempts,
+    state.mastery.acceptedAttemptIds,
+    legacyMasteryRows()
+  );
+  return state.mastery.records;
+}
+
+function masterySummaryForItems(items) {
+  const api = window.MonParcoursMastery;
+  if (api) return api.calculateMasterySummary(items || [], currentMasteryRecords());
+  const total = exerciseItemCount(items || []);
+  return { total: total, practiced: 0, new: total, learning: 0, acquired: 0, percentages: { new: total ? 100 : 0, learning: 0, acquired: 0 } };
+}
+
+function masteryStatusForQuestion(question) {
+  const api = window.MonParcoursMastery;
+  if (!api || !question) return "new";
+  const itemId = question.stableItemId || (question.stableItemIds || [])[0];
+  const record = currentMasteryRecords().get(api.keyFor(itemId, question.itemVariant || ""));
+  return api.getMasteryStatus(record);
+}
+
+function masteryFeedbackHtml(change) {
+  if (!change) return "";
+  if (change.before === "learning" && change.after === "acquired") {
+    return '<p class="mastery-feedback is-newly-acquired">' + uiText("Acquis !", "Nu gekend!") + '</p>';
+  }
+  const labels = {
+    new: ["Nouveau", "Nieuw"],
+    learning: ["Statut : En cours", "Status: Aan het leren"],
+    acquired: ["Statut : Acquis", "Status: Gekend"]
+  };
+  const label = labels[change.after] || labels.learning;
+  return '<p class="mastery-feedback">' + uiText(label[0], label[1]) + '</p>';
+}
+
+function restoreMasteryServerCache() {
+  const identity = currentStudentIdentity();
+  state.mastery.serverRows = [];
+  state.mastery.acceptedAttemptIds = [];
+  try {
+    const cache = JSON.parse(localStorage.getItem(MASTERY_SERVER_CACHE_KEY));
+    if (cache && cache.identity_subject === identity.subject && Array.isArray(cache.items)) state.mastery.serverRows = cache.items;
+  } catch (error) {
+    /* Een beschadigde cache mag de lokale trainer niet blokkeren. */
+  }
+  invalidateMasteryRecords();
+}
+
+async function refreshMasteryFromServer() {
+  if (state.mastery.refreshing || !window.MonParcoursSupabase || !window.MonParcoursSupabase.isConfigured() || !window.StudentIdentity) return false;
+  const identity = currentStudentIdentity();
+  const credential = window.StudentIdentity.getSyncCredential && window.StudentIdentity.getSyncCredential();
+  if (!identity || !identity.verified || identity.provider === "local" || !credential) return false;
+  state.mastery.refreshing = true;
+  try {
+    const pendingIds = state.mastery.localAttempts.filter(function (attempt) {
+      return attempt.identity_subject === identity.subject;
+    }).map(function (attempt) { return attempt.client_attempt_id; }).filter(Boolean).slice(-5000);
+    const result = await window.MonParcoursSupabase.rpc("get_student_mastery", {
+      p_identity_token: credential,
+      p_pending_attempt_ids: pendingIds
+    });
+    const rows = result && Array.isArray(result.items) ? result.items : [];
+    const accepted = result && Array.isArray(result.accepted_pending_attempt_ids) ? result.accepted_pending_attempt_ids.map(String) : [];
+    state.mastery.serverRows = rows;
+    state.mastery.acceptedAttemptIds = accepted;
+    if (accepted.length) {
+      const acceptedSet = new Set(accepted);
+      state.mastery.localAttempts = state.mastery.localAttempts.filter(function (attempt) {
+        return attempt.identity_subject !== identity.subject || !acceptedSet.has(String(attempt.client_attempt_id));
+      });
+      saveMasteryAttempts();
+      state.mastery.acceptedAttemptIds = [];
+    }
+    localStorage.setItem(MASTERY_SERVER_CACHE_KEY, JSON.stringify({ identity_subject: identity.subject, items: rows, updated_at: new Date().toISOString() }));
+    invalidateMasteryRecords();
+    if (state.view === "home") renderHome();
+    else if (state.view === "unit") renderUnit();
+    return true;
+  } catch (error) {
+    return false;
+  } finally {
+    state.mastery.refreshing = false;
+  }
 }
 
 function trajectoryStats(index) {

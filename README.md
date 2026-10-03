@@ -13,6 +13,7 @@ Een leerlingvriendelijke, statische en tweetalige studietool voor Franse woorden
 - Strenge beoordeling van accenten.
 - Accentknoppen bij elk antwoordveld.
 - Fout-herhaling, moeilijke woorden, voortgang per Trajet en categorie en verder oefenen.
+- Een afgeleid beheersingsmodel met Nieuw, Aan het leren en Gekend; Gekend vereist drie correcte zelfstandige antwoorden, 75% correct, twee sessies en een laatste juiste poging.
 - Synoniemen met dezelfde Nederlandse prompt binnen dezelfde JSON-subsectie worden als gelijkwaardige antwoorden aanvaard.
 - Responsive ontwerp voor laptop, Chromebook, tablet en smartphone.
 
@@ -54,6 +55,7 @@ Met Node.js kun je de ingebouwde controles uitvoeren:
 7. node tests/actes-de-parole-regression.js
 8. node tests/identity-button-regression.js
 9. node tests/trajectories-4-6-regression.js
+10. node tests/mastery-regression.js
 
 De volledige audit controleert alle trajecten en cursusonderdelen, de koppeling van studieblokken en subsecties, alle werkwoordvervoegingen, expliciete alternatieve antwoorden en synoniemgroepen. De GitHub Pages-audit controleert de rootstructuur, relatieve assets, subpadwerking, localStorage en de afwezigheid van een backend of buildstap.
 
@@ -87,6 +89,7 @@ Elk leeritem heeft daarnaast een permanente `id`. Voer na het toevoegen van nieu
 - `student-identity.js` is de centrale, verwisselbare identificatielaag.
 - `supabase-client.js` doet alleen begrensde RPC-aanroepen.
 - `sync-manager.js` bewaart mislukte verzendingen in `monParcoursSyncQueueV1` en probeert ze later opnieuw.
+- `mastery.js` bevat de gedeelde statusdefinitie voor leerlingtool en dashboard; `monParcoursMasteryAttemptsV1` bewaart alleen de minimale lokale, nog te verzoenen pogingsmetadata en nooit getypte antwoorden.
 - `config.js` bevat uitsluitend de Project URL en publishable key.
 - Een nieuwe leerling moet zich eenmaal online met een actieve schoolmailidentiteit koppelen voordat oefenen mogelijk is.
 - Een eerder gekoppelde leerling kan bij tijdelijke internetuitval blijven oefenen; resultaten wachten dan in de lokale syncqueue.
@@ -104,6 +107,7 @@ Gewone nieuwe Trajets vereisen geen JavaScript-aanpassing zolang dezelfde datast
 - student-identity.js — modulaire leerlingidentiteit
 - supabase-client.js — optionele publieke Supabase-RPC-client
 - sync-manager.js — offline outbox en idempotente synchronisatie
+- mastery.js — centrale, herbruikbare berekening van Nieuw / Aan het leren / Gekend
 - config.js — publieke Supabase-configuratie
 - data/course.json — alle cursusinhoud
 - supabase/ — database, functies, RLS en optionele testdata

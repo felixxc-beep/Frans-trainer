@@ -7,7 +7,7 @@
     classes: "id,name,is_active,created_at",
     students: "id,class_id,display_name,is_active,created_at",
     practice_sessions: "id,student_id,client_session_id,trajectory,top_category,lesson,block,subsection,exercise_key,mode,question_count,attempt_count,correct_count,incorrect_count,active_duration_seconds,started_at,finished_at",
-    practice_attempts: "id,session_id,student_id,item_id,item_variant,item_type,trajectory,top_category,lesson,block,subsection,exercise_key,mode,correct_answers,was_correct,attempt_number,created_at"
+    practice_attempts: "id,session_id,student_id,item_id,equivalent_item_ids,item_variant,item_type,trajectory,top_category,lesson,block,subsection,exercise_key,mode,correct_answers,was_correct,attempt_number,created_at"
   });
   const MANAGEMENT_COLUMNS = Object.freeze({
     classes: "id,name,class_code,is_active,created_at,updated_at",
@@ -652,12 +652,29 @@
     if (!student) return emptyState("Leerling niet gevonden", "Deze leerling valt niet binnen de huidige RLS-resultaten.");
     const classRow = data.classes.find(function (row) { return row.id === student.class_id; });
     const overview = studentOverview(data, student);
+    const mastery = studentMasterySummary(overview.attemptRows);
     const sessions = overview.sessionRows.slice().sort(function (left, right) { return new Date(right.finished_at || right.started_at) - new Date(left.finished_at || left.started_at); });
     return breadcrumbs([{ label: "Dashboard", action: "view-dashboard" }, { label: classRow ? classRow.name : "Klas", action: "view-class", id: student.class_id }, { label: student.display_name || "Naamloze leerling" }]) +
       '<div class="page-heading"><div><p class="eyebrow">Leerlingdetail</p><h2>' + escapeHtml(student.display_name || "Naamloze leerling") + '</h2><p class="muted">' + escapeHtml(classRow ? classRow.name : "Onbekende klas") + ' · laatste activiteit ' + escapeHtml(formatDate(overview.lastActivity)) + '</p></div><div class="export-actions"><button class="button button-secondary" type="button" data-action="export-student" data-id="' + escapeHtml(student.id) + '">Sessies CSV</button><button class="button button-secondary" type="button" data-action="export-difficult-student" data-id="' + escapeHtml(student.id) + '">Moeilijke items CSV</button></div></div>' +
-      '<section class="stat-grid">' + statCard("Sessies", overview.sessions) + statCard("Oefeningen gemaakt", overview.exercisesMade, "werkelijk beantwoord") + statCard("Pogingen", overview.attempts, "incl. herhalingen") + statCard("Juist / fout", overview.correct + " / " + overview.incorrect) + statCard("Correct", overview.accuracy + "%") + statCard("Actieve oefentijd", overview.hasMeasuredDuration ? formatActiveDuration(overview.activeDurationSeconds) : "—", overview.hasMeasuredDuration ? "alleen gemeten sessies" : "nog niet gemeten") + '</section>' +
+      '<section class="stat-grid">' + statCard("Sessies", overview.sessions) + statCard("Oefeningen gemaakt", overview.exercisesMade, "werkelijk beantwoord") + statCard("Pogingen", overview.attempts, "incl. herhalingen") + statCard("Juist / fout", overview.correct + " / " + overview.incorrect) + statCard("Correct", overview.accuracy + "%") + statCard("Gekend", mastery ? mastery.percentages.acquired + "%" : "—", mastery ? mastery.acquired + " gekend · " + mastery.learning + " aan het leren · " + mastery.new + " nieuw" : "mastery.js niet beschikbaar") + statCard("Actieve oefentijd", overview.hasMeasuredDuration ? formatActiveDuration(overview.activeDurationSeconds) : "—", overview.hasMeasuredDuration ? "alleen gemeten sessies" : "nog niet gemeten") + '</section>' +
       '<section class="section-block"><div class="section-heading"><div><h2>Sessiegeschiedenis</h2><p>Open een sessie voor itemdetails en modelantwoorden.</p></div></div><div class="session-list">' + (sessions.length ? sessions.map(function (session) { return renderSessionCard(session, overview.attemptRows); }).join("") : emptyState("Nog geen sessies", "Binnen de gekozen filters zijn voor deze leerling geen sessies gevonden.")) + '</div></section>' +
       '<section class="section-block">' + renderDifficult(difficultItems(overview.attemptRows, state.courseIndex), "Moeilijk voor deze leerling") + '</section>';
+  }
+
+  function studentMasterySummary(attempts) {
+    if (!window.MonParcoursMastery || !state.course) return null;
+    const exerciseTypes = new Set(["vocabulary", "verb", "phrase", "grammar_rule", "number"]);
+    const items = asArray(state.course.trajectories).reduce(function (all, trajectory) {
+      return all.concat(asArray(trajectory.items).filter(function (item) { return exerciseTypes.has(item.type); }));
+    }, []);
+    const localAttempts = asArray(attempts).map(function (attempt) {
+      return Object.assign({}, attempt, {
+        client_attempt_id: attempt.id,
+        client_session_id: attempt.session_id
+      });
+    });
+    const records = window.MonParcoursMastery.mergeMasterySources([], localAttempts, [], []);
+    return window.MonParcoursMastery.calculateMasterySummary(items, records);
   }
 
   function renderCreatedStudents(classRow) {
@@ -1200,6 +1217,7 @@
     summarize: summarize,
     classOverview: classOverview,
     studentOverview: studentOverview,
+    studentMasterySummary: studentMasterySummary,
     difficultItems: difficultItems,
     describeItem: describeItem,
     sessionStats: sessionStats,

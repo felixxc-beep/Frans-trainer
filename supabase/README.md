@@ -128,3 +128,23 @@ Voer na `phase5-school-email.sql` **handmatig** `phase5-active-time.sql` uit voo
 - verandert geen leerling-ID's, sync-tokens, pogingen, RLS-policies of cursusdata.
 
 Publiceer de nieuwe frontend pas na deze migratie: de nieuwe dashboardquery verwacht dat de kolom bestaat.
+
+## Fase 5: beheersingsmodel
+
+Voer na de eerdere fase-5-migraties **handmatig** `phase5-mastery.sql` uit voordat je de mastery-frontend publiceert. Het script:
+
+- maakt geen nieuwe tabel en slaat geen permanente statusvlag op;
+- leidt beheersing telkens af uit de bestaande, idempotente sessies en pogingen;
+- geeft een leerling via `get_student_mastery` uitsluitend eigen aggregaten per `item_id` en `item_variant`;
+- geeft geen prompts, modelantwoorden of getypte antwoorden terug;
+- gebruikt een publieke `SECURITY INVOKER`-wrapper en private `SECURITY DEFINER`-logica met `search_path = ''`;
+- laat alle directe rechten op `practice_attempts` ongewijzigd.
+
+Live procedure:
+
+1. Open Supabase → **SQL Editor** → **New query**.
+2. Kopieer de volledige inhoud van `supabase/phase5-mastery.sql` en klik **Run**.
+3. Controleer onder **Database → Functions** dat `public.get_student_mastery` en `private.get_student_mastery_impl` bestaan.
+4. Publiceer daarna `mastery.js`, de bijgewerkte HTML/CSS/JavaScriptbestanden en de overige repositorybestanden naar GitHub Pages.
+5. Meld een testleerling aan, maak zelfstandige pogingen in minstens twee sessies en vernieuw de pagina.
+6. Controleer dat de voortgang behouden blijft, dat offline gemaakte pogingen onmiddellijk meetellen en dat `monParcoursSyncQueueV1` na herverbinden leegloopt zonder dubbele databasepogingen.

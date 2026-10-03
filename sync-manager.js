@@ -87,6 +87,9 @@
     } finally {
       flushing = false;
     }
+    if (sent && window.dispatchEvent && typeof window.CustomEvent === "function") {
+      window.dispatchEvent(new CustomEvent("monparcours:sync-complete", { detail: { sent: sent } }));
+    }
     return { sent: sent, pending: readQueue().length };
   }
 
