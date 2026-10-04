@@ -180,7 +180,7 @@ setImmediate(async () => {
   assert.equal(questions.length, 20);
   assert.equal(new Set(questions.map(question => question.stableItemId)).size, 20);
   assert.ok(questions.every(question => taskData.item_ids.includes(question.stableItemId)));
-  assert.equal(vm.runInContext("state.session.mode", context), "learn", "nieuwe taakitems starten met kennismaking");
+  assert.equal(vm.runInContext("state.session.mode", context), "practice", "rechtstreeks gestarte taak levert zelfstandig bewijs");
   assert.equal(payload.session.assignment_id, taskData.id);
   assert.equal(payload.session.question_count, 20);
   assert.equal(payload.session.attempt_count, 0);

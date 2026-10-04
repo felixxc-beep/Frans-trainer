@@ -21,6 +21,10 @@
       independentCorrect: 0,
       independentSessionIds: new Set(),
       independentSessionCount: 0,
+      independentCorrectSessionIds: new Set(),
+      independentCorrectSessionCount: 0,
+      firstIndependentAt: "",
+      firstIndependentCorrect: null,
       latestIndependentAt: "",
       latestIndependentCorrect: null
     };
@@ -45,6 +49,20 @@
       Number(row.independent_session_count == null ? row.independentSessionCount : row.independent_session_count) || 0,
       record.independentSessionIds.size
     );
+    const correctSessionIds = row.independent_correct_session_ids || row.independentCorrectSessionIds || [];
+    record.independentCorrectSessionIds = new Set(Array.isArray(correctSessionIds) ? correctSessionIds.filter(Boolean).map(String) : []);
+    record.independentCorrectSessionCount = Math.max(
+      Number(row.independent_correct_session_count == null ? row.independentCorrectSessionCount : row.independent_correct_session_count) || 0,
+      record.independentCorrectSessionIds.size,
+      record.independentCorrect > 0
+        ? record.independentCorrect === record.independentAttempts ? record.independentSessionCount : 1 : 0
+    );
+    record.firstIndependentAt = String(row.first_independent_at || row.firstIndependentAt || "");
+    const first = row.first_independent_correct == null ? row.firstIndependentCorrect : row.first_independent_correct;
+    record.firstIndependentCorrect = first == null
+      ? record.independentCorrect === record.independentAttempts && record.independentAttempts > 0 ? true
+        : record.independentCorrect === 0 && record.independentAttempts > 0 ? false : null
+      : Boolean(first);
     record.latestIndependentAt = String(row.latest_independent_at || row.latestIndependentAt || "");
     const latest = row.latest_independent_correct == null ? row.latestIndependentCorrect : row.latest_independent_correct;
     record.latestIndependentCorrect = latest == null ? null : Boolean(latest);
@@ -68,13 +86,16 @@
     if (getMasteryStatus(value) === STATUS.ACQUIRED) return 100;
     if (value.practicedAttempts < 1) return 0;
     if (value.independentAttempts < 1) return 10;
-    const correct = value.independentCorrect;
-    const evidence = correct < 1 ? 10
-      : correct === 1 ? 40
-      : correct === 2 ? 60
-      : Math.min(90, 75 + (correct - 3) * 3);
-    const accuracy = correct / value.independentAttempts;
-    return Math.max(10, Math.min(90, Math.round(evidence * accuracy)));
+    if (value.independentCorrect < 1) return 15;
+    const firstCorrect = value.firstIndependentCorrect === true;
+    const correctSessions = value.independentCorrectSessionCount;
+    const base = correctSessions >= 2 ? value.independentCorrect >= 3 ? 90 : 80
+      : firstCorrect ? value.independentCorrect >= 2 ? 70 : 60 : 40;
+    const accuracy = value.independentCorrect / value.independentAttempts;
+    // A weak full-history accuracy lowers partial mastery; Acquis stays a separate strict gate.
+    const penalty = Math.round(Math.max(0, (firstCorrect ? 1 : 0.5) - accuracy) * 40);
+    const level = Math.max(15, base - penalty);
+    return value.latestIndependentCorrect === false ? Math.min(70, level) : Math.min(90, level);
   }
 
   function addAttempt(records, attempt) {
@@ -85,12 +106,20 @@
       const record = records.get(key) || emptyRecord(itemId, variant);
       record.practicedAttempts += 1;
       if (INDEPENDENT_MODES.has(attempt.mode)) {
+        const at = String(attempt.created_at || "");
+        if (record.independentAttempts === 0 || record.firstIndependentAt && at && Date.parse(at) < Date.parse(record.firstIndependentAt)) {
+          record.firstIndependentAt = at;
+          record.firstIndependentCorrect = attempt.was_correct === true;
+        }
         record.independentAttempts += 1;
-        if (attempt.was_correct === true) record.independentCorrect += 1;
         const sessionId = String(attempt.client_session_id || attempt.session_id || "");
         if (sessionId) record.independentSessionIds.add(sessionId);
         record.independentSessionCount = Math.max(record.independentSessionCount, record.independentSessionIds.size);
-        const at = String(attempt.created_at || "");
+        if (attempt.was_correct === true) {
+          record.independentCorrect += 1;
+          if (sessionId) record.independentCorrectSessionIds.add(sessionId);
+          record.independentCorrectSessionCount = Math.max(record.independentCorrectSessionCount, record.independentCorrectSessionIds.size, 1);
+        }
         if (isAtLeastAsRecent(at, record.latestIndependentAt)) {
           record.latestIndependentAt = at;
           record.latestIndependentCorrect = attempt.was_correct === true;
@@ -131,7 +160,15 @@
       combined.independentAttempts += record.independentAttempts;
       combined.independentCorrect += record.independentCorrect;
       record.independentSessionIds.forEach(function (id) { combined.independentSessionIds.add(id); });
+      record.independentCorrectSessionIds.forEach(function (id) { combined.independentCorrectSessionIds.add(id); });
       combined.independentSessionCount = Math.max(combined.independentSessionCount, record.independentSessionCount, combined.independentSessionIds.size);
+      combined.independentCorrectSessionCount = Math.max(combined.independentCorrectSessionCount, record.independentCorrectSessionCount, combined.independentCorrectSessionIds.size);
+      if (record.firstIndependentAt && (!combined.firstIndependentAt || Date.parse(record.firstIndependentAt) < Date.parse(combined.firstIndependentAt))) {
+        combined.firstIndependentAt = record.firstIndependentAt;
+        combined.firstIndependentCorrect = record.firstIndependentCorrect;
+      } else if (!combined.firstIndependentAt && combined.firstIndependentCorrect == null && record.firstIndependentCorrect != null) {
+        combined.firstIndependentCorrect = record.firstIndependentCorrect;
+      }
       if (record.latestIndependentAt && isAtLeastAsRecent(record.latestIndependentAt, combined.latestIndependentAt)) {
         combined.latestIndependentAt = record.latestIndependentAt;
         combined.latestIndependentCorrect = record.latestIndependentCorrect;

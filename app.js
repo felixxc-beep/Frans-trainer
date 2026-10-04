@@ -534,7 +534,7 @@ function assignmentCard(assignment) {
     '<strong class="assignment-card-title">' + assignmentContentIcon(assignment) + escapeHtml(assignment.title) + '</strong><span>' + assignmentDue(assignment) + '</span>' +
     '<span>' + assignmentStatus(progress) + ' · ' + progress.practiced + '/' + progress.total + ' ' + uiText("travaillés", "geoefend") + '</span>' +
     '<span>' + uiText("Niveau de maîtrise : " + progress.masteryLevel + "%", "Beheersingsniveau: " + progress.masteryLevel + "%") + '</span>' +
-    '<span>' + progress.acquired + '/' + progress.total + ' ' + uiText("acquis · objectif " + progress.target + "%", "gekend · doel " + progress.target + "%") + '</span>' +
+    '<span>' + progress.acquired + '/' + progress.total + ' ' + uiText("acquis · objectif " + progress.target + "% acquis", "gekend · doel " + progress.target + "% gekend") + '</span>' +
     masteryBar(progress, true) + '<span class="assignment-card-cta">' + uiText(progress.practiced ? "Continuer" : "Commencer", progress.practiced ? "Verder oefenen" : "Starten") + ' →</span></button>';
 }
 
@@ -548,7 +548,7 @@ function assignmentShortProgress(progress) {
     return uiText(progress.acquired + "/" + progress.total + " objectifs acquis · " + progress.masteryLevel + "% maîtrise",
       progress.acquired + "/" + progress.total + " doelen gekend · " + progress.masteryLevel + "% beheerst");
   }
-  return progress.acquired + '/' + progress.total + ' ' + uiText("acquis · objectif " + progress.target + "%", "gekend · doel " + progress.target + "%");
+  return progress.acquired + '/' + progress.total + ' ' + uiText("acquis · objectif " + progress.target + "% acquis", "gekend · doel " + progress.target + "% gekend");
 }
 
 // One quiet, fixed icon vocabulary for every student-facing content surface.
@@ -634,8 +634,9 @@ function renderAssignmentDetail(id) {
     (assignment.instructions ? '<p class="assignment-instructions">' + escapeHtml(assignment.instructions) + '</p>' : '') +
     (progress.goals ? '<div class="assignment-stats"><strong>' + assignmentShortProgress(progress) + '</strong></div>' :
       '<div class="assignment-stats"><strong>' + progress.practiced + '/' + progress.total + ' ' + uiText("travaillés", "geoefend") + '</strong>' +
+      '<strong>' + uiText("Niveau de maîtrise : " + progress.masteryLevel + "%", "Beheersingsniveau: " + progress.masteryLevel + "%") + '</strong>' +
       '<strong>' + progress.acquired + '/' + progress.total + ' ' + uiText("acquis", "gekend") + '</strong>' +
-      '<strong>' + progress.acquiredPercentage + '% / ' + progress.target + '% ' + uiText("objectif", "doel") + '</strong></div>' + masteryBar(progress, false)) +
+      '<strong>' + uiText("Objectif : " + progress.target + "% acquis", "Doel: " + progress.target + "% gekend") + '</strong></div>' + masteryBar(progress, false)) +
     (progress.completedAt ? '<p class="perfect-note">' + uiText("Objectif atteint ! Le " + new Date(progress.completedAt).toLocaleDateString("fr-BE") + ".", "Doel behaald! Op " + new Date(progress.completedAt).toLocaleDateString("nl-BE") + ".") + '</p>' :
       progress.reachedLocally ? '<p class="sync-note">' + uiText("Objectif atteint sur cet appareil. Confirmation après synchronisation.", "Doel op dit toestel behaald. Bevestiging volgt na synchronisatie.") + '</p>' :
       (progress.goals ? '<p>' + uiText("Travaille les personnes et les verbes indiqués pour atteindre l’objectif.", "Oefen de persoonsgroepen en werkwoorden om het doel te bereiken.") + '</p>' :
@@ -661,11 +662,8 @@ function launchAssignment(id) {
     return;
   }
   const selectedItems = window.MonParcoursAssignments.selectItems(allItems, currentMasteryRecords(), 20);
-  const mode = selectedItems.some(function (item) {
-    return window.MonParcoursMastery.getItemMastery(item.id, currentMasteryRecords()).status === "new";
-  }) ? "learn" : "practice";
   const questions = taskQuestionsForItems(selectedItems, "assignment-mixed");
-  beginSession(questions, mode, "assignment-mixed", assignment.title, { availableCount: allItems.length, assignmentId: id });
+  beginSession(questions, "practice", "assignment-mixed", assignment.title, { availableCount: allItems.length, assignmentId: id });
 }
 
 function verbTaskQuestions(assignment, items) {
@@ -1357,7 +1355,7 @@ function taskPracticeContextHtml(session) {
     uiText(progress.practiced + ' / ' + progress.total + ' travaillés', progress.practiced + ' / ' + progress.total + ' geoefend') + '</span><span>' +
     uiText('Niveau de maîtrise : ' + progress.masteryLevel + '%', 'Beheersingsniveau: ' + progress.masteryLevel + '%') + '</span><span>' +
     uiText(progress.acquired + ' / ' + progress.total + ' acquis', progress.acquired + ' / ' + progress.total + ' gekend') + '</span><span>' +
-    uiText('Objectif : ' + progress.target + '%', 'Doel: ' + progress.target + '%') + '</span></aside>';
+    uiText('Objectif : ' + progress.target + '% acquis', 'Doel: ' + progress.target + '% gekend') + '</span></aside>';
 }
 
 function submitAnswer(rawAnswer) {

@@ -29,10 +29,19 @@ function level(attempts) {
 assert.equal(status([]), "new", "0 pogingen blijft Nieuw");
 assert.equal(level([]), 0, "nooit geoefend geeft 0% beheersingsniveau");
 assert.equal(level([attempt("l1", "s1", "learn", true)]), 10, "alleen Leren geeft 10%");
-assert.equal(level([attempt("c1", "s1", "practice", true)]), 40, "1/1 zelfstandig correct geeft 40%");
-assert.equal(level([attempt("c1", "s1", "practice", true), attempt("c2", "s1", "practice", true)]), 60, "2/2 zelfstandig correct geeft 60%");
-assert.equal(level([attempt("c1", "s1", "practice", true), attempt("c2", "s1", "practice", true), attempt("c3", "s1", "practice", true)]), 75, "3/3 zonder sessiespreiding geeft 75%");
-assert.equal(level([attempt("w1", "s1", "practice", true), attempt("w2", "s1", "practice", false), attempt("w3", "s1", "practice", false), attempt("w4", "s1", "practice", false)]), 10, "1/4 wordt door de nauwkeurigheid duidelijk lager dan 1/1");
+assert.equal(level([attempt("w0", "s1", "practice", false)]), 15, "zelfstandig fout zonder correctie geeft 15%");
+assert.equal(level([attempt("c1", "s1", "practice", true)]), 60, "1/1 zelfstandig direct correct geeft 60%");
+assert.equal(level([attempt("w1", "s1", "practice", false, "2026-10-03T10:00:01Z"), attempt("c1", "s1", "practice", true, "2026-10-03T10:00:02Z")]), 40,
+  "fout en daarna correct in dezelfde sessie geeft 40%");
+assert.equal(level([attempt("c1", "s1", "practice", true), attempt("c2", "s1", "practice", true)]), 70, "2 goede recalls in één sessie geeft 70%");
+assert.equal(level([attempt("c1", "s1", "practice", true), attempt("c2", "s1", "practice", true), attempt("c3", "s1", "practice", true)]), 70,
+  "zonder sessiespreiding stijgt het niveau niet onbeperkt");
+assert.equal(level([attempt("c1", "s1", "practice", true), attempt("c2", "s2", "practice", true)]), 80,
+  "latere correcte recall geeft 80%");
+assert.equal(level([attempt("w1", "s1", "practice", false), attempt("c1", "s1", "practice", true), attempt("c2", "s1", "practice", true)]), 40,
+  "correcties in dezelfde sessie zijn geen extra sterke recalls na een eerste fout");
+assert.equal(level([attempt("w1", "s1", "practice", true), attempt("w2", "s1", "practice", false), attempt("w3", "s1", "practice", false), attempt("w4", "s1", "practice", false), attempt("w5", "s1", "practice", false)]), 28,
+  "1 correct en 4 fout wordt door accuracy duidelijk lager dan 60%");
 assert.equal(status([attempt("a1", "s1", "practice", true)]), "learning", "1/1 is nog niet Gekend");
 assert.equal(status([
   attempt("a1", "s1", "practice", true, "2026-10-03T10:00:01Z"),
@@ -84,7 +93,7 @@ const recovered = [
 assert.equal(status(recovered.slice(0, 4)), "learning");
 assert.equal(status(recovered), "acquired", "na een nieuwe correcte poging kan het item opnieuw Gekend worden");
 assert.equal(level(recovered.slice(0, 3)), 100, "alleen een strikt Gekend item krijgt 100%");
-assert.equal(level(recovered.slice(0, 4)), 56, "een nieuwe fout verlaagt het continue niveau en laat Gekend terugvallen");
+assert.equal(level(recovered.slice(0, 4)), 70, "een nieuwe fout verlaagt het continue niveau en laat Gekend terugvallen");
 assert.equal(level(recovered), 100, "herstel naar Gekend geeft opnieuw 100%");
 
 const server = [{
@@ -104,17 +113,35 @@ assert.equal(dynamicSummary.total, 1, "één permanente number_spec blijft één
 assert.equal(dynamicSummary.new, 0);
 assert.equal(dynamicSummary.learning, 1);
 assert.equal(dynamicSummary.percentages.new + dynamicSummary.percentages.learning + dynamicSummary.percentages.acquired, 100);
-assert.equal(dynamicSummary.masteryLevel, 40, "een getalvariant levert bewijs voor de ene permanente number_spec");
+assert.equal(dynamicSummary.masteryLevel, 60, "een getalvariant levert bewijs voor de ene permanente number_spec");
 
 const anotherVariant = Object.assign({}, attempt("n2", "s1", "practice", true, "2026-10-03T10:00:02Z", "999"), { item_id: "uf1-number-spec", equivalent_item_ids: ["uf1-number-spec"] });
 const multiVariantSummary = mastery.calculateMasterySummary([dynamicItem], mastery.mergeMasterySources([], [first, anotherVariant], [], []));
 assert.equal(multiVariantSummary.total, 1, "meerdere getalvarianten vergroten de zichtbare noemer niet");
-assert.equal(multiVariantSummary.masteryLevel, 60, "bewijs van varianten wordt op het permanente item gecombineerd");
+assert.equal(multiVariantSummary.masteryLevel, 70, "bewijs van varianten wordt op het permanente item gecombineerd");
 
 const secondItemAttempt = Object.assign({}, attempt("scope-1", "scope-session", "practice", true), { item_id: "scope-a", equivalent_item_ids: ["scope-a"] });
 const scopeRecords = mastery.mergeMasterySources([], [secondItemAttempt], [], []);
 const scopeSummary = mastery.calculateMasterySummary([{ id: "scope-a", type: "vocabulary" }, { id: "scope-b", type: "vocabulary" }], scopeRecords);
-assert.equal(scopeSummary.masteryLevel, 20, "scopepercentage is het gemiddelde van 40% en een niet-geoefend item van 0%");
+assert.equal(scopeSummary.masteryLevel, 30, "scopepercentage is het gemiddelde van 60% en een niet-geoefend item van 0%");
+
+function scopeAttempt(id, serial, correct, session) {
+  return Object.assign({}, attempt("scope-" + id + "-" + serial, session || "scope-s1", "practice", correct,
+    "2026-10-03T10:00:" + String(serial).padStart(2, "0") + "Z"), { item_id: id, equivalent_item_ids: [id] });
+}
+const twentyItems = Array.from({ length: 20 }, (_, index) => ({ id: "item-" + index }));
+const allDirect = twentyItems.map((item, index) => scopeAttempt(item.id, index, true));
+assert.equal(mastery.calculateMasterySummary(twentyItems, mastery.mergeMasterySources([], allDirect, [], [])).masteryLevel, 60,
+  "20/20 meteen correct geeft 60% scope-mastery en 0 Acquis");
+const corrected = allDirect.slice(0, 14).concat(twentyItems.slice(14).flatMap((item, index) => [
+  scopeAttempt(item.id, 30 + index * 2, false), scopeAttempt(item.id, 31 + index * 2, true)
+]));
+const correctedSummary = mastery.calculateMasterySummary(twentyItems, mastery.mergeMasterySources([], corrected, [], []));
+assert.equal(correctedSummary.masteryLevel, 54, "14 direct correct + 6 gecorrigeerd geeft 54%");
+assert.equal(correctedSummary.acquired, 0);
+const stillWrong = allDirect.slice(0, 14).concat(twentyItems.slice(14).map((item, index) => scopeAttempt(item.id, 50 + index, false)));
+assert.equal(mastery.calculateMasterySummary(twentyItems, mastery.mergeMasterySources([], stillWrong, [], [])).masteryLevel, 47,
+  "14 direct correct + 6 fout geeft afgerond 47%");
 
 const verbSummary = mastery.calculateMasterySummary([{ id: "uf1-verb", type: "verb", conjugations: [{ subject: "je" }, { subject: "tu" }] }], new Map());
 assert.equal(verbSummary.total, 1, "vervoegingspersonen zijn bewijsvarianten en geen zichtbare mastery-items");
