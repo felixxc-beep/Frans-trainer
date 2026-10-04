@@ -37,6 +37,7 @@
     monitor: { rows: [], error: "", loading: false, pending: false, masteryByStudent: Object.create(null), masteryRefreshedAt: 0 },
     analyticsLoaded: false,
     studentVerbGoals: Object.create(null),
+    studentVerbGoalsError: false,
     lastRefreshedAt: null,
     autoRefreshTimer: null,
     route: { view: "dashboard", classId: null, studentId: null },
@@ -689,20 +690,33 @@
     document.querySelector("#dashboardContent").innerHTML = '<section class="loading-state"><span class="loader" aria-hidden="true"></span><p>Leerlingdetails worden geladen…</p></section>';
     try {
       await ensureAnalyticsData();
-      const [classRows, result] = await Promise.all([
-        fetchClassMonitor(state.client, Object.assign({}, state.filters, { classId: student.class_id }), true),
-        state.client.rpc("get_teacher_student_verb_goals", { p_student_id: id })
-      ]);
-      if (result.error) throw result.error;
+      const detail = await loadStudentDetailExtras(state.client, state.filters, student);
+      const classRows = detail.classRows;
       classRows.forEach(function (row) { if (row.current_mastery_percentage != null) state.monitor.masteryByStudent[row.student_id] = Number(row.current_mastery_percentage); });
       const byId = new Map(state.monitor.rows.map(function (row) { return [row.student.id, row]; }));
       normalizeMonitorRows(classRows, Date.now(), state.monitor.masteryByStudent).forEach(function (row) { byId.set(row.student.id, row); });
       state.monitor.rows = Array.from(byId.values());
-      state.studentVerbGoals[id] = asArray(result.data);
+      state.studentVerbGoals[id] = detail.verbGoals;
+      state.studentVerbGoalsError = detail.verbError;
       renderCurrent();
     } catch (error) {
+      console.error("[Klasmonitor] Leerlingdetail laden mislukt", { code: error && error.code, message: error && error.message, details: error && error.details });
       document.querySelector("#dashboardContent").innerHTML = '<div class="error-state">Leerlingdetails konden niet worden geladen. Probeer opnieuw.</div>';
     }
+  }
+
+  async function loadStudentDetailExtras(client, filters, student) {
+    const goalPromise = Promise.resolve()
+      .then(function () { return client.rpc("get_teacher_student_verb_goals", { p_student_id: student.id }); })
+      .catch(function (error) { return { error: error }; });
+    const [classRows, goalResult] = await Promise.all([
+      fetchClassMonitor(client, Object.assign({}, filters, { classId: student.class_id }), true),
+      goalPromise
+    ]);
+    if (goalResult.error) {
+      console.error("[Klasmonitor] Werkwoorddoelen niet beschikbaar", { code: goalResult.error.code, message: goalResult.error.message, details: goalResult.error.details });
+    }
+    return { classRows: classRows, verbGoals: goalResult.error ? [] : asArray(goalResult.data), verbError: Boolean(goalResult.error) };
   }
 
   async function loadManagementDataset(client) {
@@ -1001,8 +1015,9 @@
     const sessions = overview.sessionRows.slice().sort(function (left, right) { return new Date(right.finished_at || right.started_at) - new Date(left.finished_at || left.started_at); });
     return breadcrumbs([{ label: "Dashboard", action: "view-dashboard" }, { label: classRow ? classRow.name : "Klas", action: "view-class", id: student.class_id }, { label: student.display_name || "Naamloze leerling" }]) +
       '<div class="page-heading"><div><p class="eyebrow">Leerlingdetail · ' + escapeHtml(periodLabel(state.filters.period)) + '</p><h2>' + escapeHtml(student.display_name || "Naamloze leerling") + ' · ' + escapeHtml(classRow ? classRow.name : "Onbekende klas") + '</h2></div><div class="export-actions"><button class="button button-secondary" type="button" data-action="export-student" data-id="' + escapeHtml(student.id) + '">Sessies CSV</button><button class="button button-secondary" type="button" data-action="export-difficult-student" data-id="' + escapeHtml(student.id) + '">Moeilijke items CSV</button></div></div>' +
-      '<section class="monitor-summary student-summary" aria-label="Leerlingoverzicht"><span><strong>' + periodExercises + '</strong> oefeningen</span><span><strong>' + escapeHtml(formatMonitorDuration(periodSeconds)) + '</strong> actieve tijd*</span><span><strong>' + (periodAccuracy == null ? '—' : periodAccuracy + '%') + '</strong> correct zelfstandig</span><span title="Huidige beheersing; niet beperkt tot deze periode"><strong>' + (mastery == null ? '—' : mastery + '%') + '</strong> huidige mastery</span><span><strong>' + escapeHtml(task ? task.title + ' · ' + Number(task.mastery_percentage || 0) + '%' : '—') + '</strong> actieve taak</span></section>' +
+      '<section class="monitor-summary student-summary" aria-label="Leerlingoverzicht"><span><strong>' + periodExercises + '</strong> oefeningen</span><span><strong>' + escapeHtml(formatMonitorDuration(periodSeconds)) + '</strong> actieve tijd*</span><span><strong>' + (periodAccuracy == null ? '—' : periodAccuracy + '%') + '</strong> correct zelfstandig</span><span><strong>' + escapeHtml(monitorRow ? relativeActivity(monitorRow.lastActivity) : relativeActivity(overview.lastActivity)) + '</strong> laatst actief</span><span title="Huidige beheersing; niet beperkt tot deze periode"><strong>' + (mastery == null ? '—' : mastery + '%') + '</strong> huidige mastery</span><span><strong>' + escapeHtml(task ? task.title + ' · ' + Number(task.mastery_percentage || 0) + '%' : 'Geen actieve taak') + '</strong> actieve taak</span></section>' +
       '<p class="monitor-footnote">* De monitor rekent actieve sessieseconden toe aan de periode waarin de sessie begon.</p>' +
+      (state.studentVerbGoalsError ? '<p class="monitor-error" role="status">Werkwoordbeheersing is tijdelijk niet beschikbaar. De overige leerlinggegevens blijven zichtbaar.</p>' : '') +
       (verbGoals.length ? '<section class="section-block"><h3>Werkwoordbeheersing · huidige staat</h3><div class="verb-analysis">' + verbGoals.map(function (goal) {
         const item = state.courseIndex[goal.goal_id];
         const label = item ? item.infinitive : goal.goal_id === 'present_er' ? 'Verbes en -ER' : goal.goal_id === 'present_ir_finir' ? 'Verbes du type finir' : goal.goal_id === 'present_re' ? 'Verbes en -RE' : goal.goal_id;
@@ -1402,6 +1417,7 @@
     state.monitor = { rows: [], error: "", loading: false, pending: false, masteryByStudent: Object.create(null), masteryRefreshedAt: 0 };
     state.analyticsLoaded = false;
     state.studentVerbGoals = Object.create(null);
+    state.studentVerbGoalsError = false;
     state.management = { loaded: false, classes: [], students: [], selectedClassId: null, studentStatus: "active", generatedCode: "", createdStudents: [], message: "", messageIsError: false };
     state.teacherAdmin = { loaded: false, teachers: [], assignments: [], classes: [], editingTeacherId: null, message: "", messageIsError: false };
     state.tasks = { loaded: false, list: [], detail: [], selectedId: null, draft: null, filter: "all", message: "", error: false };
@@ -1448,6 +1464,7 @@
       state.monitor = { rows: [], error: "", loading: false, pending: false, masteryByStudent: Object.create(null), masteryRefreshedAt: 0 };
       state.analyticsLoaded = false;
       state.studentVerbGoals = Object.create(null);
+      state.studentVerbGoalsError = false;
       state.tasks = { loaded: false, list: [], detail: [], selectedId: null, draft: null, filter: "all", message: "", error: false };
       state.management = { loaded: false, classes: [], students: [], selectedClassId: null, studentStatus: "active", generatedCode: "", createdStudents: [], message: "", messageIsError: false };
       state.teacherAdmin = { loaded: false, teachers: [], assignments: [], classes: [], editingTeacherId: null, message: "", messageIsError: false };
@@ -2220,6 +2237,9 @@
     monitorSummary: monitorSummary,
     formatMonitorDuration: formatMonitorDuration,
     fetchClassMonitor: fetchClassMonitor,
+    loadStudentDetailExtras: loadStudentDetailExtras,
+    openStudentDetail: openStudentDetail,
+    renderStudentDetail: renderStudentDetail,
     loadDashboardBase: loadDashboardBase,
     filterDataset: filterDataset,
     summarize: summarize,
@@ -2265,6 +2285,8 @@
     managementColumns: MANAGEMENT_COLUMNS,
     accessColumns: ACCESS_COLUMNS
   });
+
+  if (window.MON_PARCOURS_TEACHER_TEST) window.MonParcoursTeacherTestState = state;
 
   if (!window.MON_PARCOURS_TEACHER_TEST) {
     if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);

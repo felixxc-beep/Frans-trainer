@@ -38,9 +38,9 @@ returns integer language sql stable security definer set search_path = '' as $$
       when g.correct>=3 and g.correct::numeric/nullif(g.independent,0)>=0.75
         and g.sessions>=2 and g.latest_correct is true then 100
       when g.independent=0 then 10
-      else pg_catalog.greatest(10,pg_catalog.least(90,pg_catalog.round(
+      else greatest(10,least(90,pg_catalog.round(
         (case when g.correct=0 then 10 when g.correct=1 then 40
-          when g.correct=2 then 60 else pg_catalog.least(90,75+(g.correct-3)*3) end)
+          when g.correct=2 then 60 else least(90,75+(g.correct-3)*3) end)
         *g.correct::numeric/nullif(g.independent,0))::integer)) end as level
     from public.course_item_ids ci left join grouped g on g.item_id=ci.item_id
   )
@@ -107,7 +107,7 @@ begin
     select student_id,
       -- Alleen sessies die in deze periode begonnen: de huidige tabel heeft
       -- geen tijdlijn om één sessie exact over twee perioden te splitsen.
-      coalesce(sum(pg_catalog.greatest(0,active_duration_seconds)),0)::bigint active_seconds,
+      coalesce(sum(greatest(0,active_duration_seconds)),0)::bigint active_seconds,
       max(started_at) last_started_at,
       max(finished_at) filter(where (p_period_start is null or finished_at>=p_period_start)
         and (p_period_end is null or finished_at<p_period_end)) last_finished_at
@@ -120,7 +120,7 @@ begin
     'independent_attempts',coalesce(at.independent_attempts,0),
     'independent_correct',coalesce(at.independent_correct,0),
     'active_seconds',coalesce(st.active_seconds,0),
-    'last_activity_at',pg_catalog.greatest(at.last_attempt_at,st.last_started_at,st.last_finished_at),
+    'last_activity_at',greatest(at.last_attempt_at,st.last_started_at,st.last_finished_at),
     'recent_open_session',exists (
       select 1 from scoped_sessions live
       where live.student_id=s.id and live.finished_at is null
