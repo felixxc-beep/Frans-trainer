@@ -7,7 +7,7 @@
     <meta name="theme-color" content="#12372a">
     <title>Leerkrachtendashboard | Mon parcours</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='15' fill='%2312372a'/%3E%3Cpath d='M18 16h28v9H28v8h15v9H28v14H18z' fill='%23fff7df'/%3E%3Ccircle cx='48' cy='49' r='7' fill='%23f4b942'/%3E%3C/svg%3E">
-    <link rel="stylesheet" href="./teacher.css?v=20261003-3">
+    <link rel="stylesheet" href="./teacher.css?v=20261004-2">
   </head>
   <body>
     <header class="teacher-topbar">
@@ -48,9 +48,9 @@
       <section id="dashboardView" hidden>
         <div class="dashboard-heading">
           <div>
-            <p class="eyebrow">Resultaten</p>
-            <h1>Dashboard</h1>
-            <p class="muted">Correctheidspercentages zijn gebaseerd op werkelijke pogingen, inclusief herhalingen na fouten.</p>
+            <p class="eyebrow">Tijdens de les</p>
+            <h1>Klasmonitor</h1>
+            <p class="muted">Wie oefent, wie wacht en wie heeft hulp nodig?</p>
           </div>
           <button id="refreshButton" class="button button-secondary" type="button">Vernieuwen</button>
         </div>
@@ -69,6 +69,7 @@
               <label><span>Leerlingstatus</span><select id="studentStatusFilter" name="student_status"><option value="active">Actief</option><option value="inactive">Inactief</option><option value="all">Alle</option></select></label>
               <label><span>Cursusonderdeel</span><select id="categoryFilter" name="category"><option value="all">Alle onderdelen</option></select></label>
               <label><span>Subsection</span><select id="subsectionFilter" name="subsection"><option value="all">Alle subsections</option></select></label>
+              <label><span>Taak</span><select id="assignmentFilter" name="assignment"><option value="all">Alle taken</option></select></label>
             </div>
           </details>
         </form>
@@ -84,7 +85,8 @@
     <script src="./config.js?v=20261001-3" defer></script>
     <script src="./supabase-client.js?v=20261001-4" defer></script>
     <script src="./mastery.js?v=20261003-2" defer></script>
-    <script src="./assignments.js?v=20261003-1" defer></script>
-    <script src="./teacher.js?v=20261003-5" defer></script>
+    <script src="./verb-mastery.js?v=20261003-2" defer></script>
+    <script src="./assignments.js?v=20261003-3" defer></script>
+    <script src="./teacher.js?v=20261004-2" defer></script>
   </body>
 </html>

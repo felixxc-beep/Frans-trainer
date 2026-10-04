@@ -54,7 +54,7 @@ assert.match(source, /Sessiegeschiedenis/);
 assert.match(source, /Geen moeilijke leerstof/);
 assert.match(source, /Geen leerlingen/);
 assert.match(source, /Geen recente activiteit/);
-assert.match(source, /setTimeout[\s\S]*30000/, "korte periodes moeten automatisch vernieuwen");
+assert.match(source, /MONITOR_REFRESH_MS = 30000/, "korte periodes moeten automatisch vernieuwen");
 assert.match(source, /document\.hidden/, "automatisch vernieuwen moet pauzeren als het tabblad verborgen is");
 assert.match(css, /@media \(max-width:/, "dashboard moet mobiel bruikbaar zijn");
 
@@ -168,11 +168,11 @@ const monitorAttempts = monitorSessions.map(function (session, index) {
   return { id: "monitor-attempt-" + index, session_id: session.id, student_id: session.student_id, item_id: "item-" + index, item_variant: "", was_correct: index % 2 === 0, created_at: "2026-10-01T11:" + String(41 + index).padStart(2, "0") + ":00Z" };
 });
 const monitorData = api.filterDataset({ classes: [{ id: "monitor-class", name: "1A", is_active: true }], students: monitorStudents, sessions: monitorSessions, attempts: monitorAttempts }, { period: "60m", trajectory: "all", mode: "all", classId: "monitor-class", studentId: "all", studentStatus: "active", category: "all", subsection: "all" }, "2026-10-01T12:00:00Z");
-const monitorRows = api.classMonitor(monitorData, "monitor-class");
+const monitorRows = api.classMonitor(monitorData, "monitor-class", "2026-10-01T12:00:00Z");
 assert.equal(monitorRows.length, 15, "de klasmonitor behoudt alle actieve leerlingen, ook zonder activiteit");
 assert.equal(monitorRows.filter(function (row) { return row.exercisesMade > 0; }).length, 9, "9 van 15 leerlingen hebben in de periode geoefend");
 assert.equal(monitorRows.filter(function (row) { return row.status === "Nog niet gestart"; }).length, 6);
-assert.equal(monitorRows.filter(function (row) { return row.status === "Bezig"; }).length, 1);
+assert.equal(monitorRows.filter(function (row) { return row.status === "Bezig"; }).length, 0, "een open sessie zonder recente activiteit is niet bezig");
 const idleMonitorRow = monitorRows.find(function (row) { return row.status === "Nog niet gestart"; });
 assert.equal(idleMonitorRow.exercisesMade, 0);
 assert.equal(idleMonitorRow.activeDurationSeconds, 0);

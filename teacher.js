@@ -18,6 +18,11 @@
     class_teachers: "class_id,teacher_id,created_at"
   });
   const STUDENT_CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  const ACTIVE_NOW_THRESHOLD_SECONDS = 180;
+  const STUCK_MIN_ATTEMPTS = 5;
+  const STUCK_ACCURACY_PERCENT = 40;
+  const MONITOR_REFRESH_MS = 30000;
+  const MASTERY_REFRESH_MS = 5 * 60 * 1000;
 
   const state = {
     client: null,
@@ -26,8 +31,12 @@
     course: null,
     courseIndex: Object.create(null),
     raw: emptyDataset(),
-    filters: { period: "today", trajectory: "all", mode: "all", classId: "all", studentId: "all", studentStatus: "active", category: "all", subsection: "all" },
+    filters: { period: "today", trajectory: "all", mode: "all", classId: "all", studentId: "all", studentStatus: "active", category: "all", subsection: "all", assignmentId: "all" },
     monitorSort: "auto",
+    monitorQuickFilter: "all",
+    monitor: { rows: [], error: "", loading: false, pending: false, masteryByStudent: Object.create(null), masteryRefreshedAt: 0 },
+    analyticsLoaded: false,
+    studentVerbGoals: Object.create(null),
     lastRefreshedAt: null,
     autoRefreshTimer: null,
     route: { view: "dashboard", classId: null, studentId: null },
@@ -65,6 +74,14 @@
     const seconds = Math.max(0, Math.floor(Number(value) || 0));
     if (seconds < 60) return seconds + " s";
     if (seconds < 3600) return Math.floor(seconds / 60) + " min " + String(seconds % 60).padStart(2, "0") + " s";
+    return Math.floor(seconds / 3600) + " u " + String(Math.floor((seconds % 3600) / 60)).padStart(2, "0") + " min";
+  }
+
+  function formatMonitorDuration(value) {
+    const seconds = Math.max(0, Math.floor(Number(value) || 0));
+    if (!seconds) return "0 min";
+    if (seconds < 60) return "< 1 min";
+    if (seconds < 3600) return Math.floor(seconds / 60) + " min";
     return Math.floor(seconds / 3600) + " u " + String(Math.floor((seconds % 3600) / 60)).padStart(2, "0") + " min";
   }
 
@@ -188,10 +205,41 @@
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return "Onbekende datum";
     return new Intl.DateTimeFormat("nl-BE", includeTime === false ? {
-      day: "2-digit", month: "2-digit", year: "numeric"
+      timeZone: "Europe/Brussels", day: "2-digit", month: "2-digit", year: "numeric"
     } : {
-      day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit"
+      timeZone: "Europe/Brussels", day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit"
     }).format(date);
+  }
+
+  function brusselsDateParts(value) {
+    const parts = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Brussels", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(new Date(value));
+    const values = Object.fromEntries(parts.map(function (part) { return [part.type, part.value]; }));
+    return { year: Number(values.year), month: Number(values.month), day: Number(values.day) };
+  }
+
+  function brusselsMidnight(parts, shiftDays) {
+    const midnightUtc = Date.UTC(parts.year, parts.month - 1, parts.day + shiftDays);
+    const timezone = new Intl.DateTimeFormat("en-US", { timeZone: "Europe/Brussels", timeZoneName: "shortOffset" })
+      .formatToParts(new Date(midnightUtc)).find(function (part) { return part.type === "timeZoneName"; });
+    const offset = /GMT([+-])(\d{1,2})(?::(\d{2}))?/.exec(timezone && timezone.value || "");
+    const offsetMinutes = offset ? (offset[1] === "-" ? -1 : 1) * (Number(offset[2]) * 60 + Number(offset[3] || 0)) : 0;
+    return midnightUtc - offsetMinutes * 60000;
+  }
+
+  function relativeActivity(value, nowValue) {
+    if (!value) return "—";
+    const time = new Date(value).getTime();
+    const now = new Date(nowValue || Date.now()).getTime();
+    if (!Number.isFinite(time)) return "—";
+    const elapsed = Math.max(0, Math.floor((now - time) / 60000));
+    if (elapsed < 1) return "nu";
+    if (elapsed < 60) return elapsed + " min geleden";
+    const today = brusselsDateParts(now), activity = brusselsDateParts(time);
+    const clock = new Intl.DateTimeFormat("nl-BE", { timeZone: "Europe/Brussels", hour: "2-digit", minute: "2-digit" }).format(new Date(time));
+    if (activity.year === today.year && activity.month === today.month && activity.day === today.day) return "vandaag " + clock;
+    const yesterday = brusselsDateParts(brusselsMidnight(today, -1) + 12 * 3600000);
+    if (activity.year === yesterday.year && activity.month === yesterday.month && activity.day === yesterday.day) return "gisteren " + clock;
+    return formatDate(value);
   }
 
   function latestDate(rows, fields) {
@@ -261,10 +309,11 @@
       return { start: end - Number(period.slice(0, -1)) * 60 * 1000, end: end };
     }
     if (period === "today" || period === "yesterday") {
-      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+      const parts = brusselsDateParts(end);
+      const today = brusselsMidnight(parts, 0);
       return period === "today"
         ? { start: today, end: end }
-        : { start: today - 24 * 60 * 60 * 1000, end: today };
+        : { start: brusselsMidnight(parts, -1), end: today };
     }
     if (period === "7" || period === "30") return { start: end - Number(period) * 24 * 60 * 60 * 1000, end: end };
     return { start: null, end: null };
@@ -337,13 +386,14 @@
     };
   }
 
-  function classMonitor(data, classId) {
+  function classMonitor(data, classId, nowValue) {
     const students = asArray(data.students).filter(function (student) { return student.class_id === classId && student.is_active !== false; });
     return students.map(function (student) {
       const overview = studentOverview(data, student);
       const unfinished = overview.sessionRows.some(function (session) { return !session.finished_at; });
+      const recent = overview.lastActivity && new Date(nowValue || Date.now()).getTime() - new Date(overview.lastActivity).getTime() <= ACTIVE_NOW_THRESHOLD_SECONDS * 1000;
       return Object.assign({}, overview, {
-        status: unfinished ? "Bezig" : overview.exercisesMade > 0 ? "Geoefend" : "Nog niet gestart"
+        status: unfinished && recent ? "Bezig" : overview.exercisesMade > 0 ? "Geoefend" : "Nog niet gestart"
       });
     });
   }
@@ -356,8 +406,51 @@
       if (sort === "last") return new Date(right.lastActivity || 0) - new Date(left.lastActivity || 0) || String(left.student.display_name || "").localeCompare(String(right.student.display_name || ""), "nl");
       if (sort === "made") return right.exercisesMade - left.exercisesMade || String(left.student.display_name || "").localeCompare(String(right.student.display_name || ""), "nl");
       if (sort === "time") return right.activeDurationSeconds - left.activeDurationSeconds || String(left.student.display_name || "").localeCompare(String(right.student.display_name || ""), "nl");
+      if (sort === "correct") return (right.attempts ? right.accuracy : -1) - (left.attempts ? left.accuracy : -1) || String(left.student.display_name || "").localeCompare(String(right.student.display_name || ""), "nl");
+      if (sort === "mastery") return Number(right.masteryPercentage || 0) - Number(left.masteryPercentage || 0) || String(left.student.display_name || "").localeCompare(String(right.student.display_name || ""), "nl");
+      if (sort === "task") return Number(right.activeAssignmentCount || 0) - Number(left.activeAssignmentCount || 0) || String(left.student.display_name || "").localeCompare(String(right.student.display_name || ""), "nl");
       return statusOrder[left.status] - statusOrder[right.status] || String(left.student.display_name || "").localeCompare(String(right.student.display_name || ""), "nl");
     });
+  }
+
+  function normalizeMonitorRows(rows, nowValue, masteryCache) {
+    const now = new Date(nowValue || Date.now()).getTime();
+    return asArray(rows).map(function (row) {
+      const lastActivity = row.last_activity_at || null;
+      const recent = lastActivity && Math.abs(now - new Date(lastActivity).getTime()) <= ACTIVE_NOW_THRESHOLD_SECONDS * 1000;
+      const exercisesMade = Number(row.unique_exercises || 0);
+      const independentAttempts = Number(row.independent_attempts || 0);
+      const independentCorrect = Number(row.independent_correct || 0);
+      const currentMastery = row.current_mastery_percentage == null
+        ? masteryCache && masteryCache[row.student_id] : Number(row.current_mastery_percentage);
+      return {
+        student: { id: row.student_id, class_id: row.class_id, display_name: row.display_name },
+        status: row.is_active === false ? "Inactief" : recent && row.recent_open_session ? "Bezig" : exercisesMade ? "Geoefend" : "Nog niet gestart",
+        exercisesMade: exercisesMade,
+        attempts: Number(row.attempt_count || 0),
+        activeDurationSeconds: Number(row.active_seconds || 0),
+        lastActivity: lastActivity,
+        accuracy: independentAttempts ? percentage(independentCorrect, independentAttempts) : null,
+        independentAttempts: independentAttempts,
+        independentCorrect: independentCorrect,
+        masteryPercentage: currentMastery == null ? null : Number(currentMastery),
+        activeAssignmentCount: Number(row.active_assignment_count || 0),
+        activeAssignment: row.active_assignment || null,
+        mayBeStuck: independentAttempts >= STUCK_MIN_ATTEMPTS && percentage(independentCorrect, independentAttempts) < STUCK_ACCURACY_PERCENT
+      };
+    });
+  }
+
+  function monitorSummary(rows) {
+    const values = asArray(rows);
+    const attempts = values.reduce(function (sum, row) { return sum + row.independentAttempts; }, 0);
+    const correct = values.reduce(function (sum, row) { return sum + row.independentCorrect; }, 0);
+    return { total: values.length, practiced: values.filter(function (row) { return row.exercisesMade > 0; }).length,
+      idle: values.filter(function (row) { return row.status === "Nog niet gestart"; }).length,
+      active: values.filter(function (row) { return row.status === "Bezig"; }).length,
+      exercises: values.reduce(function (sum, row) { return sum + row.exercisesMade; }, 0),
+      activeSeconds: values.reduce(function (sum, row) { return sum + row.activeDurationSeconds; }, 0),
+      accuracy: attempts ? percentage(correct, attempts) : null };
   }
 
   function classOverview(data, classRow) {
@@ -509,6 +602,107 @@
       fetchAll(client, "practice_attempts", TABLE_COLUMNS.practice_attempts)
     ]);
     return { classes: results[0], students: results[1], sessions: results[2], attempts: results[3] };
+  }
+
+  async function loadDashboardBase(client) {
+    const results = await Promise.all([
+      fetchAll(client, "classes", TABLE_COLUMNS.classes),
+      fetchAll(client, "students", TABLE_COLUMNS.students)
+    ]);
+    return { classes: results[0], students: results[1], sessions: [], attempts: [] };
+  }
+
+  async function fetchClassMonitor(client, filters, includeMastery, nowValue) {
+    const bounds = periodBounds(filters.period, nowValue);
+    const result = await client.rpc("get_class_activity_monitor", {
+      p_class_id: filters.classId === "all" ? null : filters.classId,
+      p_period_start: bounds.start == null ? null : new Date(bounds.start).toISOString(),
+      p_period_end: bounds.end == null ? null : new Date(bounds.end).toISOString(),
+      p_trajectory: filters.trajectory === "all" ? null : filters.trajectory,
+      p_mode: filters.mode === "all" ? null : filters.mode,
+      p_category: filters.category === "all" ? null : filters.category,
+      p_subsection: filters.subsection === "all" ? null : filters.subsection,
+      p_assignment_id: !filters.assignmentId || filters.assignmentId === "all" ? null : filters.assignmentId,
+      p_student_status: filters.studentStatus || "active",
+      p_include_mastery: Boolean(includeMastery && filters.classId !== "all")
+    });
+    if (result.error) throw result.error;
+    return asArray(result.data);
+  }
+
+  async function refreshMonitor(forceMastery, shouldRender) {
+    if (!state.client || !state.user) return false;
+    if (state.monitor.loading) { state.monitor.pending = true; return false; }
+    const selectedFilters = Object.assign({}, state.filters);
+    const missingMastery = selectedFilters.classId !== "all" && state.raw.students.some(function (student) {
+      return student.class_id === selectedFilters.classId && student.is_active !== false && state.monitor.masteryByStudent[student.id] == null;
+    });
+    const includeMastery = Boolean(forceMastery || missingMastery || Date.now() - state.monitor.masteryRefreshedAt >= MASTERY_REFRESH_MS);
+    state.monitor.loading = true;
+    try {
+      const rows = await fetchClassMonitor(state.client, selectedFilters, includeMastery);
+      if (!state.user || JSON.stringify(selectedFilters) !== JSON.stringify(state.filters)) return false;
+      rows.forEach(function (row) {
+        if (row.current_mastery_percentage != null) state.monitor.masteryByStudent[row.student_id] = Number(row.current_mastery_percentage);
+      });
+      if (includeMastery && selectedFilters.classId !== "all") state.monitor.masteryRefreshedAt = Date.now();
+      state.monitor.rows = normalizeMonitorRows(rows, Date.now(), state.monitor.masteryByStudent);
+      state.monitor.error = "";
+      state.lastRefreshedAt = new Date();
+      populateFilters();
+      if (shouldRender !== false && ["dashboard", "classes"].includes(state.route.view)) renderCurrent();
+      return true;
+    } catch (error) {
+      state.monitor.error = "De klasmonitor kon niet worden vernieuwd. Controleer je verbinding en of fase 8 in Supabase is uitgevoerd.";
+      if (shouldRender !== false && ["dashboard", "classes"].includes(state.route.view)) renderCurrent();
+      return false;
+    } finally {
+      state.monitor.loading = false;
+      if (state.monitor.pending && state.user) {
+        state.monitor.pending = false;
+        Promise.resolve().then(function () { return refreshMonitor(true); });
+      }
+    }
+  }
+
+  async function ensureAnalyticsData() {
+    if (state.analyticsLoaded) return true;
+    const dataset = await loadRlsDataset(state.client);
+    if (!state.user) return false;
+    state.raw = dataset;
+    state.analyticsLoaded = true;
+    populateFilters();
+    return true;
+  }
+
+  async function openClassDetail(id) {
+    state.route = { view: "class", classId: id, studentId: null };
+    document.querySelector("#dashboardContent").innerHTML = '<section class="loading-state"><span class="loader" aria-hidden="true"></span><p>Klasdetails worden geladen…</p></section>';
+    try { if (await ensureAnalyticsData()) renderCurrent(); }
+    catch (error) { document.querySelector("#dashboardContent").innerHTML = '<div class="error-state">Klasdetails konden niet worden geladen. Probeer opnieuw.</div>'; }
+  }
+
+  async function openStudentDetail(id) {
+    const student = state.raw.students.find(function (row) { return row.id === id; });
+    if (!student) return;
+    state.route = { view: "student", classId: student.class_id, studentId: id };
+    document.querySelector("#dashboardContent").innerHTML = '<section class="loading-state"><span class="loader" aria-hidden="true"></span><p>Leerlingdetails worden geladen…</p></section>';
+    try {
+      await ensureAnalyticsData();
+      const [classRows, result] = await Promise.all([
+        fetchClassMonitor(state.client, Object.assign({}, state.filters, { classId: student.class_id }), true),
+        state.client.rpc("get_teacher_student_verb_goals", { p_student_id: id })
+      ]);
+      if (result.error) throw result.error;
+      classRows.forEach(function (row) { if (row.current_mastery_percentage != null) state.monitor.masteryByStudent[row.student_id] = Number(row.current_mastery_percentage); });
+      const byId = new Map(state.monitor.rows.map(function (row) { return [row.student.id, row]; }));
+      normalizeMonitorRows(classRows, Date.now(), state.monitor.masteryByStudent).forEach(function (row) { byId.set(row.student.id, row); });
+      state.monitor.rows = Array.from(byId.values());
+      state.studentVerbGoals[id] = asArray(result.data);
+      renderCurrent();
+    } catch (error) {
+      document.querySelector("#dashboardContent").innerHTML = '<div class="error-state">Leerlingdetails konden niet worden geladen. Probeer opnieuw.</div>';
+    }
   }
 
   async function loadManagementDataset(client) {
@@ -684,37 +878,65 @@
     return { "15m": "laatste 15 minuten", "30m": "laatste 30 minuten", "60m": "laatste 60 minuten", today: "vandaag", yesterday: "gisteren", "7": "laatste 7 dagen", "30": "laatste 30 dagen", all: "alles" }[period] || "gekozen periode";
   }
 
-  function renderClassMonitor(classRow) {
-    const monitorFilters = Object.assign({}, state.filters, { studentId: "all", studentStatus: "active" });
-    const monitorData = filterDataset(state.raw, monitorFilters);
-    const rows = sortClassMonitor(classMonitor(monitorData, classRow.id), state.monitorSort);
-    const activity = summarize(monitorData.sessions, monitorData.attempts);
-    const practiced = rows.filter(function (row) { return row.exercisesMade > 0; }).length;
-    const notStarted = rows.length - practiced;
+  function renderClassMonitor(classRow, sourceRows, quickFilter) {
+    const allRows = asArray(sourceRows || state.monitor.rows).filter(function (row) { return row.student.class_id === classRow.id; });
+    const summary = monitorSummary(allRows);
+    const activeQuickFilter = quickFilter || state.monitorQuickFilter;
+    const shown = allRows.filter(function (row) {
+      return activeQuickFilter === "all" || activeQuickFilter === "idle" && row.status === "Nog niet gestart" ||
+        activeQuickFilter === "active" && row.status === "Bezig";
+    });
+    const rows = sortClassMonitor(shown, state.monitorSort);
+    const sortOptions = { auto: "Nog niet gestart eerst", status: "Status", name: "Naam", last: "Laatste activiteit", made: "Oefeningen", time: "Actieve tijd", correct: "Correct %", mastery: "Beheersing", task: "Taakstatus" };
     const rowHtml = rows.map(function (row) {
-      const accuracy = row.attempts ? row.accuracy + "%" : "—";
-      return '<tr class="monitor-row" tabindex="0" data-action="view-student" data-id="' + escapeHtml(row.student.id) + '"><td><strong>' + escapeHtml(row.student.display_name || "Naamloze leerling") + '</strong></td><td><span class="monitor-status status-' + row.status.toLowerCase().replace(/\s+/g, "-") + '">' + escapeHtml(row.status) + '</span></td><td>' + row.exercisesMade + '</td><td>' + escapeHtml(formatActiveDuration(row.activeDurationSeconds)) + '</td><td>' + escapeHtml(row.lastActivity ? formatDate(row.lastActivity) : "—") + '</td><td>' + accuracy + '</td></tr>';
+      const task = row.activeAssignment;
+      const taskText = row.activeAssignmentCount > 1 ? row.activeAssignmentCount + " actieve taken" : task ? task.title : "—";
+      const taskMeta = task ? (task.mastery_percentage == null ? "" : " · " + Number(task.mastery_percentage) + "%") : "";
+      return '<tr class="monitor-row" tabindex="0" data-action="view-student" data-id="' + escapeHtml(row.student.id) + '">' +
+        '<td><strong>' + escapeHtml(row.student.display_name || "Naamloze leerling") + '</strong></td>' +
+        '<td><span class="monitor-status status-' + row.status.toLowerCase().replace(/\s+/g, "-") + '">' + escapeHtml(row.status) + '</span>' +
+        (row.mayBeStuck ? '<small class="stuck-hint" title="Veel foute zelfstandige pogingen in deze periode.">Mogelijk vastgelopen</small>' : '') + '</td>' +
+        '<td>' + row.exercisesMade + '</td><td>' + escapeHtml(formatMonitorDuration(row.activeDurationSeconds)) + '</td>' +
+        '<td title="' + escapeHtml(row.lastActivity ? formatDate(row.lastActivity) : "") + '">' + escapeHtml(relativeActivity(row.lastActivity)) + '</td>' +
+        '<td>' + (row.accuracy == null ? "—" : row.accuracy + "%") + '</td>' +
+        '<td title="Huidige beheersing; niet beperkt tot deze periode">' + (row.masteryPercentage == null ? "—" : row.masteryPercentage + "%") + '</td>' +
+        '<td>' + (task ? '<button class="monitor-task-link" type="button" data-action="monitor-task" data-id="' + escapeHtml(task.id) + '">' + escapeHtml(taskText) + escapeHtml(taskMeta) + '</button>' : '—') + '</td></tr>';
     }).join("");
-    return '<section class="monitor-panel"><div class="section-heading monitor-heading"><div><p class="eyebrow">Klasmonitor · ' + escapeHtml(periodLabel(state.filters.period)) + '</p><h2>' + escapeHtml(classRow.name) + '</h2><p>' + practiced + ' van ' + rows.length + ' actieve leerlingen oefenden in deze periode.</p></div><label class="monitor-sort"><span>Sorteer</span><select id="monitorSort"><option value="auto"' + (state.monitorSort === "auto" ? " selected" : "") + '>Geen activiteit eerst</option><option value="status"' + (state.monitorSort === "status" ? " selected" : "") + '>Status</option><option value="name"' + (state.monitorSort === "name" ? " selected" : "") + '>Naam</option><option value="last"' + (state.monitorSort === "last" ? " selected" : "") + '>Laatste activiteit</option><option value="made"' + (state.monitorSort === "made" ? " selected" : "") + '>Gemaakt</option><option value="time"' + (state.monitorSort === "time" ? " selected" : "") + '>Actieve tijd</option></select></label></div>' +
-      '<section class="monitor-summary" aria-label="Klassamenvatting"><span><strong>' + practiced + ' / ' + rows.length + '</strong> leerlingen geoefend</span><span><strong>' + notStarted + '</strong> nog niet gestart</span><span><strong>' + activity.exercisesMade + '</strong> oefeningen gemaakt</span><span><strong>' + escapeHtml(formatActiveDuration(activity.activeDurationSeconds)) + '</strong> actieve oefentijd</span><span><strong>' + (activity.attempts ? activity.accuracy + "%" : "—") + '</strong> correct</span></section>' +
-      (rowHtml ? '<div class="table-wrap"><table class="monitor-table"><thead><tr><th>Leerling</th><th>Status</th><th>Gemaakt</th><th>Actieve tijd</th><th>Laatste activiteit</th><th>Correct</th></tr></thead><tbody>' + rowHtml + '</tbody></table></div>' : emptyState("Geen actieve leerlingen", "Deze klas heeft nog geen actieve leerlingen.")) +
-      '<p class="refresh-note">Laatst vernieuwd: ' + escapeHtml(state.lastRefreshedAt ? new Intl.DateTimeFormat("nl-BE", { hour: "2-digit", minute: "2-digit", second: "2-digit" }).format(state.lastRefreshedAt) : "—") + '</p></section>';
+    return (state.monitor.error ? '<p class="monitor-error" role="alert">' + escapeHtml(state.monitor.error) + '</p>' : '') +
+      '<section class="monitor-panel"><div class="section-heading monitor-heading"><div><p class="eyebrow">Klasmonitor · ' + escapeHtml(periodLabel(state.filters.period)) + '</p><h2>' + escapeHtml(classRow.name) + '</h2></div>' +
+      '<div class="monitor-controls"><button class="small-button" type="button" data-action="export-monitor">Exporteer klasweergave</button><label class="monitor-sort"><span>Sorteer</span><select id="monitorSort">' + Object.entries(sortOptions).map(function (entry) {
+        return '<option value="' + entry[0] + '"' + (state.monitorSort === entry[0] ? ' selected' : '') + '>' + entry[1] + '</option>';
+      }).join("") + '</select></label></div></div>' +
+      '<section class="monitor-summary" aria-label="Klassamenvatting"><span><strong>' + summary.practiced + ' / ' + summary.total + '</strong> geoefend</span><span><strong>' + summary.idle + '</strong> nog niet gestart</span><span><strong>' + summary.active + '</strong> bezig</span><span><strong>' + summary.exercises + '</strong> oefeningen</span><span><strong>' + escapeHtml(formatMonitorDuration(summary.activeSeconds)) + '</strong> actieve tijd*</span><span><strong>' + (summary.accuracy == null ? '—' : summary.accuracy + '%') + '</strong> correct</span></section>' +
+      '<div class="monitor-quick-filters"><button type="button" data-action="monitor-quick" data-value="all" aria-pressed="' + (activeQuickFilter === 'all') + '">Alle leerlingen</button><button type="button" data-action="monitor-quick" data-value="idle" aria-pressed="' + (activeQuickFilter === 'idle') + '">Nog niet gestart</button><button type="button" data-action="monitor-quick" data-value="active" aria-pressed="' + (activeQuickFilter === 'active') + '">Bezig</button></div>' +
+      (rowHtml ? '<div class="table-wrap"><table class="monitor-table"><thead><tr><th>Leerling</th><th>Status</th><th>Oefeningen</th><th>Actieve tijd*</th><th>Laatst actief</th><th>Correct</th><th>Huidige mastery</th><th>Taak</th></tr></thead><tbody>' + rowHtml + '</tbody></table></div>' : emptyState("Geen leerlingen in deze weergave", "Pas de snelfilter aan of wacht op activiteit.")) +
+      '<p class="monitor-footnote">* Actieve seconden worden aan de startperiode van een sessie toegerekend; een sessie over een periodegrens kan niet exact worden opgesplitst.</p>' +
+      '<p class="refresh-note">Laatst vernieuwd: ' + escapeHtml(state.lastRefreshedAt ? new Intl.DateTimeFormat("nl-BE", { timeZone: "Europe/Brussels", hour: "2-digit", minute: "2-digit", second: "2-digit" }).format(state.lastRefreshedAt) : "—") + '</p></section>';
   }
 
   function renderDashboard(data) {
     const selectedClass = state.raw.classes.find(function (row) { return row.id === state.filters.classId; });
-    const cards = renderClassCards(data);
+    const cards = state.raw.classes.filter(function (row) { return row.is_active !== false; }).map(function (classRow) {
+      const summary = monitorSummary(state.monitor.rows.filter(function (row) { return row.student.class_id === classRow.id; }));
+      return '<button class="class-card monitor-class-card" type="button" data-action="select-monitor-class" data-id="' + escapeHtml(classRow.id) + '"><strong>' + escapeHtml(classRow.name) + '</strong><span>' + summary.practiced + ' / ' + summary.total + ' geoefend · ' + summary.exercises + ' oefeningen · ' + escapeHtml(formatMonitorDuration(summary.activeSeconds)) + ' actief</span></button>';
+    }).join("");
+    const analysis = state.analyticsLoaded ? renderSummaryCards(data) : '<button class="button button-secondary" type="button" data-action="load-analysis">Analyse laden</button>';
     if (selectedClass) {
-      return renderClassMonitor(selectedClass) + '<details class="secondary-analytics"><summary>Algemene analyses en klasdetails</summary>' + renderSummaryCards(data) + '<div class="section-block"><button class="button button-secondary" type="button" data-action="view-class" data-id="' + escapeHtml(selectedClass.id) + '">Open volledige klasdetails</button></div></details>';
+      return renderClassMonitor(selectedClass) + '<details class="secondary-analytics"><summary>Analyse</summary>' + analysis + '<div class="section-block"><button class="button button-secondary" type="button" data-action="view-class" data-id="' + escapeHtml(selectedClass.id) + '">Open volledige klasdetails</button></div></details>';
     }
-    return '<section class="monitor-intro"><p class="eyebrow">Klasmonitor</p><h2>Kies een klas</h2><p class="muted">Selecteer bovenaan één klas om alle actieve leerlingen en hun activiteit in de gekozen periode te zien.</p></section>' +
-      '<section class="section-block compact-section"><div class="section-heading"><div><h2>Mijn klassen</h2></div></div>' + (cards ? '<div class="class-grid">' + cards + '</div>' : emptyState("Nog geen klassen", "Supabase gaf voor dit leerkrachtenaccount geen klassen terug.")) + '</section>' +
-      '<details class="secondary-analytics"><summary>Algemene analyses</summary>' + renderSummaryCards(data) + '</details>';
+    return (state.monitor.error ? '<p class="monitor-error" role="alert">' + escapeHtml(state.monitor.error) + '</p>' : '') +
+      '<section class="monitor-intro"><p class="eyebrow">Klasmonitor · ' + escapeHtml(periodLabel(state.filters.period)) + '</p><h2>Kies een klas</h2><p class="muted">Open een klas voor de live leerlingmonitor.</p></section>' +
+      '<section class="section-block compact-section"><div class="section-heading"><div><h2>Mijn klassen</h2></div></div>' + (cards ? '<div class="class-grid">' + cards + '</div>' : emptyState("Nog geen klassen", "Supabase gaf voor dit leerkrachtenaccount geen klassen terug.")) +
+      '<p class="refresh-note">Laatst vernieuwd: ' + escapeHtml(state.lastRefreshedAt ? new Intl.DateTimeFormat("nl-BE", { timeZone: "Europe/Brussels", hour: "2-digit", minute: "2-digit", second: "2-digit" }).format(state.lastRefreshedAt) : '—') + '</p></section>' +
+      '<details class="secondary-analytics"><summary>Analyse</summary>' + analysis + '</details>';
   }
 
   function renderClassesPage(data) {
-    const cards = renderClassCards(data);
-    return breadcrumbs([{ label: "Dashboard", action: "view-dashboard" }, { label: "Klassen" }]) + '<div class="page-heading"><div><p class="eyebrow">Resultaten</p><h2>Klassen</h2><p class="muted">Open een klas voor leerlingen, recente activiteit en moeilijke leerstof.</p></div></div>' + (cards ? '<div class="class-grid">' + cards + '</div>' : emptyState("Nog geen klassen", "Maak je eerste klas aan onder Beheer."));
+    const cards = state.raw.classes.filter(function (row) { return row.is_active !== false; }).map(function (classRow) {
+      const summary = monitorSummary(state.monitor.rows.filter(function (row) { return row.student.class_id === classRow.id; }));
+      return '<button class="class-card monitor-class-card" type="button" data-action="select-monitor-class" data-id="' + escapeHtml(classRow.id) + '"><strong>' + escapeHtml(classRow.name) + '</strong><span>' + summary.practiced + ' / ' + summary.total + ' geoefend · ' + summary.exercises + ' oefeningen · ' + escapeHtml(formatMonitorDuration(summary.activeSeconds)) + ' actief</span></button>';
+    }).join("");
+    return breadcrumbs([{ label: "Dashboard", action: "view-dashboard" }, { label: "Klassen" }]) + '<div class="page-heading"><div><p class="eyebrow">Klasmonitor</p><h2>Klassen</h2><p class="muted">Open een klas voor de leerlingmonitor.</p></div></div>' + (cards ? '<div class="class-grid">' + cards + '</div>' : emptyState("Nog geen klassen", "Maak je eerste klas aan onder Beheer."));
   }
 
   function renderDifficult(groups, title) {
@@ -767,11 +989,26 @@
     if (!student) return emptyState("Leerling niet gevonden", "Deze leerling valt niet binnen de huidige RLS-resultaten.");
     const classRow = data.classes.find(function (row) { return row.id === student.class_id; });
     const overview = studentOverview(data, student);
-    const mastery = studentMasterySummary(overview.attemptRows);
+    const independent = overview.attemptRows.filter(function (attempt) { return attempt.mode === "practice" || attempt.mode === "test"; });
+    const independentAccuracy = independent.length ? percentage(independent.filter(function (attempt) { return attempt.was_correct === true; }).length, independent.length) : null;
+    const mastery = state.monitor.masteryByStudent[studentId];
+    const monitorRow = state.monitor.rows.find(function (row) { return row.student.id === studentId; });
+    const task = monitorRow && monitorRow.activeAssignment;
+    const periodExercises = monitorRow ? monitorRow.exercisesMade : overview.exercisesMade;
+    const periodSeconds = monitorRow ? monitorRow.activeDurationSeconds : overview.activeDurationSeconds;
+    const periodAccuracy = monitorRow ? monitorRow.accuracy : independentAccuracy;
+    const verbGoals = asArray(state.studentVerbGoals[studentId]).filter(function (goal) { return Number(goal.attempts || 0) > 0; });
     const sessions = overview.sessionRows.slice().sort(function (left, right) { return new Date(right.finished_at || right.started_at) - new Date(left.finished_at || left.started_at); });
     return breadcrumbs([{ label: "Dashboard", action: "view-dashboard" }, { label: classRow ? classRow.name : "Klas", action: "view-class", id: student.class_id }, { label: student.display_name || "Naamloze leerling" }]) +
-      '<div class="page-heading"><div><p class="eyebrow">Leerlingdetail</p><h2>' + escapeHtml(student.display_name || "Naamloze leerling") + '</h2><p class="muted">' + escapeHtml(classRow ? classRow.name : "Onbekende klas") + ' · laatste activiteit ' + escapeHtml(formatDate(overview.lastActivity)) + '</p></div><div class="export-actions"><button class="button button-secondary" type="button" data-action="export-student" data-id="' + escapeHtml(student.id) + '">Sessies CSV</button><button class="button button-secondary" type="button" data-action="export-difficult-student" data-id="' + escapeHtml(student.id) + '">Moeilijke items CSV</button></div></div>' +
-      '<section class="stat-grid">' + statCard("Sessies", overview.sessions) + statCard("Oefeningen gemaakt", overview.exercisesMade, "werkelijk beantwoord") + statCard("Pogingen", overview.attempts, "incl. herhalingen") + statCard("Juist / fout", overview.correct + " / " + overview.incorrect) + statCard("Correct", overview.accuracy + "%") + statCard("Beheersingsniveau", mastery ? mastery.masteryLevel + "%" : "—", "continue voortgang") + statCard("Gekend", mastery ? mastery.acquired + " / " + mastery.total : "—", mastery ? mastery.percentages.acquired + "% streng beheerst" : "mastery.js niet beschikbaar") + statCard("Actieve oefentijd", overview.hasMeasuredDuration ? formatActiveDuration(overview.activeDurationSeconds) : "—", overview.hasMeasuredDuration ? "alleen gemeten sessies" : "nog niet gemeten") + '</section>' +
+      '<div class="page-heading"><div><p class="eyebrow">Leerlingdetail · ' + escapeHtml(periodLabel(state.filters.period)) + '</p><h2>' + escapeHtml(student.display_name || "Naamloze leerling") + ' · ' + escapeHtml(classRow ? classRow.name : "Onbekende klas") + '</h2></div><div class="export-actions"><button class="button button-secondary" type="button" data-action="export-student" data-id="' + escapeHtml(student.id) + '">Sessies CSV</button><button class="button button-secondary" type="button" data-action="export-difficult-student" data-id="' + escapeHtml(student.id) + '">Moeilijke items CSV</button></div></div>' +
+      '<section class="monitor-summary student-summary" aria-label="Leerlingoverzicht"><span><strong>' + periodExercises + '</strong> oefeningen</span><span><strong>' + escapeHtml(formatMonitorDuration(periodSeconds)) + '</strong> actieve tijd*</span><span><strong>' + (periodAccuracy == null ? '—' : periodAccuracy + '%') + '</strong> correct zelfstandig</span><span title="Huidige beheersing; niet beperkt tot deze periode"><strong>' + (mastery == null ? '—' : mastery + '%') + '</strong> huidige mastery</span><span><strong>' + escapeHtml(task ? task.title + ' · ' + Number(task.mastery_percentage || 0) + '%' : '—') + '</strong> actieve taak</span></section>' +
+      '<p class="monitor-footnote">* De monitor rekent actieve sessieseconden toe aan de periode waarin de sessie begon.</p>' +
+      (verbGoals.length ? '<section class="section-block"><h3>Werkwoordbeheersing · huidige staat</h3><div class="verb-analysis">' + verbGoals.map(function (goal) {
+        const item = state.courseIndex[goal.goal_id];
+        const label = item ? item.infinitive : goal.goal_id === 'present_er' ? 'Verbes en -ER' : goal.goal_id === 'present_ir_finir' ? 'Verbes du type finir' : goal.goal_id === 'present_re' ? 'Verbes en -RE' : goal.goal_id;
+        return '<span><strong>' + escapeHtml(label) + '</strong> ' + Number(goal.level || 0) + '% · ' + Number(goal.persons || 0) + '/6 persoonsgroepen · ' + Number(goal.conjugation_accuracy ?? goal.accuracy ?? 0) + '% juist</span>';
+      }).join('') + '</div></section>' : '') +
+      '<details class="secondary-analytics"><summary>Analyse · ' + escapeHtml(periodLabel(state.filters.period)) + '</summary><section class="stat-grid">' + statCard("Sessies", overview.sessions) + statCard("Oefeningen gemaakt", overview.exercisesMade, "werkelijk beantwoord") + statCard("Pogingen", overview.attempts, "incl. herhalingen") + statCard("Juist / fout", overview.correct + " / " + overview.incorrect) + statCard("Correct", overview.attempts ? overview.accuracy + "%" : "—") + statCard("Actieve oefentijd", overview.hasMeasuredDuration ? formatActiveDuration(overview.activeDurationSeconds) : "—") + '</section></details>' +
       '<section class="section-block"><div class="section-heading"><div><h2>Sessiegeschiedenis</h2><p>Open een sessie voor itemdetails en modelantwoorden.</p></div></div><div class="session-list">' + (sessions.length ? sessions.map(function (session) { return renderSessionCard(session, overview.attemptRows); }).join("") : emptyState("Nog geen sessies", "Binnen de gekozen filters zijn voor deze leerling geen sessies gevonden.")) + '</div></section>' +
       '<section class="section-block">' + renderDifficult(difficultItems(overview.attemptRows, state.courseIndex), "Moeilijk voor deze leerling") + '</section>';
   }
@@ -873,6 +1110,8 @@
       instructions: source && source.instructions || "",
       due_at: source && source.due_at ? taskDeadlineLocal(source.due_at) : "",
       target_acquired_percentage: source && source.target_acquired_percentage || 80,
+      mastery_strategy: source && source.mastery_strategy || "item_mastery",
+      verb_item_ids: source && source.mastery_strategy && source.mastery_strategy !== "item_mastery" ? asArray(source.item_ids).map(String) : null,
       status: source && source.status || "draft",
       class_ids: asArray(source && source.class_ids).map(String),
       trajectory: first && first.trajectory || "",
@@ -921,7 +1160,32 @@
     const items = taskScopeItems(draft);
     const start = Math.max(1, Number(draft.range_start) || 1);
     const end = Math.min(items.length, Number(draft.range_end) || items.length);
-    return items.slice(start - 1, end);
+    const selected = items.slice(start - 1, end);
+    if (draft.mastery_strategy === "irregular_verb_mastery" || draft.mastery_strategy === "mixed_verb_mastery") {
+      const chosen = draft.verb_item_ids && new Set(draft.verb_item_ids);
+      return selected.filter(function (item) {
+        const type = window.MonParcoursVerbMastery && window.MonParcoursVerbMastery.classification(item.id);
+        return !type || type.kind !== "irregular" || !chosen || chosen.has(item.id);
+      });
+    }
+    return selected;
+  }
+
+  function taskStrategyChoices(items) {
+    const api = window.MonParcoursVerbMastery;
+    if (!api || !items.length || items.some(function (item) { return item.type !== "verb" || !api.classification(item.id); })) return ["item_mastery"];
+    const kinds = new Set(items.map(function (item) { return api.classification(item.id).kind; }));
+    if (kinds.size === 2) return ["item_mastery", "mixed_verb_mastery"];
+    return kinds.has("regular") ? ["item_mastery", "verb_rule_mastery"] : ["item_mastery", "irregular_verb_mastery"];
+  }
+
+  function taskRequirements(draft, items) {
+    if (draft.mastery_strategy === "item_mastery") return [];
+    const api = window.MonParcoursVerbMastery;
+    return api.goalsForItems(items).map(function (goalId, index) {
+      return { requirement_type: goalId.startsWith("uf1-item-") ? "irregular_verb_mastery" : "verb_rule_mastery",
+        reference_id: goalId, target_percentage: Number(draft.target_acquired_percentage), ordering: index + 1 };
+    });
   }
 
   function taskSelect(name, label, values, selected) {
@@ -955,7 +1219,9 @@
         return '<section class="section-block"><h3>' + labels[group] + ' (' + rows.length + ')</h3>' +
           (rows.length ? '<div class="task-list">' + rows.map(function (task) {
             const classes = asArray(task.classes).map(function (row) { return row.name; }).join(", ");
-            return '<button class="task-card" type="button" data-action="open-task" data-id="' + escapeHtml(task.id) + '"><strong>' + escapeHtml(task.title) + '</strong><span>' + escapeHtml(classes || "Geen toegankelijke klassen") + '</span><span>' + asArray(task.item_ids).length + ' items · ' + Number(task.completed_count || 0) + '/' + Number(task.student_count || 0) + ' afgerond' + (task.due_at ? ' · ' + escapeHtml(formatDate(task.due_at, false)) : '') + '</span></button>';
+            const scopeLabel = task.mastery_strategy && task.mastery_strategy !== "item_mastery"
+              ? asArray(task.requirements).length + ' werkwoorddoelen' : asArray(task.item_ids).length + ' items';
+            return '<button class="task-card" type="button" data-action="open-task" data-id="' + escapeHtml(task.id) + '"><strong>' + escapeHtml(task.title) + '</strong><span>' + escapeHtml(classes || "Geen toegankelijke klassen") + '</span><span>' + scopeLabel + ' · ' + Number(task.completed_count || 0) + '/' + Number(task.student_count || 0) + ' afgerond' + (task.due_at ? ' · ' + escapeHtml(formatDate(task.due_at, false)) : '') + '</span></button>';
           }).join("") + '</div>' : '<p class="muted">Geen taken.</p>') + '</section>';
       }).join("");
   }
@@ -965,8 +1231,23 @@
     if (!draft) return renderTasksPage();
     const scopeItems = taskScopeItems(draft);
     const selectedItems = taskSelectedItems(draft);
+    const rangeItems = scopeItems.slice(Math.max(0, (Number(draft.range_start) || 1) - 1),
+      Math.min(scopeItems.length, Number(draft.range_end) || scopeItems.length));
     const trajectories = asArray(state.course && state.course.trajectories).map(function (row) { return row.trajectory; });
     const ranges = window.MonParcoursAssignments.numberedRanges(scopeItems.length);
+    const strategies = taskStrategyChoices(rangeItems);
+    const strategyNames = { item_mastery: "Vocabulaire / losse leeritems", verb_rule_mastery: "Regel en vervoeging beheersen", irregular_verb_mastery: "Onregelmatige werkwoorden beheersen", mixed_verb_mastery: "Gemengd werkwoordblok: alle doelen" };
+    const strategySelect = '<label><span>Wat moet de leerling beheersen?</span><select name="mastery_strategy">' + strategies.map(function (strategy) {
+      return '<option value="' + strategy + '"' + (strategy === draft.mastery_strategy ? ' selected' : '') + '>' + strategyNames[strategy] + '</option>';
+    }).join("") + '</select></label>';
+    const irregularItems = rangeItems.filter(function (item) {
+      const type = window.MonParcoursVerbMastery && window.MonParcoursVerbMastery.classification(item.id);
+      return type && type.kind === "irregular";
+    });
+    const verbSelector = ["irregular_verb_mastery", "mixed_verb_mastery"].includes(draft.mastery_strategy) && irregularItems.length
+      ? '<div class="task-class-grid">' + irregularItems.map(function (item) {
+        return '<label class="task-class"><input type="checkbox" name="verb_item_ids" value="' + escapeHtml(item.id) + '"' + (!draft.verb_item_ids || draft.verb_item_ids.includes(item.id) ? ' checked' : '') + '><span>' + escapeHtml(item.infinitive) + ' · ' + escapeHtml(item.nl) + '</span></label>';
+      }).join("") + '</div>' : "";
     const classChoices = state.raw.classes.filter(function (row) { return row.is_active !== false; }).map(function (row) {
       return '<label class="task-class"><input type="checkbox" name="class_ids" value="' + escapeHtml(row.id) + '"' + (draft.class_ids.includes(row.id) ? ' checked' : '') + '><span>' + escapeHtml(row.name) + '</span></label>';
     }).join("");
@@ -982,10 +1263,10 @@
         taskSelect("block", "Blok", taskScopeChoices(draft, "block"), draft.block) +
         taskSelect("subsection", "Subsection", taskScopeChoices(draft, "subsection"), draft.subsection) +
         taskSelect("category", "Categorie", taskScopeChoices(draft, "category"), draft.category) + '</div>') + '</fieldset>' +
-      '<fieldset><legend>3 · Itemselectie</legend><p>' + scopeItems.length + ' oefenbare items in dit onderdeel.</p>' +
+      '<fieldset><legend>3 · Itemselectie</legend><p>' + scopeItems.length + ' oefenbare items in dit onderdeel.</p><div class="task-fields">' + strategySelect + '</div>' + verbSelector +
         (draft.fixed_item_ids ? '' : '<div class="task-fields"><label><span>Van item</span><input name="range_start" type="number" min="1" max="' + scopeItems.length + '" value="' + draft.range_start + '"></label><label><span>Tot item</span><input name="range_end" type="number" min="1" max="' + scopeItems.length + '" value="' + (draft.range_end || scopeItems.length) + '"></label></div><div class="export-actions"><button class="small-button" type="button" data-action="task-range" data-start="1" data-end="' + scopeItems.length + '">Alle ' + scopeItems.length + '</button>' + ranges.map(function (range) { return '<button class="small-button" type="button" data-action="task-range" data-start="' + range.start + '" data-end="' + range.end + '">' + range.start + '–' + range.end + '</button>'; }).join("") + '</div>') +
         '<p><strong>Voorbeeld: ' + selectedItems.length + ' geselecteerd.</strong></p><ol class="task-preview">' + selectedItems.slice(0, 20).map(function (item) { return '<li>' + escapeHtml(item.nl || item.prompt || item.infinitive || item.id) + ' — ' + escapeHtml(item.fr || item.answer || item.infinitive || '') + '</li>'; }).join("") + '</ol>' + (selectedItems.length > 20 ? '<p>… en ' + (selectedItems.length - 20) + ' meer.</p>' : '') + '</fieldset>' +
-      '<fieldset><legend>4 · Doel en deadline</legend><div class="task-fields"><label><span>Titel</span><input name="title" maxlength="160" required value="' + escapeHtml(draft.title) + '"></label><label><span>Deadline (optioneel, lokale tijd)</span><input name="due_at" type="datetime-local" value="' + escapeHtml(draft.due_at) + '"></label><label><span>Doel: % gekend</span><input name="target_acquired_percentage" type="number" min="1" max="100" value="' + draft.target_acquired_percentage + '"></label></div><div class="export-actions">' + [70,80,90,100].map(function (value) { return '<button class="small-button" type="button" data-action="task-target" data-value="' + value + '">' + value + '%</button>'; }).join("") + '</div><p>Voltooid wanneer alle items minstens eenmaal geoefend zijn én het doelpercentage gekend is.</p><label><span>Instructies (optioneel)</span><textarea name="instructions" maxlength="1000">' + escapeHtml(draft.instructions) + '</textarea></label></fieldset>' +
+      '<fieldset><legend>4 · Doel en deadline</legend><div class="task-fields"><label><span>Titel</span><input name="title" maxlength="160" required value="' + escapeHtml(draft.title) + '"></label><label><span>Deadline (optioneel, lokale tijd)</span><input name="due_at" type="datetime-local" value="' + escapeHtml(draft.due_at) + '"></label><label><span>Doel: % ' + (draft.mastery_strategy === "verb_rule_mastery" ? "regelbeheersing" : "gekend") + '</span><input name="target_acquired_percentage" type="number" min="1" max="100" value="' + draft.target_acquired_percentage + '"></label></div><div class="export-actions">' + [70,80,90,100].map(function (value) { return '<button class="small-button" type="button" data-action="task-target" data-value="' + value + '">' + value + '%</button>'; }).join("") + '</div><p>' + (draft.mastery_strategy === "item_mastery" ? "Voltooid wanneer alle items minstens eenmaal geoefend zijn én het doelpercentage gekend is." : "Voltooiing volgt de persoonsgroepen, werkwoorddiversiteit en zelfstandige oefenresultaten.") + '</p><label><span>Instructies (optioneel)</span><textarea name="instructions" maxlength="1000">' + escapeHtml(draft.instructions) + '</textarea></label></fieldset>' +
       '<fieldset><legend>5 · Controleren en publiceren</legend><p>' + selectedItems.length + ' vaste permanente item-ID’s · ' + draft.class_ids.length + ' klassen · doel ' + draft.target_acquired_percentage + '%.</p><div class="export-actions">' + (draft.status === "draft" ? '<button class="button button-secondary" type="submit" name="task_status" value="draft">Concept opslaan</button>' : '') + '<button class="button button-primary" type="submit" name="task_status" value="published">' + (draft.status === "published" ? "Wijzigingen opslaan" : "Publiceren") + '</button></div></fieldset></form>';
   }
 
@@ -1004,14 +1285,20 @@
     const completedCount = rows.filter(function (row) { return row.completed_at; }).length;
     const startedCount = rows.filter(function (row) { return !row.completed_at && Number(row.progress && row.progress.practiced || 0) > 0; }).length;
     const averageMastery = rows.length ? Math.round(rows.reduce(function (total, row) { return total + Number(row.progress && row.progress.mastery_level || 0); }, 0) / rows.length) : 0;
-    return '<div class="page-heading"><div><p class="eyebrow">Taak · ' + escapeHtml(task.status) + '</p><h2>' + escapeHtml(task.title) + '</h2><p class="muted">' + asArray(task.item_ids).length + ' items · doel ' + task.target_acquired_percentage + '% gekend · ' + escapeHtml(task.due_at ? formatDate(task.due_at) : "Geen deadline") + '</p></div><div class="export-actions"><button class="button button-secondary" type="button" data-action="view-tasks">Terug</button><button class="button button-secondary" type="button" data-action="export-task">CSV</button>' + (editable ? '<button class="button button-primary" type="button" data-action="edit-task">Bewerken</button><button class="button button-secondary" type="button" data-action="archive-task">Archiveren</button>' : '') + '</div></div>' +
+    const verbTask = task.mastery_strategy && task.mastery_strategy !== "item_mastery";
+    return '<div class="page-heading"><div><p class="eyebrow">Taak · ' + escapeHtml(task.status) + '</p><h2>' + escapeHtml(task.title) + '</h2><p class="muted">' + (verbTask ? asArray(task.requirements).length + ' werkwoorddoelen' : asArray(task.item_ids).length + ' items') + ' · doel ' + task.target_acquired_percentage + '% · ' + escapeHtml(task.due_at ? formatDate(task.due_at) : "Geen deadline") + '</p></div><div class="export-actions"><button class="button button-secondary" type="button" data-action="view-tasks">Terug</button><button class="button button-secondary" type="button" data-action="export-task">CSV</button>' + (editable ? '<button class="button button-primary" type="button" data-action="edit-task">Bewerken</button><button class="button button-secondary" type="button" data-action="archive-task">Archiveren</button>' : '') + '</div></div>' +
       (task.instructions ? '<p>' + escapeHtml(task.instructions) + '</p>' : '') +
       '<div class="task-summary"><span><strong>' + completedCount + '/' + rows.length + '</strong> afgerond</span><span><strong>' + startedCount + '</strong> bezig</span><span><strong>' + (rows.length - completedCount - startedCount) + '</strong> niet gestart</span><span><strong>' + averageMastery + '%</strong> gemiddelde beheersing</span></div>' +
       '<label class="task-filter"><span>Status</span><select id="taskStatusFilter"><option value="all"' + (state.tasks.filter === "all" ? ' selected' : '') + '>Alle</option>' + Object.entries(statuses).map(function (entry) { return '<option value="' + entry[0] + '"' + (state.tasks.filter === entry[0] ? ' selected' : '') + '>' + entry[1] + '</option>'; }).join("") + '</select></label>' +
       '<div class="table-wrap"><table><thead><tr><th>Klas / leerling</th><th>Status</th><th>Geoefend</th><th>Beheersing</th><th>Gekend</th><th>Doel</th><th>Laatste activiteit</th><th>Actieve taaktijd</th></tr></thead><tbody>' + filteredRows.map(function (row) {
         const progress = row.progress || {};
         const status = statuses[statusFor(row)];
-        return '<tr><td>' + escapeHtml(row.class_name) + ' · <strong>' + escapeHtml(row.student_name) + '</strong></td><td>' + status + (row.completed_at ? ' · ' + escapeHtml(formatDate(row.completed_at)) : '') + '</td><td>' + Number(progress.practiced || 0) + '/' + Number(progress.total || 0) + '</td><td>' + Number(progress.mastery_level || 0) + '%</td><td>' + Number(progress.acquired || 0) + '/' + Number(progress.total || 0) + ' · ' + (Number(progress.total || 0) ? Math.round(Number(progress.acquired || 0) * 100 / Number(progress.total)) : 0) + '%</td><td>' + task.target_acquired_percentage + '%</td><td>' + escapeHtml(progress.last_activity ? formatDate(progress.last_activity) : "—") + '</td><td>' + formatActiveDuration(row.active_task_time) + '</td></tr>';
+        const goalDetails = verbTask ? '<div class="task-goal-details">' + asArray(progress.goals).map(function (goal) {
+          const courseItem = state.courseIndex[goal.goal_id];
+          const label = courseItem ? courseItem.infinitive : goal.goal_id === "present_er" ? "Verbes en -ER" : goal.goal_id;
+          return '<span>' + escapeHtml(label) + ': ' + Number(goal.level || 0) + '% · ' + Number(goal.persons || 0) + '/6 pers. · ' + Number(goal.conjugation_accuracy ?? goal.accuracy ?? 0) + '% juist · ' + Number(goal.verbs || 0) + ' ww. · ' + Number(goal.sessions || 0) + ' sessies · laatst ' + escapeHtml(goal.last_activity ? formatDate(goal.last_activity) : '—') + '</span>';
+        }).join("") + '</div>' : "";
+        return '<tr><td>' + escapeHtml(row.class_name) + ' · <strong>' + escapeHtml(row.student_name) + '</strong></td><td>' + status + (row.completed_at ? ' · ' + escapeHtml(formatDate(row.completed_at)) : '') + '</td><td>' + Number(progress.practiced || 0) + '/' + Number(progress.total || 0) + '</td><td>' + Number(progress.mastery_level || 0) + '%' + goalDetails + '</td><td>' + Number(progress.acquired || 0) + '/' + Number(progress.total || 0) + ' · ' + (Number(progress.total || 0) ? Math.round(Number(progress.acquired || 0) * 100 / Number(progress.total)) : 0) + '%</td><td>' + task.target_acquired_percentage + '%</td><td>' + escapeHtml(progress.last_activity ? formatDate(progress.last_activity) : "—") + '</td><td>' + formatActiveDuration(row.active_task_time) + '</td></tr>';
       }).join("") + '</tbody></table></div>';
   }
 
@@ -1040,10 +1327,12 @@
     const studentStatusSelect = document.querySelector("#studentStatusFilter");
     const categorySelect = document.querySelector("#categoryFilter");
     const subsectionSelect = document.querySelector("#subsectionFilter");
+    const assignmentSelect = document.querySelector("#assignmentFilter");
     const trajectories = courseTrajectories(state.course, state.raw.sessions);
-    const modes = Array.from(new Set(state.raw.sessions.map(function (session) { return session.mode; }).filter(Boolean)));
-    const categories = Array.from(new Set(state.raw.sessions.map(function (session) { return session.top_category; }).filter(Boolean)));
-    const subsections = Array.from(new Set(state.raw.sessions.map(function (session) { return session.subsection; }).filter(Boolean)));
+    const modes = ["learn", "practice", "test"];
+    const courseItems = asArray(state.course && state.course.trajectories).flatMap(function (row) { return asArray(row.items); });
+    const categories = Array.from(new Set(courseItems.map(function (item) { return item.top_category; }).concat(state.raw.sessions.map(function (session) { return session.top_category; })).filter(Boolean)));
+    const subsections = Array.from(new Set(courseItems.map(function (item) { return item.subsection; }).concat(state.raw.sessions.map(function (session) { return session.subsection; })).filter(Boolean)));
     const availableStudents = state.raw.students.filter(function (student) { return state.filters.classId === "all" || student.class_id === state.filters.classId; });
     trajectorySelect.innerHTML = '<option value="all">Alle Trajets</option>' + trajectories.map(function (value) { return '<option value="' + escapeHtml(value) + '">' + escapeHtml(value) + '</option>'; }).join("");
     modeSelect.innerHTML = '<option value="all">Alle modi</option>' + modes.map(function (value) { return '<option value="' + escapeHtml(value) + '">' + escapeHtml(modeLabel(value)) + '</option>'; }).join("");
@@ -1051,12 +1340,16 @@
     studentSelect.innerHTML = '<option value="all">Alle leerlingen</option>' + availableStudents.map(function (row) { return '<option value="' + escapeHtml(row.id) + '">' + escapeHtml(row.display_name || "Naamloze leerling") + '</option>'; }).join("");
     categorySelect.innerHTML = '<option value="all">Alle onderdelen</option>' + categories.map(function (value) { return '<option value="' + escapeHtml(value) + '">' + escapeHtml(value) + '</option>'; }).join("");
     subsectionSelect.innerHTML = '<option value="all">Alle subsections</option>' + subsections.map(function (value) { return '<option value="' + escapeHtml(value) + '">' + escapeHtml(value) + '</option>'; }).join("");
+    if (assignmentSelect) assignmentSelect.innerHTML = '<option value="all">Alle taken</option>' + state.tasks.list.filter(function (task) { return task.status === "published"; }).map(function (task) {
+      return '<option value="' + escapeHtml(task.id) + '">' + escapeHtml(task.title) + '</option>';
+    }).join("");
     if (trajectories.indexOf(state.filters.trajectory) < 0) state.filters.trajectory = "all";
     if (modes.indexOf(state.filters.mode) < 0) state.filters.mode = "all";
     if (!state.raw.classes.some(function (row) { return row.id === state.filters.classId; })) state.filters.classId = "all";
     if (!availableStudents.some(function (row) { return row.id === state.filters.studentId; })) state.filters.studentId = "all";
     if (categories.indexOf(state.filters.category) < 0) state.filters.category = "all";
     if (subsections.indexOf(state.filters.subsection) < 0) state.filters.subsection = "all";
+    if (!state.tasks.list.some(function (task) { return task.id === state.filters.assignmentId && task.status === "published"; })) state.filters.assignmentId = "all";
     trajectorySelect.value = state.filters.trajectory;
     modeSelect.value = state.filters.mode;
     classSelect.value = state.filters.classId;
@@ -1064,6 +1357,7 @@
     studentStatusSelect.value = state.filters.studentStatus;
     categorySelect.value = state.filters.category;
     subsectionSelect.value = state.filters.subsection;
+    if (assignmentSelect) assignmentSelect.value = state.filters.assignmentId;
   }
 
   function updateNavigation() {
@@ -1085,24 +1379,19 @@
 
   function scheduleAutoRefresh() {
     clearAutoRefresh();
-    if (!state.user || state.route.view !== "dashboard" || !isShortPeriod(state.filters.period)) return;
+    if (!state.user || !["dashboard", "classes"].includes(state.route.view) || !isShortPeriod(state.filters.period)) return;
     state.autoRefreshTimer = window.setTimeout(async function () {
       state.autoRefreshTimer = null;
-      if (document.hidden || state.loading || !state.user) {
+      if (document.hidden || state.loading || state.monitor.loading || !state.user || !["dashboard", "classes"].includes(state.route.view)) {
         scheduleAutoRefresh();
         return;
       }
-      state.loading = true;
       try {
-        state.raw = await loadRlsDataset(state.client);
-        state.lastRefreshedAt = new Date();
-        populateFilters();
-        renderCurrent();
+        await refreshMonitor(false);
       } finally {
-        state.loading = false;
         scheduleAutoRefresh();
       }
-    }, 30000);
+    }, MONITOR_REFRESH_MS);
   }
 
   function showLogin(message) {
@@ -1110,6 +1399,9 @@
     state.user = null;
     state.teacherProfile = null;
     state.raw = emptyDataset();
+    state.monitor = { rows: [], error: "", loading: false, pending: false, masteryByStudent: Object.create(null), masteryRefreshedAt: 0 };
+    state.analyticsLoaded = false;
+    state.studentVerbGoals = Object.create(null);
     state.management = { loaded: false, classes: [], students: [], selectedClassId: null, studentStatus: "active", generatedCode: "", createdStudents: [], message: "", messageIsError: false };
     state.teacherAdmin = { loaded: false, teachers: [], assignments: [], classes: [], editingTeacherId: null, message: "", messageIsError: false };
     state.tasks = { loaded: false, list: [], detail: [], selectedId: null, draft: null, filter: "all", message: "", error: false };
@@ -1151,6 +1443,18 @@
       return;
     }
     const sameUser = state.user && state.user.id === session.user.id;
+    if (!sameUser) {
+      state.raw = emptyDataset();
+      state.monitor = { rows: [], error: "", loading: false, pending: false, masteryByStudent: Object.create(null), masteryRefreshedAt: 0 };
+      state.analyticsLoaded = false;
+      state.studentVerbGoals = Object.create(null);
+      state.tasks = { loaded: false, list: [], detail: [], selectedId: null, draft: null, filter: "all", message: "", error: false };
+      state.management = { loaded: false, classes: [], students: [], selectedClassId: null, studentStatus: "active", generatedCode: "", createdStudents: [], message: "", messageIsError: false };
+      state.teacherAdmin = { loaded: false, teachers: [], assignments: [], classes: [], editingTeacherId: null, message: "", messageIsError: false };
+      state.filters.classId = "all";
+      state.filters.studentId = "all";
+      state.filters.assignmentId = "all";
+    }
     state.user = session.user;
     state.teacherProfile = profile;
     document.querySelector("#authView").hidden = true;
@@ -1161,7 +1465,7 @@
     document.querySelector("#teachersNavButton").hidden = profile.role !== "admin";
     document.querySelector("#loginMessage").textContent = "";
     if (sameUser && state.loading && !forceReload) return;
-    if (sameUser && !forceReload && state.raw.classes.length + state.raw.students.length + state.raw.sessions.length + state.raw.attempts.length > 0) {
+    if (sameUser && !forceReload && state.raw.classes.length + state.raw.students.length > 0) {
       renderCurrent();
       scheduleAutoRefresh();
       return;
@@ -1170,11 +1474,17 @@
     state.loading = true;
     document.querySelector("#dashboardContent").innerHTML = '<section class="loading-state"><span class="loader" aria-hidden="true"></span><p>Resultaten worden veilig geladen…</p></section>';
     try {
-      const dataset = await loadRlsDataset(state.client);
+      const dataset = await loadDashboardBase(state.client);
       if (sequence !== state.loadSequence || !state.user) return;
       state.raw = dataset;
-      state.lastRefreshedAt = new Date();
+      state.analyticsLoaded = false;
+      const taskResult = await state.client.rpc("get_teacher_assignments");
+      if (!taskResult.error) {
+        state.tasks.list = asArray(taskResult.data);
+        state.tasks.loaded = true;
+      }
       populateFilters();
+      await refreshMonitor(true, false);
       renderCurrent();
       scheduleAutoRefresh();
     } catch (error) {
@@ -1306,11 +1616,12 @@
   function updateTaskDraftFromForm(form) {
     const draft = state.tasks.draft;
     if (!draft || !form) return;
-    ["title", "instructions", "due_at", "target_acquired_percentage", "trajectory", "top_category", "lesson", "block", "subsection", "category", "range_start", "range_end"].forEach(function (name) {
+    ["title", "instructions", "due_at", "target_acquired_percentage", "mastery_strategy", "trajectory", "top_category", "lesson", "block", "subsection", "category", "range_start", "range_end"].forEach(function (name) {
       const field = form.elements.namedItem(name);
       if (field) draft[name] = field.value;
     });
     draft.class_ids = Array.from(form.querySelectorAll('input[name="class_ids"]:checked')).map(function (field) { return field.value; });
+    if (form.querySelector && form.querySelector('input[name="verb_item_ids"]')) draft.verb_item_ids = Array.from(form.querySelectorAll('input[name="verb_item_ids"]:checked')).map(function (field) { return field.value; });
   }
 
   async function saveTask(event, form) {
@@ -1319,9 +1630,21 @@
     const draft = state.tasks.draft;
     const status = event.submitter && event.submitter.value || "draft";
     const items = taskSelectedItems(draft);
+    if (!taskStrategyChoices(items).includes(draft.mastery_strategy)) {
+      state.tasks.message = "Deze beheersingswijze past niet bij de geselecteerde werkwoorden.";
+      return renderCurrent();
+    }
     if (!draft.class_ids.length || !items.length || !draft.title.trim()) {
       state.tasks.message = "Kies minstens één klas en één item en vul een titel in.";
       return renderCurrent();
+    }
+    if (draft.mastery_strategy === "verb_rule_mastery" || draft.mastery_strategy === "mixed_verb_mastery") {
+      const api = window.MonParcoursVerbMastery;
+      const rules = taskRequirements(draft, items).filter(function (row) { return row.requirement_type === "verb_rule_mastery"; });
+      if (rules.some(function (rule) { return items.filter(function (item) { return api.classification(item.id).ruleId === rule.reference_id; }).length < 3; })) {
+        state.tasks.message = "Kies minstens drie verschillende werkwoorden per regeldoel.";
+        return renderCurrent();
+      }
     }
     let deadline;
     try { deadline = taskDeadlineUtc(draft.due_at); }
@@ -1330,6 +1653,8 @@
       id: draft.id, title: draft.title.trim(), instructions: draft.instructions.trim(),
       due_at: deadline,
       target_acquired_percentage: Number(draft.target_acquired_percentage),
+      mastery_strategy: draft.mastery_strategy,
+      requirements: taskRequirements(draft, items),
       class_ids: draft.class_ids, item_ids: items.map(function (item) { return item.id; }), status: status
     };
     const buttons = form.querySelectorAll('button[type="submit"]');
@@ -1341,19 +1666,24 @@
       state.tasks.message = status === "published" ? "Taak gepubliceerd." : "Concept opgeslagen.";
       renderCurrent();
     } catch (error) {
-      state.tasks.message = /scope locked/i.test(String(error.message)) ? "De itemselectie van deze taak is vergrendeld na leerlingactiviteit." : "Taak opslaan mislukt. Controleer je rechten en probeer opnieuw.";
+      state.tasks.message = /scope locked/i.test(String(error.message)) ? "De itemselectie van deze taak is vergrendeld na leerlingactiviteit." :
+        /regular rule needs at least three verbs/i.test(String(error.message)) ? "Kies minstens drie verschillende werkwoorden per regeldoel." :
+        "Taak opslaan mislukt. Controleer je rechten en probeer opnieuw.";
       renderCurrent();
     }
   }
 
   async function reloadAfterManagementMutation(createdStudents) {
-    const results = await Promise.all([loadManagementDataset(state.client), loadRlsDataset(state.client)]);
+    const results = await Promise.all([loadManagementDataset(state.client), loadDashboardBase(state.client)]);
     state.management.classes = results[0].classes;
     state.management.students = results[0].students;
     state.management.loaded = true;
     state.management.generatedCode = "";
     if (createdStudents) state.management.createdStudents = createdStudents;
     state.raw = results[1];
+    state.analyticsLoaded = false;
+    state.monitor.masteryByStudent = Object.create(null);
+    await refreshMonitor(true, false);
     populateFilters();
     renderCurrent();
   }
@@ -1486,6 +1816,42 @@
     if (!target) return;
     const action = target.dataset.action;
     const id = target.dataset.id;
+    if (action === "select-monitor-class") {
+      state.filters.classId = id;
+      state.filters.studentId = "all";
+      state.monitorQuickFilter = "all";
+      state.route = { view: "dashboard", classId: null, studentId: null };
+      populateFilters();
+      renderCurrent();
+      await refreshMonitor(true);
+      scheduleAutoRefresh();
+      return;
+    }
+    if (action === "monitor-quick") {
+      state.monitorQuickFilter = target.dataset.value || "all";
+      renderCurrent();
+      return;
+    }
+    if (action === "monitor-task") {
+      if (!state.tasks.list.some(function (task) { return task.id === id; })) await openTasks(true);
+      if (state.tasks.list.some(function (task) { return task.id === id; })) return openTaskDetail(id);
+      return;
+    }
+    if (action === "load-analysis") {
+      target.disabled = true;
+      try { await ensureAnalyticsData(); renderCurrent(); }
+      catch (error) { target.disabled = false; target.textContent = "Analyse laden mislukt · opnieuw proberen"; }
+      return;
+    }
+    if (action === "export-monitor") {
+      const classRow = state.raw.classes.find(function (row) { return row.id === state.filters.classId; });
+      if (!classRow) return;
+      const rows = sortClassMonitor(state.monitor.rows.filter(function (row) { return row.student.class_id === classRow.id &&
+        (state.monitorQuickFilter === "all" || state.monitorQuickFilter === "idle" && row.status === "Nog niet gestart" || state.monitorQuickFilter === "active" && row.status === "Bezig"); }), state.monitorSort);
+      downloadCsv("klasmonitor-" + safeFilename(classRow.name) + ".csv", ["Leerling", "Status", "Oefeningen", "Pogingen", "Actieve tijd (s, sessiestartperiode)", "Laatst actief", "Correct %", "Huidige mastery %", "Actieve taak"],
+        rows.map(function (row) { return [row.student.display_name, row.status, row.exercisesMade, row.attempts, row.activeDurationSeconds, row.lastActivity || "", row.accuracy == null ? "" : row.accuracy, row.masteryPercentage == null ? "" : row.masteryPercentage, row.activeAssignmentCount > 1 ? row.activeAssignmentCount + " actieve taken" : row.activeAssignment && row.activeAssignment.title || ""]; }));
+      return;
+    }
     if (action === "view-tasks") {
       await openTasks(false);
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -1528,7 +1894,8 @@
       if (!task || !(currentTeacherIsAdmin() || task.created_by_teacher_id === state.user.id)) return;
       if (!window.confirm("Deze taak archiveren? Historische voltooiingen blijven bewaard.")) return;
       const payload = { id: task.id, title: task.title, instructions: task.instructions, due_at: task.due_at,
-        target_acquired_percentage: task.target_acquired_percentage, class_ids: task.class_ids, item_ids: task.item_ids, status: "archived" };
+        target_acquired_percentage: task.target_acquired_percentage, mastery_strategy: task.mastery_strategy || "item_mastery",
+        requirements: task.requirements || [], class_ids: task.class_ids, item_ids: task.item_ids, status: "archived" };
       const result = await state.client.rpc("save_assignment", { p_payload: payload });
       if (result.error) { state.tasks.message = "Archiveren mislukt."; return renderCurrent(); }
       return openTasks(true);
@@ -1563,12 +1930,15 @@
       return;
     }
     if (action === "view-dashboard") state.route = { view: "dashboard", classId: null, studentId: null };
-    if (action === "view-classes") state.route = { view: "classes", classId: null, studentId: null };
-    if (action === "view-class") state.route = { view: "class", classId: id, studentId: null };
-    if (action === "view-student") {
-      const student = state.raw.students.find(function (row) { return row.id === id; });
-      state.route = { view: "student", classId: student && student.class_id || null, studentId: id };
+    if (action === "view-classes") {
+      state.filters.classId = "all";
+      state.filters.studentId = "all";
+      state.route = { view: "classes", classId: null, studentId: null };
+      populateFilters();
+      await refreshMonitor(false, false);
     }
+    if (action === "view-class") return openClassDetail(id);
+    if (action === "view-student") return openStudentDetail(id);
     if (/^export-(?:class|student|difficult-class|difficult-student)$/.test(action)) {
       exportResult(action, id);
       return;
@@ -1703,7 +2073,8 @@
     handleContentClick({ target: row });
   }
 
-  function handleFilters() {
+  async function handleFilters() {
+    const previousClass = state.filters.classId;
     state.filters = {
       period: document.querySelector("#periodFilter").value,
       trajectory: document.querySelector("#trajectoryFilter").value,
@@ -1712,16 +2083,21 @@
       studentId: document.querySelector("#studentFilter").value,
       studentStatus: document.querySelector("#studentStatusFilter").value,
       category: document.querySelector("#categoryFilter").value,
-      subsection: document.querySelector("#subsectionFilter").value
+      subsection: document.querySelector("#subsectionFilter").value,
+      assignmentId: document.querySelector("#assignmentFilter").value
     };
     populateFilters();
     if (state.filters.studentId !== "all") {
       const selectedStudent = state.raw.students.find(function (student) { return student.id === state.filters.studentId; });
       state.route = { view: "student", classId: selectedStudent && selectedStudent.class_id || null, studentId: state.filters.studentId };
+      await openStudentDetail(state.filters.studentId);
+      return;
     } else if (state.route.view === "student") {
       state.route = { view: "dashboard", classId: null, studentId: null };
     }
+    if (previousClass !== state.filters.classId) state.monitorQuickFilter = "all";
     renderCurrent();
+    await refreshMonitor(previousClass !== state.filters.classId);
     scheduleAutoRefresh();
   }
 
@@ -1739,6 +2115,8 @@
         order.slice(order.indexOf(event.target.name) + 1).forEach(function (name) { state.tasks.draft[name] = ""; });
         state.tasks.draft.range_start = 1;
         state.tasks.draft.range_end = null;
+        state.tasks.draft.mastery_strategy = "item_mastery";
+        state.tasks.draft.verb_item_ids = null;
         state.tasks.draft.autoTitle = taskSuggestedTitle(state.tasks.draft);
         if (wasAuto) state.tasks.draft.title = state.tasks.draft.autoTitle;
       }
@@ -1803,6 +2181,7 @@
       if (state.route.view === "management") openManagement(true);
       else if (state.route.view === "teachers") openTeachers(true);
       else if (state.route.view.indexOf("task") === 0) openTasks(true);
+      else if (state.route.view === "dashboard") refreshMonitor(true);
       else showDashboardForSession({ user: state.user }, true);
     });
     document.querySelector("#filterBar").addEventListener("change", handleFilters);
@@ -1835,6 +2214,13 @@
   window.MonParcoursTeacher = Object.freeze({
     buildCourseIndex: buildCourseIndex,
     periodBounds: periodBounds,
+    relativeActivity: relativeActivity,
+    normalizeMonitorRows: normalizeMonitorRows,
+    renderClassMonitor: renderClassMonitor,
+    monitorSummary: monitorSummary,
+    formatMonitorDuration: formatMonitorDuration,
+    fetchClassMonitor: fetchClassMonitor,
+    loadDashboardBase: loadDashboardBase,
     filterDataset: filterDataset,
     summarize: summarize,
     classMonitor: classMonitor,

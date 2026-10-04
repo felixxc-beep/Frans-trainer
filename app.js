@@ -4,6 +4,8 @@ const ACTIVE_SESSION_KEY = "monParcoursActiveSessionV1";
 const MASTERY_ATTEMPTS_KEY = "monParcoursMasteryAttemptsV1";
 const MASTERY_SERVER_CACHE_KEY = "monParcoursMasteryServerCacheV1";
 const ASSIGNMENTS_CACHE_KEY = "monParcoursAssignmentsCacheV1";
+const VERB_EVIDENCE_KEY = "monParcoursVerbEvidenceV1";
+const VERB_SERVER_CACHE_KEY = "monParcoursVerbServerCacheV1";
 const INACTIVITY_TIMEOUT_MS = 60000;
 const MAX_DYNAMIC_NUMBER_ALL = 101;
 const ACCENTS = ["é", "è", "ê", "ë", "à", "â", "ç", "ù", "û", "ô", "î", "ï"];
@@ -15,6 +17,7 @@ const EXERCISES = {
   "verb-fr-nl": { type: "verb", label: "Frans → Nederlands", labelFr: "Français → néerlandais", short: "Werkwoorden", shortFr: "Verbes" },
   "verb-nl-conj": { type: "verb", label: "Vervoegen vanuit Nederlands", labelFr: "Conjuguer depuis le néerlandais", short: "Vervoegen", shortFr: "Conjuguer" },
   "verb-fr-conj": { type: "verb", label: "Vervoegen vanuit Frans", labelFr: "Conjuguer depuis le français", short: "Vervoegen", shortFr: "Conjuguer" },
+  "verb-rule-recognition": { type: "verb", label: "De uitgangen herkennen", labelFr: "Reconnaître les terminaisons", short: "Regel", shortFr: "Règle" },
   "phrase-nl-fr": { type: "phrase", label: "Nederlandse zin → Franse zin", labelFr: "Phrase néerlandaise → phrase française", short: "Zinnen", shortFr: "Phrases" },
   "grammar": { type: "grammar_rule", label: "Grammaticaregel aanvullen", labelFr: "Compléter la règle de grammaire", short: "Grammatica", shortFr: "Grammaire" },
   "number-nl-fr": { type: "number", label: "Cijfer → Frans", labelFr: "Nombre → français", short: "Getallen", shortFr: "Nombres" },
@@ -22,7 +25,7 @@ const EXERCISES = {
 };
 const TYPE_EXERCISES = {
   vocabulary: ["vocab-nl-fr", "vocab-fr-nl"],
-  verb: ["verb-nl-inf", "verb-fr-nl", "verb-nl-conj", "verb-fr-conj"],
+  verb: ["verb-nl-inf", "verb-fr-nl", "verb-nl-conj", "verb-fr-conj", "verb-rule-recognition"],
   phrase: ["phrase-nl-fr"],
   grammar_rule: ["grammar"],
   number: ["number-nl-fr", "number-fr-nl"]
@@ -45,6 +48,7 @@ const state = {
     records: null,
     refreshing: false
   },
+  verbEvidence: { local: loadVerbEvidence(), server: [], refreshing: false },
   view: "loading"
 };
 
@@ -65,6 +69,7 @@ document.addEventListener("visibilitychange", handleVisibilityChange);
 if (window.addEventListener) window.addEventListener("pagehide", handlePageHide);
 if (window.addEventListener) window.addEventListener("monparcours:sync-complete", function () {
   refreshMasteryFromServer();
+  refreshVerbEvidenceFromServer();
   refreshStudentAssignments();
 });
 if (identityButton) identityButton.addEventListener("click", handleIdentityButtonClick);
@@ -108,6 +113,7 @@ function handleClick(event) {
     if (window.StudentIdentity) window.StudentIdentity.switchToLocal();
     state.mastery.serverRows = [];
     state.mastery.acceptedAttemptIds = [];
+    state.verbEvidence.server = [];
     invalidateMasteryRecords();
     state.pendingStartAction = null;
     state.assignments = { items: [], loading: false, loaded: false };
@@ -155,6 +161,7 @@ function handleClick(event) {
       block: control.dataset.block || "",
       subsection: control.dataset.subsection || "",
       category: control.dataset.category || "",
+      itemId: control.dataset.itemId || "",
       title: control.dataset.title || ""
     };
     if (hasRequiredStudentIdentity()) renderSetup();
@@ -315,7 +322,9 @@ async function submitStudentIdentity(form) {
     const connectedIdentity = await window.StudentIdentity.connectFromForm(provider, form);
     if (state.session && state.session.identity_subject !== connectedIdentity.subject) leaveSessionUnfinished();
     restoreMasteryServerCache();
+    restoreVerbServerCache();
     refreshMasteryFromServer();
+    refreshVerbEvidenceFromServer();
     restoreAssignmentCache();
     refreshStudentAssignments();
     updateIdentityUi();
@@ -368,6 +377,7 @@ function scheduleIdentityDialogCompletion(connectedIdentity, resumePending) {
 function initializeIdentity() {
   updateIdentityUi();
   restoreMasteryServerCache();
+  restoreVerbServerCache();
   restoreAssignmentCache();
   if (window.MonParcoursSync) window.MonParcoursSync.scheduleFlush();
 }
@@ -388,6 +398,7 @@ async function loadCourse() {
     invalidateMasteryRecords();
     if (!restoreActiveSession()) renderHome();
     refreshMasteryFromServer();
+    refreshVerbEvidenceFromServer();
     refreshStudentAssignments();
   } catch (error) {
     app.innerHTML = '<section class="error-card"><p class="eyebrow">' + uiText("Échec du chargement", "Laden mislukt") + '</p><h1>' + uiText("Le cours n'a pas pu être ouvert.", "De cursus kon niet worden geopend.") + '</h1><p>' + uiText("Vérifie ta connexion puis recharge la page.", "Controleer je verbinding en laad de pagina opnieuw.") + '</p><p>' + uiText("Ouvre cette application via un serveur web local.", "Open deze map via een lokale webserver; dubbelklikken op index.html is niet voldoende.") + '</p></section>';
@@ -494,7 +505,7 @@ function assignmentCourseItems(assignment) {
 }
 
 function assignmentProgress(assignment) {
-  return window.MonParcoursAssignments.progress(assignment, currentMasteryRecords());
+  return window.MonParcoursAssignments.progress(assignment, currentMasteryRecords(), undefined, currentVerbEvidence());
 }
 
 function assignmentDue(assignment) {
@@ -516,12 +527,28 @@ function assignmentStatus(progress) {
 
 function assignmentCard(assignment) {
   const progress = assignmentProgress(assignment);
+  if (progress.goals) return '<button class="assignment-card" type="button" data-action="view-assignment" data-id="' + escapeAttr(assignment.id) + '">' +
+    '<strong class="assignment-card-title">' + assignmentContentIcon(assignment) + escapeHtml(assignment.title) + '</strong><span>' + assignmentDue(assignment) + '</span>' +
+    '<span>' + assignmentShortProgress(progress) + '</span><span class="assignment-card-cta">' + uiText("Continuer", "Verder oefenen") + ' →</span></button>';
   return '<button class="assignment-card" type="button" data-action="view-assignment" data-id="' + escapeAttr(assignment.id) + '">' +
     '<strong class="assignment-card-title">' + assignmentContentIcon(assignment) + escapeHtml(assignment.title) + '</strong><span>' + assignmentDue(assignment) + '</span>' +
     '<span>' + assignmentStatus(progress) + ' · ' + progress.practiced + '/' + progress.total + ' ' + uiText("travaillés", "geoefend") + '</span>' +
     '<span>' + uiText("Niveau de maîtrise : " + progress.masteryLevel + "%", "Beheersingsniveau: " + progress.masteryLevel + "%") + '</span>' +
     '<span>' + progress.acquired + '/' + progress.total + ' ' + uiText("acquis · objectif " + progress.target + "%", "gekend · doel " + progress.target + "%") + '</span>' +
     masteryBar(progress, true) + '<span class="assignment-card-cta">' + uiText(progress.practiced ? "Continuer" : "Commencer", progress.practiced ? "Verder oefenen" : "Starten") + ' →</span></button>';
+}
+
+function assignmentShortProgress(progress) {
+  if (progress.goals) {
+    if (progress.goals.length === 1 && progress.goals[0].kind === "regular") {
+      const goal = progress.goals[0];
+      return uiText("Règle : " + goal.level + "% · " + goal.persons + "/6 personnes · objectif " + goal.target + "%",
+        "Regel: " + goal.level + "% · " + goal.persons + "/6 personen · doel " + goal.target + "%");
+    }
+    return uiText(progress.acquired + "/" + progress.total + " objectifs acquis · " + progress.masteryLevel + "% maîtrise",
+      progress.acquired + "/" + progress.total + " doelen gekend · " + progress.masteryLevel + "% beheerst");
+  }
+  return progress.acquired + '/' + progress.total + ' ' + uiText("acquis · objectif " + progress.target + "%", "gekend · doel " + progress.target + "%");
 }
 
 // One quiet, fixed icon vocabulary for every student-facing content surface.
@@ -532,7 +559,7 @@ function contentTypeKey(label, itemType) {
   if (/verbes?|être et avoir/.test(text) || itemType === "verb") return "verbs";
   if (/grammaire|adjectifs|mots invariables/.test(text) || itemType === "grammar_rule") return "grammar";
   if (/nombres?|chiffres/.test(text) || itemType === "number") return "numbers";
-  if (/sons?|prononciation|comment dire/.test(text) || itemType === "sound_rule") return "sounds";
+  if (/\bsons?\b|prononciation|comment dire/.test(text) || itemType === "sound_rule") return "sounds";
   return "vocabulary";
 }
 
@@ -562,7 +589,7 @@ function assignmentHomeRow(assignment) {
     : uiText("Sans échéance", "Geen deadline");
   return '<button class="assignment-home-row" type="button" data-action="view-assignment" data-id="' + escapeAttr(assignment.id) + '">' +
     '<span class="content-icon-wrap">' + assignmentContentIcon(assignment) + '</span>' +
-    '<span class="assignment-home-copy"><strong>' + escapeHtml(assignment.title) + '</strong><small>' + progress.acquired + '/' + progress.total + ' ' + uiText("acquis · objectif " + progress.target + "%", "gekend · doel " + progress.target + "%") + '</small></span>' +
+    '<span class="assignment-home-copy"><strong>' + escapeHtml(assignment.title) + '</strong><small>' + assignmentShortProgress(progress) + '</small></span>' +
     '<span class="assignment-home-due">' + dueText + '</span>' +
     '<span class="assignment-home-cta">' + uiText("Continuer", "Verdergaan") + ' →</span></button>';
 }
@@ -596,16 +623,23 @@ function renderAssignmentDetail(id) {
   state.activeAssignmentId = id;
   state.view = "assignment-detail";
   const progress = assignmentProgress(assignment);
+  const goalDetails = progress.goals ? '<div class="verb-task-goals">' + progress.goals.map(function (goal) {
+    const item = assignmentCourseItems(assignment).find(function (row) { return row.id === goal.goalId; });
+    const name = item ? displayScopeTitle(item.infinitive) : goal.goalId === "present_er" ? "Verbes en -ER" : goal.goalId;
+    return '<div><strong>' + escapeHtml(name) + '</strong><span>' + goal.level + '% · ' + uiText(goal.status === "acquired" ? "Acquis" : "En cours", goal.status === "acquired" ? "Gekend" : "Aan het leren") + '</span><small>' + goal.persons + '/6 ' + uiText("personnes", "persoonsgroepen") + '</small></div>';
+  }).join("") + '</div>' : "";
   app.innerHTML = breadcrumbHtml([{ label: "Mon parcours", action: "home" }, { label: "Mes devoirs", action: "view-assignments" }]) +
     '<section class="assignment-detail"><p class="eyebrow">' + assignmentStatus(progress) + '</p><h1>' + assignmentContentIcon(assignment) + escapeHtml(assignment.title) + '</h1>' +
     '<p>' + assignmentDue(assignment) + '</p>' +
     (assignment.instructions ? '<p class="assignment-instructions">' + escapeHtml(assignment.instructions) + '</p>' : '') +
-    '<div class="assignment-stats"><strong>' + progress.practiced + '/' + progress.total + ' ' + uiText("travaillés", "geoefend") + '</strong>' +
-    '<strong>' + progress.acquired + '/' + progress.total + ' ' + uiText("acquis", "gekend") + '</strong>' +
-    '<strong>' + progress.acquiredPercentage + '% / ' + progress.target + '% ' + uiText("objectif", "doel") + '</strong></div>' + masteryBar(progress, false) +
+    (progress.goals ? '<div class="assignment-stats"><strong>' + assignmentShortProgress(progress) + '</strong></div>' :
+      '<div class="assignment-stats"><strong>' + progress.practiced + '/' + progress.total + ' ' + uiText("travaillés", "geoefend") + '</strong>' +
+      '<strong>' + progress.acquired + '/' + progress.total + ' ' + uiText("acquis", "gekend") + '</strong>' +
+      '<strong>' + progress.acquiredPercentage + '% / ' + progress.target + '% ' + uiText("objectif", "doel") + '</strong></div>' + masteryBar(progress, false)) +
     (progress.completedAt ? '<p class="perfect-note">' + uiText("Objectif atteint ! Le " + new Date(progress.completedAt).toLocaleDateString("fr-BE") + ".", "Doel behaald! Op " + new Date(progress.completedAt).toLocaleDateString("nl-BE") + ".") + '</p>' :
       progress.reachedLocally ? '<p class="sync-note">' + uiText("Objectif atteint sur cet appareil. Confirmation après synchronisation.", "Doel op dit toestel behaald. Bevestiging volgt na synchronisatie.") + '</p>' :
-      '<p>' + uiText("La tâche est terminée quand tous les éléments ont été travaillés et que le pourcentage acquis atteint l’objectif.", "De taak is klaar als alle items geoefend zijn en het gekend-percentage het doel bereikt.") + '</p>') +
+      (progress.goals ? '<p>' + uiText("Travaille les personnes et les verbes indiqués pour atteindre l’objectif.", "Oefen de persoonsgroepen en werkwoorden om het doel te bereiken.") + '</p>' :
+      '<p>' + uiText("La tâche est terminée quand tous les éléments ont été travaillés et que le pourcentage acquis atteint l’objectif.", "De taak is klaar als alle items geoefend zijn en het gekend-percentage het doel bereikt.") + '</p>')) +
     '<button class="button button-primary" type="button" data-action="launch-assignment" data-id="' + escapeAttr(id) + '">' + uiText(progress.practiced ? "Continuer" : "Commencer", progress.practiced ? "Verder oefenen" : "Starten") + '</button></section>';
   focusApp();
 }
@@ -621,12 +655,37 @@ function launchAssignment(id) {
   const unit = currentTrajectory().units.find(function (row) { return row.top_category === first.top_category; });
   state.selectedUnitOrder = unit && unit.order;
   state.selectedScope = { unitOrder: state.selectedUnitOrder, block: first.block || "", subsection: first.subsection || "", category: first.category || "", title: assignment.title };
+  if (assignment.mastery_strategy && assignment.mastery_strategy !== "item_mastery") {
+    const questions = verbTaskQuestions(assignment, allItems);
+    beginSession(questions, "practice", "assignment-mixed", assignment.title, { availableCount: questions.length, assignmentId: id });
+    return;
+  }
   const selectedItems = window.MonParcoursAssignments.selectItems(allItems, currentMasteryRecords(), 20);
   const mode = selectedItems.some(function (item) {
     return window.MonParcoursMastery.getItemMastery(item.id, currentMasteryRecords()).status === "new";
   }) ? "learn" : "practice";
   const questions = taskQuestionsForItems(selectedItems, "assignment-mixed");
   beginSession(questions, mode, "assignment-mixed", assignment.title, { availableCount: allItems.length, assignmentId: id });
+}
+
+function verbTaskQuestions(assignment, items) {
+  const api = window.MonParcoursVerbMastery;
+  if (!api) return [];
+  const goalIds = new Set((assignment.requirements || []).map(function (row) { return row.reference_id; }));
+  const relevant = items.filter(function (item) { return goalIds.has(api.goalForItem(item)); });
+  const candidates = buildQuestions(relevant, "verb-fr-conj").concat(buildQuestions(relevant, "verb-nl-conj"));
+  const count = Math.min(20, candidates.length);
+  const recognitionCount = goalIds.has("present_er") ? Math.min(4, Math.floor(count / 5)) : 0;
+  const selected = api.selectPracticeQuestions(candidates, currentVerbEvidence(), count - recognitionCount);
+  if (recognitionCount) {
+    const recognition = buildQuestions(relevant, "verb-rule-recognition");
+    const missing = new Set(api.calculate("present_er", currentVerbEvidence()).coveredPersons);
+    recognition.sort(function (left, right) {
+      return Number(missing.has(api.canonicalPerson(left.itemVariant.split(":")[2]))) - Number(missing.has(api.canonicalPerson(right.itemVariant.split(":")[2])));
+    });
+    selected.push.apply(selected, recognition.slice(0, recognitionCount));
+  }
+  return shuffle(selected);
 }
 
 function dashboardCard(titleFr, titleNl, valueFr, valueNl, descriptionFr, descriptionNl, action, disabled, icon) {
@@ -720,9 +779,11 @@ function renderUnit() {
               if (auxiliaryItems.length && !subsection.content_types.includes("être / avoir")) {
                 categoryChoices.push(scopeChoiceCard(unit, section.title, subsection.title, "Être et avoir", auxiliaryItems.length, "être / avoir", masterySummaryForItems(auxiliaryItems)));
               }
-              const categoryGrid = categoryChoices.length
+              const verbGrid = subsetCount && subset.every(function (item) { return item.type === "verb"; })
+                ? renderVerbScopeGroups(unit, section.title, subsection.title, subset) : "";
+              const categoryGrid = verbGrid || (categoryChoices.length
                 ? '<div class="scope-choice-grid">' + categoryChoices.join("") + '</div>'
-                : (subsetCount ? '<div class="scope-choice-grid">' + scopeChoiceCard(unit, section.title, subsection.title, subsection.title, subsetCount, "", masterySummaryForItems(subset)) + '</div>' : '<span class="source-only">' + uiText("Informations du cours", "Alleen cursusinfo") + '</span>');
+                : (subsetCount ? '<div class="scope-choice-grid">' + scopeChoiceCard(unit, section.title, subsection.title, subsection.title, subsetCount, "", masterySummaryForItems(subset)) + '</div>' : '<span class="source-only">' + uiText("Informations du cours", "Alleen cursusinfo") + '</span>'));
               return '<section class="subsection-row"><div class="subsection-title"><div><h4>' + escapeHtml(subsection.title) + '</h4>' + (subsetCount ? masteryCompactLine(masterySummaryForItems(subset)) : "") + '</div>' +
                 (subsetCount && categoryChoices.length > 1 ? compactScopeButton(unit, section.title, subsection.title, subsection.title, subsetCount, "Tout ce contenu", "Alles hiervan") : "") +
                 '</div>' + categoryGrid + '</section>';
@@ -742,9 +803,60 @@ function renderUnit() {
   focusApp();
 }
 
-function scopeAttributes(unit, block, subsection, title, category) {
+function scopeAttributes(unit, block, subsection, title, category, itemId) {
   return ' data-action="choose-scope" data-order="' + unit.order +
-    '" data-block="' + escapeAttr(block) + '" data-subsection="' + escapeAttr(subsection) + '" data-category="' + escapeAttr(category || "") + '" data-title="' + escapeAttr(title) + '">';
+    '" data-block="' + escapeAttr(block) + '" data-subsection="' + escapeAttr(subsection) + '" data-category="' + escapeAttr(category || "") + '" data-item-id="' + escapeAttr(itemId || "") + '" data-title="' + escapeAttr(title) + '">';
+}
+
+function renderVerbScopeGroups(unit, block, subsection, items) {
+  const api = window.MonParcoursVerbMastery;
+  if (!api) return "";
+  const rules = new Map();
+  const irregular = [];
+  items.forEach(function (item) {
+    const type = api.classification(item.id);
+    if (!type) return;
+    if (type.ruleId) {
+      if (!rules.has(type.ruleId)) rules.set(type.ruleId, []);
+      rules.get(type.ruleId).push(item);
+    } else irregular.push(item);
+  });
+  const groups = [];
+  if (rules.size) groups.push('<div class="verb-scope-group"><h5>' + uiText("Réguliers", "Regelmatige werkwoorden") + '</h5><div class="scope-choice-grid">' +
+    Array.from(rules.entries()).map(function (entry) {
+      const ruleId = entry[0], ruleItems = entry[1];
+      const title = ruleItems[0].category;
+      return verbGoalCard(unit, block, subsection, title, scopeLabelDutch(title), ruleItems.length, title, "", ruleId);
+    }).join("") + '</div></div>');
+  if (irregular.length) groups.push('<div class="verb-scope-group"><h5>' + uiText("Irréguliers", "Onregelmatige werkwoorden") + '</h5><div class="scope-choice-grid">' +
+    irregular.map(function (item) {
+      return verbGoalCard(unit, block, subsection, displayScopeTitle(item.infinitive), item.nl, 1, item.category, item.id, item.id);
+    }).join("") +
+    (irregular.length > 1 && irregular[0].category === "être / avoir" && irregular.every(function (item) { return item.category === irregular[0].category; })
+      ? irregularGroupCard(unit, block, subsection, irregular) : "") +
+    '</div></div>');
+  return groups.length ? '<div class="verb-scope-groups">' + groups.join("") + '</div>' : "";
+}
+
+function irregularGroupCard(unit, block, subsection, items) {
+  const api = window.MonParcoursVerbMastery;
+  const scores = items.map(function (item) { return api.calculate(item.id, currentVerbEvidence()); });
+  const level = Math.round(scores.reduce(function (sum, row) { return sum + row.level; }, 0) / scores.length);
+  const title = items.map(function (item) { return displayScopeTitle(item.infinitive); }).join(" + ");
+  return '<button class="scope-choice-card verb-goal-card" type="button"' +
+    scopeAttributes(unit, block, subsection, title, items[0].category) +
+    '<span class="content-icon-wrap">' + contentIcon("verbs") + '</span><strong>' + escapeHtml(title) + '</strong><b class="scope-count">' + items.length + '</b>' +
+    '<small>' + uiText("Ensemble", "Samen oefenen") + '</small><small class="scope-mastery">' +
+    uiText(level + "% maîtrise · " + scores.filter(function (row) { return row.status === "acquired"; }).length + "/" + items.length + " acquis",
+      "beheerst · " + scores.filter(function (row) { return row.status === "acquired"; }).length + "/" + items.length + " gekend") + '</small></button>';
+}
+
+function verbGoalCard(unit, block, subsection, title, dutch, count, category, itemId, goalId) {
+  const progress = window.MonParcoursVerbMastery.calculate(goalId, currentVerbEvidence());
+  return '<button class="scope-choice-card verb-goal-card" type="button" data-goal-id="' + escapeAttr(goalId) + '"' +
+    scopeAttributes(unit, block, subsection, title, category, itemId) +
+    '<span class="content-icon-wrap">' + contentIcon("verbs") + '</span><strong>' + escapeHtml(title) + '</strong><b class="scope-count">' + count + '</b>' +
+    '<small lang="nl">' + escapeHtml(dutch) + '</small><small class="scope-mastery">' + uiText(progress.level + "% maîtrise · " + progress.persons + "/6 personnes", "beheerst · " + progress.persons + "/6 persoonsgroepen") + '</small></button>';
 }
 
 function compactScopeButton(unit, block, subsection, title, count, labelFr, labelNl, category) {
@@ -753,7 +865,7 @@ function compactScopeButton(unit, block, subsection, title, count, labelFr, labe
 }
 
 function scopeChoiceCard(unit, block, subsection, title, count, category, mastery) {
-  const kind = contentTypeKey(title === subsection ? subsection : title);
+  const kind = contentTypeKey(subsection === "Actes de parole" ? subsection : title);
   return '<button class="scope-choice-card" type="button"' + scopeAttributes(unit, block, subsection, title, category) +
     '<span class="content-icon-wrap">' + contentIcon(kind) + '</span><strong>' + escapeHtml(displayScopeTitle(title)) + '</strong><b class="scope-count">' + count + '</b><small lang="nl">' + escapeHtml(scopeLabelDutch(title)) + '</small>' + (mastery ? '<small class="scope-mastery">' + uiText(mastery.masteryLevel + "% maîtrise", "beheerst") + '</small>' : "") + '</button>';
 }
@@ -794,6 +906,8 @@ function scopeLabelDutch(title) {
     "présenter quelqu’un (1)": "Iemand voorstellen (1)",
     "présenter quelqu’un (2)": "Iemand voorstellen (2)",
     "verbes en -er": "Werkwoorden op -ER",
+    "type finir": "Werkwoorden van het type finir",
+    "verbes en -re": "Werkwoorden op -RE",
     "être et avoir": "être en avoir",
     "adjectifs": "Bijvoeglijke naamwoorden",
     "verbes": "Werkwoorden",
@@ -841,8 +955,19 @@ function renderSetup() {
           const option = EXERCISES[key];
           const exerciseItems = option.type === "mixed" ? items : items.filter(function (item) { return item.type === option.type; });
           const count = assignment ? exerciseItems.length : questionCountForItems(exerciseItems, key);
-          return '<label class="radio-card"><input type="radio" name="exercise" value="' + key + '"' + (index === 0 ? " checked" : "") + '>' +
-            '<span><strong>' + contentIcon(contentTypeKey(scope.category || scope.title, option.type)) + uiText(option.labelFr, option.label) + '</strong><b class="choice-count">' + count + '</b></span></label>';
+          const isConjugation = key === "verb-nl-conj" || key === "verb-fr-conj";
+          const countLabel = isConjugation ? exerciseItems.length + " verbes" : count;
+          const group = key === "verb-nl-inf" || key === "verb-fr-nl" ? "Vocabulaire" : isConjugation ? "Conjugaison" : key === "verb-rule-recognition" ? "Règle" : "";
+          const preceding = index ? available[index - 1] : "";
+          const precedingGroup = preceding === "verb-nl-inf" || preceding === "verb-fr-nl" ? "Vocabulaire" : preceding === "verb-nl-conj" || preceding === "verb-fr-conj" ? "Conjugaison" : preceding === "verb-rule-recognition" ? "Règle" : "";
+          const applyingRule = group === "Conjugaison" && exerciseItems.length && exerciseItems.every(function (item) {
+            const type = window.MonParcoursVerbMastery && window.MonParcoursVerbMastery.classification(item.id);
+            return type && type.kind === "regular";
+          });
+          const groupHeading = group && group !== precedingGroup ? '<h3 class="exercise-group-heading">' + uiText(group, { Vocabulaire: "Woordenschat", Conjugaison: "Vervoegen", Règle: "Regel" }[group]) +
+            (applyingRule ? ' · ' + uiText("Appliquer la règle", "De regel toepassen") : '') + '</h3>' : "";
+          return groupHeading + '<label class="radio-card"><input type="radio" name="exercise" value="' + key + '"' + (index === 0 ? " checked" : "") + '>' +
+            '<span><strong>' + contentIcon(contentTypeKey(scope.category || scope.title, option.type)) + uiText(option.labelFr, option.label) + '</strong><b class="choice-count">' + countLabel + '</b></span></label>';
         }).join("") +
       '</div><section class="session-size-panel" aria-labelledby="session-size-heading"><div class="section-heading compact"><h2 id="session-size-heading">' + uiText("Combien veux-tu travailler ?", "Hoeveel wil je oefenen?") + '</h2></div>' +
         '<div id="session-size-picker"></div></section></div>' +
@@ -865,7 +990,7 @@ function sessionSizeOptions(availableCount, includeAll) {
 function preferredSessionSize(availableCount, includeAll) {
   const options = sessionSizeOptions(availableCount, includeAll);
   const preference = state.progress.settings.sessionSize;
-  if (preference === "all") return "all";
+  if (preference === "all" && options.includes("all")) return "all";
   if (options.includes(Number(preference))) return Number(preference);
   const numeric = options.filter(function (option) { return typeof option === "number"; });
   return numeric.length ? numeric[numeric.length - 1] : "all";
@@ -895,7 +1020,7 @@ function questionsForSetup(exerciseKey, requestedCount) {
 function taskQuestionsForItems(items, exerciseKey) {
   return items.map(function (item) {
       const key = exerciseKey === "assignment-mixed" ?
-        { vocabulary: "vocab-nl-fr", verb: "verb-nl-conj", phrase: "phrase-nl-fr", grammar_rule: "grammar", number: "number-nl-fr" }[item.type] : exerciseKey;
+        { vocabulary: "vocab-nl-fr", verb: "verb-nl-inf", phrase: "phrase-nl-fr", grammar_rule: "grammar", number: "number-nl-fr" }[item.type] : exerciseKey;
       if (!key) return null;
       const questions = buildQuestionsForItems([item], key, 1);
       return questions[Math.floor(Math.random() * questions.length)] || null;
@@ -910,6 +1035,7 @@ function availableQuestionCount(exerciseKey) {
 function setupAllowsAll(exerciseKey) {
   if (assignmentById(state.activeAssignmentId)) return true;
   const items = exerciseItemsForSetup(exerciseKey);
+  if (exerciseKey === "verb-nl-conj" || exerciseKey === "verb-fr-conj") return questionCountForItems(items, exerciseKey) <= 30;
   return !items.some(isDynamicNumberItem) || questionCountForItems(items, exerciseKey) <= MAX_DYNAMIC_NUMBER_ALL;
 }
 
@@ -937,6 +1063,16 @@ function updateSessionPlan() {
   if (!plan || !selectedExercise || !selectedSize) return;
   const availableCount = availableQuestionCount(selectedExercise.value);
   const dynamicNumbers = exerciseItemsForSetup(selectedExercise.value).some(isDynamicNumberItem);
+  if (selectedExercise.value === "verb-nl-conj" || selectedExercise.value === "verb-fr-conj") {
+    const verbCount = exerciseItemsForSetup(selectedExercise.value).length;
+    plan.innerHTML = uiText("Tu travailleras " + selectedSize.value + " questions de conjugaison · " + verbCount + " verbes · 6 personnes.",
+      "Je oefent " + selectedSize.value + " vervoegingen · " + verbCount + " werkwoorden · 6 persoonsgroepen.", "ui-block");
+    return;
+  }
+  if (selectedExercise.value === "verb-rule-recognition") {
+    plan.innerHTML = uiText("Tu travailleras les 6 terminaisons de la règle.", "Je oefent de 6 uitgangen van de regel.", "ui-block");
+    return;
+  }
   plan.innerHTML = uiText(sessionPlanFrench(selectedSize.value, availableCount, dynamicNumbers), sessionPlanText(selectedSize.value, availableCount, dynamicNumbers), "ui-block");
 }
 
@@ -1216,6 +1352,7 @@ function taskPracticeContextHtml(session) {
   const assignment = assignmentById(session.assignment_id);
   if (!assignment) return "";
   const progress = assignmentProgress(assignment);
+  if (progress.goals) return '<aside class="task-practice-context" aria-label="Devoir / Taak"><strong>' + escapeHtml(assignment.title) + '</strong><span>' + assignmentShortProgress(progress) + '</span></aside>';
   return '<aside class="task-practice-context" aria-label="Devoir / Taak"><strong>' + escapeHtml(assignment.title) + '</strong><span>' +
     uiText(progress.practiced + ' / ' + progress.total + ' travaillés', progress.practiced + ' / ' + progress.total + ' geoefend') + '</span><span>' +
     uiText('Niveau de maîtrise : ' + progress.masteryLevel + '%', 'Beheersingsniveau: ' + progress.masteryLevel + '%') + '</span><span>' +
@@ -1351,7 +1488,7 @@ function recordSyncAttempt(question, correct) {
     lesson: item.lesson || path.lesson,
     block: item.block || path.block,
     subsection: item.subsection || path.subsection,
-    exercise_key: session.exerciseKey,
+    exercise_key: question.exerciseKey || session.exerciseKey,
     mode: session.mode,
     prompt: question.prompt,
     correct_answers: question.answers.slice(),
@@ -1363,6 +1500,7 @@ function recordSyncAttempt(question, correct) {
   };
   session.sync_attempts.push(attempt);
   appendMasteryAttempt(attempt);
+  appendVerbEvidence(attempt);
   const after = masteryStatusForQuestion(question);
   const afterLevel = masteryLevelForQuestion(question);
   syncSessionSnapshot();
@@ -1662,6 +1800,18 @@ function belgianNumberBelowThousand(number) {
 }
 
 function buildQuestions(items, exerciseKey) {
+  if (exerciseKey === "verb-rule-recognition") {
+    const model = window.MonParcoursVerbMastery;
+    const representative = items.find(function (item) { const type = model && model.classification(item.id); return type && type.ruleId === "present_er"; });
+    if (!representative) return [];
+    return model.PERSONS.map(function (person) {
+      const base = { itemId: representative._id, itemIds: [representative._id], stableItemId: representative.id, exerciseKey: exerciseKey,
+        stableItemIds: [representative.id], itemVariant: "rule:present_er:" + person, item: representative,
+        groupPath: [representative._trajectoryIndex, representative.top_category, representative.lesson, "present_er", "recognition"].join("::"), reviewCount: 0 };
+      return makeQuestion(base, "verbe en -ER — " + person, [model.ER_ENDINGS[person], model.ER_ENDINGS[person].slice(1)],
+        "Geef de uitgang van de regel");
+    });
+  }
   const questions = [];
   items.forEach(function (item) {
     if (isDynamicNumberItem(item) && (exerciseKey === "number-nl-fr" || exerciseKey === "number-fr-nl")) {
@@ -1673,6 +1823,7 @@ function buildQuestions(items, exerciseKey) {
       itemIds: [item._id],
       stableItemId: item.id,
       stableItemIds: [item.id],
+      exerciseKey: exerciseKey,
       item: item,
       groupPath: [item._trajectoryIndex, item.top_category, item.lesson, item.block, item.subsection, item.type].join("::"),
       reviewCount: 0
@@ -1831,6 +1982,36 @@ function loadMasteryAttempts() {
   }
 }
 
+function loadVerbEvidence() {
+  try {
+    const rows = JSON.parse(localStorage.getItem(VERB_EVIDENCE_KEY));
+    return Array.isArray(rows) ? rows : [];
+  } catch (error) { return []; }
+}
+
+function currentVerbEvidence() {
+  const identity = currentStudentIdentity();
+  const merged = new Map();
+  state.verbEvidence.server.forEach(function (row) { if (row.client_attempt_id) merged.set(String(row.client_attempt_id), row); });
+  state.mastery.localAttempts.forEach(function (row) {
+    if (row.identity_subject === identity.subject && row.client_attempt_id &&
+        window.MonParcoursVerbMastery && window.MonParcoursVerbMastery.classification(row.item_id)) merged.set(String(row.client_attempt_id), row);
+  });
+  state.verbEvidence.local.forEach(function (row) {
+    if (row.identity_subject === identity.subject && row.client_attempt_id) merged.set(String(row.client_attempt_id), row);
+  });
+  return Array.from(merged.values());
+}
+
+function appendVerbEvidence(attempt) {
+  if (!window.MonParcoursVerbMastery || !window.MonParcoursVerbMastery.classification(attempt.item_id)) return;
+  if (state.verbEvidence.local.some(function (row) { return row.client_attempt_id === attempt.client_attempt_id; })) return;
+  state.verbEvidence.local.push({ client_attempt_id: attempt.client_attempt_id, client_session_id: attempt.client_session_id,
+    identity_subject: attempt.identity_subject, item_id: attempt.item_id, item_variant: attempt.item_variant,
+    exercise_key: attempt.exercise_key, mode: attempt.mode, was_correct: attempt.was_correct, created_at: attempt.created_at });
+  localStorage.setItem(VERB_EVIDENCE_KEY, JSON.stringify(state.verbEvidence.local));
+}
+
 function saveMasteryAttempts() {
   localStorage.setItem(MASTERY_ATTEMPTS_KEY, JSON.stringify(state.mastery.localAttempts));
 }
@@ -1849,6 +2030,8 @@ function appendMasteryAttempt(attempt) {
     item_id: attempt.item_id,
     equivalent_item_ids: (attempt.equivalent_item_ids || []).slice(),
     item_variant: attempt.item_variant || "",
+    item_type: attempt.item_type || "",
+    exercise_key: attempt.exercise_key || "",
     mode: attempt.mode,
     was_correct: attempt.was_correct === true,
     created_at: attempt.created_at
@@ -1876,6 +2059,7 @@ function legacyMasteryRows() {
     }
     const stats = state.progress.items[legacyId];
     if (!item || !stats || !stats.attempts) return;
+    if (item.type === "verb") return; // Legacy totals mix lexical and conjugation; never infer lexical mastery from them.
     rows.push({
       item_id: item.id,
       item_variant: variant,
@@ -1895,7 +2079,10 @@ function currentMasteryRecords() {
   if (!api) return new Map();
   const identity = currentStudentIdentity();
   const attempts = state.mastery.localAttempts.filter(function (attempt) {
-    return !attempt.identity_subject || attempt.identity_subject === identity.subject;
+    if (attempt.identity_subject && attempt.identity_subject !== identity.subject) return false;
+    const verbType = window.MonParcoursVerbMastery && window.MonParcoursVerbMastery.classification(attempt.item_id);
+    return !verbType || ["verb-nl-inf", "verb-fr-nl"].includes(attempt.exercise_key) ||
+      !attempt.exercise_key && !attempt.item_variant;
   });
   state.mastery.records = api.mergeMasterySources(
     state.mastery.serverRows,
@@ -1916,6 +2103,8 @@ function masterySummaryForItems(items) {
 function masteryStatusForQuestion(question) {
   const api = window.MonParcoursMastery;
   if (!api || !question) return "new";
+  const verbGoal = verbGoalForQuestion(question);
+  if (verbGoal) return window.MonParcoursVerbMastery.calculate(verbGoal, currentVerbEvidence()).status;
   const itemId = question.stableItemId || (question.stableItemIds || [])[0];
   const record = currentMasteryRecords().get(api.keyFor(itemId, question.itemVariant || ""));
   return api.getMasteryStatus(record);
@@ -1924,9 +2113,17 @@ function masteryStatusForQuestion(question) {
 function masteryLevelForQuestion(question) {
   const api = window.MonParcoursMastery;
   if (!api || !question) return 0;
+  const verbGoal = verbGoalForQuestion(question);
+  if (verbGoal) return window.MonParcoursVerbMastery.calculate(verbGoal, currentVerbEvidence()).level;
   const itemId = question.stableItemId || (question.stableItemIds || [])[0];
   const record = currentMasteryRecords().get(api.keyFor(itemId, question.itemVariant || ""));
   return api.getMasteryLevel(record);
+}
+
+function verbGoalForQuestion(question) {
+  const api = window.MonParcoursVerbMastery;
+  if (!api || !question || !question.item || question.item.type !== "verb" || !question.itemVariant) return null;
+  return api.goalForItem(question.item);
 }
 
 function masteryFeedbackHtml(change) {
@@ -1960,6 +2157,33 @@ function restoreMasteryServerCache() {
     /* Een beschadigde cache mag de lokale trainer niet blokkeren. */
   }
   invalidateMasteryRecords();
+}
+
+function restoreVerbServerCache() {
+  state.verbEvidence.server = [];
+  try {
+    const cache = JSON.parse(localStorage.getItem(VERB_SERVER_CACHE_KEY));
+    if (cache && cache.identity_subject === currentStudentIdentity().subject && Array.isArray(cache.items)) state.verbEvidence.server = cache.items;
+  } catch (error) { /* Offline fallback remains local. */ }
+}
+
+async function refreshVerbEvidenceFromServer() {
+  if (state.verbEvidence.refreshing || !window.MonParcoursSupabase || !window.MonParcoursSupabase.isConfigured() || !window.StudentIdentity) return false;
+  const identity = currentStudentIdentity();
+  const credential = window.StudentIdentity.getSyncCredential && window.StudentIdentity.getSyncCredential();
+  if (!identity.verified || !credential) return false;
+  state.verbEvidence.refreshing = true;
+  try {
+    const rows = await window.MonParcoursSupabase.rpc("get_student_verb_evidence", { p_identity_token: credential });
+    if (!Array.isArray(rows) || currentStudentIdentity().subject !== identity.subject) return false;
+    state.verbEvidence.server = rows;
+    localStorage.setItem(VERB_SERVER_CACHE_KEY, JSON.stringify({ identity_subject: identity.subject, items: rows }));
+    if (state.view === "home") renderHome();
+    else if (state.view === "unit") renderUnit();
+    else if (state.view === "assignment-detail") renderAssignmentDetail(state.activeAssignmentId);
+    return true;
+  } catch (error) { return false; }
+  finally { state.verbEvidence.refreshing = false; }
 }
 
 async function refreshMasteryFromServer() {
@@ -2053,6 +2277,7 @@ function itemsForScope(trajectory, unit, scope) {
     if (scope.block && item.block !== scope.block) return false;
     if (scope.subsection && item.subsection !== scope.subsection) return false;
     if (scope.category && item.category !== scope.category) return false;
+    if (scope.itemId && item.id !== scope.itemId) return false;
     return true;
   });
 }
@@ -2065,7 +2290,13 @@ function exerciseKeysForItems(items) {
   const available = [];
   Object.keys(TYPE_EXERCISES).forEach(function (type) {
     if (!items.some(function (item) { return item.type === type; })) return;
-    TYPE_EXERCISES[type].forEach(function (key) { available.push(key); });
+    TYPE_EXERCISES[type].forEach(function (key) {
+      if (key === "verb-rule-recognition" && !items.some(function (item) {
+        const classification = window.MonParcoursVerbMastery && window.MonParcoursVerbMastery.classification(item.id);
+        return classification && classification.ruleId === "present_er";
+      })) return;
+      available.push(key);
+    });
   });
   return available;
 }
@@ -2105,6 +2336,7 @@ function instructionFrench(instruction) {
   if (value === "Schrijf het getal in het Frans") return "Écris le nombre en français";
   if (value === "Schrijf het cijfer") return "Écris le nombre en chiffres";
   if (value === "Vervoeg het werkwoord") return "Conjugue le verbe";
+  if (value === "Geef de uitgang van de regel") return "Donne la terminaison de la règle";
   if (value.indexOf("Vul de regel aan") === 0) return value.replace("Vul de regel aan", "Complète la règle");
   return value;
 }

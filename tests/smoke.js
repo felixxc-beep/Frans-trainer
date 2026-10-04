@@ -23,6 +23,7 @@ const context = vm.createContext({
     }
   },
   window: {
+    MonParcoursVerbMastery: require("../verb-mastery.js"),
     scrollTo() {},
     confirm() { return false; }
   },
