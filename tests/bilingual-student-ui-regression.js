@@ -19,7 +19,7 @@ assert.match(css, /\.hero > div\s*\{[^}]*max-width:\s*700px/, "het hero-tekstblo
 assert.match(css, /\.hero h1\s*\{[^}]*font-size:\s*clamp\(1\.9rem,\s*3vw,\s*2\.55rem\)[^}]*line-height:\s*1\.05/, "de desktopheadline is compact");
 assert.match(css, /\.hero h1 \.ui-nl\s*\{[^}]*font-size:\s*\.52em/, "de Nederlandse herotitel blijft duidelijk ondersteunend");
 assert.match(css, /@media \(max-width: 620px\)[\s\S]*\.hero h1\s*\{[^}]*font-size:\s*clamp\(1\.8rem,\s*8vw,\s*2\.3rem\)/, "de hero blijft ook mobiel compact");
-assert.match(html, /styles\.css\?v=20261003-\d+/, "de nieuwe UX-CSS krijgt een verse cacheversie");
+assert.match(html, /styles\.css\?v=20261009-\d+/, "de nieuwe UX-CSS krijgt een verse cacheversie");
 assert.doesNotMatch(teacherHtml, /class="ui-bilingual"/, "het leerkrachtendashboard blijft Nederlandstalig");
 assert.match(source, /Bonne réponse ![\s\S]*Juist!/);
 assert.match(source, /Pas encore\.[\s\S]*Nog niet juist/);

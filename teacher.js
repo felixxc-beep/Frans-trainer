@@ -1126,6 +1126,9 @@
       due_at: source && source.due_at ? taskDeadlineLocal(source.due_at) : "",
       target_acquired_percentage: source && source.target_acquired_percentage || 80,
       mastery_strategy: source && source.mastery_strategy || "item_mastery",
+      completion_strategy: source && source.completion_strategy || (source && source.id ? "legacy_mastery" : "rounds"),
+      required_rounds: source && source.required_rounds || 3,
+      item_verb_exercise_key: source && source.item_verb_exercise_key || "verb-nl-conj",
       verb_item_ids: source && source.mastery_strategy && source.mastery_strategy !== "item_mastery" ? asArray(source.item_ids).map(String) : null,
       status: source && source.status || "draft",
       class_ids: asArray(source && source.class_ids).map(String),
@@ -1236,7 +1239,7 @@
             const classes = asArray(task.classes).map(function (row) { return row.name; }).join(", ");
             const scopeLabel = task.mastery_strategy && task.mastery_strategy !== "item_mastery"
               ? asArray(task.requirements).length + ' werkwoorddoelen' : asArray(task.item_ids).length + ' items';
-            return '<button class="task-card" type="button" data-action="open-task" data-id="' + escapeHtml(task.id) + '"><strong>' + escapeHtml(task.title) + '</strong><span>' + escapeHtml(classes || "Geen toegankelijke klassen") + '</span><span>' + scopeLabel + ' · ' + Number(task.completed_count || 0) + '/' + Number(task.student_count || 0) + ' afgerond' + (task.due_at ? ' · ' + escapeHtml(formatDate(task.due_at, false)) : '') + '</span></button>';
+            return '<button class="task-card" type="button" data-action="open-task" data-id="' + escapeHtml(task.id) + '"><strong>' + escapeHtml(task.title) + '</strong><span>' + escapeHtml(classes || "Geen toegankelijke klassen") + '</span><span>' + scopeLabel + (task.completion_strategy === "rounds" ? ' · ' + task.required_rounds + ' rondes' : '') + ' · ' + Number(task.completed_count || 0) + '/' + Number(task.student_count || 0) + ' afgerond' + (task.due_at ? ' · ' + escapeHtml(formatDate(task.due_at, false)) : '') + '</span></button>';
           }).join("") + '</div>' : '<p class="muted">Geen taken.</p>') + '</section>';
       }).join("");
   }
@@ -1281,8 +1284,18 @@
       '<fieldset><legend>3 · Itemselectie</legend><p>' + scopeItems.length + ' oefenbare items in dit onderdeel.</p><div class="task-fields">' + strategySelect + '</div>' + verbSelector +
         (draft.fixed_item_ids ? '' : '<div class="task-fields"><label><span>Van item</span><input name="range_start" type="number" min="1" max="' + scopeItems.length + '" value="' + draft.range_start + '"></label><label><span>Tot item</span><input name="range_end" type="number" min="1" max="' + scopeItems.length + '" value="' + (draft.range_end || scopeItems.length) + '"></label></div><div class="export-actions"><button class="small-button" type="button" data-action="task-range" data-start="1" data-end="' + scopeItems.length + '">Alle ' + scopeItems.length + '</button>' + ranges.map(function (range) { return '<button class="small-button" type="button" data-action="task-range" data-start="' + range.start + '" data-end="' + range.end + '">' + range.start + '–' + range.end + '</button>'; }).join("") + '</div>') +
         '<p><strong>Voorbeeld: ' + selectedItems.length + ' geselecteerd.</strong></p><ol class="task-preview">' + selectedItems.slice(0, 20).map(function (item) { return '<li>' + escapeHtml(item.nl || item.prompt || item.infinitive || item.id) + ' — ' + escapeHtml(item.fr || item.answer || item.infinitive || '') + '</li>'; }).join("") + '</ol>' + (selectedItems.length > 20 ? '<p>… en ' + (selectedItems.length - 20) + ' meer.</p>' : '') + '</fieldset>' +
-      '<fieldset><legend>4 · Doel en deadline</legend><div class="task-fields"><label><span>Titel</span><input name="title" maxlength="160" required value="' + escapeHtml(draft.title) + '"></label><label><span>Deadline (optioneel, lokale tijd)</span><input name="due_at" type="datetime-local" value="' + escapeHtml(draft.due_at) + '"></label><label><span>Doel: % ' + (draft.mastery_strategy === "verb_rule_mastery" ? "regelbeheersing" : "gekend") + '</span><input name="target_acquired_percentage" type="number" min="1" max="100" value="' + draft.target_acquired_percentage + '"></label></div><div class="export-actions">' + [70,80,90,100].map(function (value) { return '<button class="small-button" type="button" data-action="task-target" data-value="' + value + '">' + value + '%</button>'; }).join("") + '</div><p>' + (draft.mastery_strategy === "item_mastery" ? "Voltooid wanneer alle items minstens eenmaal geoefend zijn én het doelpercentage gekend is." : "Voltooiing volgt de persoonsgroepen, werkwoorddiversiteit en zelfstandige oefenresultaten.") + '</p><label><span>Instructies (optioneel)</span><textarea name="instructions" maxlength="1000">' + escapeHtml(draft.instructions) + '</textarea></label></fieldset>' +
-      '<fieldset><legend>5 · Controleren en publiceren</legend><p>' + selectedItems.length + ' vaste permanente item-ID’s · ' + draft.class_ids.length + ' klassen · doel ' + draft.target_acquired_percentage + '%.</p><div class="export-actions">' + (draft.status === "draft" ? '<button class="button button-secondary" type="submit" name="task_status" value="draft">Concept opslaan</button>' : '') + '<button class="button button-primary" type="submit" name="task_status" value="published">' + (draft.status === "published" ? "Wijzigingen opslaan" : "Publiceren") + '</button></div></fieldset></form>';
+      '<fieldset><legend>4 · Doel en deadline</legend><div class="task-fields"><label><span>Titel</span><input name="title" maxlength="160" required value="' + escapeHtml(draft.title) + '"></label><label><span>Deadline (optioneel, lokale tijd)</span><input name="due_at" type="datetime-local" value="' + escapeHtml(draft.due_at) + '"></label>' +
+        (draft.mastery_strategy === "item_mastery" && draft.completion_strategy === "rounds" ?
+          '<label><span>Aantal rondes</span><select name="required_rounds">' + [1,2,3,4].map(function (value) { return '<option value="' + value + '"' + (Number(draft.required_rounds) === value ? ' selected' : '') + '>' + value + '×</option>'; }).join("") + '</select></label>' :
+          '<label><span>Doel: % ' + (draft.mastery_strategy === "verb_rule_mastery" ? "regelbeheersing" : "gekend") + '</span><input name="target_acquired_percentage" type="number" min="1" max="100" value="' + draft.target_acquired_percentage + '"></label>') + '</div>' +
+        (draft.mastery_strategy === "item_mastery" && draft.completion_strategy === "rounds" ? '<p>1× = één volledige ronde · 2× = twee volledige rondes · 3× = twee volledige rondes + gerichte herhaling · 4× = twee volledige rondes + twee gerichte herhalingen.</p>' :
+          '<div class="export-actions">' + [70,80,90,100].map(function (value) { return '<button class="small-button" type="button" data-action="task-target" data-value="' + value + '">' + value + '%</button>'; }).join("") + '</div><p>' + (draft.mastery_strategy === "item_mastery" ? "Bestaande legacy-taak: voltooiing blijft gebaseerd op het percentage gekend." : "Voltooiing volgt de bestaande werkwoorddoelen.") + '</p>') +
+        (draft.mastery_strategy === "item_mastery" && draft.completion_strategy === "rounds" && selectedItems.some(function (item) { return item.type === "verb"; }) ?
+          '<label><span>Werkwoordoefening</span><select name="item_verb_exercise_key"><option value="verb-nl-conj"' + (draft.item_verb_exercise_key === "verb-nl-conj" ? " selected" : "") + '>Nederlands → vervoeging</option><option value="verb-fr-conj"' + (draft.item_verb_exercise_key === "verb-fr-conj" ? " selected" : "") + '>Frans → vervoeging</option><option value="verb-nl-inf"' + (draft.item_verb_exercise_key === "verb-nl-inf" ? " selected" : "") + '>Nederlands → infinitief</option></select></label>' : '') +
+        '<label><span>Instructies (optioneel)</span><textarea name="instructions" maxlength="1000">' + escapeHtml(draft.instructions) + '</textarea></label></fieldset>' +
+      '<fieldset><legend>5 · Controleren en publiceren</legend><p>' + selectedItems.length + ' vaste permanente item-ID’s · ' + draft.class_ids.length + ' klassen · ' +
+        (draft.mastery_strategy === "item_mastery" && draft.completion_strategy === "rounds" ? draft.required_rounds + ' rondes.' : 'doel ' + draft.target_acquired_percentage + '%.') +
+        '</p><div class="export-actions">' + (draft.status === "draft" ? '<button class="button button-secondary" type="submit" name="task_status" value="draft">Concept opslaan</button>' : '') + '<button class="button button-primary" type="submit" name="task_status" value="published">' + (draft.status === "published" ? "Wijzigingen opslaan" : "Publiceren") + '</button></div></fieldset></form>';
   }
 
   function renderTaskDetail() {
@@ -1293,27 +1306,29 @@
     const statusFor = function (row) {
       if (row.completed_at) return "completed";
       if (task.due_at && new Date(task.due_at) < new Date()) return "late";
-      return Number(row.progress && row.progress.practiced || 0) ? "in_progress" : "not_started";
+      return task.completion_strategy === "rounds" ? row.round_progress ? "in_progress" : "not_started" :
+        Number(row.progress && row.progress.practiced || 0) ? "in_progress" : "not_started";
     };
     const statuses = { completed: "Afgerond", late: "Te laat", in_progress: "Bezig", not_started: "Niet gestart" };
     const filteredRows = state.tasks.filter === "all" ? rows : rows.filter(function (row) { return statusFor(row) === state.tasks.filter; });
     const completedCount = rows.filter(function (row) { return row.completed_at; }).length;
-    const startedCount = rows.filter(function (row) { return !row.completed_at && Number(row.progress && row.progress.practiced || 0) > 0; }).length;
+    const startedCount = rows.filter(function (row) { return !row.completed_at && statusFor(row) === "in_progress"; }).length;
     const averageMastery = rows.length ? Math.round(rows.reduce(function (total, row) { return total + Number(row.progress && row.progress.mastery_level || 0); }, 0) / rows.length) : 0;
     const verbTask = task.mastery_strategy && task.mastery_strategy !== "item_mastery";
-    return '<div class="page-heading"><div><p class="eyebrow">Taak · ' + escapeHtml(task.status) + '</p><h2>' + escapeHtml(task.title) + '</h2><p class="muted">' + (verbTask ? asArray(task.requirements).length + ' werkwoorddoelen' : asArray(task.item_ids).length + ' items') + ' · doel ' + task.target_acquired_percentage + '% · ' + escapeHtml(task.due_at ? formatDate(task.due_at) : "Geen deadline") + '</p></div><div class="export-actions"><button class="button button-secondary" type="button" data-action="view-tasks">Terug</button><button class="button button-secondary" type="button" data-action="export-task">CSV</button>' + (editable ? '<button class="button button-primary" type="button" data-action="edit-task">Bewerken</button><button class="button button-secondary" type="button" data-action="archive-task">Archiveren</button>' : '') + '</div></div>' +
+    return '<div class="page-heading"><div><p class="eyebrow">Taak · ' + escapeHtml(task.status) + '</p><h2>' + escapeHtml(task.title) + '</h2><p class="muted">' + (verbTask ? asArray(task.requirements).length + ' werkwoorddoelen' : asArray(task.item_ids).length + ' items') + ' · ' + (task.completion_strategy === "rounds" ? task.required_rounds + ' rondes' : 'doel ' + task.target_acquired_percentage + '%') + ' · ' + escapeHtml(task.due_at ? formatDate(task.due_at) : "Geen deadline") + '</p></div><div class="export-actions"><button class="button button-secondary" type="button" data-action="view-tasks">Terug</button><button class="button button-secondary" type="button" data-action="export-task">CSV</button>' + (editable ? '<button class="button button-primary" type="button" data-action="edit-task">Bewerken</button><button class="button button-secondary" type="button" data-action="archive-task">Archiveren</button>' : '') + '</div></div>' +
       (task.instructions ? '<p>' + escapeHtml(task.instructions) + '</p>' : '') +
       '<div class="task-summary"><span><strong>' + completedCount + '/' + rows.length + '</strong> afgerond</span><span><strong>' + startedCount + '</strong> bezig</span><span><strong>' + (rows.length - completedCount - startedCount) + '</strong> niet gestart</span><span><strong>' + averageMastery + '%</strong> gemiddelde beheersing</span></div>' +
       '<label class="task-filter"><span>Status</span><select id="taskStatusFilter"><option value="all"' + (state.tasks.filter === "all" ? ' selected' : '') + '>Alle</option>' + Object.entries(statuses).map(function (entry) { return '<option value="' + entry[0] + '"' + (state.tasks.filter === entry[0] ? ' selected' : '') + '>' + entry[1] + '</option>'; }).join("") + '</select></label>' +
-      '<div class="table-wrap"><table><thead><tr><th>Klas / leerling</th><th>Status</th><th>Geoefend</th><th>Beheersing</th><th>Gekend</th><th>Doel</th><th>Laatste activiteit</th><th>Actieve taaktijd</th></tr></thead><tbody>' + filteredRows.map(function (row) {
+      '<div class="table-wrap"><table><thead><tr><th>Klas / leerling</th><th>Status</th><th>Geoefend</th><th>Beheersing</th><th>Gekend</th><th>Doel / rondes</th><th>Laatste activiteit</th><th>Actieve taaktijd</th></tr></thead><tbody>' + filteredRows.map(function (row) {
         const progress = row.progress || {};
+        const round = row.round_progress;
         const status = statuses[statusFor(row)];
         const goalDetails = verbTask ? '<div class="task-goal-details">' + asArray(progress.goals).map(function (goal) {
           const courseItem = state.courseIndex[goal.goal_id];
           const label = courseItem ? courseItem.infinitive : goal.goal_id === "present_er" ? "Verbes en -ER" : goal.goal_id;
           return '<span>' + escapeHtml(label) + ': ' + Number(goal.level || 0) + '% · ' + Number(goal.persons || 0) + '/6 pers. · ' + Number(goal.conjugation_accuracy ?? goal.accuracy ?? 0) + '% juist · ' + Number(goal.verbs || 0) + ' ww. · ' + Number(goal.sessions || 0) + ' sessies · laatst ' + escapeHtml(goal.last_activity ? formatDate(goal.last_activity) : '—') + '</span>';
         }).join("") + '</div>' : "";
-        return '<tr><td>' + escapeHtml(row.class_name) + ' · <strong>' + escapeHtml(row.student_name) + '</strong></td><td>' + status + (row.completed_at ? ' · ' + escapeHtml(formatDate(row.completed_at)) : '') + '</td><td>' + Number(progress.practiced || 0) + '/' + Number(progress.total || 0) + '</td><td>' + Number(progress.mastery_level || 0) + '%' + goalDetails + '</td><td>' + Number(progress.acquired || 0) + '/' + Number(progress.total || 0) + ' · ' + (Number(progress.total || 0) ? Math.round(Number(progress.acquired || 0) * 100 / Number(progress.total)) : 0) + '%</td><td>' + task.target_acquired_percentage + '%</td><td>' + escapeHtml(progress.last_activity ? formatDate(progress.last_activity) : "—") + '</td><td>' + formatActiveDuration(row.active_task_time) + '</td></tr>';
+        return '<tr><td>' + escapeHtml(row.class_name) + ' · <strong>' + escapeHtml(row.student_name) + '</strong></td><td>' + status + (round ? ' · ronde ' + round.round_number + '/' + round.required_rounds + ' · ' + round.completed + '/' + round.total : '') + (row.completed_at ? ' · ' + escapeHtml(formatDate(row.completed_at)) : '') + '</td><td>' + Number(progress.practiced || 0) + '/' + Number(progress.total || 0) + '</td><td>' + Number(progress.mastery_level || 0) + '%' + goalDetails + '</td><td>' + Number(progress.acquired || 0) + '/' + Number(progress.total || 0) + ' · ' + (Number(progress.total || 0) ? Math.round(Number(progress.acquired || 0) * 100 / Number(progress.total)) : 0) + '%</td><td>' + (task.completion_strategy === "rounds" ? task.required_rounds + ' rondes' : task.target_acquired_percentage + '%') + '</td><td>' + escapeHtml(progress.last_activity ? formatDate(progress.last_activity) : "—") + '</td><td>' + formatActiveDuration(row.active_task_time) + '</td></tr>';
       }).join("") + '</tbody></table></div>';
   }
 
@@ -1633,7 +1648,7 @@
   function updateTaskDraftFromForm(form) {
     const draft = state.tasks.draft;
     if (!draft || !form) return;
-    ["title", "instructions", "due_at", "target_acquired_percentage", "mastery_strategy", "trajectory", "top_category", "lesson", "block", "subsection", "category", "range_start", "range_end"].forEach(function (name) {
+    ["title", "instructions", "due_at", "target_acquired_percentage", "mastery_strategy", "required_rounds", "item_verb_exercise_key", "trajectory", "top_category", "lesson", "block", "subsection", "category", "range_start", "range_end"].forEach(function (name) {
       const field = form.elements.namedItem(name);
       if (field) draft[name] = field.value;
     });
@@ -1671,6 +1686,10 @@
       due_at: deadline,
       target_acquired_percentage: Number(draft.target_acquired_percentage),
       mastery_strategy: draft.mastery_strategy,
+      completion_strategy: draft.id && draft.completion_strategy !== "rounds" ? draft.completion_strategy :
+        draft.mastery_strategy === "item_mastery" ? "rounds" : draft.mastery_strategy,
+      required_rounds: Number(draft.required_rounds || 3),
+      item_verb_exercise_key: draft.item_verb_exercise_key,
       requirements: taskRequirements(draft, items),
       class_ids: draft.class_ids, item_ids: items.map(function (item) { return item.id; }), status: status
     };
@@ -1912,6 +1931,8 @@
       if (!window.confirm("Deze taak archiveren? Historische voltooiingen blijven bewaard.")) return;
       const payload = { id: task.id, title: task.title, instructions: task.instructions, due_at: task.due_at,
         target_acquired_percentage: task.target_acquired_percentage, mastery_strategy: task.mastery_strategy || "item_mastery",
+        completion_strategy: task.completion_strategy, required_rounds: task.required_rounds,
+        item_verb_exercise_key: task.item_verb_exercise_key,
         requirements: task.requirements || [], class_ids: task.class_ids, item_ids: task.item_ids, status: "archived" };
       const result = await state.client.rpc("save_assignment", { p_payload: payload });
       if (result.error) { state.tasks.message = "Archiveren mislukt."; return renderCurrent(); }
@@ -1920,8 +1941,8 @@
     if (action === "export-task") {
       const task = state.tasks.list.find(function (row) { return row.id === state.tasks.selectedId; });
       if (!task) return;
-      downloadCsv("taak-" + safeFilename(task.title) + ".csv", ["Taak", "Klas", "Leerling", "Status", "Items geoefend", "Items totaal", "Beheersing %", "Gekend", "Gekend %", "Doel %", "Voltooid op", "Laatste activiteit", "Actieve taaktijd (s)"],
-        asArray(state.tasks.detail).map(function (row) { const p = row.progress || {}; const status = row.completed_at ? "Afgerond" : task.due_at && new Date(task.due_at) < new Date() ? "Te laat" : Number(p.practiced || 0) ? "Bezig" : "Niet gestart"; return [task.title, row.class_name, row.student_name, status, p.practiced, p.total, p.mastery_level, p.acquired, Number(p.total || 0) ? Math.round(Number(p.acquired || 0) * 100 / Number(p.total)) : 0, task.target_acquired_percentage, row.completed_at || "", p.last_activity || "", row.active_task_time || 0]; }));
+      downloadCsv("taak-" + safeFilename(task.title) + ".csv", ["Taak", "Klas", "Leerling", "Status", "Items geoefend", "Items totaal", "Beheersing %", "Gekend", "Gekend %", "Doel %", "Voltooid op", "Laatste activiteit", "Actieve taaktijd (s)", "Completion strategy", "Ronde", "Rondes vereist", "Ronde-items juist", "Ronde-items totaal"],
+        asArray(state.tasks.detail).map(function (row) { const p = row.progress || {}; const r = row.round_progress || {}; const status = row.completed_at ? "Afgerond" : task.due_at && new Date(task.due_at) < new Date() ? "Te laat" : task.completion_strategy === "rounds" ? r.round_number ? "Bezig" : "Niet gestart" : Number(p.practiced || 0) ? "Bezig" : "Niet gestart"; return [task.title, row.class_name, row.student_name, status, p.practiced, p.total, p.mastery_level, p.acquired, Number(p.total || 0) ? Math.round(Number(p.acquired || 0) * 100 / Number(p.total)) : 0, task.completion_strategy === "rounds" ? "" : task.target_acquired_percentage, row.completed_at || "", p.last_activity || "", row.active_task_time || 0, task.completion_strategy || "legacy_mastery", r.round_number || "", r.required_rounds || (task.completion_strategy === "rounds" ? task.required_rounds : ""), r.completed || 0, r.total || 0]; }));
       return;
     }
     if (action === "view-teachers") {

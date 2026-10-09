@@ -6,6 +6,7 @@ const MASTERY_SERVER_CACHE_KEY = "monParcoursMasteryServerCacheV1";
 const ASSIGNMENTS_CACHE_KEY = "monParcoursAssignmentsCacheV1";
 const VERB_EVIDENCE_KEY = "monParcoursVerbEvidenceV1";
 const VERB_SERVER_CACHE_KEY = "monParcoursVerbServerCacheV1";
+const TASK_ROUNDS_KEY = "monParcoursTaskRoundsV1";
 const INACTIVITY_TIMEOUT_MS = 60000;
 const MAX_DYNAMIC_NUMBER_ALL = 101;
 const ACCENTS = ["é", "è", "ê", "ë", "à", "â", "ç", "ù", "û", "ô", "î", "ï"];
@@ -174,6 +175,11 @@ function handleClick(event) {
   }
   if (action === "start-session") startSession(control.dataset.mode);
   if (action === "next-question") nextQuestion();
+  if (action === "consult-round") consultRoundCourse();
+  if (action === "close-consult") {
+    const dialog = document.querySelector("#round-consult-dialog");
+    if (dialog) dialog.close();
+  }
   if (action === "insert-accent") insertAccent(control.dataset.accent);
   if (action === "view-progress") renderProgress();
   if (action === "view-difficult") renderDifficult();
@@ -480,6 +486,7 @@ async function refreshStudentAssignments() {
   try {
     const items = await window.MonParcoursSupabase.rpc("get_student_assignments", { p_identity_token: token });
     if (!Array.isArray(items) || currentStudentIdentity().subject !== identity.subject) return false;
+    items.forEach(mergeAssignmentRounds);
     state.assignments.items = items;
     state.assignments.loaded = true;
     localStorage.setItem(ASSIGNMENTS_CACHE_KEY, JSON.stringify({ identity_subject: identity.subject, items: items, updated_at: new Date().toISOString() }));
@@ -504,8 +511,63 @@ function assignmentCourseItems(assignment) {
   return (assignment.item_ids || []).map(function (id) { return index.get(id); }).filter(Boolean);
 }
 
+function roundStore() {
+  try {
+    const value = JSON.parse(localStorage.getItem(TASK_ROUNDS_KEY));
+    return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+  } catch (error) { return {}; }
+}
+
+function roundsForAssignment(assignment) {
+  if (!assignment) return [];
+  const identity = currentStudentIdentity();
+  const saved = roundStore()[identity.subject + ":" + assignment.id];
+  return saved && Array.isArray(saved.rounds) ? saved.rounds.filter(function (round) {
+    return round && Number.isInteger(round.number) && Array.isArray(round.selected_item_ids) &&
+      round.items && typeof round.items === "object";
+  }) : [];
+}
+
+function saveAssignmentRounds(assignment, rounds) {
+  if (!assignment) return;
+  const identity = currentStudentIdentity();
+  if (!identity || !identity.subject) return;
+  const saved = roundStore();
+  saved[identity.subject + ":" + assignment.id] = { rounds: rounds, updated_at: new Date().toISOString() };
+  localStorage.setItem(TASK_ROUNDS_KEY, JSON.stringify(saved));
+}
+
+function mergeAssignmentRounds(assignment) {
+  if (!assignment || assignment.completion_strategy !== "rounds" || !Array.isArray(assignment.rounds)) return;
+  const local = roundsForAssignment(assignment);
+  assignment.rounds.forEach(function (serverRound) {
+    const existing = local.find(function (round) { return round.number === serverRound.number; });
+    if (!existing) { local.push(serverRound); return; }
+    if (existing.selected_item_ids.join("\u001f") !== serverRound.selected_item_ids.join("\u001f")) {
+      Object.assign(existing, serverRound);
+      return;
+    }
+    serverRound.selected_item_ids.forEach(function (id) {
+      const remote = serverRound.items[id];
+      const own = existing.items[id];
+      existing.items[id] = { wrong_count: Math.max(Number(own && own.wrong_count || 0), Number(remote && remote.wrong_count || 0)),
+        consulted: Boolean(own && own.consulted || remote && remote.consulted),
+        completed_at: own && own.completed_at || remote && remote.completed_at || null };
+    });
+  });
+  local.sort(function (left, right) { return left.number - right.number; });
+  saveAssignmentRounds(assignment, local);
+}
+
 function assignmentProgress(assignment) {
-  return window.MonParcoursAssignments.progress(assignment, currentMasteryRecords(), undefined, currentVerbEvidence());
+  const progress = window.MonParcoursAssignments.progress(assignment, currentMasteryRecords(), undefined, currentVerbEvidence());
+  if (assignment.completion_strategy === "rounds") {
+    const savedRounds = roundsForAssignment(assignment);
+    progress.rounds = window.MonParcoursTaskRounds.progress(assignment, savedRounds);
+    progress.status = progress.rounds.completed || assignment.completed_at ? "completed" :
+      assignment.due_at && new Date(assignment.due_at) < new Date() ? "late" : savedRounds.length ? "in_progress" : "not_started";
+  }
+  return progress;
 }
 
 function assignmentDue(assignment) {
@@ -527,6 +589,11 @@ function assignmentStatus(progress) {
 
 function assignmentCard(assignment) {
   const progress = assignmentProgress(assignment);
+  if (progress.rounds) return '<button class="assignment-card" type="button" data-action="view-assignment" data-id="' + escapeAttr(assignment.id) + '">' +
+    '<strong class="assignment-card-title">' + assignmentContentIcon(assignment) + escapeHtml(assignment.title) + '</strong><span>' + assignmentDue(assignment) + '</span>' +
+    '<span>' + uiText("Passage " + progress.rounds.round + "/" + progress.rounds.required + " · " + progress.rounds.done + "/" + progress.rounds.selected,
+      "Ronde " + progress.rounds.round + "/" + progress.rounds.required + " · " + progress.rounds.done + "/" + progress.rounds.selected) + '</span>' +
+    '<span class="assignment-card-cta">' + uiText(progress.rounds.completed ? "Terminé" : "Continuer", progress.rounds.completed ? "Afgerond" : "Verder oefenen") + ' →</span></button>';
   if (progress.goals) return '<button class="assignment-card" type="button" data-action="view-assignment" data-id="' + escapeAttr(assignment.id) + '">' +
     '<strong class="assignment-card-title">' + assignmentContentIcon(assignment) + escapeHtml(assignment.title) + '</strong><span>' + assignmentDue(assignment) + '</span>' +
     '<span>' + assignmentShortProgress(progress) + '</span><span class="assignment-card-cta">' + uiText("Continuer", "Verder oefenen") + ' →</span></button>';
@@ -539,6 +606,8 @@ function assignmentCard(assignment) {
 }
 
 function assignmentShortProgress(progress) {
+  if (progress.rounds) return uiText("Passage " + progress.rounds.round + "/" + progress.rounds.required + " · " + progress.rounds.done + "/" + progress.rounds.selected,
+    "Ronde " + progress.rounds.round + "/" + progress.rounds.required + " · " + progress.rounds.done + "/" + progress.rounds.selected);
   if (progress.goals) {
     if (progress.goals.length === 1 && progress.goals[0].kind === "regular") {
       const goal = progress.goals[0];
@@ -596,7 +665,9 @@ function assignmentHomeRow(assignment) {
 
 function assignmentHomeSection() {
   const identity = currentStudentIdentity();
-  const items = state.assignments.items.filter(function (item) { return item.status === "published" && !item.completed_at; });
+  const items = state.assignments.items.filter(function (item) {
+    return item.status === "published" && !item.completed_at && !assignmentProgress(item).rounds?.completed;
+  });
   return '<section class="assignments-home" aria-labelledby="assignments-heading"><div class="section-heading"><h2 id="assignments-heading">' + uiText("Mes devoirs", "Mijn taken") + '</h2>' +
     '<button class="text-button" type="button" data-action="view-assignments">' + uiText("Voir tout", "Alles bekijken") + '</button></div>' +
     (items.length ? '<div class="assignment-home-list">' + items.slice(0, 2).map(assignmentHomeRow).join("") + '</div>' :
@@ -632,16 +703,22 @@ function renderAssignmentDetail(id) {
     '<section class="assignment-detail"><p class="eyebrow">' + assignmentStatus(progress) + '</p><h1>' + assignmentContentIcon(assignment) + escapeHtml(assignment.title) + '</h1>' +
     '<p>' + assignmentDue(assignment) + '</p>' +
     (assignment.instructions ? '<p class="assignment-instructions">' + escapeHtml(assignment.instructions) + '</p>' : '') +
-    (progress.goals ? '<div class="assignment-stats"><strong>' + assignmentShortProgress(progress) + '</strong></div>' :
+    (progress.rounds ? '<div class="assignment-stats"><strong>' + assignmentShortProgress(progress) + '</strong><strong>' +
+      uiText("Encore " + progress.rounds.remaining, "Nog " + progress.rounds.remaining) + '</strong></div>' :
+      progress.goals ? '<div class="assignment-stats"><strong>' + assignmentShortProgress(progress) + '</strong></div>' :
       '<div class="assignment-stats"><strong>' + progress.practiced + '/' + progress.total + ' ' + uiText("travaillés", "geoefend") + '</strong>' +
       '<strong>' + uiText("Niveau de maîtrise : " + progress.masteryLevel + "%", "Beheersingsniveau: " + progress.masteryLevel + "%") + '</strong>' +
       '<strong>' + progress.acquired + '/' + progress.total + ' ' + uiText("acquis", "gekend") + '</strong>' +
       '<strong>' + uiText("Objectif : " + progress.target + "% acquis", "Doel: " + progress.target + "% gekend") + '</strong></div>' + masteryBar(progress, false)) +
-    (progress.completedAt ? '<p class="perfect-note">' + uiText("Objectif atteint ! Le " + new Date(progress.completedAt).toLocaleDateString("fr-BE") + ".", "Doel behaald! Op " + new Date(progress.completedAt).toLocaleDateString("nl-BE") + ".") + '</p>' :
+    (progress.rounds ? '<p>' + (progress.rounds.completed ? uiText("Tous les passages sont terminés.", "Alle rondes zijn afgerond.") :
+      progress.rounds.round === 1 ? uiText("Tu peux encore consulter ton cours.", "Je mag nog opzoeken in Mon parcours.") :
+      progress.rounds.round === 2 ? uiText("Sans aide cette fois. Utilise ton livre si nécessaire.", "Deze keer zonder hulp. Gebruik je boek indien nodig.") :
+      uiText("Révision", "Herhaling")) + '</p>' : progress.completedAt ? '<p class="perfect-note">' + uiText("Objectif atteint ! Le " + new Date(progress.completedAt).toLocaleDateString("fr-BE") + ".", "Doel behaald! Op " + new Date(progress.completedAt).toLocaleDateString("nl-BE") + ".") + '</p>' :
       progress.reachedLocally ? '<p class="sync-note">' + uiText("Objectif atteint sur cet appareil. Confirmation après synchronisation.", "Doel op dit toestel behaald. Bevestiging volgt na synchronisatie.") + '</p>' :
       (progress.goals ? '<p>' + uiText("Travaille les personnes et les verbes indiqués pour atteindre l’objectif.", "Oefen de persoonsgroepen en werkwoorden om het doel te bereiken.") + '</p>' :
       '<p>' + uiText("La tâche est terminée quand tous les éléments ont été travaillés et que le pourcentage acquis atteint l’objectif.", "De taak is klaar als alle items geoefend zijn en het gekend-percentage het doel bereikt.") + '</p>')) +
-    '<button class="button button-primary" type="button" data-action="launch-assignment" data-id="' + escapeAttr(id) + '">' + uiText(progress.practiced ? "Continuer" : "Commencer", progress.practiced ? "Verder oefenen" : "Starten") + '</button></section>';
+    (progress.rounds && progress.rounds.completed ? '' : '<button class="button button-primary" type="button" data-action="launch-assignment" data-id="' + escapeAttr(id) + '">' + uiText(progress.rounds ? progress.status === "not_started" ? "Commencer" : "Continuer" : progress.practiced ? "Continuer" : "Commencer",
+      progress.rounds ? progress.status === "not_started" ? "Starten" : "Verder oefenen" : progress.practiced ? "Verder oefenen" : "Starten") + '</button>') + '</section>';
   focusApp();
 }
 
@@ -656,6 +733,28 @@ function launchAssignment(id) {
   const unit = currentTrajectory().units.find(function (row) { return row.top_category === first.top_category; });
   state.selectedUnitOrder = unit && unit.order;
   state.selectedScope = { unitOrder: state.selectedUnitOrder, block: first.block || "", subsection: first.subsection || "", category: first.category || "", title: assignment.title };
+  if (assignment.completion_strategy === "rounds") {
+    const rounds = roundsForAssignment(assignment);
+    const api = window.MonParcoursTaskRounds;
+    let round = api.currentRound(assignment, rounds);
+    if (!round) return renderAssignmentDetail(id);
+    if (!rounds.some(function (entry) { return entry.number === round.number; })) {
+      rounds.push(round);
+      saveAssignmentRounds(assignment, rounds);
+    }
+    const pendingIds = round.selected_item_ids.filter(function (itemId) { return !round.items[itemId].completed_at; });
+    const selected = allItems.filter(function (item) { return pendingIds.includes(item.id); });
+    const questions = taskQuestionsForItems(selected, "assignment-mixed", assignment.item_verb_exercise_key || "verb-nl-conj");
+    if (questions.length !== pendingIds.length) {
+      app.innerHTML = '<section class="error-card"><h1>' + uiText("Ce devoir ne peut pas encore commencer.", "Deze taak kan nog niet starten.") +
+        '</h1><p>' + uiText("Un élément du cours manque. Préviens ton professeur.", "Een cursusitem ontbreekt. Meld dit aan je leerkracht.") + '</p></section>';
+      return;
+    }
+    beginSession(questions, "practice", "assignment-mixed", assignment.title,
+      { availableCount: round.selected_item_ids.length, assignmentId: id, roundNumber: round.number,
+        roundSelectedIds: round.selected_item_ids.slice(), roundReasons: round.selection_reasons });
+    return;
+  }
   if (assignment.mastery_strategy && assignment.mastery_strategy !== "item_mastery") {
     const questions = verbTaskQuestions(assignment, allItems);
     beginSession(questions, "practice", "assignment-mixed", assignment.title, { availableCount: questions.length, assignmentId: id });
@@ -1015,10 +1114,10 @@ function questionsForSetup(exerciseKey, requestedCount) {
   return buildQuestionsForItems(exerciseItemsForSetup(exerciseKey), exerciseKey, requestedCount);
 }
 
-function taskQuestionsForItems(items, exerciseKey) {
+function taskQuestionsForItems(items, exerciseKey, verbExerciseKey) {
   return items.map(function (item) {
       const key = exerciseKey === "assignment-mixed" ?
-        { vocabulary: "vocab-nl-fr", verb: "verb-nl-inf", phrase: "phrase-nl-fr", grammar_rule: "grammar", number: "number-nl-fr" }[item.type] : exerciseKey;
+        { vocabulary: "vocab-nl-fr", verb: verbExerciseKey || "verb-nl-inf", phrase: "phrase-nl-fr", grammar_rule: "grammar", number: "number-nl-fr" }[item.type] : exerciseKey;
       if (!key) return null;
       const questions = buildQuestionsForItems([item], key, 1);
       return questions[Math.floor(Math.random() * questions.length)] || null;
@@ -1153,6 +1252,9 @@ function beginSession(questions, mode, exerciseKey, title, metadata) {
     attempt_count: 0,
     available_count: availableCount,
     assignment_id: metadata && metadata.assignmentId || null,
+    assignment_round_number: metadata && metadata.roundNumber || null,
+    assignment_round_selected_item_ids: metadata && metadata.roundSelectedIds || null,
+    assignment_round_reasons: metadata && metadata.roundReasons || null,
     client_session_id: createClientId(),
     identity_provider: identity.provider,
     identity_subject: identity.subject,
@@ -1282,6 +1384,16 @@ function restoreActiveSession() {
   saved.activeClockRunning = false;
   state.session = saved;
   state.activeAssignmentId = saved.assignment_id || null;
+  if (saved.assignment_round_number) {
+    const assignment = assignmentById(saved.assignment_id);
+    const round = roundsForAssignment(assignment).find(function (entry) { return entry.number === saved.assignment_round_number; });
+    while (round && saved.index < saved.questions.length) {
+      const question = saved.questions[saved.index];
+      const id = question.stableItemId || question.stableItemIds && question.stableItemIds[0];
+      if (!round.items[id] || !round.items[id].completed_at) break;
+      saved.index += 1;
+    }
+  }
   renderQuestion('<span class="resume-note">' + uiText("Ta session inachevée a été reprise.", "Je onvoltooide sessie is veilig hervat.") + '</span>');
   return true;
 }
@@ -1320,13 +1432,15 @@ function renderQuestion(message) {
   const session = state.session;
   const question = session.questions[session.index];
   if (!question) return finishSession();
-  const progress = Math.round((session.index / session.questions.length) * 100);
+  const roundState = session.assignment_round_number ? assignmentById(session.assignment_id) : null;
+  const roundProgress = roundState ? window.MonParcoursTaskRounds.progress(roundState, roundsForAssignment(roundState)) : null;
+  const progress = roundProgress ? Math.round((roundProgress.done / Math.max(1, roundProgress.selected)) * 100) : Math.round((session.index / session.questions.length) * 100);
   const isTest = session.mode === "test";
   app.innerHTML =
     '<section class="practice-shell">' +
       '<header class="practice-header"><button class="text-button" type="button" data-action="back-unit">' + uiText("Arrêter", "Stoppen") + '</button>' +
       '<div class="practice-progress" aria-label="Voortgang"><span style="width:' + progress + '%"></span></div>' +
-      '<strong>' + (session.index + 1) + ' / ' + session.questions.length + '</strong></header>' +
+      '<strong>' + (roundProgress ? roundProgress.done + ' / ' + roundProgress.selected : (session.index + 1) + ' / ' + session.questions.length) + '</strong></header>' +
       taskPracticeContextHtml(session) +
       '<article class="question-card">' +
         '<div class="question-meta"><span>' + uiText(modeLabelFr(session.mode), modeLabel(session.mode)) + '</span><span>' + contentIcon(contentTypeKey(question.item && question.item.category || state.selectedScope && (state.selectedScope.category || state.selectedScope.title), question.item && question.item.type || EXERCISES[session.exerciseKey].type)) + uiText(EXERCISES[session.exerciseKey].labelFr, EXERCISES[session.exerciseKey].label) + '</span></div>' +
@@ -1350,6 +1464,11 @@ function taskPracticeContextHtml(session) {
   const assignment = assignmentById(session.assignment_id);
   if (!assignment) return "";
   const progress = assignmentProgress(assignment);
+  if (progress.rounds) return '<aside class="task-practice-context" aria-label="Devoir / Taak"><strong>' + escapeHtml(assignment.title) + '</strong><span>' +
+    uiText("Passage " + progress.rounds.round + " sur " + progress.rounds.required, "Ronde " + progress.rounds.round + " van " + progress.rounds.required) + '</span><span>' +
+    uiText(progress.rounds.done + " / " + progress.rounds.selected + " corrects", progress.rounds.done + " / " + progress.rounds.selected + " juist") + '</span><span>' +
+    (progress.rounds.round === 1 ? uiText("Tu peux consulter ton cours.", "Je mag opzoeken in Mon parcours.") : progress.rounds.round === 2 ?
+      uiText("Sans aide cette fois.", "Deze keer zonder hulp.") : uiText("Révision", "Herhaling")) + '</span></aside>';
   if (progress.goals) return '<aside class="task-practice-context" aria-label="Devoir / Taak"><strong>' + escapeHtml(assignment.title) + '</strong><span>' + assignmentShortProgress(progress) + '</span></aside>';
   return '<aside class="task-practice-context" aria-label="Devoir / Taak"><strong>' + escapeHtml(assignment.title) + '</strong><span>' +
     uiText(progress.practiced + ' / ' + progress.total + ' travaillés', progress.practiced + ' / ' + progress.total + ' geoefend') + '</span><span>' +
@@ -1366,6 +1485,25 @@ function submitAnswer(rawAnswer) {
   session.attempt_count += 1;
   const correct = isCorrect(rawAnswer, question.answers);
   session.lastMasteryFeedback = recordSyncAttempt(question, correct);
+
+  if (session.assignment_round_number) {
+    const assignment = assignmentById(session.assignment_id);
+    const rounds = roundsForAssignment(assignment);
+    const round = rounds.find(function (entry) { return entry.number === session.assignment_round_number; });
+    const itemId = question.stableItemId || question.stableItemIds && question.stableItemIds[0];
+    window.MonParcoursTaskRounds.markAttempt(round, itemId, correct, new Date().toISOString());
+    saveAssignmentRounds(assignment, rounds);
+    recordAttempt(question, correct);
+    syncSessionSnapshot();
+    if (correct) {
+      showFeedback(true, "Bonne réponse !", "Juist antwoord!", true);
+    } else {
+      requeueRoundQuestion(question);
+      showFeedback(false, session.assignment_round_number === 1 ? "Pas encore." : "Pas encore. Cherche dans ton cours si nécessaire.",
+        session.assignment_round_number === 1 ? "Nog niet juist." : "Nog niet juist. Zoek het indien nodig op in je boek/cursus.", true);
+    }
+    return;
+  }
 
   if (session.mode === "test") {
     session.results.push({ question: question, answer: rawAnswer, correct: correct });
@@ -1418,8 +1556,9 @@ function showFeedback(correct, messageFr, messageNl, allowNext, clearInput) {
   const submit = document.querySelector(".submit-button");
   feedback.className = "feedback visible " + (correct ? "correct" : "wrong");
   feedback.innerHTML = '<span class="feedback-mark" aria-hidden="true">' + (correct ? "✓" : "!") + '</span><div><p>' + uiHtml(messageFr, messageNl) + '</p>' +
-    masteryFeedbackHtml(state.session && state.session.lastMasteryFeedback) +
-    (allowNext ? '<button class="button button-primary" type="button" data-action="next-question">' + uiText("Suivant", "Volgende") + '</button>' : "") + '</div>';
+    (state.session && state.session.assignment_round_number ? "" : masteryFeedbackHtml(state.session && state.session.lastMasteryFeedback)) +
+    (allowNext ? '<button class="button button-primary" type="button" data-action="next-question">' + uiText("Suivant", "Volgende") + '</button>' : "") +
+    (!correct && state.session && state.session.assignment_round_number === 1 ? '<button class="button button-secondary" type="button" data-action="consult-round">' + uiText("Consulter", "Opzoeken") + '</button>' : "") + '</div>';
   if (allowNext) {
     input.disabled = true;
     submit.hidden = true;
@@ -1434,9 +1573,65 @@ function nextQuestion() {
   const session = state.session;
   markPracticeActivity();
   session.index += 1;
+  if (session.assignment_round_number) {
+    const assignment = assignmentById(session.assignment_id);
+    const round = roundsForAssignment(assignment).find(function (entry) { return entry.number === session.assignment_round_number; });
+    while (session.index < session.questions.length) {
+      const next = session.questions[session.index];
+      const id = next.stableItemId || next.stableItemIds && next.stableItemIds[0];
+      if (!round || !round.items[id] || !round.items[id].completed_at) break;
+      session.index += 1;
+    }
+  }
   session.phase = "answer";
   session.questionAttempts = 0;
+  persistActiveSession();
   renderQuestion();
+}
+
+function requeueRoundQuestion(question) {
+  const queue = state.session.questions;
+  const earliest = Math.min(queue.length, state.session.index + 2);
+  const insertion = Math.min(queue.length, earliest + Math.floor(Math.random() * 3));
+  queue.splice(insertion, 0, Object.assign({}, question));
+  persistActiveSession();
+}
+
+function consultRoundCourse() {
+  const session = state.session;
+  if (!session || session.assignment_round_number !== 1) return;
+  const question = session.questions[session.index];
+  const assignment = assignmentById(session.assignment_id);
+  const rounds = roundsForAssignment(assignment);
+  const round = rounds.find(function (entry) { return entry.number === 1; });
+  const itemId = question.stableItemId || question.stableItemIds && question.stableItemIds[0];
+  window.MonParcoursTaskRounds.markConsulted(round, itemId);
+  saveAssignmentRounds(assignment, rounds);
+  syncSessionSnapshot();
+  const source = question.item || {};
+  const matching = allCourseItems().filter(function (item) {
+    return item._trajectoryIndex === source._trajectoryIndex && item.top_category === source.top_category &&
+      item.lesson === source.lesson && item.block === source.block;
+  });
+  const items = matching.length >= 5 ? matching : allCourseItems().filter(function (item) {
+    return item._trajectoryIndex === source._trajectoryIndex && item.top_category === source.top_category && item.lesson === source.lesson;
+  });
+  const courseItems = items.length >= 5 ? items : allCourseItems().filter(function (item) {
+    return item.top_category === source.top_category && item._trajectoryIndex === source._trajectoryIndex;
+  });
+  const dialog = document.createElement("dialog");
+  dialog.id = "round-consult-dialog";
+  dialog.className = "consult-dialog";
+  dialog.setAttribute("aria-labelledby", "round-consult-title");
+  dialog.innerHTML = '<div class="consult-heading"><h2 id="round-consult-title">' + uiText("Consulte ton cours", "Zoek op in je cursus") + '</h2>' +
+    '<button class="text-button" type="button" data-action="close-consult">' + uiText("Fermer", "Sluiten") + '</button></div>' +
+    '<p>' + escapeHtml(source.lesson || source.top_category || "Univers français 1") + '</p><ul>' + courseItems.map(function (item) {
+      return '<li><span>' + escapeHtml(item.nl || item.prompt || "") + '</span><strong>' +
+        escapeHtml(item.fr || item.answer || item.infinitive || "") + '</strong></li>';
+    }).join("") + '</ul>';
+  dialog.addEventListener("close", function () { dialog.remove(); });
+  document.body.appendChild(dialog);
+  dialog.showModal();
 }
 
 function finishSession() {
@@ -1518,6 +1713,10 @@ function syncSessionSnapshot() {
     session: {
       client_session_id: session.client_session_id,
       assignment_id: session.assignment_id,
+      assignment_round_number: session.assignment_round_number,
+      assignment_round_selected_item_ids: session.assignment_round_selected_item_ids,
+      assignment_round_reasons: session.assignment_round_reasons,
+      assignment_round_consulted_item_ids: roundConsultedItemIds(session),
       course_key: path.course_key,
       trajectory: path.trajectory,
       top_category: path.top_category,
@@ -1536,9 +1735,32 @@ function syncSessionSnapshot() {
   });
 }
 
+function roundConsultedItemIds(session) {
+  if (!session.assignment_round_number) return [];
+  const round = roundsForAssignment(assignmentById(session.assignment_id)).find(function (entry) {
+    return entry.number === session.assignment_round_number;
+  });
+  return round ? Object.keys(round.items).filter(function (id) { return round.items[id].consulted; }) : [];
+}
+
 function renderSummary() {
   state.view = "summary";
   const session = state.session;
+  if (session.assignment_round_number) {
+    const assignment = assignmentById(session.assignment_id);
+    const progress = assignment && window.MonParcoursTaskRounds.progress(assignment, roundsForAssignment(assignment));
+    const headingFr = progress && progress.completed ? "Devoir terminé !" : "Passage terminé !";
+    const headingNl = progress && progress.completed ? "Taak afgerond!" : "Ronde afgerond!";
+    app.innerHTML = '<section class="summary-card"><h1>' + uiText(headingFr, headingNl) + '</h1><p>' +
+      (progress ? uiText("Passage " + session.assignment_round_number + " sur " + progress.required,
+        "Ronde " + session.assignment_round_number + " van " + progress.required) : "") + '</p><p>' +
+      uiText("La progression est enregistrée et sera synchronisée.", "De voortgang is bewaard en wordt gesynchroniseerd.") + '</p>' +
+      '<div class="summary-actions">' + (progress && !progress.completed ? '<button class="button button-primary" type="button" data-action="launch-assignment" data-id="' + escapeAttr(session.assignment_id) + '">' +
+        uiText("Passage suivant", "Volgende ronde") + '</button>' : '') +
+      '<button class="button button-secondary" type="button" data-action="view-assignments">' + uiText("Mes devoirs", "Mijn taken") + '</button></div></section>';
+    focusApp();
+    return;
+  }
   const results = session.mode === "test"
     ? session.results
     : session.questions.slice(0, Math.min(session.index, session.questions.length)).map(function (question) {

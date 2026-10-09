@@ -57,6 +57,7 @@
     if (!credential || !identity.verified || identity.provider === "local") return { sent: 0, pending: readQueue().length };
     flushing = true;
     let sent = 0;
+    let newerRevisionPending = false;
     try {
       const candidates = readQueue().filter(function (entry) { return canSyncEntry(entry, identity); });
       for (const candidate of candidates) {
@@ -71,7 +72,7 @@
           if (index >= 0 && latest[index].revision === candidate.revision) {
             latest.splice(index, 1);
             saveQueue(latest);
-          }
+          } else if (index >= 0) newerRevisionPending = true;
           sent += 1;
         } catch (error) {
           const latest = readQueue();
@@ -90,6 +91,7 @@
     if (sent && window.dispatchEvent && typeof window.CustomEvent === "function") {
       window.dispatchEvent(new CustomEvent("monparcours:sync-complete", { detail: { sent: sent } }));
     }
+    if (newerRevisionPending) scheduleFlush();
     return { sent: sent, pending: readQueue().length };
   }
 

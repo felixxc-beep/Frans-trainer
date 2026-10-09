@@ -457,3 +457,20 @@ dialog::backdrop { background: rgba(10,29,23,.45); backdrop-filter: blur(4px); }
   .verb-task-goals > div { grid-template-columns: minmax(0, 1fr) auto; }
   .verb-task-goals small { grid-column: 1 / -1; }
 }
+.consult-dialog {
+  width: min(680px, calc(100vw - 24px));
+  max-height: min(78vh, 760px);
+  padding: 1.25rem;
+  border: 1px solid #c5d5cc;
+  border-radius: 18px;
+  color: #123b2f;
+  background: #fffdf8;
+  overflow: auto;
+}
+.consult-dialog::backdrop { background: rgb(12 34 28 / 55%); }
+.consult-heading { display: flex; justify-content: space-between; align-items: start; gap: 1rem; }
+.consult-heading h2 { margin: 0; }
+.consult-dialog ul { list-style: none; padding: 0; margin: 1rem 0 0; }
+.consult-dialog li { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; padding: .7rem 0; border-top: 1px solid #e2eae4; }
+.consult-dialog li strong { font-weight: 600; }
+@media (max-width: 540px) { .consult-dialog li { grid-template-columns: 1fr; gap: .2rem; } }
