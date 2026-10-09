@@ -71,7 +71,7 @@ setImmediate(function () {
     assert.equal(items.length, phraseItems.length, "Actes de parole mag niet door andere types worden vervuild");
 
     assert.ok(appElement.innerHTML.includes('data-subsection="Actes de parole"'));
-    assert.match(appElement.innerHTML, new RegExp('data-subsection="Actes de parole"[\\s\\S]*?(?:<span>' + phraseItems.length + "</span>|<b class=\"scope-count\">" + phraseItems.length + "</b>)"));
+    assert.match(appElement.innerHTML, new RegExp('data-subsection="Actes de parole"[\\s\\S]*?(?:<span class="scope-all-count">' + phraseItems.length + "</span>|<b class=\"scope-count\">" + phraseItems.length + "</b>)"));
     evaluate("state.selectedScope = actesScope; renderSetup()");
     assert.match(appElement.innerHTML, /Nederlandse zin → Franse zin/);
     assert.ok(appElement.innerHTML.includes('class="choice-count">' + expectedQuestionCounts[trajectoryIndex]));
@@ -104,8 +104,9 @@ setImmediate(function () {
   assert.equal(wholeBlock.filter(function (item) { return item.type === "phrase"; }).length, 45);
   assert.equal(wholeBlock.filter(function (item) { return item.type !== "phrase"; }).length, 101);
   assert.match(appElement.innerHTML, /146[\s\S]*éléments d’exercice[\s\S]*oefenitems/);
-  assert.match(appElement.innerHTML, /Toute la partie[\s\S]*Hele onderdeel[\s\S]*146/);
-  assert.doesNotMatch(appElement.innerHTML, /Tout le bloc[\s\S]*Hele blok[\s\S]*146/, "de identieke blokactie wordt niet dubbel getoond");
+  assert.match(appElement.innerHTML, /Tout pratiquer →[\s\S]*Alles oefenen →[\s\S]*<span class="scope-all-count">146<\/span>/);
+  assert.equal((appElement.innerHTML.match(/<span class="scope-all-count">146<\/span>/g) || []).length, 1,
+    "de identieke blokactie wordt niet dubbel getoond");
   assert.ok(appElement.innerHTML.includes('data-subsection="Actes de parole" data-category=""'));
   assert.ok(appElement.innerHTML.includes('data-category="Se présenter"'));
   assert.ok(appElement.innerHTML.includes('data-category="Présenter quelqu’un (1)"'));

@@ -102,6 +102,7 @@ function handleClick(event) {
   }
   if (action === "view-assignments") renderAssignments();
   if (action === "view-assignment") launchAssignment(control.dataset.id);
+  if (action === "show-assignment-detail") renderAssignmentDetail(control.dataset.id);
   if (action === "launch-assignment") launchAssignment(control.dataset.id);
   if (action === "open-settings") settingsDialog.showModal();
   if (action === "open-identity") openIdentityDialog();
@@ -438,11 +439,9 @@ function renderHome() {
         state.data.trajectories.map(function (entry, index) {
           const stats = trajectoryStats(index);
           const total = (entry.items || []).length;
-          const mastery = masterySummaryForItems(entry.items || []);
           return '<button class="trajectory-card" type="button" data-action="select-trajectory" data-index="' + index + '" aria-pressed="' + (index === state.trajectoryIndex) + '">' +
-            '<span class="trajectory-number"><strong>' + escapeHtml(entry.trajectory) + '</strong><span class="count-badge">' + total + '</span></span>' +
-            '<small class="trajectory-progress">' + uiText(stats.practiced + " / " + total + " travaillés", stats.practiced + " / " + total + " geoefend") + '</small>' + masteryBar(mastery, true) +
-            '<small class="mastery-level">' + uiText(mastery.masteryLevel + "% maîtrise", "beheerst") + '</small>' +
+            '<span class="trajectory-number"><strong>' + escapeHtml(entry.trajectory) + '</strong><span class="trajectory-total">' + uiText(total + " éléments", total + " onderdelen") + '</span></span>' +
+            '<small class="trajectory-progress">' + uiText(stats.practiced + " / " + total + " travaillés", stats.practiced + " / " + total + " geoefend") + '</small>' +
           '</button>';
         }).join("") +
       '</div>' +
@@ -452,12 +451,10 @@ function renderHome() {
       '<div class="unit-list">' +
         trajectory.units.map(function (unit) {
           const count = exerciseItemCount(itemsForUnit(trajectory, unit).filter(isExerciseItem));
-          const unitStats = categoryStats(state.trajectoryIndex, unit.top_category);
-          const mastery = masterySummaryForItems(itemsForUnit(trajectory, unit));
           return '<button class="unit-card" type="button" data-action="select-unit" data-order="' + unit.order + '">' +
             '<span class="unit-order">' + unit.order + '</span>' +
             '<span class="unit-copy"><strong>' + contentIcon(contentTypeKey(unit.top_category)) + escapeHtml(unit.top_category) + '</strong><small>' + escapeHtml(unit.title) + '</small></span>' +
-            '<span class="unit-meta">' + (mastery.total ? '<strong>' + unitStats.practiced + '/' + mastery.total + ' · ' + mastery.masteryLevel + '%</strong><span class="sr-only">' + uiText("travaillés · maîtrise", "geoefend · beheerst") + '</span>' : uiText("Information", "Cursusinfo")) + '</span>' +
+            '<span class="unit-meta">' + (count ? count + ' ' + uiText("éléments", "items") : uiText("Information", "Cursusinfo")) + '<span class="unit-arrow" aria-hidden="true">→</span></span>' +
           '</button>';
         }).join("") +
       '</div>' +
@@ -589,20 +586,18 @@ function assignmentStatus(progress) {
 
 function assignmentCard(assignment) {
   const progress = assignmentProgress(assignment);
-  if (progress.rounds) return '<button class="assignment-card" type="button" data-action="view-assignment" data-id="' + escapeAttr(assignment.id) + '">' +
-    '<strong class="assignment-card-title">' + assignmentContentIcon(assignment) + escapeHtml(assignment.title) + '</strong><span>' + assignmentDue(assignment) + '</span>' +
-    '<span>' + uiText("Passage " + progress.rounds.round + "/" + progress.rounds.required + " · " + progress.rounds.done + "/" + progress.rounds.selected,
-      "Ronde " + progress.rounds.round + "/" + progress.rounds.required + " · " + progress.rounds.done + "/" + progress.rounds.selected) + '</span>' +
-    '<span class="assignment-card-cta">' + uiText(progress.rounds.completed ? "Terminé" : "Continuer", progress.rounds.completed ? "Afgerond" : "Verder oefenen") + ' →</span></button>';
-  if (progress.goals) return '<button class="assignment-card" type="button" data-action="view-assignment" data-id="' + escapeAttr(assignment.id) + '">' +
-    '<strong class="assignment-card-title">' + assignmentContentIcon(assignment) + escapeHtml(assignment.title) + '</strong><span>' + assignmentDue(assignment) + '</span>' +
-    '<span>' + assignmentShortProgress(progress) + '</span><span class="assignment-card-cta">' + uiText("Continuer", "Verder oefenen") + ' →</span></button>';
-  return '<button class="assignment-card" type="button" data-action="view-assignment" data-id="' + escapeAttr(assignment.id) + '">' +
-    '<strong class="assignment-card-title">' + assignmentContentIcon(assignment) + escapeHtml(assignment.title) + '</strong><span>' + assignmentDue(assignment) + '</span>' +
-    '<span>' + assignmentStatus(progress) + ' · ' + progress.practiced + '/' + progress.total + ' ' + uiText("travaillés", "geoefend") + '</span>' +
-    '<span>' + uiText("Niveau de maîtrise : " + progress.masteryLevel + "%", "Beheersingsniveau: " + progress.masteryLevel + "%") + '</span>' +
-    '<span>' + progress.acquired + '/' + progress.total + ' ' + uiText("acquis · objectif " + progress.target + "% acquis", "gekend · doel " + progress.target + "% gekend") + '</span>' +
-    masteryBar(progress, true) + '<span class="assignment-card-cta">' + uiText(progress.practiced ? "Continuer" : "Commencer", progress.practiced ? "Verder oefenen" : "Starten") + ' →</span></button>';
+  const completed = progress.status === "completed";
+  return '<button class="assignment-card" type="button" data-action="' + (completed ? "show-assignment-detail" : "launch-assignment") + '" data-id="' + escapeAttr(assignment.id) + '">' +
+    '<span class="assignment-kind">' + uiText("Devoir", "Taak") + '</span>' +
+    '<strong class="assignment-card-title">' + assignmentContentIcon(assignment) + escapeHtml(assignment.title) + '</strong>' +
+    '<span class="assignment-simple-progress">' + (progress.rounds ? assignmentRoundLabel(progress.rounds) : assignmentStatus(progress)) + '</span>' +
+    '<span class="assignment-home-due">' + assignmentDue(assignment) + '</span>' +
+    '<span class="assignment-card-cta">' + uiText(completed ? "Voir le devoir →" : "Continuer →", completed ? "Bekijk de taak →" : "Verdergaan →") + '</span></button>';
+}
+
+function assignmentRoundLabel(rounds) {
+  return uiText("Passage " + rounds.round + "/" + rounds.required + " · Encore " + rounds.remaining,
+    "Ronde " + rounds.round + "/" + rounds.required + " · Nog " + rounds.remaining);
 }
 
 function assignmentShortProgress(progress) {
@@ -656,11 +651,11 @@ function assignmentHomeRow(assignment) {
   const dueText = due && !Number.isNaN(due.getTime())
     ? uiText("Pour le " + due.toLocaleDateString("fr-BE", { day: "numeric", month: "short", timeZone: "Europe/Brussels" }), "Tegen " + due.toLocaleDateString("nl-BE", { day: "numeric", month: "short", timeZone: "Europe/Brussels" }))
     : uiText("Sans échéance", "Geen deadline");
-  return '<button class="assignment-home-row" type="button" data-action="view-assignment" data-id="' + escapeAttr(assignment.id) + '">' +
+  return '<button class="assignment-home-row" type="button" data-action="launch-assignment" data-id="' + escapeAttr(assignment.id) + '">' +
     '<span class="content-icon-wrap">' + assignmentContentIcon(assignment) + '</span>' +
-    '<span class="assignment-home-copy"><strong>' + escapeHtml(assignment.title) + '</strong><small>' + assignmentShortProgress(progress) + '</small></span>' +
+    '<span class="assignment-home-copy"><small class="assignment-kind">' + uiText("Devoir", "Taak") + '</small><strong>' + escapeHtml(assignment.title) + '</strong><small>' + (progress.rounds ? assignmentRoundLabel(progress.rounds) : assignmentStatus(progress)) + '</small></span>' +
     '<span class="assignment-home-due">' + dueText + '</span>' +
-    '<span class="assignment-home-cta">' + uiText("Continuer", "Verdergaan") + ' →</span></button>';
+    '<span class="assignment-home-cta">' + uiText("Continuer →", "Verdergaan →") + '</span></button>';
 }
 
 function assignmentHomeSection() {
@@ -669,7 +664,7 @@ function assignmentHomeSection() {
     return item.status === "published" && !item.completed_at && !assignmentProgress(item).rounds?.completed;
   });
   return '<section class="assignments-home" aria-labelledby="assignments-heading"><div class="section-heading"><h2 id="assignments-heading">' + uiText("Mes devoirs", "Mijn taken") + '</h2>' +
-    '<button class="text-button" type="button" data-action="view-assignments">' + uiText("Voir tout", "Alles bekijken") + '</button></div>' +
+    (items.length > 2 ? '<button class="text-button" type="button" data-action="view-assignments">' + uiText("Voir tout →", "Alles bekijken →") + '</button>' : '') + '</div>' +
     (items.length ? '<div class="assignment-home-list">' + items.slice(0, 2).map(assignmentHomeRow).join("") + '</div>' :
       '<p class="muted">' + (identity.verified && !state.assignments.loaded ? uiText("Connecte-toi à Internet pour charger tes devoirs.", "Maak verbinding met internet om je taken op te halen.") : identity.verified ? uiText("Aucun devoir à faire pour le moment.", "Momenteel geen openstaande taken.") :
         uiText("Connecte-toi pour voir tes devoirs.", "Meld je aan om je taken te zien.")) + '</p>') + '</section>';
@@ -799,7 +794,8 @@ function dashboardIcon(kind) {
 function masteryDashboardCard(summary) {
   return '<button class="quick-card mastery-dashboard-card" type="button" data-action="view-progress">' +
     '<span class="quick-icon chart" aria-hidden="true">' + dashboardIcon("chart") + '</span><span><small>' + uiText("Ma progression", "Mijn voortgang") + '</small>' +
-    '<strong>' + uiText("Niveau de maîtrise : " + summary.masteryLevel + "%", "Beheersingsniveau: " + summary.masteryLevel + "%") + '</strong>' + masteryBar(summary, true) + '</span></button>';
+    '<strong>' + uiText("Niveau de maîtrise : " + summary.masteryLevel + "%", "Beheersingsniveau: " + summary.masteryLevel + "%") + '</strong>' + masteryBar(summary, true) +
+    '<span class="quick-cta">' + uiText("Voir ma progression →", "Bekijk mijn voortgang →") + '</span></span></button>';
 }
 
 function masteryBar(summary, compact) {
@@ -841,7 +837,6 @@ function renderUnit() {
   const unitItems = itemsForUnit(trajectory, unit);
   const exerciseItems = unitItems.filter(isExerciseItem);
   const exerciseCount = exerciseItems.length;
-  const unitMastery = masterySummaryForItems(unitItems);
   const soundItems = unitItems.filter(function (item) { return item.type === "sound_rule"; });
   const sectionsHtml = unit.study_sections.length
     ? unit.study_sections.map(function (section) {
@@ -850,7 +845,7 @@ function renderUnit() {
         const blockDuplicatesUnit = samePermanentItemSet(blockItems, exerciseItems);
         return '<article class="structure-card">' +
           '<div class="structure-heading"><div><small>' + uiText("Bloc d'étude", "Studieblok") + '</small><h3>' + escapeHtml(section.title) + '</h3></div>' +
-          (blockCount && !blockDuplicatesUnit ? compactScopeButton(unit, section.title, "", section.title, blockCount, "Tout le bloc", "Hele blok") : "") + '</div>' +
+          (blockCount && !blockDuplicatesUnit ? compactScopeButton(unit, section.title, "", section.title, blockCount) : "") + '</div>' +
           '<div class="subsection-list">' +
             section.subsections.map(function (subsection) {
               const subsectionScope = {
@@ -869,20 +864,20 @@ function renderUnit() {
                 const categoryItems = exerciseItemsForScope(trajectory, unit, categoryScope);
                 const categoryCount = categoryItems.length;
                 return categoryCount
-                  ? scopeChoiceCard(unit, section.title, subsection.title, contentType, categoryCount, categoryValue, masterySummaryForItems(categoryItems))
+                  ? scopeChoiceCard(unit, section.title, subsection.title, contentType, categoryCount, categoryValue)
                   : "";
               }).filter(Boolean);
               const auxiliaryItems = subset.filter(function (item) { return item.category === "être / avoir"; });
               if (auxiliaryItems.length && !subsection.content_types.includes("être / avoir")) {
-                categoryChoices.push(scopeChoiceCard(unit, section.title, subsection.title, "Être et avoir", auxiliaryItems.length, "être / avoir", masterySummaryForItems(auxiliaryItems)));
+                categoryChoices.push(scopeChoiceCard(unit, section.title, subsection.title, "Être et avoir", auxiliaryItems.length, "être / avoir"));
               }
               const verbGrid = subsetCount && subset.every(function (item) { return item.type === "verb"; })
                 ? renderVerbScopeGroups(unit, section.title, subsection.title, subset) : "";
               const categoryGrid = verbGrid || (categoryChoices.length
                 ? '<div class="scope-choice-grid">' + categoryChoices.join("") + '</div>'
-                : (subsetCount ? '<div class="scope-choice-grid">' + scopeChoiceCard(unit, section.title, subsection.title, subsection.title, subsetCount, "", masterySummaryForItems(subset)) + '</div>' : '<span class="source-only">' + uiText("Informations du cours", "Alleen cursusinfo") + '</span>'));
-              return '<section class="subsection-row"><div class="subsection-title"><div><h4>' + escapeHtml(subsection.title) + '</h4>' + (subsetCount ? masteryCompactLine(masterySummaryForItems(subset)) : "") + '</div>' +
-                (subsetCount && categoryChoices.length > 1 ? compactScopeButton(unit, section.title, subsection.title, subsection.title, subsetCount, "Tout ce contenu", "Alles hiervan") : "") +
+                : (subsetCount ? '<div class="scope-choice-grid">' + scopeChoiceCard(unit, section.title, subsection.title, subsection.title, subsetCount, "") + '</div>' : '<span class="source-only">' + uiText("Informations du cours", "Alleen cursusinfo") + '</span>'));
+              return '<section class="subsection-row"><div class="subsection-title"><div><h4>' + escapeHtml(subsection.title) + '</h4></div>' +
+                (subsetCount && categoryChoices.length > 1 ? compactScopeButton(unit, section.title, subsection.title, subsection.title, subsetCount) : "") +
                 '</div>' + categoryGrid + '</section>';
             }).join("") +
           '</div></article>';
@@ -893,8 +888,8 @@ function renderUnit() {
     breadcrumbHtml([{ label: trajectory.trajectory, action: "home" }]) +
     journeySteps(3) +
     '<section class="unit-hero"><div><p class="eyebrow unit-kind">' + contentIcon(contentTypeKey(unit.top_category)) + escapeHtml(unit.top_category) + '</p><h1>' + escapeHtml(unit.title) + '</h1>' +
-    '<p class="lede">' + exerciseCount + ' ' + uiText("éléments d’exercice", "oefenitems") + '</p>' + masteryPageSummary(unitMastery) + '</div>' +
-    (exerciseCount ? compactScopeButton(unit, "", "", unit.title, exerciseCount, "Toute la partie", "Hele onderdeel") : "") + '</section>' +
+    '<p class="lede">' + exerciseCount + ' ' + uiText("éléments d’exercice", "oefenitems") + '</p></div>' +
+    (exerciseCount ? compactScopeButton(unit, "", "", unit.title, exerciseCount) : "") + '</section>' +
     '<section class="structure-stack" aria-label="Cursusstructuur">' + sectionsHtml + '</section>' +
     renderSoundNotes(soundItems);
   focusApp();
@@ -936,45 +931,29 @@ function renderVerbScopeGroups(unit, block, subsection, items) {
 }
 
 function irregularGroupCard(unit, block, subsection, items) {
-  const api = window.MonParcoursVerbMastery;
-  const scores = items.map(function (item) { return api.calculate(item.id, currentVerbEvidence()); });
-  const level = Math.round(scores.reduce(function (sum, row) { return sum + row.level; }, 0) / scores.length);
   const title = items.map(function (item) { return displayScopeTitle(item.infinitive); }).join(" + ");
   return '<button class="scope-choice-card verb-goal-card" type="button"' +
     scopeAttributes(unit, block, subsection, title, items[0].category) +
     '<span class="content-icon-wrap">' + contentIcon("verbs") + '</span><strong>' + escapeHtml(title) + '</strong><b class="scope-count">' + items.length + '</b>' +
-    '<small>' + uiText("Ensemble", "Samen oefenen") + '</small><small class="scope-mastery">' +
-    uiText(level + "% maîtrise · " + scores.filter(function (row) { return row.status === "acquired"; }).length + "/" + items.length + " acquis",
-      "beheerst · " + scores.filter(function (row) { return row.status === "acquired"; }).length + "/" + items.length + " gekend") + '</small></button>';
+    '<small>' + uiText("Ensemble", "Samen oefenen") + '</small><span class="scope-cta">' + uiText("Pratiquer →", "Oefenen →") + '</span></button>';
 }
 
 function verbGoalCard(unit, block, subsection, title, dutch, count, category, itemId, goalId) {
-  const progress = window.MonParcoursVerbMastery.calculate(goalId, currentVerbEvidence());
   return '<button class="scope-choice-card verb-goal-card" type="button" data-goal-id="' + escapeAttr(goalId) + '"' +
     scopeAttributes(unit, block, subsection, title, category, itemId) +
     '<span class="content-icon-wrap">' + contentIcon("verbs") + '</span><strong>' + escapeHtml(title) + '</strong><b class="scope-count">' + count + '</b>' +
-    '<small lang="nl">' + escapeHtml(dutch) + '</small><small class="scope-mastery">' + uiText(progress.level + "% maîtrise · " + progress.persons + "/6 personnes", "beheerst · " + progress.persons + "/6 persoonsgroepen") + '</small></button>';
+    '<small lang="nl">' + escapeHtml(dutch) + '</small><span class="scope-cta">' + uiText("Pratiquer →", "Oefenen →") + '</span></button>';
 }
 
-function compactScopeButton(unit, block, subsection, title, count, labelFr, labelNl, category) {
+function compactScopeButton(unit, block, subsection, title, count, category) {
   return '<button class="scope-all-button" type="button"' + scopeAttributes(unit, block, subsection, title, category) +
-    uiText(labelFr, labelNl) + '<span>' + count + '</span></button>';
+    '<span class="scope-all-icon">' + dashboardIcon("play") + '</span>' + uiText("Tout pratiquer →", "Alles oefenen →") + '<span class="scope-all-count">' + count + '</span></button>';
 }
 
-function scopeChoiceCard(unit, block, subsection, title, count, category, mastery) {
+function scopeChoiceCard(unit, block, subsection, title, count, category) {
   const kind = contentTypeKey(subsection === "Actes de parole" ? subsection : title);
   return '<button class="scope-choice-card" type="button"' + scopeAttributes(unit, block, subsection, title, category) +
-    '<span class="content-icon-wrap">' + contentIcon(kind) + '</span><strong>' + escapeHtml(displayScopeTitle(title)) + '</strong><b class="scope-count">' + count + '</b><small lang="nl">' + escapeHtml(scopeLabelDutch(title)) + '</small>' + (mastery ? '<small class="scope-mastery">' + uiText(mastery.masteryLevel + "% maîtrise", "beheerst") + '</small>' : "") + '</button>';
-}
-
-function masteryPageSummary(summary) {
-  if (!summary || !summary.total) return "";
-  return '<span class="unit-summary">' + uiText(summary.masteryLevel + "% maîtrise", "beheerst") + '</span>';
-}
-
-function masteryCompactLine(summary) {
-  if (!summary || !summary.total) return "";
-  return '<small class="mastery-compact-line">' + summary.practiced + '/' + summary.total + ' · ' + summary.masteryLevel + '%<span class="sr-only">' + uiText("travaillés · maîtrise", "geoefend · beheerst") + '</span></small>';
+    '<span class="content-icon-wrap">' + contentIcon(kind) + '</span><strong>' + escapeHtml(displayScopeTitle(title)) + '</strong><b class="scope-count">' + count + '</b><small lang="nl">' + escapeHtml(scopeLabelDutch(title)) + '</small><span class="scope-cta">' + uiText("Pratiquer →", "Oefenen →") + '</span></button>';
 }
 
 function samePermanentItemSet(left, right) {
@@ -1440,7 +1419,7 @@ function renderQuestion(message) {
     '<section class="practice-shell">' +
       '<header class="practice-header"><button class="text-button" type="button" data-action="back-unit">' + uiText("Arrêter", "Stoppen") + '</button>' +
       '<div class="practice-progress" aria-label="Voortgang"><span style="width:' + progress + '%"></span></div>' +
-      '<strong>' + (roundProgress ? roundProgress.done + ' / ' + roundProgress.selected : (session.index + 1) + ' / ' + session.questions.length) + '</strong></header>' +
+      (roundProgress ? '' : '<strong>' + (session.index + 1) + ' / ' + session.questions.length + '</strong>') + '</header>' +
       taskPracticeContextHtml(session) +
       '<article class="question-card">' +
         '<div class="question-meta"><span>' + uiText(modeLabelFr(session.mode), modeLabel(session.mode)) + '</span><span>' + contentIcon(contentTypeKey(question.item && question.item.category || state.selectedScope && (state.selectedScope.category || state.selectedScope.title), question.item && question.item.type || EXERCISES[session.exerciseKey].type)) + uiText(EXERCISES[session.exerciseKey].labelFr, EXERCISES[session.exerciseKey].label) + '</span></div>' +
@@ -1464,17 +1443,17 @@ function taskPracticeContextHtml(session) {
   const assignment = assignmentById(session.assignment_id);
   if (!assignment) return "";
   const progress = assignmentProgress(assignment);
-  if (progress.rounds) return '<aside class="task-practice-context" aria-label="Devoir / Taak"><strong>' + escapeHtml(assignment.title) + '</strong><span>' +
-    uiText("Passage " + progress.rounds.round + " sur " + progress.rounds.required, "Ronde " + progress.rounds.round + " van " + progress.rounds.required) + '</span><span>' +
-    uiText(progress.rounds.done + " / " + progress.rounds.selected + " corrects", progress.rounds.done + " / " + progress.rounds.selected + " juist") + '</span><span>' +
-    (progress.rounds.round === 1 ? uiText("Tu peux consulter ton cours.", "Je mag opzoeken in Mon parcours.") : progress.rounds.round === 2 ?
-      uiText("Sans aide cette fois.", "Deze keer zonder hulp.") : uiText("Révision", "Herhaling")) + '</span></aside>';
+  if (progress.rounds) return '<aside class="task-practice-context task-round-context" aria-label="Devoir / Taak"><strong>' + escapeHtml(assignment.title) + '</strong>' +
+    '<span class="task-round-label">' + uiText("Passage " + progress.rounds.round + " sur " + progress.rounds.required,
+      "Ronde " + progress.rounds.round + " van " + progress.rounds.required) + '</span>' +
+    '<span class="task-round-score"><b>' + progress.rounds.done + ' / ' + progress.rounds.selected + '</b>' +
+    '<small>' + uiText("corrects", "juist") + '</small></span>' +
+    '<span class="task-round-bar" role="progressbar" aria-valuenow="' + progress.rounds.done + '" aria-valuemin="0" aria-valuemax="' + progress.rounds.selected + '"><i style="width:' + Math.round(100 * progress.rounds.done / Math.max(1, progress.rounds.selected)) + '%"></i></span>' +
+    '<span class="task-round-footer"><b>' + uiText("Encore " + progress.rounds.remaining, "Nog " + progress.rounds.remaining) + '</b><small>' +
+    (progress.rounds.round === 1 ? uiText("Consulter disponible", "Opzoeken mogelijk") : uiText("Sans aide", "Zonder hulp")) + '</small></span></aside>';
   if (progress.goals) return '<aside class="task-practice-context" aria-label="Devoir / Taak"><strong>' + escapeHtml(assignment.title) + '</strong><span>' + assignmentShortProgress(progress) + '</span></aside>';
   return '<aside class="task-practice-context" aria-label="Devoir / Taak"><strong>' + escapeHtml(assignment.title) + '</strong><span>' +
-    uiText(progress.practiced + ' / ' + progress.total + ' travaillés', progress.practiced + ' / ' + progress.total + ' geoefend') + '</span><span>' +
-    uiText('Niveau de maîtrise : ' + progress.masteryLevel + '%', 'Beheersingsniveau: ' + progress.masteryLevel + '%') + '</span><span>' +
-    uiText(progress.acquired + ' / ' + progress.total + ' acquis', progress.acquired + ' / ' + progress.total + ' gekend') + '</span><span>' +
-    uiText('Objectif : ' + progress.target + '% acquis', 'Doel: ' + progress.target + '% gekend') + '</span></aside>';
+    assignmentStatus(progress) + '</span></aside>';
 }
 
 function submitAnswer(rawAnswer) {
@@ -1499,8 +1478,8 @@ function submitAnswer(rawAnswer) {
       showFeedback(true, "Bonne réponse !", "Juist antwoord!", true);
     } else {
       requeueRoundQuestion(question);
-      showFeedback(false, session.assignment_round_number === 1 ? "Pas encore." : "Pas encore. Cherche dans ton cours si nécessaire.",
-        session.assignment_round_number === 1 ? "Nog niet juist." : "Nog niet juist. Zoek het indien nodig op in je boek/cursus.", true);
+      showFeedback(false, session.assignment_round_number === 1 ? "Pas encore" : "Pas encore. Regarde dans ton cours.",
+        session.assignment_round_number === 1 ? "Nog niet juist" : "Nog niet juist. Kijk in je boek.", true);
     }
     return;
   }
@@ -1556,9 +1535,8 @@ function showFeedback(correct, messageFr, messageNl, allowNext, clearInput) {
   const submit = document.querySelector(".submit-button");
   feedback.className = "feedback visible " + (correct ? "correct" : "wrong");
   feedback.innerHTML = '<span class="feedback-mark" aria-hidden="true">' + (correct ? "✓" : "!") + '</span><div><p>' + uiHtml(messageFr, messageNl) + '</p>' +
-    (state.session && state.session.assignment_round_number ? "" : masteryFeedbackHtml(state.session && state.session.lastMasteryFeedback)) +
-    (allowNext ? '<button class="button button-primary" type="button" data-action="next-question">' + uiText("Suivant", "Volgende") + '</button>' : "") +
-    (!correct && state.session && state.session.assignment_round_number === 1 ? '<button class="button button-secondary" type="button" data-action="consult-round">' + uiText("Consulter", "Opzoeken") + '</button>' : "") + '</div>';
+    (!correct && state.session && state.session.assignment_round_number === 1 ? '<button class="button button-primary consult-action" type="button" data-action="consult-round">' + contentIcon("vocabulary") + uiText("Consulter", "Opzoeken") + '</button>' : "") +
+    (allowNext ? '<button class="button ' + (!correct && state.session && state.session.assignment_round_number === 1 ? 'button-secondary' : 'button-primary') + '" type="button" data-action="next-question">' + uiText("Suivant", "Volgende") + '</button>' : "") + '</div>';
   if (allowNext) {
     input.disabled = true;
     submit.hidden = true;
@@ -2344,26 +2322,6 @@ function verbGoalForQuestion(question) {
   const api = window.MonParcoursVerbMastery;
   if (!api || !question || !question.item || question.item.type !== "verb" || !question.itemVariant) return null;
   return api.goalForItem(question.item);
-}
-
-function masteryFeedbackHtml(change) {
-  if (!change) return "";
-  const levelFr = change.beforeLevel === change.afterLevel
-    ? "Niveau de maîtrise : " + change.afterLevel + "%"
-    : "Niveau de maîtrise : " + change.beforeLevel + "% → " + change.afterLevel + "%";
-  const levelNl = change.beforeLevel === change.afterLevel
-    ? "Beheersingsniveau: " + change.afterLevel + "%"
-    : "Beheersingsniveau: " + change.beforeLevel + "% → " + change.afterLevel + "%";
-  if (change.before === "learning" && change.after === "acquired") {
-    return '<p class="mastery-feedback is-newly-acquired">' + uiText("Acquis ! · " + levelFr, "Nu gekend! · " + levelNl) + '</p>';
-  }
-  const labels = {
-    new: ["Nouveau", "Nieuw"],
-    learning: ["Statut : En cours", "Status: Aan het leren"],
-    acquired: ["Statut : Acquis", "Status: Gekend"]
-  };
-  const label = labels[change.after] || labels.learning;
-  return '<p class="mastery-feedback">' + uiText(levelFr + " · " + label[0], levelNl + " · " + label[1]) + '</p>';
 }
 
 function restoreMasteryServerCache() {

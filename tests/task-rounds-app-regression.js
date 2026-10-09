@@ -42,13 +42,22 @@ setImmediate(() => {
   context.taskIds = ids;
   run('state.assignments.items = [{ id: "00000000-0000-4000-8000-000000000099", title: "Rondetaak", status: "published",' +
     ' item_ids: taskIds, required_rounds: 3, completion_strategy: "rounds", mastery_strategy: "item_mastery" }]');
+  run('renderHome()');
+  assert.match(app.innerHTML, /class="assignment-home-row"[^>]*data-action="launch-assignment"/);
+  assert.match(app.innerHTML, /Devoir[\s\S]*Taak[\s\S]*Rondetaak/);
+  assert.match(app.innerHTML, /Passage 1\/3[\s\S]*Encore 3[\s\S]*Continuer →/);
+  assert.doesNotMatch(app.innerHTML, /\d+% maîtrise|objectifs acquis|objectif \d+%/);
   run('launchAssignment("00000000-0000-4000-8000-000000000099")');
   assert.equal(run('state.session.questions.length'), 3);
   assert.equal(run('state.session.assignment_round_number'), 1);
+  assert.match(app.innerHTML, /class="task-round-score"><b>0 \/ 3<\/b>/);
+  assert.match(app.innerHTML, /role="progressbar" aria-valuenow="0"/);
+  assert.match(app.innerHTML, /Consulter disponible[\s\S]*Opzoeken mogelijk/);
   const answer = run('state.session.questions[0].answers[0]');
   run('submitAnswer("niet juist")');
   assert.equal(run('state.session.questions.length'), 4, "fout item komt terug");
   assert.ok(feedback.innerHTML.includes("consult-round"), "Consulter in ronde 1");
+  assert.match(feedback.innerHTML, /consult-action[\s\S]*Consulter[\s\S]*Opzoeken/);
   assert.ok(!feedback.innerHTML.includes(answer), "geen modelantwoord in foutfeedback");
   run('consultRoundCourse()');
   assert.equal(run('roundsForAssignment(state.assignments.items[0])[0].items[taskIds[0]].consulted'), true);
@@ -62,6 +71,7 @@ setImmediate(() => {
   assert.equal(run('assignmentProgress(state.assignments.items[0]).rounds.completed'), false);
   run('launchAssignment("00000000-0000-4000-8000-000000000099")');
   assert.equal(run('state.session.assignment_round_number'), 2);
+  assert.match(app.innerHTML, /Sans aide[\s\S]*Zonder hulp/);
   run('submitAnswer("niet juist")');
   assert.ok(!feedback.innerHTML.includes("consult-round"), "ronde 2 heeft geen Consulter");
   assert.ok(!feedback.innerHTML.includes(run('state.session.questions[0].answers[0]')), "ronde 2 toont geen modelantwoord");
@@ -84,6 +94,11 @@ setImmediate(() => {
   run('nextQuestion()');
   assert.equal(run('assignmentProgress(state.assignments.items[0]).rounds.completed'), true,
     "taak rondt lokaal pas na de laatste reviewset af");
+  run('renderAssignments()');
+  assert.match(app.innerHTML, /data-action="show-assignment-detail"/,
+    "afgeronde taak opent het detail in plaats van een nieuwe oefensessie");
+  run('renderAssignmentDetail("00000000-0000-4000-8000-000000000099")');
+  assert.equal(run('state.view'), 'assignment-detail');
   assert.ok(sent.some(entry => entry.session.assignment_round_number === 1 && entry.session.assignment_round_selected_item_ids.length === 3),
     "ronde en vaste set gaan via de bestaande idempotente queue");
   const stored = JSON.parse(storage.get("monParcoursTaskRoundsV1"));

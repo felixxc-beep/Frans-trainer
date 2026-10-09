@@ -30,10 +30,11 @@ assert.match(sql, /p_correct>=3 and p_correct::numeric\/nullif\(p_independent,0\
 assert.match(sql, /p_sessions>=2 and p_latest_correct is true/);
 assert.match(sql, /\$curve_check\$/);
 assert.match(studentHtml, /mastery\.js\?v=20261004-1/);
-assert.match(studentHtml, /app\.js\?v=20261009-1/);
+assert.match(studentHtml, /app\.js\?v=20261009-2/);
 assert.match(teacherHtml, /mastery\.js\?v=20261004-1/);
 assert.match(app, /beginSession\(questions, "practice", "assignment-mixed", assignment\.title/);
-assert.match(app, /Objectif : ' \+ progress\.target \+ '% acquis/);
+assert.match(app, /"Objectif : " \+ progress\.target \+ "% acquis"/);
+assert.match(app, /progress\.masteryLevel/);
 
 const task = { item_ids: Array.from({ length: 20 }, (_, index) => "item-" + index), target_acquired_percentage: 60 };
 function evidence(corrected, stillWrong) {

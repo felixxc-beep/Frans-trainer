@@ -175,7 +175,7 @@ setImmediate(async () => {
   assert.match(appElement.innerHTML, /Testtaak/);
   assert.doesNotMatch(appElement.innerHTML, /Que veux-tu travailler \?/);
   assert.doesNotMatch(appElement.innerHTML, /Choisis ton mode/);
-  assert.match(appElement.innerHTML, /Niveau de maîtrise/);
+  assert.doesNotMatch(appElement.innerHTML, /Niveau de maîtrise/, "mastery staat niet in het gewone taakscherm");
   const questions = vm.runInContext("state.session.questions", context);
   assert.equal(questions.length, 20);
   assert.equal(new Set(questions.map(question => question.stableItemId)).size, 20);

@@ -105,7 +105,11 @@ function evaluate(code) { return vm.runInContext(code, context); }
   assert.match(home, /Aucun devoir|Connecte-toi pour voir tes devoirs/);
   assert.equal((home.match(/class="assignment-home-row"/g) || []).length, 0, "zonder taken blijft de homepage-taakzone één rij");
   assert.ok(home.indexOf('class="assignments-home"') < home.indexOf('class="home-browser"'), "Trajets blijven direct na het compacte overzicht bereikbaar");
-  assert.equal((firstTrajectoryCard.match(/mastery-bar/g) || []).length, 1, "Trajet heeft precies één masterybalk");
+  assert.doesNotMatch(firstTrajectoryCard, /mastery-bar|maîtrise|\d+%/, "Trajet toont geen mastery meer");
+  assert.match(firstTrajectoryCard, /éléments[\s\S]*onderdelen/);
+  assert.match(firstTrajectoryCard, /travaillés[\s\S]*geoefend/);
+  assert.match(home, /Ma progression[\s\S]*Mijn voortgang[\s\S]*Voir ma progression →/,
+    "Mijn voortgang is de zichtbare mastery-ingang");
   assert.doesNotMatch(firstTrajectoryCard, /mastery-acquired|acquis<\/span>/, "geen Acquisdetail op Trajetkaart");
   assert.doesNotMatch(home.match(/<button class="unit-card"[\s\S]*?<\/button>/)[0], /mastery-bar/, "onderdeelrij heeft geen extra balk");
 
@@ -123,7 +127,11 @@ function evaluate(code) { return vm.runInContext(code, context); }
   assert.match(parole, /Iemand voorstellen \(1\)/);
   assert.match(parole, /class="content-icon-wrap"/);
   assert.match(parole, /class="scope-count"/);
-  assert.match(parole, /class="mastery-compact-line">\d+\/\d+ · \d+%/);
+  assert.doesNotMatch(parole, /class="mastery-compact-line"|class="scope-mastery"|class="unit-summary"/);
+  assert.match(parole, /Tout pratiquer →/);
+  assert.match(parole, /Pratiquer →/);
+  assert.match(parole, /scope-all-icon[\s\S]*Tout pratiquer →/);
+  assert.match(parole, /data-subsection="Actes de parole"[\s\S]*scope-all-count">45/);
   const vocabCard = parole.match(/<button class="scope-choice-card"[^>]*data-title="[Vv]ocabulaire"[\s\S]*?<\/button>/);
   const expressionsCard = parole.match(/<button class="scope-choice-card"[^>]*data-title="[Ee]xpressions"[\s\S]*?<\/button>/);
   assert.ok(vocabCard && expressionsCard, "beide contenttypes blijven afzonderlijk klikbaar");
@@ -137,6 +145,8 @@ function evaluate(code) { return vm.runInContext(code, context); }
   const verbContent = appElement.innerHTML;
   assert.match(verbContent, /Verbes en -ER<\/strong><b class="scope-count">22<\/b>/);
   assert.match(verbContent, /Être et avoir<\/strong><b class="scope-count">2<\/b>/);
+  assert.doesNotMatch(verbContent, /class="scope-mastery"|\d+\/6 personnes/);
+  assert.match(verbContent, /Pratiquer →[\s\S]*Oefenen →/);
   assert.doesNotMatch(verbContent, /Tout le bloc[\s\S]*24/, "ook de 24 werkwoorden krijgen geen dubbele partie- en blokactie");
   const erItems = evaluate("exerciseItemsForScope(currentTrajectory(), currentUnit(), { block: 'À retenir', subsection: 'On se rappelle ?', category: 'verbes en -ER' })");
   const auxiliaryItems = evaluate("exerciseItemsForScope(currentTrajectory(), currentUnit(), { block: 'À retenir', subsection: 'On se rappelle ?', category: 'être / avoir' })");
@@ -170,6 +180,8 @@ function evaluate(code) { return vm.runInContext(code, context); }
   assert.match(css, /\.scope-choice-grid[^}]*grid-template-columns:\s*repeat\(2/);
   assert.match(css, /@media \(max-width: 620px\)[\s\S]*\.trajectory-grid\s*\{[^}]*grid-template-columns:\s*1fr/);
   assert.match(css, /@media \(max-width: 620px\)[\s\S]*\.scope-choice-grid, \.choice-list \{ grid-template-columns: 1fr/);
+  assert.match(css, /@media \(max-width: 620px\)[\s\S]*\.assignment-home-cta \{[^}]*min-content|@media \(max-width: 620px\)[\s\S]*\.assignment-home-cta \{[^}]*grid-column: 2/);
+  assert.match(css, /\.scope-all-button \{[^}]*min-height: 48px/);
 
   identity = { provider: "local", subject: "local", displayName: "Lokale leerling", className: "", verified: false };
   identityDialog.open = true;
