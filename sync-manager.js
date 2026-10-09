@@ -46,6 +46,24 @@
     return true;
   }
 
+  function enqueueIssueReport(snapshot) {
+    if (!snapshot || !snapshot.identity_subject || !snapshot.report || !snapshot.report.client_report_id) return false;
+    const queue = readQueue();
+    if (queue.some(function (entry) { return entry.kind === "item_report" &&
+      entry.client_report_id === snapshot.report.client_report_id; })) return true;
+    queue.push({ kind: "item_report", client_report_id: snapshot.report.client_report_id,
+      identity_subject: snapshot.identity_subject, report: snapshot.report,
+      revision: createId(), retry_count: 0, queued_at: new Date().toISOString() });
+    saveQueue(queue);
+    scheduleFlush();
+    return true;
+  }
+
+  function sameEntry(left, right) {
+    return left.kind === "item_report" ? right.kind === "item_report" &&
+      right.client_report_id === left.client_report_id : right.client_session_id === left.client_session_id;
+  }
+
   function canSyncEntry(entry, identity) {
     return identity && identity.verified === true && identity.provider !== "local" && entry.identity_subject === identity.subject;
   }
@@ -58,30 +76,38 @@
     flushing = true;
     let sent = 0;
     let newerRevisionPending = false;
+    let failed = false;
     try {
       const candidates = readQueue().filter(function (entry) { return canSyncEntry(entry, identity); });
       for (const candidate of candidates) {
         try {
-          await window.MonParcoursSupabase.rpc("ingest_practice_bundle", {
-            p_identity_token: credential,
-            p_session: candidate.session,
-            p_attempts: candidate.attempts
-          });
+          if (candidate.kind === "item_report") {
+            await window.MonParcoursSupabase.rpc("report_assignment_item", {
+              p_identity_token: credential, p_payload: candidate.report
+            });
+          } else {
+            await window.MonParcoursSupabase.rpc("ingest_practice_bundle", {
+              p_identity_token: credential,
+              p_session: candidate.session,
+              p_attempts: candidate.attempts
+            });
+          }
           const latest = readQueue();
-          const index = latest.findIndex(function (entry) { return entry.client_session_id === candidate.client_session_id; });
-          if (index >= 0 && latest[index].revision === candidate.revision) {
-            latest.splice(index, 1);
+          const match = latest.findIndex(function (entry) { return sameEntry(candidate, entry); });
+          if (match >= 0 && latest[match].revision === candidate.revision) {
+            latest.splice(match, 1);
             saveQueue(latest);
-          } else if (index >= 0) newerRevisionPending = true;
+          } else if (match >= 0) newerRevisionPending = true;
           sent += 1;
         } catch (error) {
           const latest = readQueue();
-          const index = latest.findIndex(function (entry) { return entry.client_session_id === candidate.client_session_id; });
+          const index = latest.findIndex(function (entry) { return sameEntry(candidate, entry); });
           if (index >= 0 && latest[index].revision === candidate.revision) {
             latest[index].retry_count = (latest[index].retry_count || 0) + 1;
             latest[index].last_failed_at = new Date().toISOString();
             saveQueue(latest);
           }
+          failed = true;
           break;
         }
       }
@@ -91,7 +117,7 @@
     if (sent && window.dispatchEvent && typeof window.CustomEvent === "function") {
       window.dispatchEvent(new CustomEvent("monparcours:sync-complete", { detail: { sent: sent } }));
     }
-    if (newerRevisionPending) scheduleFlush();
+    if (newerRevisionPending || !failed && sent && readQueue().some(function (entry) { return canSyncEntry(entry, identity); })) scheduleFlush();
     return { sent: sent, pending: readQueue().length };
   }
 
@@ -114,6 +140,7 @@
 
   window.MonParcoursSync = Object.freeze({
     enqueueSession: enqueueSession,
+    enqueueIssueReport: enqueueIssueReport,
     flush: flush,
     scheduleFlush: scheduleFlush,
     getStatus: getStatus,

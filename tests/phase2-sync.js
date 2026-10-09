@@ -142,6 +142,22 @@ function snapshot(attempts) {
   assert.ok(rpcCalls.some(function (call) { return call.functionName === "ingest_practice_bundle"; }));
   assert.equal(storage.get("monParcoursProgressV1"), progressBefore, "bestaande voortgang mag niet worden herschreven");
 
+  const report = { client_report_id: "55555555-5555-4555-8555-555555555555", assignment_id: "66666666-6666-4666-8666-666666666666",
+    round_number: 1, item_id: "uf1-item-000025", prompt: "de hobby", exercise_direction: "vocab-nl-fr",
+    submitted_answers: ["la hobby", "l'hobby"], accepted_answers: ["le hobby"], consulted: true, app_version: "20261009-4" };
+  Sync.enqueueIssueReport({ identity_subject: identity.subject, report });
+  Sync.enqueueIssueReport({ identity_subject: identity.subject, report });
+  assert.equal(queue().length, 1, "dezelfde rapport-ID mag niet tweemaal in de wachtrij komen");
+  rpcMode = "offline";
+  await Sync.flush();
+  assert.equal(queue().length, 1, "offline melding blijft in de wachtrij");
+  rpcMode = "online";
+  await Sync.flush();
+  assert.equal(queue().length, 0, "melding wordt na herstel verzonden");
+  assert.equal(rpcCalls.filter(function (call) { return call.functionName === "report_assignment_item"; }).at(-1).body.p_payload.client_report_id,
+    report.client_report_id);
+  assert.equal(storage.get("monParcoursProgressV1"), progressBefore);
+
   StudentIdentity.switchToLocal();
   assert.equal(StudentIdentity.getCurrentStudentIdentity().provider, "local");
 

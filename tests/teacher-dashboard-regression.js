@@ -64,7 +64,7 @@ assert.doesNotMatch(frontend, /secret[_-]?key/i);
 const resultColumnBlock = source.slice(source.indexOf("const TABLE_COLUMNS"), source.indexOf("const MANAGEMENT_COLUMNS"));
 assert.doesNotMatch(resultColumnBlock, /student_code/i, "normale resultaatqueries mogen geen leerlingcodes laden");
 assert.match(source, /MANAGEMENT_COLUMNS[\s\S]*student_code/i, "leerlingcodes mogen uitsluitend via de beheerquery beschikbaar zijn");
-assert.doesNotMatch(frontend, /submitted_answer/i, "ingevoerde antwoorden horen niet in fase 3");
+assert.doesNotMatch(resultColumnBlock, /submitted_answer/i, "normale resultaatqueries laden geen getypte antwoorden");
 assert.doesNotMatch(resultColumnBlock, /owner_id/i, "resultaatqueries mogen owner_id niet nodig hebben");
 assert.doesNotMatch(source, /\.eq\(["']owner_id["']/i, "RLS bepaalt het eigenaarschap; de frontend filtert niet op owner_id");
 assert.match(source, /owner_id:\s*user\.id/, "een nieuwe klas krijgt de ingelogde gebruiker mee; RLS valideert dit server-side");

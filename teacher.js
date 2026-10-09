@@ -43,7 +43,7 @@
     route: { view: "dashboard", classId: null, studentId: null },
     management: { loaded: false, classes: [], students: [], selectedClassId: null, studentStatus: "active", generatedCode: "", createdStudents: [], message: "", messageIsError: false },
     teacherAdmin: { loaded: false, teachers: [], assignments: [], classes: [], editingTeacherId: null, message: "", messageIsError: false },
-    tasks: { loaded: false, list: [], detail: [], selectedId: null, draft: null, filter: "all", message: "", error: false },
+    tasks: { loaded: false, list: [], detail: [], reports: [], selectedId: null, draft: null, filter: "all", message: "", error: false },
     loading: false,
     loadSequence: 0
   };
@@ -1315,9 +1315,23 @@
     const startedCount = rows.filter(function (row) { return !row.completed_at && statusFor(row) === "in_progress"; }).length;
     const averageMastery = rows.length ? Math.round(rows.reduce(function (total, row) { return total + Number(row.progress && row.progress.mastery_level || 0); }, 0) / rows.length) : 0;
     const verbTask = task.mastery_strategy && task.mastery_strategy !== "item_mastery";
+    const reports = asArray(state.tasks.reports);
+    const reportSection = task.completion_strategy === "rounds" ?
+      '<section class="task-report-section"><div class="section-heading"><div><h3>Probleemmeldingen</h3><p>Goedkeuren rondt dit item af zonder extra beheersingspunten; terugsturen geeft het item terug.</p></div><span class="task-report-badge">' + reports.length + ' wachtend</span></div>' +
+      (state.tasks.message ? '<p class="task-report-message" role="status">' + escapeHtml(state.tasks.message) + '</p>' : '') +
+      (reports.length ? '<div class="task-report-list">' + reports.map(function (report) {
+        const courseItem = state.courseIndex[report.item_id];
+        const model = courseItem && (courseItem.fr || courseItem.infinitive || courseItem.answer) || '';
+        return '<article class="task-report-card"><div><strong>' + escapeHtml(report.student_name) + '</strong> · ' + escapeHtml(report.class_name) +
+          ' · ronde ' + Number(report.round_number) + '<p class="muted">' + escapeHtml(formatDate(report.created_at)) + ' · ' + escapeHtml(report.item_id) + '</p></div>' +
+          '<p><b>Prompt:</b> ' + escapeHtml(report.prompt) + '</p><p><b>Getypt:</b> ' + asArray(report.submitted_answers).map(escapeHtml).join(' / ') + '</p>' +
+          '<p><b>Verwacht:</b> ' + asArray(report.accepted_answers).map(escapeHtml).join(' / ') + (model ? ' · model: ' + escapeHtml(model) : '') + '</p>' +
+          '<p class="muted">' + escapeHtml(report.exercise_direction) + ' · opgezocht: ' + (report.consulted ? 'ja' : 'nee') + ' · app ' + escapeHtml(report.app_version || 'onbekend') + '</p>' +
+          '<div class="export-actions"><button class="button button-primary" type="button" data-action="resolve-item-report" data-id="' + escapeHtml(report.id) + '" data-decision="approved">Goedkeuren</button><button class="button button-secondary" type="button" data-action="resolve-item-report" data-id="' + escapeHtml(report.id) + '" data-decision="rejected">Terugsturen</button></div></article>';
+      }).join('') + '</div>' : '<p class="muted">Geen meldingen die op beoordeling wachten.</p>') + '</section>' : '';
     return '<div class="page-heading"><div><p class="eyebrow">Taak · ' + escapeHtml(task.status) + '</p><h2>' + escapeHtml(task.title) + '</h2><p class="muted">' + (verbTask ? asArray(task.requirements).length + ' werkwoorddoelen' : asArray(task.item_ids).length + ' items') + ' · ' + (task.completion_strategy === "rounds" ? task.required_rounds + ' rondes' : 'doel ' + task.target_acquired_percentage + '%') + ' · ' + escapeHtml(task.due_at ? formatDate(task.due_at) : "Geen deadline") + '</p></div><div class="export-actions"><button class="button button-secondary" type="button" data-action="view-tasks">Terug</button><button class="button button-secondary" type="button" data-action="export-task">CSV</button>' + (editable ? '<button class="button button-primary" type="button" data-action="edit-task">Bewerken</button><button class="button button-secondary" type="button" data-action="archive-task">Archiveren</button>' : '') + '</div></div>' +
       (task.instructions ? '<p>' + escapeHtml(task.instructions) + '</p>' : '') +
-      '<div class="task-summary"><span><strong>' + completedCount + '/' + rows.length + '</strong> afgerond</span><span><strong>' + startedCount + '</strong> bezig</span><span><strong>' + (rows.length - completedCount - startedCount) + '</strong> niet gestart</span><span><strong>' + averageMastery + '%</strong> gemiddelde beheersing</span></div>' +
+      '<div class="task-summary"><span><strong>' + completedCount + '/' + rows.length + '</strong> afgerond</span><span><strong>' + startedCount + '</strong> bezig</span><span><strong>' + (rows.length - completedCount - startedCount) + '</strong> niet gestart</span><span><strong>' + averageMastery + '%</strong> gemiddelde beheersing</span></div>' + reportSection +
       '<label class="task-filter"><span>Status</span><select id="taskStatusFilter"><option value="all"' + (state.tasks.filter === "all" ? ' selected' : '') + '>Alle</option>' + Object.entries(statuses).map(function (entry) { return '<option value="' + entry[0] + '"' + (state.tasks.filter === entry[0] ? ' selected' : '') + '>' + entry[1] + '</option>'; }).join("") + '</select></label>' +
       '<div class="table-wrap"><table><thead><tr><th>Klas / leerling</th><th>Status</th><th>Geoefend</th><th>Beheersing</th><th>Gekend</th><th>Doel / rondes</th><th>Laatste activiteit</th><th>Actieve taaktijd</th></tr></thead><tbody>' + filteredRows.map(function (row) {
         const progress = row.progress || {};
@@ -1636,9 +1650,14 @@
     document.querySelector("#dashboardContent").innerHTML = '<section class="loading-state"><span class="loader" aria-hidden="true"></span><p>Leerlingvoortgang wordt geladen…</p></section>';
     updateNavigation();
     try {
-      const result = await state.client.rpc("get_teacher_assignment_detail", { p_assignment_id: id });
+      const [result, reportResult] = await Promise.all([
+        state.client.rpc("get_teacher_assignment_detail", { p_assignment_id: id }),
+        task.completion_strategy === "rounds" ? state.client.rpc("get_teacher_assignment_reports", { p_assignment_id: id }) : Promise.resolve({ data: [] })
+      ]);
       if (result.error) throw result.error;
       state.tasks.detail = asArray(result.data);
+      state.tasks.reports = reportResult.error ? [] : asArray(reportResult.data);
+      state.tasks.message = reportResult.error ? "Probleemmeldingen zijn tijdelijk niet beschikbaar. Controleer de verbinding en of de aparte SQL-migratie is uitgevoerd; bestaande taakdetails blijven zichtbaar." : "";
       renderCurrent();
     } catch (error) {
       document.querySelector("#dashboardContent").innerHTML = '<div class="error-state"><strong>Taakdetails konden niet worden geladen.</strong><p>Probeer opnieuw.</p></div>';
@@ -1917,6 +1936,28 @@
       return renderCurrent();
     }
     if (action === "open-task") return openTaskDetail(id);
+    if (action === "resolve-item-report") {
+      const decision = target.dataset.decision;
+      if (!state.tasks.reports.some(function (report) { return report.id === id; }) ||
+        !["approved", "rejected"].includes(decision)) return;
+      target.disabled = true;
+      try {
+        const result = await state.client.rpc("resolve_assignment_item_report", {
+          p_report_id: id, p_decision: decision
+        });
+        if (result.error) throw result.error;
+        const taskId = state.tasks.selectedId;
+        await openTasks(true);
+        await openTaskDetail(taskId);
+        state.tasks.message = decision === "approved" ? "Melding goedgekeurd. Het item is afgerond zonder extra beheersingspunten." :
+          "Melding afgewezen. Het item staat opnieuw klaar voor de leerling.";
+        renderCurrent();
+      } catch (error) {
+        state.tasks.message = "Beoordeling niet opgeslagen. Controleer je verbinding en probeer opnieuw.";
+        renderCurrent();
+      }
+      return;
+    }
     if (action === "edit-task") {
       const task = state.tasks.list.find(function (row) { return row.id === state.tasks.selectedId; });
       if (!task || !(currentTeacherIsAdmin() || task.created_by_teacher_id === state.user.id)) return;

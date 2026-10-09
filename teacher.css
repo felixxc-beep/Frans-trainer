@@ -250,3 +250,13 @@ tr:last-child td { border-bottom: 0; }
 .task-class { display: flex !important; align-items: center; gap: .5rem; }
 .task-class input { width: auto !important; }
 .task-goal-details { display: grid; gap: .2rem; margin-top: .3rem; color: #5b7067; font-size: .73rem; font-weight: 500; white-space: nowrap; }
+.task-report-section { margin: 1.25rem 0; padding: 1rem; border: 1px solid #d9b46e; border-radius: 14px; background: #fffaf0; }
+.task-report-section .section-heading { display: flex; align-items: start; justify-content: space-between; gap: 1rem; }
+.task-report-section h3 { margin: 0 0 .3rem; }
+.task-report-section p { margin: .35rem 0; }
+.task-report-badge { flex: none; padding: .3rem .65rem; border-radius: 999px; background: #f1dfb5; font-weight: 800; }
+.task-report-list { display: grid; gap: .7rem; margin-top: .8rem; }
+.task-report-card { padding: .8rem; border: 1px solid var(--line); border-radius: 11px; background: #fff; overflow-wrap: anywhere; }
+.task-report-card .export-actions { margin-top: .7rem; }
+.task-report-message { font-weight: 700; }
+@media (max-width: 720px) { .task-report-section .section-heading { flex-direction: column; } }

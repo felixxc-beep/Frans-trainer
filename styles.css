@@ -298,6 +298,9 @@ dialog::backdrop { background: rgba(10,29,23,.45); backdrop-filter: blur(4px); }
 .feedback.visible { display: flex; align-items: flex-start; gap: .8rem; }
 .feedback.correct { background: #e4f5e9; color: #145b2b; }
 .feedback.wrong { background: #fff0ec; color: #8d2c1e; }
+.feedback.reported { background: #e9f4ec; color: var(--forest); }
+.feedback .report-action { display: inline-flex; min-height: 42px; margin: .35rem .55rem .35rem 0; }
+.retry-note { margin: 0 0 .45rem; color: #8d5a1e; font-weight: 850; }
 .feedback-mark { width: 30px; height: 30px; flex: 0 0 auto; display: grid; place-items: center; border: 2px solid currentColor; border-radius: 50%; font-weight: 900; }
 .feedback p { margin: .1rem 0 .8rem; }
 .mastery-bar { display: flex; width: 100%; height: 7px; overflow: hidden; border: 1px solid rgba(18,55,42,.13); border-radius: 999px; background: #edf1ee; }
@@ -416,6 +419,8 @@ dialog::backdrop { background: rgba(10,29,23,.45); backdrop-filter: blur(4px); }
 .assignment-home-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem; }
 .assignment-home-row { width: 100%; min-width: 0; display: grid; grid-template-columns: 32px minmax(0, 1fr) auto; gap: .35rem .65rem; align-items: center; padding: .65rem .7rem; border: 1px solid #c6ddcf; border-radius: 11px; background: #fff; text-align: left; cursor: pointer; }
 .assignment-home-row:hover { border-color: var(--forest-2); }
+.assignment-home-row.is-complete, .assignment-card.is-complete { border-color: #c9ddcd; background: #f3f8f3; }
+.assignment-home-row.is-pending-review, .assignment-card.is-pending-review { border-color: #d7c99f; background: #fbf8e9; }
 .assignment-home-copy { min-width: 0; }
 .assignment-home-copy strong, .assignment-home-copy small { display: block; }
 .assignment-home-copy strong { font-size: .88rem; line-height: 1.25; }
@@ -423,6 +428,8 @@ dialog::backdrop { background: rgba(10,29,23,.45); backdrop-filter: blur(4px); }
 .assignment-home-copy .assignment-kind, .assignment-kind { color: var(--forest-2); font-size: .68rem; font-weight: 900; letter-spacing: .07em; text-transform: uppercase; }
 .assignment-home-due { grid-column: 2; }
 .assignment-home-cta { grid-column: 3; grid-row: 1 / 3; display: inline-flex; align-items: center; min-height: 44px; padding: .45rem .65rem; border-radius: 9px; background: var(--forest); color: white; font-size: .8rem; font-weight: 800; white-space: nowrap; }
+.is-complete .assignment-home-cta, .is-complete .assignment-card-cta { background: #e0ebe3; color: var(--forest); }
+.is-pending-review .assignment-home-cta, .is-pending-review .assignment-card-cta { background: #eee3bb; color: var(--forest); }
 .assignments-home .section-heading .text-button { display: inline-flex; }
 .assignment-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr)); gap: .75rem; }
 .assignment-card { display: grid; gap: .35rem; width: 100%; padding: .9rem 1rem; border: 1px solid #c9dbd0; border-radius: 13px; background: #fff; color: #12372a; text-align: left; cursor: pointer; }
@@ -445,14 +452,35 @@ dialog::backdrop { background: rgba(10,29,23,.45); backdrop-filter: blur(4px); }
 .task-practice-context .ui-nl { font-size: .78em; }
 .task-round-context { display: grid; gap: .25rem; }
 .task-round-context > strong { font-size: .85rem; }
-.task-round-label { color: var(--forest-2); font-size: .76rem; font-weight: 900; text-transform: uppercase; }
+.round-status { display: grid; gap: .3rem; min-width: 0; margin: .3rem 0; }
+.round-tracker { display: flex; flex-wrap: nowrap; gap: .35rem; max-width: 100%; }
+.round-step { min-width: 39px; height: 38px; display: inline-flex; align-items: center; justify-content: center; gap: .15rem; border: 1px solid var(--line); border-radius: 9px; color: var(--muted); background: #fff; font-variant-numeric: tabular-nums; }
+.round-step-symbol { font-size: 1rem; line-height: 1; }
+.round-step.is-complete { border-color: #a8c9b4; background: #e7f2e9; color: var(--forest-2); }
+.round-step.is-current { border: 2px solid var(--forest); background: var(--mint); color: var(--forest); }
+.round-step.is-future { background: #f7f9f7; color: #687971; }
+.round-step b { font-size: .8rem; }
+.task-round-label { display: block; color: var(--forest-2); font-size: .84rem; font-weight: 900; text-transform: uppercase; }
 .task-round-score { display: flex; align-items: baseline; gap: .6rem; }
 .task-round-score b { font-size: clamp(1.75rem, 5vw, 2.4rem); line-height: 1; font-variant-numeric: tabular-nums; }
 .task-round-score small { color: var(--muted); }
 .task-round-bar { height: 8px; overflow: hidden; border-radius: 999px; background: #dce9e0; }
 .task-round-bar i { display: block; height: 100%; border-radius: inherit; background: var(--forest-2); }
-.task-round-footer { display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
-.task-round-footer small { color: var(--muted); }
+.task-round-remaining { color: var(--forest-2); font-size: .84rem; font-weight: 850; }
+.task-round-help { color: var(--muted); }
+.round-complete-label { color: var(--forest-2); font-size: 1rem; }
+.round-report-count { color: #76571e; font-size: .82rem; font-weight: 800; }
+.round-awaiting { color: #76571e; font-size: .78rem; }
+.round-status.is-compact { gap: .18rem; margin: .25rem 0 0; }
+.round-status.is-compact .round-tracker { gap: .2rem; }
+.round-status.is-compact .round-step { min-width: 31px; height: 29px; border-radius: 7px; }
+.round-status.is-compact .round-step-symbol { font-size: .82rem; }
+.round-status.is-compact .round-step b { font-size: .72rem; }
+.round-status.is-compact .task-round-label { font-size: .72rem; }
+.round-status.is-compact .task-round-score b { font-size: 1.15rem; }
+.round-status.is-compact .task-round-score small, .round-status.is-compact .task-round-remaining { font-size: .7rem; }
+.round-status.is-compact .task-round-bar { height: 6px; }
+.round-summary .round-status { max-width: 380px; padding: .8rem; border: 1px solid #c9ddcd; border-radius: 12px; background: #f3f8f3; }
 .consult-action { margin-right: .5rem; }
 
 @media (max-width: 860px) {
@@ -464,6 +492,8 @@ dialog::backdrop { background: rgba(10,29,23,.45); backdrop-filter: blur(4px); }
   .assignment-home-cta { grid-column: 2; grid-row: auto; width: fit-content; }
   .verb-task-goals > div { grid-template-columns: minmax(0, 1fr) auto; }
   .verb-task-goals small { grid-column: 1 / -1; }
+  .round-tracker { gap: .2rem; }
+  .round-step { min-width: 35px; height: 34px; }
 }
 .consult-dialog {
   width: min(680px, calc(100vw - 24px));

@@ -194,7 +194,7 @@ const baseClasses = [{ id: "class-a", name: "1AA", class_code: "1AA", is_active:
   ["'=2+2", "'+SUM(A1:A2)", "'-1", "'@CMD"].forEach(function (safe) { assert.ok(csv.includes(safe), safe + " is niet tegen CSV-injection beschermd"); });
 
   assert.doesNotMatch(source, /service[_-]?role|secret[_-]?key/i);
-  assert.doesNotMatch(source, /sync_token|submitted_answer/i);
+  assert.doesNotMatch(source, /sync_token/i);
   console.log("FASE 4 BEHEER- EN EXPORTREGRESSIE GESLAAGD");
   console.log("Klassen, leerlingen, bulk, veilige codes, deactivering, regeneratie, gecombineerde filters, vier CSV-stromen, privacy en RLS-contracten gecontroleerd.");
 })().catch(function (error) {

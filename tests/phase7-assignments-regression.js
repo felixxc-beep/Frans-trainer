@@ -162,6 +162,7 @@ setImmediate(async () => {
   vm.runInContext("state.assignments.items=[taskData]; renderHome()", context);
   assert.match(appElement.innerHTML, /Continuer|Commencer/);
   assert.equal((appElement.innerHTML.match(/class="assignment-home-row"/g) || []).length, 1, "één taak is één compacte rij");
+  assert.doesNotMatch(appElement.innerHTML, /round-tracker/, "legacy-taak krijgt geen fictieve rondes");
   assert.equal((appElement.innerHTML.match(/class="assignment-card"/g) || []).length, 0, "grote taakkaarten staan niet op de homepage");
   const extraTasks = [2, 3].map(index => ({ ...taskData, id: "00000000-0000-4000-8000-00000000000" + index, title: "Taak " + index }));
   context.extraTasks = extraTasks;

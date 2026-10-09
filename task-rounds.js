@@ -13,7 +13,8 @@
 
   function roundComplete(round) {
     return Boolean(round && round.selected_item_ids.length &&
-      round.selected_item_ids.every(function (id) { return round.items[id] && round.items[id].completed_at; }));
+      round.selected_item_ids.every(function (id) { return round.items[id] &&
+        (round.items[id].completed_at || round.items[id].reported_pending); }));
   }
 
   function selectReview(itemIds, previousRounds, random) {
@@ -67,7 +68,7 @@
     return { number: number, selected_item_ids: chosen.selected_item_ids,
       random_sample_item_ids: chosen.random_sample_item_ids, selection_reasons: chosen.selection_reasons,
       items: Object.fromEntries(chosen.selected_item_ids.map(function (id) {
-        return [id, { wrong_count: 0, consulted: false, completed_at: null }];
+        return [id, { wrong_count: 0, consulted: false, completed_at: null, reported_pending: false }];
       })) };
   }
 
@@ -80,7 +81,7 @@
   }
 
   function markAttempt(round, itemId, correct, at) {
-    if (!round || !round.items[itemId] || round.items[itemId].completed_at) return false;
+    if (!round || !round.items[itemId] || round.items[itemId].completed_at || round.items[itemId].reported_pending) return false;
     if (correct) round.items[itemId].completed_at = at || new Date().toISOString();
     else round.items[itemId].wrong_count += 1;
     return true;
@@ -97,7 +98,8 @@
     const active = currentRound(assignment, rounds);
     const completed = !active && (rounds || []).length >= required;
     const selected = active ? active.selected_item_ids : [];
-    const done = selected.filter(function (id) { return active.items[id] && active.items[id].completed_at; }).length;
+    const done = selected.filter(function (id) { return active.items[id] &&
+      (active.items[id].completed_at || active.items[id].reported_pending); }).length;
     return { required: required, round: active ? active.number : required, selected: selected.length,
       done: done, remaining: selected.length - done, completed: completed };
   }

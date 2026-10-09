@@ -25,7 +25,7 @@ assert.deepEqual(itemTypes, ["grammar_rule", "number", "phrase", "sound_rule", "
 itemTypes.forEach(function (itemType) {
   assert.ok(schema.includes("'" + itemType + "'"), itemType + " ontbreekt in de SQL-validatie");
 });
-assert.doesNotMatch(schema + frontend, /submitted_answer/);
+assert.doesNotMatch(schema, /submitted_answer/, "normale oefenpogingen bewaren geen getypt antwoord");
 assert.match(schema, /student_code ~ '\^\[A-Za-z0-9_-\]\{8,64\}\$'/);
 assert.match(schema, /char_length\(btrim\(p_student_code\)\) not between 8 and 64/);
 assert.match(schema, /default private\.generate_student_code\(\)/);

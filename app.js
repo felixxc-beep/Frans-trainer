@@ -7,6 +7,7 @@ const ASSIGNMENTS_CACHE_KEY = "monParcoursAssignmentsCacheV1";
 const VERB_EVIDENCE_KEY = "monParcoursVerbEvidenceV1";
 const VERB_SERVER_CACHE_KEY = "monParcoursVerbServerCacheV1";
 const TASK_ROUNDS_KEY = "monParcoursTaskRoundsV1";
+const APP_VERSION = "20261009-4";
 const INACTIVITY_TIMEOUT_MS = 60000;
 const MAX_DYNAMIC_NUMBER_ALL = 101;
 const ACCENTS = ["é", "è", "ê", "ë", "à", "â", "ç", "ù", "û", "ô", "î", "ï"];
@@ -41,6 +42,7 @@ const state = {
   pendingStartAction: null,
   activeAssignmentId: null,
   assignments: { items: [], loading: false, loaded: false },
+  roundAnswerDrafts: Object.create(null),
   progress: loadProgress(),
   mastery: {
     localAttempts: loadMasteryAttempts(),
@@ -119,6 +121,7 @@ function handleClick(event) {
     invalidateMasteryRecords();
     state.pendingStartAction = null;
     state.assignments = { items: [], loading: false, loaded: false };
+    state.roundAnswerDrafts = Object.create(null);
     state.activeAssignmentId = null;
     localStorage.removeItem(ASSIGNMENTS_CACHE_KEY);
     const identityForm = document.querySelector("#identity-form");
@@ -177,6 +180,7 @@ function handleClick(event) {
   if (action === "start-session") startSession(control.dataset.mode);
   if (action === "next-question") nextQuestion();
   if (action === "consult-round") consultRoundCourse();
+  if (action === "report-round-item") reportRoundItem();
   if (action === "close-consult") {
     const dialog = document.querySelector("#round-consult-dialog");
     if (dialog) dialog.close();
@@ -547,10 +551,24 @@ function mergeAssignmentRounds(assignment) {
     serverRound.selected_item_ids.forEach(function (id) {
       const remote = serverRound.items[id];
       const own = existing.items[id];
+      const report = (assignment.reports || []).find(function (entry) {
+        return entry.round_number === serverRound.number && entry.item_id === id;
+      });
       existing.items[id] = { wrong_count: Math.max(Number(own && own.wrong_count || 0), Number(remote && remote.wrong_count || 0)),
         consulted: Boolean(own && own.consulted || remote && remote.consulted),
-        completed_at: own && own.completed_at || remote && remote.completed_at || null };
+        completed_at: report && report.status === "pending" || report && report.status === "rejected" ? null :
+          own && own.completed_at || remote && remote.completed_at || null,
+        reported_pending: report ? report.status === "pending" : Boolean(own && own.reported_pending) };
     });
+  });
+  (assignment.reports || []).forEach(function (report) {
+    const round = local.find(function (entry) { return entry.number === report.round_number; });
+    const item = round && round.items[report.item_id];
+    if (!item) return;
+    item.reported_pending = report.status === "pending";
+    if (report.status === "pending" || report.status === "rejected") item.completed_at = null;
+    if (report.status === "rejected") item.returned_for_retry = true;
+    else item.returned_for_retry = false;
   });
   local.sort(function (left, right) { return left.number - right.number; });
   saveAssignmentRounds(assignment, local);
@@ -561,7 +579,11 @@ function assignmentProgress(assignment) {
   if (assignment.completion_strategy === "rounds") {
     const savedRounds = roundsForAssignment(assignment);
     progress.rounds = window.MonParcoursTaskRounds.progress(assignment, savedRounds);
-    progress.status = progress.rounds.completed || assignment.completed_at ? "completed" :
+    progress.pendingReports = savedRounds.reduce(function (total, round) {
+      return total + Object.values(round.items || {}).filter(function (item) { return item.reported_pending; }).length;
+    }, 0);
+    progress.status = progress.pendingReports && progress.rounds.completed ? "pending_review" :
+      assignment.completed_at ? "completed" : progress.rounds.completed ? "completed" :
       assignment.due_at && new Date(assignment.due_at) < new Date() ? "late" : savedRounds.length ? "in_progress" : "not_started";
   }
   return progress;
@@ -577,6 +599,7 @@ function assignmentDue(assignment) {
 function assignmentStatus(progress) {
   const labels = {
     completed: ["Terminée", "Afgerond"],
+    pending_review: ["En attente du professeur", "Wacht op controle van de leerkracht"],
     late: ["En retard", "Te laat"],
     in_progress: ["En cours", "Bezig"],
     not_started: ["Pas commencé", "Nog niet gestart"]
@@ -587,17 +610,39 @@ function assignmentStatus(progress) {
 function assignmentCard(assignment) {
   const progress = assignmentProgress(assignment);
   const completed = progress.status === "completed";
-  return '<button class="assignment-card" type="button" data-action="' + (completed ? "show-assignment-detail" : "launch-assignment") + '" data-id="' + escapeAttr(assignment.id) + '">' +
+  const waiting = progress.status === "pending_review";
+  return '<button class="assignment-card' + (completed ? ' is-complete' : waiting ? ' is-pending-review' : '') + '" type="button" data-action="' + (completed || waiting ? "show-assignment-detail" : "launch-assignment") + '" data-id="' + escapeAttr(assignment.id) + '">' +
     '<span class="assignment-kind">' + uiText("Devoir", "Taak") + '</span>' +
     '<strong class="assignment-card-title">' + assignmentContentIcon(assignment) + escapeHtml(assignment.title) + '</strong>' +
-    '<span class="assignment-simple-progress">' + (progress.rounds ? assignmentRoundLabel(progress.rounds) : assignmentStatus(progress)) + '</span>' +
+    (progress.rounds ? roundStatusHtml(progress.rounds, completed, true, progress.pendingReports) : '<span class="assignment-simple-progress">' + assignmentStatus(progress) + '</span>') +
     '<span class="assignment-home-due">' + assignmentDue(assignment) + '</span>' +
-    '<span class="assignment-card-cta">' + uiText(completed ? "Voir le devoir →" : "Continuer →", completed ? "Bekijk de taak →" : "Verdergaan →") + '</span></button>';
+    '<span class="assignment-card-cta">' + uiText(completed || waiting ? "Voir →" : "Continuer →", completed || waiting ? "Bekijken →" : "Verdergaan →") + '</span></button>';
 }
 
-function assignmentRoundLabel(rounds) {
-  return uiText("Passage " + rounds.round + "/" + rounds.required + " · Encore " + rounds.remaining,
-    "Ronde " + rounds.round + "/" + rounds.required + " · Nog " + rounds.remaining);
+function roundTrackerHtml(rounds, completed) {
+  let steps = '';
+  for (let number = 1; number <= rounds.required; number += 1) {
+    const status = completed || number < rounds.round ? "complete" : number === rounds.round ? "current" : "future";
+    const symbol = status === "complete" ? "✓" : status === "current" ? "●" : "○";
+    const description = status === "complete" ? "terminé / afgerond" : status === "current" ? "en cours / bezig" : "à venir / later";
+    steps += '<span class="round-step is-' + status + '" role="listitem" aria-label="' + escapeAttr("Passage " + number + " / Ronde " + number + ": " + description) + '">' +
+      '<span class="round-step-symbol" aria-hidden="true">' + symbol + '</span><b aria-hidden="true">' + number + '</b></span>';
+  }
+  return '<span class="round-tracker" role="list" aria-label="Passages du devoir / Rondes van de taak">' + steps + '</span>';
+}
+
+function roundStatusHtml(rounds, completed, compact, pendingCount) {
+  return '<span class="round-status' + (compact ? ' is-compact' : '') + '">' + roundTrackerHtml(rounds, completed || Boolean(pendingCount && rounds.completed)) +
+    (pendingCount && rounds.completed ? '<strong class="round-complete-label">✓ ' + uiText("Terminé pour toi", "Voor jou afgewerkt") + '</strong>' +
+      '<span class="round-report-count">⚠ ' + uiText(pendingCount + " problème" + (pendingCount === 1 ? "" : "s") + " signalé" + (pendingCount === 1 ? "" : "s"),
+        pendingCount + " probleem" + (pendingCount === 1 ? "" : "en") + " gemeld") + '</span>' +
+      '<span class="round-awaiting">' + uiText("En attente du professeur", "Wacht op controle van de leerkracht") + '</span>' :
+      completed ? '<strong class="round-complete-label">✓ ' + uiText("Devoir terminé", "Taak klaar") + '</strong>' :
+      '<strong class="task-round-label">' + uiText("Passage " + rounds.round + " sur " + rounds.required,
+        "Ronde " + rounds.round + " van " + rounds.required) + '</strong>' +
+      '<span class="task-round-score"><b>' + rounds.done + ' / ' + rounds.selected + '</b><small>' + uiText("traités", "afgewerkt") + '</small></span>' +
+      '<span class="task-round-bar" role="progressbar" aria-label="Éléments terminés dans ce passage / Items klaar in deze ronde" aria-valuenow="' + rounds.done + '" aria-valuemin="0" aria-valuemax="' + rounds.selected + '"><i style="width:' + Math.round(100 * rounds.done / Math.max(1, rounds.selected)) + '%"></i></span>' +
+      '<span class="task-round-remaining">' + uiText("Encore " + rounds.remaining, "Nog " + rounds.remaining) + '</span>') + '</span>';
 }
 
 function assignmentShortProgress(progress) {
@@ -647,22 +692,25 @@ function assignmentContentIcon(assignment) {
 
 function assignmentHomeRow(assignment) {
   const progress = assignmentProgress(assignment);
+  const completed = progress.status === "completed";
+  const waiting = progress.status === "pending_review";
   const due = assignment.due_at ? new Date(assignment.due_at) : null;
   const dueText = due && !Number.isNaN(due.getTime())
     ? uiText("Pour le " + due.toLocaleDateString("fr-BE", { day: "numeric", month: "short", timeZone: "Europe/Brussels" }), "Tegen " + due.toLocaleDateString("nl-BE", { day: "numeric", month: "short", timeZone: "Europe/Brussels" }))
     : uiText("Sans échéance", "Geen deadline");
-  return '<button class="assignment-home-row" type="button" data-action="launch-assignment" data-id="' + escapeAttr(assignment.id) + '">' +
+  return '<button class="assignment-home-row' + (completed ? ' is-complete' : waiting ? ' is-pending-review' : '') + '" type="button" data-action="' + (completed || waiting ? 'show-assignment-detail' : 'launch-assignment') + '" data-id="' + escapeAttr(assignment.id) + '">' +
     '<span class="content-icon-wrap">' + assignmentContentIcon(assignment) + '</span>' +
-    '<span class="assignment-home-copy"><small class="assignment-kind">' + uiText("Devoir", "Taak") + '</small><strong>' + escapeHtml(assignment.title) + '</strong><small>' + (progress.rounds ? assignmentRoundLabel(progress.rounds) : assignmentStatus(progress)) + '</small></span>' +
+    '<span class="assignment-home-copy"><small class="assignment-kind">' + uiText("Devoir", "Taak") + '</small><strong>' + escapeHtml(assignment.title) + '</strong>' +
+      (progress.rounds ? roundStatusHtml(progress.rounds, completed, true, progress.pendingReports) : '<small>' + assignmentStatus(progress) + '</small>') + '</span>' +
     '<span class="assignment-home-due">' + dueText + '</span>' +
-    '<span class="assignment-home-cta">' + uiText("Continuer →", "Verdergaan →") + '</span></button>';
+    '<span class="assignment-home-cta">' + uiText(completed || waiting ? "Voir →" : "Continuer →", completed || waiting ? "Bekijken →" : "Verdergaan →") + '</span></button>';
 }
 
 function assignmentHomeSection() {
   const identity = currentStudentIdentity();
-  const items = state.assignments.items.filter(function (item) {
-    return item.status === "published" && !item.completed_at && !assignmentProgress(item).rounds?.completed;
-  });
+  const published = state.assignments.items.filter(function (item) { return item.status === "published"; });
+  const items = published.filter(function (item) { return assignmentProgress(item).status !== "completed"; })
+    .concat(published.filter(function (item) { return assignmentProgress(item).status === "completed"; }));
   return '<section class="assignments-home" aria-labelledby="assignments-heading"><div class="section-heading"><h2 id="assignments-heading">' + uiText("Mes devoirs", "Mijn taken") + '</h2>' +
     (items.length > 2 ? '<button class="text-button" type="button" data-action="view-assignments">' + uiText("Voir tout →", "Alles bekijken →") + '</button>' : '') + '</div>' +
     (items.length ? '<div class="assignment-home-list">' + items.slice(0, 2).map(assignmentHomeRow).join("") + '</div>' :
@@ -698,21 +746,20 @@ function renderAssignmentDetail(id) {
     '<section class="assignment-detail"><p class="eyebrow">' + assignmentStatus(progress) + '</p><h1>' + assignmentContentIcon(assignment) + escapeHtml(assignment.title) + '</h1>' +
     '<p>' + assignmentDue(assignment) + '</p>' +
     (assignment.instructions ? '<p class="assignment-instructions">' + escapeHtml(assignment.instructions) + '</p>' : '') +
-    (progress.rounds ? '<div class="assignment-stats"><strong>' + assignmentShortProgress(progress) + '</strong><strong>' +
-      uiText("Encore " + progress.rounds.remaining, "Nog " + progress.rounds.remaining) + '</strong></div>' :
+    (progress.rounds ? roundStatusHtml(progress.rounds, progress.status === "completed", false, progress.pendingReports) :
       progress.goals ? '<div class="assignment-stats"><strong>' + assignmentShortProgress(progress) + '</strong></div>' :
       '<div class="assignment-stats"><strong>' + progress.practiced + '/' + progress.total + ' ' + uiText("travaillés", "geoefend") + '</strong>' +
       '<strong>' + uiText("Niveau de maîtrise : " + progress.masteryLevel + "%", "Beheersingsniveau: " + progress.masteryLevel + "%") + '</strong>' +
       '<strong>' + progress.acquired + '/' + progress.total + ' ' + uiText("acquis", "gekend") + '</strong>' +
       '<strong>' + uiText("Objectif : " + progress.target + "% acquis", "Doel: " + progress.target + "% gekend") + '</strong></div>' + masteryBar(progress, false)) +
-    (progress.rounds ? '<p>' + (progress.rounds.completed ? uiText("Tous les passages sont terminés.", "Alle rondes zijn afgerond.") :
-      progress.rounds.round === 1 ? uiText("Tu peux encore consulter ton cours.", "Je mag nog opzoeken in Mon parcours.") :
+    (progress.rounds ? (progress.status === "completed" ? '' : '<p>' + (
+      progress.rounds.round === 1 ? uiText("Consulter disponible", "Opzoeken mogelijk") :
       progress.rounds.round === 2 ? uiText("Sans aide cette fois. Utilise ton livre si nécessaire.", "Deze keer zonder hulp. Gebruik je boek indien nodig.") :
-      uiText("Révision", "Herhaling")) + '</p>' : progress.completedAt ? '<p class="perfect-note">' + uiText("Objectif atteint ! Le " + new Date(progress.completedAt).toLocaleDateString("fr-BE") + ".", "Doel behaald! Op " + new Date(progress.completedAt).toLocaleDateString("nl-BE") + ".") + '</p>' :
+      uiText("Révision", "Herhaling")) + '</p>') : progress.completedAt ? '<p class="perfect-note">' + uiText("Objectif atteint ! Le " + new Date(progress.completedAt).toLocaleDateString("fr-BE") + ".", "Doel behaald! Op " + new Date(progress.completedAt).toLocaleDateString("nl-BE") + ".") + '</p>' :
       progress.reachedLocally ? '<p class="sync-note">' + uiText("Objectif atteint sur cet appareil. Confirmation après synchronisation.", "Doel op dit toestel behaald. Bevestiging volgt na synchronisatie.") + '</p>' :
       (progress.goals ? '<p>' + uiText("Travaille les personnes et les verbes indiqués pour atteindre l’objectif.", "Oefen de persoonsgroepen en werkwoorden om het doel te bereiken.") + '</p>' :
       '<p>' + uiText("La tâche est terminée quand tous les éléments ont été travaillés et que le pourcentage acquis atteint l’objectif.", "De taak is klaar als alle items geoefend zijn en het gekend-percentage het doel bereikt.") + '</p>')) +
-    (progress.rounds && progress.rounds.completed ? '' : '<button class="button button-primary" type="button" data-action="launch-assignment" data-id="' + escapeAttr(id) + '">' + uiText(progress.rounds ? progress.status === "not_started" ? "Commencer" : "Continuer" : progress.practiced ? "Continuer" : "Commencer",
+    (progress.rounds && (progress.status === "completed" || progress.status === "pending_review") ? '' : '<button class="button button-primary" type="button" data-action="launch-assignment" data-id="' + escapeAttr(id) + '">' + uiText(progress.rounds ? progress.status === "not_started" ? "Commencer" : "Continuer" : progress.practiced ? "Continuer" : "Commencer",
       progress.rounds ? progress.status === "not_started" ? "Starten" : "Verder oefenen" : progress.practiced ? "Verder oefenen" : "Starten") + '</button>') + '</section>';
   focusApp();
 }
@@ -737,7 +784,7 @@ function launchAssignment(id) {
       rounds.push(round);
       saveAssignmentRounds(assignment, rounds);
     }
-    const pendingIds = round.selected_item_ids.filter(function (itemId) { return !round.items[itemId].completed_at; });
+    const pendingIds = round.selected_item_ids.filter(function (itemId) { return !round.items[itemId].completed_at && !round.items[itemId].reported_pending; });
     const selected = allItems.filter(function (item) { return pendingIds.includes(item.id); });
     const questions = taskQuestionsForItems(selected, "assignment-mixed", assignment.item_verb_exercise_key || "verb-nl-conj");
     if (questions.length !== pendingIds.length) {
@@ -1214,6 +1261,7 @@ function beginSession(questions, mode, exerciseKey, title, metadata) {
     return;
   }
   state.pendingStartAction = null;
+  state.roundAnswerDrafts = Object.create(null);
   const availableCount = metadata && metadata.availableCount ? metadata.availableCount : questions.length;
   const identity = currentStudentIdentity();
   const sessionPath = currentSessionPath();
@@ -1369,7 +1417,7 @@ function restoreActiveSession() {
     while (round && saved.index < saved.questions.length) {
       const question = saved.questions[saved.index];
       const id = question.stableItemId || question.stableItemIds && question.stableItemIds[0];
-      if (!round.items[id] || !round.items[id].completed_at) break;
+      if (!round.items[id] || !round.items[id].completed_at && !round.items[id].reported_pending) break;
       saved.index += 1;
     }
   }
@@ -1418,11 +1466,15 @@ function renderQuestion(message) {
   app.innerHTML =
     '<section class="practice-shell">' +
       '<header class="practice-header"><button class="text-button" type="button" data-action="back-unit">' + uiText("Arrêter", "Stoppen") + '</button>' +
-      '<div class="practice-progress" aria-label="Voortgang"><span style="width:' + progress + '%"></span></div>' +
+      (roundProgress ? '' : '<div class="practice-progress" aria-label="Voortgang"><span style="width:' + progress + '%"></span></div>') +
       (roundProgress ? '' : '<strong>' + (session.index + 1) + ' / ' + session.questions.length + '</strong>') + '</header>' +
       taskPracticeContextHtml(session) +
       '<article class="question-card">' +
         '<div class="question-meta"><span>' + uiText(modeLabelFr(session.mode), modeLabel(session.mode)) + '</span><span>' + contentIcon(contentTypeKey(question.item && question.item.category || state.selectedScope && (state.selectedScope.category || state.selectedScope.title), question.item && question.item.type || EXERCISES[session.exerciseKey].type)) + uiText(EXERCISES[session.exerciseKey].labelFr, EXERCISES[session.exerciseKey].label) + '</span></div>' +
+        (roundState && roundsForAssignment(roundState).some(function (round) {
+          const id = question.stableItemId || question.stableItemIds && question.stableItemIds[0];
+          return round.number === session.assignment_round_number && round.items[id] && round.items[id].returned_for_retry;
+        }) ? '<p class="retry-note">' + uiText("À refaire", "Opnieuw proberen") + '</p>' : '') +
         '<p class="prompt-label">' + uiText(instructionFrench(question.instruction), question.instruction) + '</p><h1 class="question-prompt">' + escapeHtml(question.prompt) + '</h1>' +
         (question.context ? '<p class="question-context">' + escapeHtml(question.context) + '</p>' : "") +
         '<form id="answer-form" autocomplete="off"><label for="answer-input" class="sr-only">Ta réponse / Jouw antwoord</label>' +
@@ -1444,16 +1496,24 @@ function taskPracticeContextHtml(session) {
   if (!assignment) return "";
   const progress = assignmentProgress(assignment);
   if (progress.rounds) return '<aside class="task-practice-context task-round-context" aria-label="Devoir / Taak"><strong>' + escapeHtml(assignment.title) + '</strong>' +
-    '<span class="task-round-label">' + uiText("Passage " + progress.rounds.round + " sur " + progress.rounds.required,
-      "Ronde " + progress.rounds.round + " van " + progress.rounds.required) + '</span>' +
-    '<span class="task-round-score"><b>' + progress.rounds.done + ' / ' + progress.rounds.selected + '</b>' +
-    '<small>' + uiText("corrects", "juist") + '</small></span>' +
-    '<span class="task-round-bar" role="progressbar" aria-valuenow="' + progress.rounds.done + '" aria-valuemin="0" aria-valuemax="' + progress.rounds.selected + '"><i style="width:' + Math.round(100 * progress.rounds.done / Math.max(1, progress.rounds.selected)) + '%"></i></span>' +
-    '<span class="task-round-footer"><b>' + uiText("Encore " + progress.rounds.remaining, "Nog " + progress.rounds.remaining) + '</b><small>' +
-    (progress.rounds.round === 1 ? uiText("Consulter disponible", "Opzoeken mogelijk") : uiText("Sans aide", "Zonder hulp")) + '</small></span></aside>';
+    roundStatusHtml(progress.rounds, progress.status === "completed", false, progress.pendingReports) +
+    '<small class="task-round-help">' + (progress.rounds.round === 1 ? uiText("Consulter disponible", "Opzoeken mogelijk") : uiText("Sans aide", "Zonder hulp")) + '</small></aside>';
   if (progress.goals) return '<aside class="task-practice-context" aria-label="Devoir / Taak"><strong>' + escapeHtml(assignment.title) + '</strong><span>' + assignmentShortProgress(progress) + '</span></aside>';
   return '<aside class="task-practice-context" aria-label="Devoir / Taak"><strong>' + escapeHtml(assignment.title) + '</strong><span>' +
     assignmentStatus(progress) + '</span></aside>';
+}
+
+function roundDraftKey(session, itemId) {
+  return [session.assignment_id, session.assignment_round_number, itemId].join(":");
+}
+
+function currentRoundItemState(session, question) {
+  if (!session || !session.assignment_round_number || !question) return null;
+  const assignment = assignmentById(session.assignment_id);
+  const rounds = roundsForAssignment(assignment);
+  const round = rounds.find(function (entry) { return entry.number === session.assignment_round_number; });
+  const id = question.stableItemId || question.stableItemIds && question.stableItemIds[0];
+  return round && round.items[id] ? { assignment: assignment, rounds: rounds, round: round, item: round.items[id], itemId: id } : null;
 }
 
 function submitAnswer(rawAnswer) {
@@ -1471,6 +1531,10 @@ function submitAnswer(rawAnswer) {
     const round = rounds.find(function (entry) { return entry.number === session.assignment_round_number; });
     const itemId = question.stableItemId || question.stableItemIds && question.stableItemIds[0];
     window.MonParcoursTaskRounds.markAttempt(round, itemId, correct, new Date().toISOString());
+    if (!correct) {
+      const key = roundDraftKey(session, itemId);
+      state.roundAnswerDrafts[key] = (state.roundAnswerDrafts[key] || []).concat(String(rawAnswer).trim()).slice(-3);
+    }
     saveAssignmentRounds(assignment, rounds);
     recordAttempt(question, correct);
     syncSessionSnapshot();
@@ -1478,8 +1542,9 @@ function submitAnswer(rawAnswer) {
       showFeedback(true, "Bonne réponse !", "Juist antwoord!", true);
     } else {
       requeueRoundQuestion(question);
-      showFeedback(false, session.assignment_round_number === 1 ? "Pas encore" : "Pas encore. Regarde dans ton cours.",
-        session.assignment_round_number === 1 ? "Nog niet juist" : "Nog niet juist. Kijk in je boek.", true);
+      const hint = nearCorrectHint(rawAnswer, question);
+      showFeedback(false, hint ? hint.fr : session.assignment_round_number === 1 ? "Pas encore" : "Pas encore. Regarde dans ton cours.",
+        hint ? hint.nl : session.assignment_round_number === 1 ? "Nog niet juist" : "Nog niet juist. Kijk in je boek.", true);
     }
     return;
   }
@@ -1521,7 +1586,9 @@ function submitAnswer(rawAnswer) {
     recordAttempt(question, false);
     session.questionAttempts += 1;
     if (session.questionAttempts === 1) {
-      showFeedback(false, "Pas encore. Regarde bien et réessaie.", "Nog niet juist. Kijk nog eens goed en probeer opnieuw.", false);
+      const hint = nearCorrectHint(rawAnswer, question);
+      showFeedback(false, hint ? hint.fr : "Pas encore. Regarde bien et réessaie.",
+        hint ? hint.nl : "Nog niet juist. Kijk nog eens goed en probeer opnieuw.", false);
     } else {
       requeueQuestion(question);
       showFeedback(false, 'Réponses possibles : <strong>' + escapeHtml(formatAnswers(question)) + '</strong>. Cet élément reviendra plus tard.', 'Mogelijke juiste antwoorden: <strong>' + escapeHtml(formatAnswers(question)) + '</strong>. Dit item komt straks terug.', true, true);
@@ -1533,9 +1600,14 @@ function showFeedback(correct, messageFr, messageNl, allowNext, clearInput) {
   const feedback = document.querySelector("#feedback");
   const input = document.querySelector("#answer-input");
   const submit = document.querySelector(".submit-button");
+  const itemState = !correct && state.session && currentRoundItemState(state.session, state.session.questions[state.session.index]);
+  const canReport = itemState && !itemState.item.reported_pending && !itemState.item.completed_at &&
+    Number(itemState.item.wrong_count || 0) >= 2 &&
+    (state.roundAnswerDrafts[roundDraftKey(state.session, itemState.itemId)] || []).length > 0;
   feedback.className = "feedback visible " + (correct ? "correct" : "wrong");
   feedback.innerHTML = '<span class="feedback-mark" aria-hidden="true">' + (correct ? "✓" : "!") + '</span><div><p>' + uiHtml(messageFr, messageNl) + '</p>' +
     (!correct && state.session && state.session.assignment_round_number === 1 ? '<button class="button button-primary consult-action" type="button" data-action="consult-round">' + contentIcon("vocabulary") + uiText("Consulter", "Opzoeken") + '</button>' : "") +
+    (canReport ? '<button class="text-button report-action" type="button" data-action="report-round-item">' + uiText("Signaler un problème", "Probleem melden") + '</button>' : '') +
     (allowNext ? '<button class="button ' + (!correct && state.session && state.session.assignment_round_number === 1 ? 'button-secondary' : 'button-primary') + '" type="button" data-action="next-question">' + uiText("Suivant", "Volgende") + '</button>' : "") + '</div>';
   if (allowNext) {
     input.disabled = true;
@@ -1545,6 +1617,34 @@ function showFeedback(correct, messageFr, messageNl, allowNext, clearInput) {
     if (clearInput !== false) input.value = "";
     input.focus();
   }
+}
+
+function reportRoundItem() {
+  const session = state.session;
+  const question = session && session.questions[session.index];
+  const current = currentRoundItemState(session, question);
+  if (!current || current.item.completed_at || current.item.reported_pending || Number(current.item.wrong_count || 0) < 2 ||
+      !window.MonParcoursSync || typeof window.MonParcoursSync.enqueueIssueReport !== "function") return;
+  const answers = state.roundAnswerDrafts[roundDraftKey(session, current.itemId)] || [];
+  if (!answers.length) return;
+  const report = {
+    client_report_id: createClientId(), assignment_id: session.assignment_id,
+    round_number: session.assignment_round_number, item_id: current.itemId,
+    prompt: question.prompt, exercise_direction: question.exerciseKey || session.exerciseKey,
+    submitted_answers: answers.slice(-3), accepted_answers: question.answers.slice(),
+    consulted: Boolean(current.item.consulted), app_version: APP_VERSION,
+    created_at: new Date().toISOString()
+  };
+  if (!window.MonParcoursSync.enqueueIssueReport({ identity_subject: session.identity_subject, report: report })) return;
+  current.item.reported_pending = true;
+  saveAssignmentRounds(current.assignment, current.rounds);
+  const feedback = document.querySelector("#feedback");
+  feedback.className = "feedback visible reported";
+  feedback.innerHTML = '<span class="feedback-mark" aria-hidden="true">✓</span><div><p>' +
+    uiText("Problème signalé ✓ Tu ne dois pas envoyer de mail.", "Probleem gemeld ✓ Je hoeft geen mail te sturen.") + '</p><p>' +
+    uiText("Tu peux continuer.", "Je kunt verder.") + '</p><button class="button button-primary" type="button" data-action="next-question">' +
+    uiText("Suivant", "Volgende") + '</button></div>';
+  feedback.querySelector("button").focus();
 }
 
 function nextQuestion() {
@@ -1557,7 +1657,7 @@ function nextQuestion() {
     while (session.index < session.questions.length) {
       const next = session.questions[session.index];
       const id = next.stableItemId || next.stableItemIds && next.stableItemIds[0];
-      if (!round || !round.items[id] || !round.items[id].completed_at) break;
+      if (!round || !round.items[id] || !round.items[id].completed_at && !round.items[id].reported_pending) break;
       session.index += 1;
     }
   }
@@ -1604,8 +1704,10 @@ function consultRoundCourse() {
   dialog.innerHTML = '<div class="consult-heading"><h2 id="round-consult-title">' + uiText("Consulte ton cours", "Zoek op in je cursus") + '</h2>' +
     '<button class="text-button" type="button" data-action="close-consult">' + uiText("Fermer", "Sluiten") + '</button></div>' +
     '<p>' + escapeHtml(source.lesson || source.top_category || "Univers français 1") + '</p><ul>' + courseItems.map(function (item) {
-      return '<li><span>' + escapeHtml(item.nl || item.prompt || "") + '</span><strong>' +
-        escapeHtml(item.fr || item.answer || item.infinitive || "") + '</strong></li>';
+      const dutch = item.type === "vocabulary" ? dutchAnswers(item.nl, item).join(" / ") : item.nl || item.prompt || "";
+      const french = item.type === "vocabulary" || item.type === "phrase" ? answerList(item.fr, item).join(" / ") :
+        item.fr || item.answer || item.infinitive || "";
+      return '<li><span>' + escapeHtml(dutch) + '</span><strong>' + escapeHtml(french) + '</strong></li>';
     }).join("") + '</ul>';
   dialog.addEventListener("close", function () { dialog.remove(); });
   document.body.appendChild(dialog);
@@ -1726,12 +1828,13 @@ function renderSummary() {
   const session = state.session;
   if (session.assignment_round_number) {
     const assignment = assignmentById(session.assignment_id);
-    const progress = assignment && window.MonParcoursTaskRounds.progress(assignment, roundsForAssignment(assignment));
-    const headingFr = progress && progress.completed ? "Devoir terminé !" : "Passage terminé !";
-    const headingNl = progress && progress.completed ? "Taak afgerond!" : "Ronde afgerond!";
-    app.innerHTML = '<section class="summary-card"><h1>' + uiText(headingFr, headingNl) + '</h1><p>' +
-      (progress ? uiText("Passage " + session.assignment_round_number + " sur " + progress.required,
-        "Ronde " + session.assignment_round_number + " van " + progress.required) : "") + '</p><p>' +
+    const assignmentState = assignment && assignmentProgress(assignment);
+    const progress = assignmentState && assignmentState.rounds;
+    const waiting = assignmentState && assignmentState.status === "pending_review";
+    const headingFr = waiting ? "Terminé pour toi" : progress && progress.completed ? "Devoir terminé !" : "Passage terminé !";
+    const headingNl = waiting ? "Voor jou afgewerkt" : progress && progress.completed ? "Taak afgerond!" : "Ronde afgerond!";
+    app.innerHTML = '<section class="summary-card round-summary"><h1>' + uiText(headingFr, headingNl) + '</h1>' +
+      (progress ? roundStatusHtml(progress, !waiting && progress.completed, false, assignmentState.pendingReports) : '') + '<p>' +
       uiText("La progression est enregistrée et sera synchronisée.", "De voortgang is bewaard en wordt gesynchroniseerd.") + '</p>' +
       '<div class="summary-actions">' + (progress && !progress.completed ? '<button class="button button-primary" type="button" data-action="launch-assignment" data-id="' + escapeAttr(session.assignment_id) + '">' +
         uiText("Passage suivant", "Volgende ronde") + '</button>' : '') +
@@ -2127,6 +2230,52 @@ function requeueQuestion(question) {
 function isCorrect(answer, accepted) {
   const candidate = normalizeAnswer(answer, true);
   return accepted.some(function (value) { return normalizeAnswer(value, true) === candidate; });
+}
+
+function splitAnswerArticle(value, french) {
+  const match = french ? /^(le|la|les|un|une|des)\s+(.+)$|^(l')(.+)$/u.exec(value) :
+    /^(de|het|een)\s+(.+)$/u.exec(value);
+  return match ? { article: match[1] || match[3], stem: match[2] || match[4] } :
+    { article: "", stem: value };
+}
+
+function oneSmallSpellingDifference(left, right) {
+  if (left.length < 5 || right.length < 5 || left.slice(0, 2) !== right.slice(0, 2) ||
+      left.includes(" ") || right.includes(" ") || Math.abs(left.length - right.length) > 1) return false;
+  let a = 0, b = 0, differences = 0;
+  while (a < left.length && b < right.length) {
+    if (left[a] === right[b]) { a += 1; b += 1; continue; }
+    differences += 1;
+    if (differences > 1) return false;
+    if (left.length > right.length) a += 1;
+    else if (right.length > left.length) b += 1;
+    else { a += 1; b += 1; }
+  }
+  return differences + (a < left.length || b < right.length ? 1 : 0) === 1;
+}
+
+function nearCorrectHint(rawAnswer, question) {
+  if (!question || !question.item || question.item.type !== "vocabulary") return null;
+  const french = question.exerciseKey === "vocab-nl-fr";
+  const dutch = question.exerciseKey === "vocab-fr-nl";
+  if (!french && !dutch) return null;
+  const candidate = normalizeAnswer(rawAnswer, true);
+  for (const answer of question.answers || []) {
+    const expected = normalizeAnswer(answer, true);
+    if (candidate === expected) return null;
+    const source = splitAnswerArticle(expected, french);
+    const typed = splitAnswerArticle(candidate, french);
+    if (source.article && source.stem === typed.stem && source.article !== typed.article) {
+      return { fr: "Presque ! Vérifie l’article.", nl: "Bijna! Controleer het lidwoord." };
+    }
+    if (french && normalizeAnswer(candidate, false) === normalizeAnswer(expected, false)) {
+      return { fr: "Presque ! Vérifie les accents.", nl: "Bijna! Controleer de accenten." };
+    }
+    if (source.article === typed.article && oneSmallSpellingDifference(typed.stem, source.stem)) {
+      return { fr: "Presque ! Vérifie l’orthographe.", nl: "Bijna! Controleer de spelling." };
+    }
+  }
+  return null;
 }
 
 function normalizeAnswer(value, strict) {
