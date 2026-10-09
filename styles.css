@@ -433,12 +433,35 @@ dialog::backdrop { background: rgba(10,29,23,.45); backdrop-filter: blur(4px); }
 .assignments-home .section-heading .text-button { display: inline-flex; }
 .assignment-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr)); gap: .75rem; }
 .assignment-card { display: grid; gap: .35rem; width: 100%; padding: .9rem 1rem; border: 1px solid #c9dbd0; border-radius: 13px; background: #fff; color: #12372a; text-align: left; cursor: pointer; }
+.assignment-card .assignment-home-due { grid-column: auto; }
 .assignment-card:hover, .assignment-card:focus-visible { border-color: #237052; box-shadow: 0 2px 12px #12372a18; }
 .assignment-card-title { display: flex; align-items: center; gap: .45rem; }
 .assignment-card-title .content-icon, .assignment-detail h1 .content-icon { margin-right: .35rem; color: var(--forest-2); }
 .source-notes h2 { display: flex; align-items: center; gap: .45rem; }
 .assignment-card > span:not(.mastery-bar) { font-size: .88rem; }
 .assignment-card-cta { justify-self: start; min-height: 44px; display: inline-flex; align-items: center; padding: .45rem .75rem; border-radius: 9px; background: var(--forest); color: white; font-weight: 800; }
+.assignment-home-row.is-todo, .assignment-card.is-todo { background: #fff3f1; border-color: #d9aca6; }
+.assignment-home-row.is-in-progress, .assignment-card.is-in-progress { background: #fff6e8; border-color: #d6b174; }
+.assignment-home-row.is-late, .assignment-card.is-late { background: #fce8e5; border: 2px solid #c77b72; }
+.assignment-home-row.is-complete, .assignment-card.is-complete { background: #edf7ed; border-color: #9bc4a2; }
+.assignment-home-row.is-pending-review, .assignment-card.is-pending-review { background: #fbf8e9; border-color: #d7c99f; }
+.assignment-status-tag { display: block; width: fit-content; color: #603f39; font-size: .77rem; font-weight: 900; line-height: 1.15; text-transform: uppercase; letter-spacing: .035em; }
+.assignment-status-tag .ui-nl { color: inherit; font-size: .83em; }
+.is-in-progress .assignment-status-tag { color: #73501d; }
+.is-late .assignment-status-tag { color: #80372e; }
+.is-complete .assignment-status-tag { color: #255b38; }
+.is-pending-review .assignment-status-tag { color: #73591e; }
+.assignment-home-row.is-late .assignment-home-cta, .assignment-card.is-late .assignment-card-cta { background: #80372e; }
+.assignment-home-row.is-in-progress .assignment-home-cta, .assignment-card.is-in-progress .assignment-card-cta { background: #73501d; }
+.assignment-home-row.is-todo .assignment-home-cta, .assignment-card.is-todo .assignment-card-cta { background: #75433a; }
+.assignment-home-row.is-complete .assignment-home-cta, .assignment-card.is-complete .assignment-card-cta { background: #d6ead9; color: #174a2d; }
+.assignment-home-row.is-todo .task-round-remaining, .assignment-card.is-todo .task-round-remaining { color: #75433a; }
+.assignment-home-row.is-in-progress .task-round-remaining, .assignment-card.is-in-progress .task-round-remaining { color: #73501d; }
+.assignment-home-row.is-late .task-round-remaining, .assignment-card.is-late .task-round-remaining { color: #80372e; }
+.assignment-home-row .task-round-label, .assignment-card .task-round-label { font-size: .84rem; }
+.assignment-home-row .task-round-remaining, .assignment-card .task-round-remaining { font-size: .82rem; font-weight: 900; }
+.assignment-home-row .assignment-status-tag { margin: .22rem 0 .32rem; }
+.assignment-card .assignment-status-tag { margin: .1rem 0 .25rem; }
 .assignment-detail { max-width: 760px; margin: 1rem auto; padding: clamp(1rem, 3vw, 2rem); border-radius: 18px; background: #fff; }
 .assignment-instructions { white-space: pre-wrap; }
 .assignment-stats { display: flex; flex-wrap: wrap; gap: .8rem 1.5rem; margin: 1rem 0; }

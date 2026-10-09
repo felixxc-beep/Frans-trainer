@@ -30,7 +30,7 @@ assert.match(sql, /p_correct>=3 and p_correct::numeric\/nullif\(p_independent,0\
 assert.match(sql, /p_sessions>=2 and p_latest_correct is true/);
 assert.match(sql, /\$curve_check\$/);
 assert.match(studentHtml, /mastery\.js\?v=20261004-1/);
-assert.match(studentHtml, /app\.js\?v=20261009-4/);
+assert.match(studentHtml, /app\.js\?v=20261009-5/);
 assert.match(teacherHtml, /mastery\.js\?v=20261004-1/);
 assert.match(app, /beginSession\(questions, "practice", "assignment-mixed", assignment\.title/);
 assert.match(app, /"Objectif : " \+ progress\.target \+ "% acquis"/);

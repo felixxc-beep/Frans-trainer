@@ -46,10 +46,11 @@ setImmediate(() => {
   run('state.assignments.items = [{ id: "00000000-0000-4000-8000-000000000099", title: "Rondetaak", status: "published",' +
     ' item_ids: taskIds, required_rounds: 3, completion_strategy: "rounds", mastery_strategy: "item_mastery" }]');
   run('renderHome()');
-  assert.match(app.innerHTML, /class="assignment-home-row"[^>]*data-action="launch-assignment"/);
+  assert.match(app.innerHTML, /class="assignment-home-row is-todo"[^>]*data-action="launch-assignment"/);
   assert.match(app.innerHTML, /Devoir[\s\S]*Taak[\s\S]*Rondetaak/);
-  assert.match(app.innerHTML, /Passage 1 sur 3[\s\S]*0 \/ 3[\s\S]*Encore 3[\s\S]*Continuer →/);
-  assert.match(app.innerHTML, /round-step is-current[\s\S]*●[\s\S]*round-step is-future[\s\S]*○/);
+  assert.match(app.innerHTML, /À faire[\s\S]*Niet gestart[\s\S]*Passage 1 sur 3[\s\S]*0 \/ 3[\s\S]*Encore 3[\s\S]*Commencer →/);
+  assert.equal((app.innerHTML.match(/round-step is-future/g) || []).length, 3);
+  assert.doesNotMatch(app.innerHTML, /round-step is-current/);
   assert.doesNotMatch(app.innerHTML, /\d+% maîtrise|objectifs acquis|objectif \d+%/);
   run('launchAssignment("00000000-0000-4000-8000-000000000099")');
   assert.equal(run('state.session.questions.length'), 3);
@@ -79,6 +80,8 @@ setImmediate(() => {
   assert.match(app.innerHTML, /Passage 2 sur 3[\s\S]*0 \/ 3/,
     "na ronde 1 toont het eindscherm onmiddellijk de volgende ronde, niet alleen 3/3");
   run('renderHome()');
+  assert.match(app.innerHTML, /assignment-home-row is-in-progress/);
+  assert.match(app.innerHTML, /En cours[\s\S]*Bezig — niet klaar/);
   assert.match(app.innerHTML, /round-step is-complete[\s\S]*✓[\s\S]*round-step is-current[\s\S]*●/);
   assert.match(app.innerHTML, /Passage 2 sur 3[\s\S]*0 \/ 3/);
   run('launchAssignment("00000000-0000-4000-8000-000000000099")');
@@ -179,5 +182,39 @@ setImmediate(() => {
   run('mergeAssignmentRounds(state.assignments.items[1])');
   assert.equal(run('assignmentProgress(state.assignments.items[1]).status'), "in_progress");
   assert.equal(run('roundsForAssignment(state.assignments.items[1])[0].items[taskIds[0]].returned_for_retry'), true);
+  run(`{
+    const makeTask = (id, title, due_at) => ({ id, title, due_at, status: "published", item_ids: [taskIds[0]],
+      required_rounds: 1, completion_strategy: "rounds", mastery_strategy: "item_mastery" });
+    const done = makeTask("00000000-0000-4000-8000-000000000090", "Groene taak", "2000-01-01T00:00:00Z");
+    const todo = makeTask("00000000-0000-4000-8000-000000000091", "Roze taak", null);
+    const active = makeTask("00000000-0000-4000-8000-000000000092", "Amber taak", null);
+    const late = makeTask("00000000-0000-4000-8000-000000000093", "Rode taak", "2000-01-01T00:00:00Z");
+    const activeRound = window.MonParcoursTaskRounds.createRound(active, []);
+    saveAssignmentRounds(active, [activeRound]);
+    const doneRound = window.MonParcoursTaskRounds.createRound(done, []);
+    window.MonParcoursTaskRounds.markAttempt(doneRound, taskIds[0], true, new Date().toISOString());
+    saveAssignmentRounds(done, [doneRound]);
+    state.assignments.items = [done, todo, active, late];
+  }`);
+  run('renderAssignments()');
+  const cards = app.innerHTML;
+  assert.match(cards, /assignment-card is-late[\s\S]*En retard[\s\S]*Te laat — niet klaar/);
+  assert.match(cards, /assignment-card is-in-progress[\s\S]*En cours[\s\S]*Bezig — niet klaar/);
+  assert.match(cards, /assignment-card is-todo[\s\S]*À faire[\s\S]*Niet gestart/);
+  assert.match(cards, /assignment-card is-complete[\s\S]*✓ Terminé[\s\S]*Klaar/);
+  assert.ok(cards.indexOf("Rode taak") < cards.indexOf("Amber taak") &&
+    cards.indexOf("Amber taak") < cards.indexOf("Roze taak") &&
+    cards.indexOf("Roze taak") < cards.indexOf("Groene taak"), "taakvolgorde: te laat, bezig, niet gestart, klaar");
+  assert.match(cards, /Commencer →[\s\S]*Starten →/);
+  assert.match(cards, /Voir →[\s\S]*Bekijken →/);
+  run('renderHome()');
+  assert.match(app.innerHTML, /assignment-home-row is-late[\s\S]*Rode taak[\s\S]*assignment-home-row is-in-progress[\s\S]*Amber taak/);
+  assert.doesNotMatch(app.innerHTML, /Roze taak|Groene taak/, "homepage toont eerst de twee dringendste taken");
+  for (const status of ["todo", "in-progress", "late", "complete"]) {
+    assert.match(css, new RegExp('\\.assignment-home-row\\.is-' + status + '[^}]*background:'), status + " kleurt de volledige homepagekaart");
+    assert.match(css, new RegExp('\\.assignment-card\\.is-' + status + '[^}]*background:'), status + " kleurt de volledige kaart in de takenlijst");
+  }
+  assert.match(css, /@media \(max-width: 620px\)[\s\S]*\.assignment-home-row \{ grid-template-columns: 32px minmax\(0, 1fr\)/,
+    "mobiele taakkaart behoudt compacte twee-kolomsindeling");
   console.log("RONDES-APPREGRESSIE GESLAAGD");
 });

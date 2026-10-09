@@ -611,18 +611,37 @@ function assignmentCard(assignment) {
   const progress = assignmentProgress(assignment);
   const completed = progress.status === "completed";
   const waiting = progress.status === "pending_review";
-  return '<button class="assignment-card' + (completed ? ' is-complete' : waiting ? ' is-pending-review' : '') + '" type="button" data-action="' + (completed || waiting ? "show-assignment-detail" : "launch-assignment") + '" data-id="' + escapeAttr(assignment.id) + '">' +
+  const roundStatus = progress.rounds ? roundCardStatus(progress) : null;
+  return '<button class="assignment-card' + (roundStatus ? ' is-' + roundStatus.className : completed ? ' is-complete' : '') + '" type="button" data-action="' + (completed || waiting ? "show-assignment-detail" : "launch-assignment") + '" data-id="' + escapeAttr(assignment.id) + '">' +
     '<span class="assignment-kind">' + uiText("Devoir", "Taak") + '</span>' +
+    (roundStatus ? '<span class="assignment-status-tag">' + uiText(roundStatus.fr, roundStatus.nl) + '</span>' : '') +
     '<strong class="assignment-card-title">' + assignmentContentIcon(assignment) + escapeHtml(assignment.title) + '</strong>' +
-    (progress.rounds ? roundStatusHtml(progress.rounds, completed, true, progress.pendingReports) : '<span class="assignment-simple-progress">' + assignmentStatus(progress) + '</span>') +
+    (progress.rounds ? roundStatusHtml(progress.rounds, completed, true, progress.pendingReports,
+      progress.status === "not_started" || progress.status === "late" && !roundsForAssignment(assignment).length) : '<span class="assignment-simple-progress">' + assignmentStatus(progress) + '</span>') +
     '<span class="assignment-home-due">' + assignmentDue(assignment) + '</span>' +
-    '<span class="assignment-card-cta">' + uiText(completed || waiting ? "Voir →" : "Continuer →", completed || waiting ? "Bekijken →" : "Verdergaan →") + '</span></button>';
+    '<span class="assignment-card-cta">' + uiText(completed || waiting ? "Voir →" : progress.status === "not_started" ? "Commencer →" : "Continuer →",
+      completed || waiting ? "Bekijken →" : progress.status === "not_started" ? "Starten →" : "Verdergaan →") + '</span></button>';
 }
 
-function roundTrackerHtml(rounds, completed) {
+function roundCardStatus(progress) {
+  const status = progress.status;
+  if (status === "completed") return { className: "complete", fr: "✓ Terminé", nl: "Klaar" };
+  if (status === "late") return { className: "late", fr: "En retard", nl: "Te laat — niet klaar" };
+  if (status === "not_started") return { className: "todo", fr: "À faire", nl: "Niet gestart" };
+  if (status === "pending_review") return { className: "pending-review", fr: "En attente du professeur", nl: "Wacht op controle" };
+  return { className: "in-progress", fr: "En cours", nl: "Bezig — niet klaar" };
+}
+
+function assignmentDisplayPriority(assignment) {
+  const status = assignmentProgress(assignment).status;
+  return status === "late" ? 0 : status === "in_progress" || status === "pending_review" ? 1 :
+    status === "not_started" ? 2 : 3;
+}
+
+function roundTrackerHtml(rounds, completed, notStarted) {
   let steps = '';
   for (let number = 1; number <= rounds.required; number += 1) {
-    const status = completed || number < rounds.round ? "complete" : number === rounds.round ? "current" : "future";
+    const status = completed || !notStarted && number < rounds.round ? "complete" : !notStarted && number === rounds.round ? "current" : "future";
     const symbol = status === "complete" ? "✓" : status === "current" ? "●" : "○";
     const description = status === "complete" ? "terminé / afgerond" : status === "current" ? "en cours / bezig" : "à venir / later";
     steps += '<span class="round-step is-' + status + '" role="listitem" aria-label="' + escapeAttr("Passage " + number + " / Ronde " + number + ": " + description) + '">' +
@@ -631,8 +650,8 @@ function roundTrackerHtml(rounds, completed) {
   return '<span class="round-tracker" role="list" aria-label="Passages du devoir / Rondes van de taak">' + steps + '</span>';
 }
 
-function roundStatusHtml(rounds, completed, compact, pendingCount) {
-  return '<span class="round-status' + (compact ? ' is-compact' : '') + '">' + roundTrackerHtml(rounds, completed || Boolean(pendingCount && rounds.completed)) +
+function roundStatusHtml(rounds, completed, compact, pendingCount, notStarted) {
+  return '<span class="round-status' + (compact ? ' is-compact' : '') + '">' + roundTrackerHtml(rounds, completed || Boolean(pendingCount && rounds.completed), notStarted) +
     (pendingCount && rounds.completed ? '<strong class="round-complete-label">✓ ' + uiText("Terminé pour toi", "Voor jou afgewerkt") + '</strong>' +
       '<span class="round-report-count">⚠ ' + uiText(pendingCount + " problème" + (pendingCount === 1 ? "" : "s") + " signalé" + (pendingCount === 1 ? "" : "s"),
         pendingCount + " probleem" + (pendingCount === 1 ? "" : "en") + " gemeld") + '</span>' +
@@ -694,23 +713,27 @@ function assignmentHomeRow(assignment) {
   const progress = assignmentProgress(assignment);
   const completed = progress.status === "completed";
   const waiting = progress.status === "pending_review";
+  const roundStatus = progress.rounds ? roundCardStatus(progress) : null;
   const due = assignment.due_at ? new Date(assignment.due_at) : null;
   const dueText = due && !Number.isNaN(due.getTime())
     ? uiText("Pour le " + due.toLocaleDateString("fr-BE", { day: "numeric", month: "short", timeZone: "Europe/Brussels" }), "Tegen " + due.toLocaleDateString("nl-BE", { day: "numeric", month: "short", timeZone: "Europe/Brussels" }))
     : uiText("Sans échéance", "Geen deadline");
-  return '<button class="assignment-home-row' + (completed ? ' is-complete' : waiting ? ' is-pending-review' : '') + '" type="button" data-action="' + (completed || waiting ? 'show-assignment-detail' : 'launch-assignment') + '" data-id="' + escapeAttr(assignment.id) + '">' +
+  return '<button class="assignment-home-row' + (roundStatus ? ' is-' + roundStatus.className : completed ? ' is-complete' : '') + '" type="button" data-action="' + (completed || waiting ? 'show-assignment-detail' : 'launch-assignment') + '" data-id="' + escapeAttr(assignment.id) + '">' +
     '<span class="content-icon-wrap">' + assignmentContentIcon(assignment) + '</span>' +
-    '<span class="assignment-home-copy"><small class="assignment-kind">' + uiText("Devoir", "Taak") + '</small><strong>' + escapeHtml(assignment.title) + '</strong>' +
-      (progress.rounds ? roundStatusHtml(progress.rounds, completed, true, progress.pendingReports) : '<small>' + assignmentStatus(progress) + '</small>') + '</span>' +
+    '<span class="assignment-home-copy"><small class="assignment-kind">' + uiText("Devoir", "Taak") + '</small>' +
+      (roundStatus ? '<span class="assignment-status-tag">' + uiText(roundStatus.fr, roundStatus.nl) + '</span>' : '') +
+      '<strong>' + escapeHtml(assignment.title) + '</strong>' +
+      (progress.rounds ? roundStatusHtml(progress.rounds, completed, true, progress.pendingReports,
+        progress.status === "not_started" || progress.status === "late" && !roundsForAssignment(assignment).length) : '<small>' + assignmentStatus(progress) + '</small>') + '</span>' +
     '<span class="assignment-home-due">' + dueText + '</span>' +
-    '<span class="assignment-home-cta">' + uiText(completed || waiting ? "Voir →" : "Continuer →", completed || waiting ? "Bekijken →" : "Verdergaan →") + '</span></button>';
+    '<span class="assignment-home-cta">' + uiText(completed || waiting ? "Voir →" : progress.status === "not_started" ? "Commencer →" : "Continuer →",
+      completed || waiting ? "Bekijken →" : progress.status === "not_started" ? "Starten →" : "Verdergaan →") + '</span></button>';
 }
 
 function assignmentHomeSection() {
   const identity = currentStudentIdentity();
   const published = state.assignments.items.filter(function (item) { return item.status === "published"; });
-  const items = published.filter(function (item) { return assignmentProgress(item).status !== "completed"; })
-    .concat(published.filter(function (item) { return assignmentProgress(item).status === "completed"; }));
+  const items = published.slice().sort(function (left, right) { return assignmentDisplayPriority(left) - assignmentDisplayPriority(right); });
   return '<section class="assignments-home" aria-labelledby="assignments-heading"><div class="section-heading"><h2 id="assignments-heading">' + uiText("Mes devoirs", "Mijn taken") + '</h2>' +
     (items.length > 2 ? '<button class="text-button" type="button" data-action="view-assignments">' + uiText("Voir tout →", "Alles bekijken →") + '</button>' : '') + '</div>' +
     (items.length ? '<div class="assignment-home-list">' + items.slice(0, 2).map(assignmentHomeRow).join("") + '</div>' :
@@ -721,7 +744,8 @@ function assignmentHomeSection() {
 function renderAssignments() {
   if (!hasRequiredStudentIdentity()) return requestRequiredIdentity({ kind: "assignment", id: null });
   state.view = "assignments";
-  const items = state.assignments.items.filter(function (item) { return item.status === "published"; });
+  const items = state.assignments.items.filter(function (item) { return item.status === "published"; })
+    .sort(function (left, right) { return assignmentDisplayPriority(left) - assignmentDisplayPriority(right); });
   app.innerHTML = breadcrumbHtml([{ label: "Mon parcours", action: "home" }]) +
     '<section class="setup-header"><h1>' + uiText("Mes devoirs", "Mijn taken") + '</h1></section>' +
     (items.length ? '<div class="assignment-list">' + items.map(assignmentCard).join("") + '</div>' :
