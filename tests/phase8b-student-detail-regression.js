@@ -27,7 +27,7 @@ assert.match(migration, /'pg_catalog\.greatest\(', 'greatest\('/);
 assert.match(migration, /private\.verb_goal_progress\(uuid,text,text\)/);
 assert.match(migration, /private\.assignment_progress_for_student\(uuid,uuid\)/);
 assert.doesNotMatch(migration, /drop function|alter table|create table|grant execute|revoke all/i);
-assert.match(html, /teacher\.js\?v=20261009-2/);
+assert.match(html, /teacher\.js\?v=20261009-3/);
 
 const student = { id: "student-felix", class_id: "class-1ab", display_name: "Heylen Felix", is_active: true };
 const classRow = { id: "class-1ab", name: "1AB", is_active: true };

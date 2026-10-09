@@ -43,7 +43,9 @@
     route: { view: "dashboard", classId: null, studentId: null },
     management: { loaded: false, classes: [], students: [], selectedClassId: null, studentStatus: "active", generatedCode: "", createdStudents: [], message: "", messageIsError: false },
     teacherAdmin: { loaded: false, teachers: [], assignments: [], classes: [], editingTeacherId: null, message: "", messageIsError: false },
-    tasks: { loaded: false, list: [], detail: [], reports: [], selectedId: null, draft: null, filter: "all", message: "", error: false },
+    tasks: { loaded: false, list: [], detail: [], reports: [], selectedId: null, draft: null, filter: "all",
+      ownerFilter: "mine", archiveOpen: false, archiveFilters: { classId: "all", creatorId: "all", period: "all", query: "" },
+      message: "", error: false },
     loading: false,
     loadSequence: 0
   };
@@ -1227,21 +1229,126 @@
     return Array.from(values);
   }
 
+  function taskLifecycle(task, now) {
+    if (task.status === "draft") return "draft";
+    if (task.status === "archived") return "archived";
+    if (now == null && task.lifecycle_status) return task.lifecycle_status;
+    const grace = Number(task.auto_archive_grace_days);
+    const due = task.due_at ? new Date(task.due_at).getTime() : NaN;
+    if (Number.isFinite(grace) && grace >= 0 && Number.isFinite(due)) {
+      const today = now == null ? Date.now() : Number(now);
+      return today <= due ? "active" : today <= due + grace * 86400000 ? "recent" : "archived";
+    }
+    return task.lifecycle_status || "active";
+  }
+
+  function taskOwnerName(task) {
+    return task.created_by_teacher_id ? task.creator_name || "Naam onbekend" : "Legacy / onbekende maker";
+  }
+
+  function taskCalendarDay(value) {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return NaN;
+    const parts = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Brussels", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(date);
+    const get = function (type) { return Number(parts.find(function (part) { return part.type === type; }).value); };
+    return Date.UTC(get("year"), get("month") - 1, get("day"));
+  }
+
+  function taskDeadlineLabel(task, lifecycle, now) {
+    if (!task.due_at) return "Geen deadline";
+    const today = taskCalendarDay(now == null ? Date.now() : now);
+    const due = taskCalendarDay(task.due_at);
+    const days = Math.round((due - today) / 86400000);
+    if (lifecycle === "recent" || lifecycle === "archived" && task.status !== "archived") {
+      return days === -1 ? "Gisteren afgelopen" : days === 0 ? "Vandaag afgelopen" :
+        Math.abs(days) + " dagen geleden afgelopen";
+    }
+    if (days === 0) return "Deadline vandaag";
+    if (days === 1) return "Deadline morgen";
+    return "Deadline " + formatDate(task.due_at, false);
+  }
+
+  function taskArchiveFilterRows(rows, filters, now) {
+    return rows.filter(function (task) {
+      if (filters.classId !== "all" && !asArray(task.class_ids).includes(filters.classId)) return false;
+      if (filters.creatorId !== "all" && (task.created_by_teacher_id || "legacy") !== filters.creatorId) return false;
+      if (filters.query && !String(task.title || "").toLocaleLowerCase("nl").includes(filters.query.toLocaleLowerCase("nl"))) return false;
+      if (filters.period === "all") return true;
+      const relevant = task.status === "archived" ? task.updated_at || task.due_at || task.created_at : task.due_at || task.created_at;
+      const age = ((now == null ? Date.now() : Number(now)) - new Date(relevant).getTime()) / 86400000;
+      return filters.period === "30" ? age <= 30 : filters.period === "90" ? age <= 90 : age > 90;
+    });
+  }
+
+  function renderTaskOverviewRow(task, lifecycle, showOwner) {
+    const completed = Number(task.completed_count || 0);
+    const total = Number(task.student_count || 0);
+    const own = Boolean(state.user && task.created_by_teacher_id === state.user.id);
+    const classes = asArray(task.classes).map(function (row) { return row.name; }).join(", ") || "Geen toegankelijke klassen";
+    const reports = Number(task.open_report_count || 0);
+    return '<article class="task-overview-row' + (own ? ' is-own' : '') + (showOwner ? ' has-owner' : '') + '">' +
+      '<div class="task-overview-name"><strong>' + escapeHtml(task.title) + '</strong>' +
+        (showOwner && own ? '<small class="task-own-mark">Mijn taak</small>' : '') +
+        '<small>' + escapeHtml(classes) + '</small></div>' +
+      '<div class="task-overview-progress"><strong>' + completed + ' / ' + total + ' klaar</strong>' +
+        '<span class="task-overview-bar" role="progressbar" aria-label="Leerlingen klaar" aria-valuemin="0" aria-valuemax="' + total + '" aria-valuenow="' + completed + '"><i style="width:' + percentage(completed, total) + '%"></i></span>' +
+        '<small>' + (total - completed) + ' niet klaar</small></div>' +
+      '<div class="task-overview-meta"><span>' + escapeHtml(taskDeadlineLabel(task, lifecycle)) + '</span>' +
+        (reports > 0 ? '<strong class="task-report-indicator">⚠ ' + reports + ' melding' + (reports === 1 ? '' : 'en') + '</strong>' : '') + '</div>' +
+      (showOwner ? '<span class="task-overview-owner">Door ' + escapeHtml(taskOwnerName(task)) + '</span>' : '') +
+      '<button class="small-button" type="button" data-action="open-task" data-id="' + escapeHtml(task.id) + '">Bekijken →</button></article>';
+  }
+
   function renderTasksPage() {
-    const groups = ["draft", "published", "archived"];
-    const labels = { draft: "Concepten", published: "Gepubliceerd", archived: "Gearchiveerd" };
-    return '<div class="page-heading"><div><p class="eyebrow">Beheersing</p><h2>Taken</h2><p class="muted">Vaste itemselecties, voortgang en eerste voltooiing.</p></div><button class="button button-primary" type="button" data-action="new-task">Nieuwe taak</button></div>' +
+    const all = state.tasks.list.filter(function (task) {
+      return state.tasks.ownerFilter === "all" || task.created_by_teacher_id === (state.user && state.user.id);
+    });
+    const lifecycle = function (task) { return taskLifecycle(task); };
+    const active = all.filter(function (task) { return lifecycle(task) === "active"; }).sort(function (left, right) {
+      return (left.due_at ? new Date(left.due_at).getTime() : Infinity) - (right.due_at ? new Date(right.due_at).getTime() : Infinity) ||
+        Number(right.open_report_count || 0) - Number(left.open_report_count || 0);
+    });
+    const recent = all.filter(function (task) { return lifecycle(task) === "recent"; }).sort(function (left, right) {
+      return new Date(right.due_at).getTime() - new Date(left.due_at).getTime() ||
+        Number(right.open_report_count || 0) - Number(left.open_report_count || 0);
+    });
+    const drafts = all.filter(function (task) { return lifecycle(task) === "draft"; });
+    const archived = all.filter(function (task) { return lifecycle(task) === "archived"; }).sort(function (left, right) {
+      return new Date(right.updated_at || right.due_at || right.created_at).getTime() -
+        new Date(left.updated_at || left.due_at || left.created_at).getTime();
+    });
+    const showOwner = state.tasks.ownerFilter === "all";
+    const group = function (title, rows, status) {
+      return '<section class="section-block task-overview-group"><h3>' + title + ' (' + rows.length + ')</h3>' +
+        (rows.length ? '<div class="task-overview-list">' + rows.map(function (task) { return renderTaskOverviewRow(task, status, showOwner); }).join("") + '</div>' :
+          '<p class="muted">Geen taken in deze categorie.</p>') + '</section>';
+    };
+    const archiveFilters = state.tasks.archiveFilters;
+    const classChoices = new Map();
+    const creatorChoices = new Map();
+    archived.forEach(function (task) {
+      asArray(task.classes).forEach(function (row) { classChoices.set(row.id, row.name); });
+      creatorChoices.set(task.created_by_teacher_id || "legacy", taskOwnerName(task));
+    });
+    const archiveRows = taskArchiveFilterRows(archived, archiveFilters);
+    const graceDays = Number(state.tasks.list[0] && state.tasks.list[0].auto_archive_grace_days);
+    const graceText = Number.isFinite(graceDays) ? graceDays + " dagen" : "tijdelijk";
+    return '<div class="page-heading"><div><p class="eyebrow">Beheersing</p><h2>Taken</h2><p class="muted">Actuele taken eerst. Afgelopen taken blijven ' + graceText + ' zichtbaar voor opvolging.</p></div><button class="button button-primary" type="button" data-action="new-task">Nieuwe taak</button></div>' +
+      (state.tasks.list.length && state.tasks.list.some(function (task) { return !task.lifecycle_status; }) ? '<p class="form-message">De slimme taaklevenscyclus is nog niet actief. Voer de aparte SQL-migratie uit; bestaande taken blijven beschikbaar.</p>' : '') +
       (state.tasks.message ? '<p class="form-message" role="alert">' + escapeHtml(state.tasks.message) + '</p>' : '') +
-      groups.map(function (group) {
-        const rows = state.tasks.list.filter(function (task) { return task.status === group; });
-        return '<section class="section-block"><h3>' + labels[group] + ' (' + rows.length + ')</h3>' +
-          (rows.length ? '<div class="task-list">' + rows.map(function (task) {
-            const classes = asArray(task.classes).map(function (row) { return row.name; }).join(", ");
-            const scopeLabel = task.mastery_strategy && task.mastery_strategy !== "item_mastery"
-              ? asArray(task.requirements).length + ' werkwoorddoelen' : asArray(task.item_ids).length + ' items';
-            return '<button class="task-card" type="button" data-action="open-task" data-id="' + escapeHtml(task.id) + '"><strong>' + escapeHtml(task.title) + '</strong><span>' + escapeHtml(classes || "Geen toegankelijke klassen") + '</span><span>' + scopeLabel + (task.completion_strategy === "rounds" ? ' · ' + task.required_rounds + ' rondes' : '') + ' · ' + Number(task.completed_count || 0) + '/' + Number(task.student_count || 0) + ' afgerond' + (task.due_at ? ' · ' + escapeHtml(formatDate(task.due_at, false)) : '') + '</span></button>';
-          }).join("") + '</div>' : '<p class="muted">Geen taken.</p>') + '</section>';
-      }).join("");
+      '<nav class="task-owner-tabs" aria-label="Welke taken"><button type="button" data-action="task-owner-filter" data-value="mine" aria-pressed="' + (state.tasks.ownerFilter === "mine") + '">Mijn taken</button>' +
+        '<button type="button" data-action="task-owner-filter" data-value="all" aria-pressed="' + showOwner + '">Alle taken</button></nav>' +
+      (!all.length && !showOwner ? '<p class="muted">Je hebt nog geen eigen taken. Via Alle taken kun je taken van collega’s raadplegen.</p>' : '') +
+      group("ACTIEF", active, "active") + group("RECENT AFGELOPEN", recent, "recent") + group("CONCEPTEN", drafts, "draft") +
+      '<details class="section-block task-archive"' + (state.tasks.archiveOpen ? ' open' : '') + '><summary>GEARCHIVEERD (' + archived.length + ')</summary>' +
+        '<form class="task-archive-filters" data-form="task-archive-filters"><label>Klas<select name="class_id"><option value="all">Alle klassen</option>' +
+          Array.from(classChoices).map(function (entry) { return '<option value="' + escapeHtml(entry[0]) + '"' + (archiveFilters.classId === entry[0] ? ' selected' : '') + '>' + escapeHtml(entry[1]) + '</option>'; }).join("") + '</select></label>' +
+        '<label>Maker<select name="creator_id"><option value="all">Alle makers</option>' +
+          Array.from(creatorChoices).map(function (entry) { return '<option value="' + escapeHtml(entry[0]) + '"' + (archiveFilters.creatorId === entry[0] ? ' selected' : '') + '>' + escapeHtml(entry[1]) + '</option>'; }).join("") + '</select></label>' +
+        '<label>Periode<select name="period"><option value="all">Alle periodes</option><option value="30"' + (archiveFilters.period === "30" ? ' selected' : '') + '>Laatste 30 dagen</option><option value="90"' + (archiveFilters.period === "90" ? ' selected' : '') + '>Laatste 90 dagen</option><option value="older"' + (archiveFilters.period === "older" ? ' selected' : '') + '>Ouder dan 90 dagen</option></select></label>' +
+        '<label>Titel<input name="query" type="search" value="' + escapeHtml(archiveFilters.query) + '" placeholder="Zoek op titel"></label><button class="small-button" type="submit">Filteren</button></form>' +
+        (archiveRows.length ? '<div class="task-overview-list">' + archiveRows.map(function (task) { return renderTaskOverviewRow(task, "archived", showOwner); }).join("") + '</div>' :
+          '<p class="muted">Geen gearchiveerde taken voor deze filters.</p>') + '</details>';
   }
 
   function renderTaskEditor() {
@@ -1301,7 +1408,8 @@
   function renderTaskDetail() {
     const task = state.tasks.list.find(function (row) { return row.id === state.tasks.selectedId; });
     if (!task) return renderTasksPage();
-    const editable = task.status !== "archived" && (currentTeacherIsAdmin() || task.created_by_teacher_id === state.user.id);
+    const canManage = currentTeacherIsAdmin() || task.created_by_teacher_id === state.user.id;
+    const editable = task.status !== "archived" && canManage;
     const rows = asArray(state.tasks.detail);
     const statusFor = function (row) {
       if (row.completed_at) return "completed";
@@ -1329,7 +1437,8 @@
           '<p class="muted">' + escapeHtml(report.exercise_direction) + ' · opgezocht: ' + (report.consulted ? 'ja' : 'nee') + ' · app ' + escapeHtml(report.app_version || 'onbekend') + '</p>' +
           '<div class="export-actions"><button class="button button-primary" type="button" data-action="resolve-item-report" data-id="' + escapeHtml(report.id) + '" data-decision="approved">Goedkeuren</button><button class="button button-secondary" type="button" data-action="resolve-item-report" data-id="' + escapeHtml(report.id) + '" data-decision="rejected">Terugsturen</button></div></article>';
       }).join('') + '</div>' : '<p class="muted">Geen meldingen die op beoordeling wachten.</p>') + '</section>' : '';
-    return '<div class="page-heading"><div><p class="eyebrow">Taak · ' + escapeHtml(task.status) + '</p><h2>' + escapeHtml(task.title) + '</h2><p class="muted">' + (verbTask ? asArray(task.requirements).length + ' werkwoorddoelen' : asArray(task.item_ids).length + ' items') + ' · ' + (task.completion_strategy === "rounds" ? task.required_rounds + ' rondes' : 'doel ' + task.target_acquired_percentage + '%') + ' · ' + escapeHtml(task.due_at ? formatDate(task.due_at) : "Geen deadline") + '</p></div><div class="export-actions"><button class="button button-secondary" type="button" data-action="view-tasks">Terug</button><button class="button button-secondary" type="button" data-action="export-task">CSV</button>' + (editable ? '<button class="button button-primary" type="button" data-action="edit-task">Bewerken</button><button class="button button-secondary" type="button" data-action="archive-task">Archiveren</button>' : '') + '</div></div>' +
+    return '<div class="page-heading"><div><p class="eyebrow">Taak · ' + escapeHtml(taskLifecycle(task) === "recent" ? "Recent afgelopen" : taskLifecycle(task) === "archived" ? "Gearchiveerd" : taskLifecycle(task) === "draft" ? "Concept" : "Actief") + '</p><h2>' + escapeHtml(task.title) + '</h2><p class="muted">' + (verbTask ? asArray(task.requirements).length + ' werkwoorddoelen' : asArray(task.item_ids).length + ' items') + ' · ' + (task.completion_strategy === "rounds" ? task.required_rounds + ' rondes' : 'doel ' + task.target_acquired_percentage + '%') + ' · ' + escapeHtml(task.due_at ? formatDate(task.due_at) : "Geen deadline") + '</p></div><div class="export-actions"><button class="button button-secondary" type="button" data-action="view-tasks">Terug</button><button class="button button-secondary" type="button" data-action="export-task">CSV</button>' + (editable ? '<button class="button button-primary" type="button" data-action="edit-task">Bewerken</button>' + (task.status === "published" ? '<button class="button button-secondary" type="button" data-action="archive-task">Archiveren</button>' : '') : task.status === "archived" && canManage ? '<button class="button button-primary" type="button" data-action="restore-task">Herstellen</button>' : '') + '</div></div>' +
+      (task.status === "archived" && canManage && taskLifecycle(Object.assign({}, task, { status: "published" }), Date.now()) === "archived" ? '<p class="muted">Na herstel blijft deze taak wegens de oorspronkelijke deadline in het archief. Pas de deadline daarna aan als je haar opnieuw actief wilt maken.</p>' : '') +
       (task.instructions ? '<p>' + escapeHtml(task.instructions) + '</p>' : '') +
       '<div class="task-summary"><span><strong>' + completedCount + '/' + rows.length + '</strong> afgerond</span><span><strong>' + startedCount + '</strong> bezig</span><span><strong>' + (rows.length - completedCount - startedCount) + '</strong> niet gestart</span><span><strong>' + averageMastery + '%</strong> gemiddelde beheersing</span></div>' + reportSection +
       '<label class="task-filter"><span>Status</span><select id="taskStatusFilter"><option value="all"' + (state.tasks.filter === "all" ? ' selected' : '') + '>Alle</option>' + Object.entries(statuses).map(function (entry) { return '<option value="' + entry[0] + '"' + (state.tasks.filter === entry[0] ? ' selected' : '') + '>' + entry[1] + '</option>'; }).join("") + '</select></label>' +
@@ -1449,7 +1558,9 @@
     state.studentVerbGoalsError = false;
     state.management = { loaded: false, classes: [], students: [], selectedClassId: null, studentStatus: "active", generatedCode: "", createdStudents: [], message: "", messageIsError: false };
     state.teacherAdmin = { loaded: false, teachers: [], assignments: [], classes: [], editingTeacherId: null, message: "", messageIsError: false };
-    state.tasks = { loaded: false, list: [], detail: [], selectedId: null, draft: null, filter: "all", message: "", error: false };
+    state.tasks = { loaded: false, list: [], detail: [], reports: [], selectedId: null, draft: null, filter: "all",
+      ownerFilter: "mine", archiveOpen: false, archiveFilters: { classId: "all", creatorId: "all", period: "all", query: "" },
+      message: "", error: false };
     state.route = { view: "dashboard", classId: null, studentId: null };
     document.querySelector("#authView").hidden = false;
     document.querySelector("#dashboardView").hidden = true;
@@ -1494,7 +1605,9 @@
       state.analyticsLoaded = false;
       state.studentVerbGoals = Object.create(null);
       state.studentVerbGoalsError = false;
-      state.tasks = { loaded: false, list: [], detail: [], selectedId: null, draft: null, filter: "all", message: "", error: false };
+      state.tasks = { loaded: false, list: [], detail: [], reports: [], selectedId: null, draft: null, filter: "all",
+        ownerFilter: "mine", archiveOpen: false, archiveFilters: { classId: "all", creatorId: "all", period: "all", query: "" },
+        message: "", error: false };
       state.management = { loaded: false, classes: [], students: [], selectedClassId: null, studentStatus: "active", generatedCode: "", createdStudents: [], message: "", messageIsError: false };
       state.teacherAdmin = { loaded: false, teachers: [], assignments: [], classes: [], editingTeacherId: null, message: "", messageIsError: false };
       state.filters.classId = "all";
@@ -1755,6 +1868,16 @@
     const form = event.target.closest("form[data-form]");
     if (!form) return;
     if (form.dataset.form === "task-editor") return saveTask(event, form);
+    if (form.dataset.form === "task-archive-filters") {
+      event.preventDefault();
+      const values = new FormData(form);
+      state.tasks.archiveFilters = { classId: String(values.get("class_id") || "all"),
+        creatorId: String(values.get("creator_id") || "all"), period: String(values.get("period") || "all"),
+        query: String(values.get("query") || "").trim().slice(0, 160) };
+      state.tasks.archiveOpen = true;
+      renderCurrent();
+      return;
+    }
     event.preventDefault();
     const submit = form.querySelector('button[type="submit"]');
     const values = new FormData(form);
@@ -1908,8 +2031,16 @@
       return;
     }
     if (action === "view-tasks") {
-      await openTasks(false);
+      await openTasks(true);
       window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+    if (action === "task-owner-filter") {
+      if (target.dataset.value !== "mine" && target.dataset.value !== "all") return;
+      state.tasks.ownerFilter = target.dataset.value;
+      state.tasks.archiveOpen = false;
+      state.tasks.archiveFilters = { classId: "all", creatorId: "all", period: "all", query: "" };
+      renderCurrent();
       return;
     }
     if (action === "new-task") {
@@ -1968,8 +2099,10 @@
     }
     if (action === "archive-task") {
       const task = state.tasks.list.find(function (row) { return row.id === state.tasks.selectedId; });
-      if (!task || !(currentTeacherIsAdmin() || task.created_by_teacher_id === state.user.id)) return;
-      if (!window.confirm("Deze taak archiveren? Historische voltooiingen blijven bewaard.")) return;
+      if (!task || task.status !== "published" || !(currentTeacherIsAdmin() || task.created_by_teacher_id === state.user.id)) return;
+      const beforeDeadline = !task.due_at || new Date(task.due_at).getTime() > Date.now();
+      if (!window.confirm(beforeDeadline ? "Deze taak vóór de deadline archiveren? Leerlingen zien haar daarna niet meer als actieve taak. Historische resultaten blijven bewaard." :
+        "Deze taak archiveren? Historische voltooiingen en resultaten blijven bewaard.")) return;
       const payload = { id: task.id, title: task.title, instructions: task.instructions, due_at: task.due_at,
         target_acquired_percentage: task.target_acquired_percentage, mastery_strategy: task.mastery_strategy || "item_mastery",
         completion_strategy: task.completion_strategy, required_rounds: task.required_rounds,
@@ -1978,6 +2111,17 @@
       const result = await state.client.rpc("save_assignment", { p_payload: payload });
       if (result.error) { state.tasks.message = "Archiveren mislukt."; return renderCurrent(); }
       return openTasks(true);
+    }
+    if (action === "restore-task") {
+      const task = state.tasks.list.find(function (row) { return row.id === state.tasks.selectedId; });
+      if (!task || task.status !== "archived" || !(currentTeacherIsAdmin() || task.created_by_teacher_id === state.user.id)) return;
+      const remainsArchived = taskLifecycle(Object.assign({}, task, { status: "published" }), Date.now()) === "archived";
+      if (!window.confirm(remainsArchived ? "Herstellen zonder de deadline te wijzigen? Deze taak blijft wegens de oude deadline in het archief totdat je de deadline aanpast." :
+        "Deze taak opnieuw publiceren met dezelfde deadline? Historische resultaten blijven behouden.")) return;
+      const result = await state.client.rpc("restore_assignment", { p_assignment_id: task.id });
+      if (result.error) { state.tasks.message = "Herstellen mislukt. Controleer je rechten en of de lifecycle-migratie is uitgevoerd."; return renderCurrent(); }
+      await openTasks(true);
+      return openTaskDetail(task.id);
     }
     if (action === "export-task") {
       const task = state.tasks.list.find(function (row) { return row.id === state.tasks.selectedId; });
@@ -2348,7 +2492,12 @@
     accessColumns: ACCESS_COLUMNS
   });
 
-  if (window.MON_PARCOURS_TEACHER_TEST) window.MonParcoursTeacherTestState = state;
+  if (window.MON_PARCOURS_TEACHER_TEST) {
+    window.MonParcoursTeacherTestState = state;
+    window.MonParcoursTeacherTaskTest = Object.freeze({ taskLifecycle: taskLifecycle,
+      taskDeadlineLabel: taskDeadlineLabel, taskArchiveFilterRows: taskArchiveFilterRows,
+      renderTasksPage: renderTasksPage, renderTaskDetail: renderTaskDetail });
+  }
 
   if (!window.MON_PARCOURS_TEACHER_TEST) {
     if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);

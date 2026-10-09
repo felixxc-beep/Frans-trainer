@@ -32,7 +32,7 @@ assert.match(teacher, /state\.tasks\.reports = reportResult\.error \? \[\] : asA
 assert.match(teacher, /resolve_assignment_item_report", \{[\s\S]*p_report_id: id, p_decision: decision/);
 assert.match(teacher, /Probleemmeldingen/);
 assert.match(teacher, /data-action="resolve-item-report"/);
-assert.match(html, /teacher\.js\?v=20261009-2/);
+assert.match(html, /teacher\.js\?v=20261009-3/);
 assert.match(app, /Signaler un problème/);
 assert.match(app, /Terminé pour toi/);
 assert.match(app, /À refaire/);
