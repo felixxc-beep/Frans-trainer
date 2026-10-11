@@ -7,6 +7,8 @@ const rounds = require("../task-rounds.js");
 const mastery = require("../mastery.js");
 const assignments = require("../assignments.js");
 const verbMastery = require("../verb-mastery.js");
+const variantEngine = require("../exercise-variants.js");
+const variantBank = JSON.parse(fs.readFileSync("data/exercise-variants.json", "utf8"));
 const storage = new Map();
 const sent = [];
 const reported = [];
@@ -29,9 +31,11 @@ const document = {
 };
 const context = vm.createContext({ console, document, setTimeout, clearTimeout, structuredClone,
   localStorage: { getItem(key) { return storage.get(key) || null; }, setItem(key, value) { storage.set(key, value); }, removeItem(key) { storage.delete(key); } },
-  fetch: async () => ({ ok: true, json: async () => structuredClone(course) }),
+  fetch: async (url) => ({ ok: true, json: async () =>
+    structuredClone(url.includes("exercise-variants") ? variantBank : course) }),
   window: { MonParcoursTaskRounds: rounds, MonParcoursMastery: mastery, MonParcoursAssignments: assignments,
-    MonParcoursVerbMastery: verbMastery, addEventListener() {}, scrollTo() {},
+    MonParcoursVerbMastery: verbMastery, MonParcoursExerciseVariants: variantEngine,
+    addEventListener() {}, scrollTo() {},
     StudentIdentity: { getCurrentStudentIdentity() { return { provider: "school_email", subject: "student-1", verified: true }; },
       getSyncCredential() { return "token"; } },
     MonParcoursSync: { createId() { return "00000000-0000-4000-8000-" + String(++serial).padStart(12, "0"); },
@@ -159,6 +163,18 @@ setImmediate(() => {
   assert.equal(run('nearCorrectHint("banane", { item: state.data.trajectories.flatMap(t => t.items).find(i => i.id === "uf1-item-000025"), exerciseKey: "vocab-nl-fr", answers: ["le hobby"] })'), null,
     "sterk afwijkend antwoord krijgt geen misleidende hint");
   assert.equal(run('nearCorrectHint("le hobby", { item: state.data.trajectories.flatMap(t => t.items).find(i => i.id === "uf1-item-000025"), exerciseKey: "vocab-nl-fr", answers: ["le hobby"] })'), null);
+  const salle = run('buildQuestions([state.data.trajectories.flatMap(t => t.items).find(i => i.id === "uf1-item-000077")], "vocab-nl-fr")[0]');
+  assert.deepEqual(Array.from(salle.answers), ["la salle", "la salle de danse", "la salle de sport"]);
+  for (const answer of salle.answers) assert.equal(run('isCorrect(' + JSON.stringify(answer) + ', ' + JSON.stringify(salle.answers) + ')'), true,
+    "uf1-item-000077 accepts each exact course variant");
+  assert.equal(run('isCorrect("la salle de sport\u200b", ' + JSON.stringify(salle.answers) + ')'), true,
+    "invisible copy/paste marks cannot falsely reject an otherwise exact answer");
+  assert.equal(run('isCorrect("\u200ela salle de sport", ' + JSON.stringify(salle.answers) + ')'), true);
+  assert.equal(run('isCorrect("le salle de sport", ' + JSON.stringify(salle.answers) + ')'), false);
+  const trainer = run('state.data.trajectories.flatMap(t => t.items).find(i => i.id === "uf1-item-000122")');
+  context.trainer = trainer;
+  assert.deepEqual(Array.from(run('buildQuestions([trainer], "verb-nl-inf")[0].answers')), ["trainer", "traîner"]);
+  assert.equal(run('buildQuestions([trainer], "verb-nl-conj").some(q => q.answers.includes("tu traînes"))'), true);
   const reportTaskId = "00000000-0000-4000-8000-000000000098";
   run('state.assignments.items.push({ id: "' + reportTaskId + '", title: "Meldingstaak", status: "published", item_ids: [taskIds[0]], required_rounds: 1, completion_strategy: "rounds", mastery_strategy: "item_mastery" })');
   run('launchAssignment("' + reportTaskId + '")');
@@ -167,11 +183,20 @@ setImmediate(() => {
   run('nextQuestion()');
   run('submitAnswer("tweede fout")');
   assert.match(feedback.innerHTML, /report-round-item/, "na twee fouten is melden beschikbaar");
+  run('nextQuestion()');
+  run('submitAnswer("derde fout")');
+  const reportSession = run('state.session.client_session_id');
+  run('state.session = null; restoreActiveSession()');
+  assert.equal(run('state.session.client_session_id'), reportSession, "refresh houdt dezelfde sessie-ID");
+  assert.equal(run('roundsForAssignment(state.assignments.items[1])[0].items[taskIds[0]].attempt_history.length'), 3,
+    "alle getypte pogingen overleven een refresh");
+  run('submitAnswer("vierde fout")');
   run('reportRoundItem()');
   assert.equal(reported.length, 1);
-  assert.equal(reported[0].report.submitted_answers.length, 2);
+  assert.deepEqual(Array.from(reported[0].report.submitted_answers),
+    ["eerste fout", "tweede fout", "derde fout", "vierde fout"]);
   assert.equal(reported[0].report.item_id, ids[0]);
-  assert.equal(reported[0].report.app_version, "20261009-4");
+  assert.equal(reported[0].report.app_version, vm.runInContext("APP_VERSION", context));
   run('nextQuestion()');
   assert.equal(run('assignmentProgress(state.assignments.items[1]).status'), "pending_review");
   run('renderHome()');
@@ -182,6 +207,93 @@ setImmediate(() => {
   run('mergeAssignmentRounds(state.assignments.items[1])');
   assert.equal(run('assignmentProgress(state.assignments.items[1]).status'), "in_progress");
   assert.equal(run('roundsForAssignment(state.assignments.items[1])[0].items[taskIds[0]].returned_for_retry'), true);
+  run(`{
+    const ids42 = state.data.trajectories.flatMap(t => t.items).filter(i => i.type === "vocabulary").slice(0, 42).map(i => i.id);
+    const task = { id: "00000000-0000-4000-8000-000000000097", title: "Bestaande taak",
+      item_ids: ids42, required_rounds: 3, completion_strategy: "rounds", mastery_strategy: "item_mastery" };
+    state.assignments.items.push(task);
+    const round = window.MonParcoursTaskRounds.createRound(task, []);
+    ids42.slice(0, 9).forEach(id => window.MonParcoursTaskRounds.markAttempt(round, id, true, "2026-10-01T12:00:00Z"));
+    saveAssignmentRounds(task, [round]);
+    task.rounds = structuredClone(roundsForAssignment(task));
+    mergeAssignmentRounds(task);
+    if (assignmentProgress(task).rounds.done !== 9 || assignmentProgress(task).rounds.selected !== 42)
+      throw new Error("9/42 changed during merge");
+    ids42.slice(9, 35).forEach(id => window.MonParcoursTaskRounds.markAttempt(round, id, true, "2026-10-02T12:00:00Z"));
+    saveAssignmentRounds(task, [round]);
+    task.rounds = structuredClone(roundsForAssignment(task));
+    mergeAssignmentRounds(task);
+    if (assignmentProgress(task).rounds.done !== 35 || assignmentProgress(task).rounds.selected !== 42)
+      throw new Error("35/42 changed during merge");
+  }`);
+  const previousTask = run('state.assignments.items.find(a => a.id === "00000000-0000-4000-8000-000000000097")');
+  assert.equal(run('assignmentProgress(state.assignments.items.find(a => a.id === "00000000-0000-4000-8000-000000000097")).rounds.done'), 35);
+  assert.equal(previousTask.item_ids.length, 42, "permanente itemselectie blijft exact bestaan");
+  const sentence = variantBank.variants.find(function (variant) {
+    return variant.kind === "revision" && variant.scoring === "integrative" &&
+      variant.targets.length === 1;
+  });
+  assert.ok(sentence, "source-backed full sentence exists");
+  context.sentenceId = sentence.id;
+  context.sentenceItemId = sentence.targets[0];
+  run(`{
+    state.variantBank = structuredClone(${JSON.stringify(variantBank)});
+    const extras = state.data.trajectories.flatMap(t => t.items).filter(i => i.type === "vocabulary" && i.id !== sentenceItemId).slice(0, 2);
+    state.assignments.items.push({ id: "00000000-0000-4000-8000-000000000096", title: "Zinnentaak",
+      item_ids: [sentenceItemId, ...extras.map(i => i.id)], required_rounds: 2,
+      include_integrative_sentences: true, completion_strategy: "rounds", mastery_strategy: "item_mastery" });
+  }`);
+  run('launchAssignment("00000000-0000-4000-8000-000000000096")');
+  assert.equal(run('state.session.questions[0].variantId'), sentence.id,
+    "opt-in rondetaak gebruikt de brongebonden volledige zin");
+  assert.equal(run('state.session.questions[0].exerciseKey'), "full-sentence-nl-fr");
+  const masteryBeforeSentence = run('state.mastery.localAttempts.length');
+  run('submitAnswer("geen juiste volledige zin")');
+  assert.equal(run('state.mastery.localAttempts.length'), masteryBeforeSentence,
+    "foute volledige zin geeft geen blanket negative mastery");
+  assert.equal(run('state.session.question_submissions[0].item_id'), sentence.targets[0]);
+  assert.doesNotMatch(feedback.innerHTML, new RegExp(sentence.accepted_answers[0].replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+  run('nextQuestion()');
+  assert.notEqual(run('state.session.questions[state.session.index].variantId'), sentence.id,
+    "foute zin komt niet meteen opnieuw");
+  run('state.session.index = state.session.questions.findIndex((q, i) => i > 0 && q.variantId === sentenceId)');
+  run('submitAnswer(state.session.questions[state.session.index].answers[0])');
+  assert.equal(run('state.session.sync_attempts.some(a => a.was_correct && a.legacy_item_id === sentenceId)'), true,
+    "volledig juiste zin geeft positieve evidence aan het gekoppelde doel");
+  run(`{
+    state.assignments.items.push({ id: "00000000-0000-4000-8000-000000000095", title: "Twee leerdoelen",
+      item_ids: ["uf1-item-000076", "uf1-item-000068", taskIds[0]], required_rounds: 1,
+      include_integrative_sentences: true, completion_strategy: "rounds", mastery_strategy: "item_mastery" });
+  }`);
+  run('launchAssignment("00000000-0000-4000-8000-000000000095")');
+  assert.equal(run('state.session.questions[0].variantId'), "T1-REV-005");
+  run('submitAnswer(state.session.questions[0].answers[0])');
+  assert.equal(run('window.MonParcoursTaskRounds.progress(state.assignments.items.at(-1), roundsForAssignment(state.assignments.items.at(-1))).done'), 2,
+    "één volledig juiste bronzin voltooit beide expliciet gekoppelde ronde-items");
+  assert.deepEqual(Array.from(run('state.session.sync_attempts[0].equivalent_item_ids')),
+    ["uf1-item-000076", "uf1-item-000068"], "positieve evidence bereikt beide doelen");
+  run(`{
+    const task = { id: "00000000-0000-4000-8000-000000000094", title: "Teruggestuurde vroege ronde",
+      completed_at: "2026-10-08T12:00:00Z", item_ids: [taskIds[0]], required_rounds: 3,
+      completion_strategy: "rounds", mastery_strategy: "item_mastery" };
+    const first = window.MonParcoursTaskRounds.createRound(task, []);
+    window.MonParcoursTaskRounds.markAttempt(first, taskIds[0], true, "2026-10-08T10:00:00Z");
+    const second = window.MonParcoursTaskRounds.createRound(task, [first]);
+    window.MonParcoursTaskRounds.markAttempt(second, taskIds[0], true, "2026-10-08T11:00:00Z");
+    const third = window.MonParcoursTaskRounds.createRound(task, [first, second]);
+    saveAssignmentRounds(task, [first, second, third]);
+    task.rounds = structuredClone(roundsForAssignment(task));
+    task.reports = [{ round_number: 1, item_id: taskIds[0], status: "rejected",
+      resolved_at: "2026-10-09T12:00:00Z" }];
+    state.assignments.items.push(task);
+    mergeAssignmentRounds(task);
+  }`);
+  assert.equal(run('assignmentProgress(state.assignments.items.at(-1)).rounds.round'), 1,
+    "terugsturen heropent een oudere ronde, zelfs nadat de leerling ronde 3 bereikte");
+  assert.equal(run('assignmentProgress(state.assignments.items.at(-1)).status'), "in_progress",
+    "verouderde completed_at mag een teruggestuurde taak niet als klaar tonen");
+  assert.equal(run('roundsForAssignment(state.assignments.items.at(-1)).length'), 3,
+    "latere rondes worden niet verwijderd of opnieuw gegenereerd");
   run(`{
     const makeTask = (id, title, due_at) => ({ id, title, due_at, status: "published", item_ids: [taskIds[0]],
       required_rounds: 1, completion_strategy: "rounds", mastery_strategy: "item_mastery" });

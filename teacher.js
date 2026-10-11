@@ -1131,6 +1131,7 @@
       completion_strategy: source && source.completion_strategy || (source && source.id ? "legacy_mastery" : "rounds"),
       required_rounds: source && source.required_rounds || 3,
       item_verb_exercise_key: source && source.item_verb_exercise_key || "verb-nl-conj",
+      include_integrative_sentences: Boolean(source && source.include_integrative_sentences),
       verb_item_ids: source && source.mastery_strategy && source.mastery_strategy !== "item_mastery" ? asArray(source.item_ids).map(String) : null,
       status: source && source.status || "draft",
       class_ids: asArray(source && source.class_ids).map(String),
@@ -1397,6 +1398,10 @@
           '<label><span>Doel: % ' + (draft.mastery_strategy === "verb_rule_mastery" ? "regelbeheersing" : "gekend") + '</span><input name="target_acquired_percentage" type="number" min="1" max="100" value="' + draft.target_acquired_percentage + '"></label>') + '</div>' +
         (draft.mastery_strategy === "item_mastery" && draft.completion_strategy === "rounds" ? '<p>1× = één volledige ronde · 2× = twee volledige rondes · 3× = twee volledige rondes + gerichte herhaling · 4× = twee volledige rondes + twee gerichte herhalingen.</p>' :
           '<div class="export-actions">' + [70,80,90,100].map(function (value) { return '<button class="small-button" type="button" data-action="task-target" data-value="' + value + '">' + value + '%</button>'; }).join("") + '</div><p>' + (draft.mastery_strategy === "item_mastery" ? "Bestaande legacy-taak: voltooiing blijft gebaseerd op het percentage gekend." : "Voltooiing volgt de bestaande werkwoorddoelen.") + '</p>') +
+        (draft.mastery_strategy === "item_mastery" && draft.completion_strategy === "rounds" ?
+          '<label class="task-sentence-option"><input type="checkbox" name="include_integrative_sentences"' +
+          (draft.include_integrative_sentences ? ' checked' : '') + (draft.status !== 'draft' ? ' disabled' : '') +
+          '> Gebruik volledige NL → FR-zinnen uit Révision waar een expliciet gekoppeld item beschikbaar is.</label>' : '') +
         (draft.mastery_strategy === "item_mastery" && draft.completion_strategy === "rounds" && selectedItems.some(function (item) { return item.type === "verb"; }) ?
           '<label><span>Werkwoordoefening</span><select name="item_verb_exercise_key"><option value="verb-nl-conj"' + (draft.item_verb_exercise_key === "verb-nl-conj" ? " selected" : "") + '>Nederlands → vervoeging</option><option value="verb-fr-conj"' + (draft.item_verb_exercise_key === "verb-fr-conj" ? " selected" : "") + '>Frans → vervoeging</option><option value="verb-nl-inf"' + (draft.item_verb_exercise_key === "verb-nl-inf" ? " selected" : "") + '>Nederlands → infinitief</option></select></label>' : '') +
         '<label><span>Instructies (optioneel)</span><textarea name="instructions" maxlength="1000">' + escapeHtml(draft.instructions) + '</textarea></label></fieldset>' +
@@ -1429,10 +1434,13 @@
       (state.tasks.message ? '<p class="task-report-message" role="status">' + escapeHtml(state.tasks.message) + '</p>' : '') +
       (reports.length ? '<div class="task-report-list">' + reports.map(function (report) {
         const courseItem = state.courseIndex[report.item_id];
-        const model = courseItem && (courseItem.fr || courseItem.infinitive || courseItem.answer) || '';
+        const model = report.exercise_direction === "full-sentence-nl-fr"
+          ? asArray(report.accepted_answers)[0] || ''
+          : courseItem && (courseItem.fr || courseItem.infinitive || courseItem.answer) || '';
         return '<article class="task-report-card"><div><strong>' + escapeHtml(report.student_name) + '</strong> · ' + escapeHtml(report.class_name) +
-          ' · ronde ' + Number(report.round_number) + '<p class="muted">' + escapeHtml(formatDate(report.created_at)) + ' · ' + escapeHtml(report.item_id) + '</p></div>' +
-          '<p><b>Prompt:</b> ' + escapeHtml(report.prompt) + '</p><p><b>Getypt:</b> ' + asArray(report.submitted_answers).map(escapeHtml).join(' / ') + '</p>' +
+          ' · ronde ' + Number(report.round_number) + '<p class="muted">' + escapeHtml(task.title) + ' · ' + escapeHtml(formatDate(report.created_at)) + ' · ' + escapeHtml(report.item_id) + '</p></div>' +
+          '<p><b>Prompt:</b> ' + escapeHtml(report.prompt) + '</p><div><b>Als fout beoordeelde invoeren (oudste → nieuwste):</b><ol>' +
+          asArray(report.submitted_answers).map(function (answer) { return '<li>' + escapeHtml(answer) + '</li>'; }).join('') + '</ol></div>' +
           '<p><b>Verwacht:</b> ' + asArray(report.accepted_answers).map(escapeHtml).join(' / ') + (model ? ' · model: ' + escapeHtml(model) : '') + '</p>' +
           '<p class="muted">' + escapeHtml(report.exercise_direction) + ' · opgezocht: ' + (report.consulted ? 'ja' : 'nee') + ' · app ' + escapeHtml(report.app_version || 'onbekend') + '</p>' +
           '<div class="export-actions"><button class="button button-primary" type="button" data-action="resolve-item-report" data-id="' + escapeHtml(report.id) + '" data-decision="approved">Goedkeuren</button><button class="button button-secondary" type="button" data-action="resolve-item-report" data-id="' + escapeHtml(report.id) + '" data-decision="rejected">Terugsturen</button></div></article>';
@@ -1785,6 +1793,10 @@
       if (field) draft[name] = field.value;
     });
     draft.class_ids = Array.from(form.querySelectorAll('input[name="class_ids"]:checked')).map(function (field) { return field.value; });
+    if (draft.status === "draft") {
+      const sentences = form.elements.namedItem("include_integrative_sentences");
+      draft.include_integrative_sentences = Boolean(sentences && sentences.checked);
+    }
     if (form.querySelector && form.querySelector('input[name="verb_item_ids"]')) draft.verb_item_ids = Array.from(form.querySelectorAll('input[name="verb_item_ids"]:checked')).map(function (field) { return field.value; });
   }
 
@@ -1822,6 +1834,8 @@
         draft.mastery_strategy === "item_mastery" ? "rounds" : draft.mastery_strategy,
       required_rounds: Number(draft.required_rounds || 3),
       item_verb_exercise_key: draft.item_verb_exercise_key,
+      include_integrative_sentences: draft.mastery_strategy === "item_mastery" &&
+        draft.completion_strategy === "rounds" && draft.include_integrative_sentences,
       requirements: taskRequirements(draft, items),
       class_ids: draft.class_ids, item_ids: items.map(function (item) { return item.id; }), status: status
     };

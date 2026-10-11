@@ -77,8 +77,13 @@
     let sent = 0;
     let newerRevisionPending = false;
     let failed = false;
+    let curatedUnsupported = false;
     try {
-      const candidates = readQueue().filter(function (entry) { return canSyncEntry(entry, identity); });
+      const candidates = readQueue().filter(function (entry) { return canSyncEntry(entry, identity); })
+        .sort(function (left, right) {
+          const curated = function (entry) { return entry.session && /^curated-/.test(entry.session.exercise_key || ""); };
+          return Number(curated(left)) - Number(curated(right));
+        });
       for (const candidate of candidates) {
         try {
           if (candidate.kind === "item_report") {
@@ -86,6 +91,15 @@
               p_identity_token: credential, p_payload: candidate.report
             });
           } else {
+            if (/^curated-/.test(candidate.session.exercise_key || "")) {
+              const version = await window.MonParcoursSupabase.rpc("curated_sync_version", {});
+              if (version !== 1) throw new Error("Curated sync migration is not available");
+            }
+            if (candidate.session.assignment_round_number &&
+                (candidate.session.question_submissions || []).length) {
+              const version = await window.MonParcoursSupabase.rpc("assignment_sentence_sync_version", {});
+              if (version !== 1) throw new Error("Assignment sentence sync migration is not available");
+            }
             await window.MonParcoursSupabase.rpc("ingest_practice_bundle", {
               p_identity_token: credential,
               p_session: candidate.session,
@@ -100,6 +114,9 @@
           } else if (match >= 0) newerRevisionPending = true;
           sent += 1;
         } catch (error) {
+          if (/^curated-/.test(candidate.session && candidate.session.exercise_key || "") &&
+              /curated_sync_version|Curated sync migration/i.test(String(error && error.message || error)))
+            curatedUnsupported = true;
           const latest = readQueue();
           const index = latest.findIndex(function (entry) { return sameEntry(candidate, entry); });
           if (index >= 0 && latest[index].revision === candidate.revision) {
@@ -117,7 +134,7 @@
     if (sent && window.dispatchEvent && typeof window.CustomEvent === "function") {
       window.dispatchEvent(new CustomEvent("monparcours:sync-complete", { detail: { sent: sent } }));
     }
-    if (newerRevisionPending || !failed && sent && readQueue().some(function (entry) { return canSyncEntry(entry, identity); })) scheduleFlush();
+    if (!curatedUnsupported && (newerRevisionPending || !failed && sent && readQueue().some(function (entry) { return canSyncEntry(entry, identity); }))) scheduleFlush();
     return { sent: sent, pending: readQueue().length };
   }
 

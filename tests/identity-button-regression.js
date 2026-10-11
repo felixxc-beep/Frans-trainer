@@ -9,7 +9,7 @@ const storage = new Map([
   ["monParcoursProgressV1", JSON.stringify({ attempted: 7, correct: 5, wrong: 2, items: {}, settings: { strictAccents: true, sessionSize: 20 } })],
   ["monParcoursSyncQueueV1", JSON.stringify([{ client_session_id: "pending-session" }])]
 ]);
-const documentListeners = { click: [], submit: [], change: [], input: [], visibilitychange: [] };
+const documentListeners = { click: [], submit: [], change: [], input: [], focusin: [], visibilitychange: [] };
 const buttonListeners = { click: [] };
 const appElement = { innerHTML: "", focus() {} };
 const strictToggle = { checked: true, disabled: false };

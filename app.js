@@ -1,4 +1,5 @@
-const DATA_URL = "./data/course.json?v=20261001-1";
+const DATA_URL = "./data/course.json?v=20261011-1";
+const VARIANT_DATA_URL = "./data/exercise-variants.json?v=20261011-1";
 const STORAGE_KEY = "monParcoursProgressV1";
 const ACTIVE_SESSION_KEY = "monParcoursActiveSessionV1";
 const MASTERY_ATTEMPTS_KEY = "monParcoursMasteryAttemptsV1";
@@ -7,7 +8,7 @@ const ASSIGNMENTS_CACHE_KEY = "monParcoursAssignmentsCacheV1";
 const VERB_EVIDENCE_KEY = "monParcoursVerbEvidenceV1";
 const VERB_SERVER_CACHE_KEY = "monParcoursVerbServerCacheV1";
 const TASK_ROUNDS_KEY = "monParcoursTaskRoundsV1";
-const APP_VERSION = "20261009-4";
+const APP_VERSION = "20261011-1";
 const INACTIVITY_TIMEOUT_MS = 60000;
 const MAX_DYNAMIC_NUMBER_ALL = 101;
 const ACCENTS = ["é", "è", "ê", "ë", "à", "â", "ç", "ù", "û", "ô", "î", "ï"];
@@ -25,6 +26,14 @@ const EXERCISES = {
   "number-nl-fr": { type: "number", label: "Cijfer → Frans", labelFr: "Nombre → français", short: "Getallen", shortFr: "Nombres" },
   "number-fr-nl": { type: "number", label: "Frans → cijfer", labelFr: "Français → nombre", short: "Getallen", shortFr: "Nombres" }
 };
+Object.assign(EXERCISES, {
+  "curated-context": { type: "curated", label: "In een zin", labelFr: "En contexte", short: "Context", shortFr: "Contexte" },
+  "curated-actes": { type: "curated", label: "Taalhandelingen", labelFr: "Actes de parole", short: "Zinnen", shortFr: "Phrases" },
+  "curated-conjugation": { type: "curated", label: "Werkwoorden in een zin", labelFr: "Verbes dans une phrase", short: "Werkwoorden", shortFr: "Verbes" },
+  "curated-grammar": { type: "curated", label: "Grammatica in een zin", labelFr: "Grammaire en contexte", short: "Grammatica", shortFr: "Grammaire" },
+  "curated-number": { type: "curated", label: "Getallen in context", labelFr: "Nombres en contexte", short: "Getallen", shortFr: "Nombres" },
+  "curated-revision": { type: "curated", label: "Alles door elkaar", labelFr: "Révision du trajet", short: "Herhaling", shortFr: "Révision" }
+});
 const TYPE_EXERCISES = {
   vocabulary: ["vocab-nl-fr", "vocab-fr-nl"],
   verb: ["verb-nl-inf", "verb-fr-nl", "verb-nl-conj", "verb-fr-conj", "verb-rule-recognition"],
@@ -35,6 +44,8 @@ const TYPE_EXERCISES = {
 
 const state = {
   data: null,
+  variantBank: { version: 1, variants: [] },
+  variantBankError: null,
   trajectoryIndex: 0,
   selectedUnitOrder: null,
   selectedScope: null,
@@ -60,6 +71,7 @@ const settingsDialog = document.querySelector("#settings-dialog");
 const identityDialog = document.querySelector("#identity-dialog");
 const identityButton = document.querySelector("#identityButton");
 let identityCompletionTimer = null;
+let activeAnswerInput = null;
 const strictToggle = document.querySelector("#strict-accents");
 strictToggle.checked = state.progress.settings.strictAccents;
 strictToggle.disabled = true;
@@ -68,6 +80,10 @@ document.addEventListener("click", handleClick);
 document.addEventListener("submit", handleSubmit);
 document.addEventListener("change", handleChange);
 document.addEventListener("input", handlePracticeActivity);
+document.addEventListener("focusin", function (event) {
+  if (event.target && (event.target.name === "answer" || /^gap-\d+$/.test(event.target.name || "")))
+    activeAnswerInput = event.target;
+});
 document.addEventListener("visibilitychange", handleVisibilityChange);
 if (window.addEventListener) window.addEventListener("pagehide", handlePageHide);
 if (window.addEventListener) window.addEventListener("monparcours:sync-complete", function () {
@@ -216,7 +232,11 @@ function handleSubmit(event) {
   }
   if (event.target.id === "answer-form") {
     event.preventDefault();
-    submitAnswer(new FormData(event.target).get("answer") || "");
+    const question = state.session && state.session.questions[state.session.index];
+    const formData = new FormData(event.target);
+    submitAnswer(question && question.variantScoring === "multi_gap"
+      ? question.gaps.map(function (_, index) { return formData.get("gap-" + index) || ""; })
+      : formData.get("answer") || "");
   }
 }
 
@@ -406,6 +426,7 @@ async function loadCourse() {
       });
     });
     state.data = data;
+    await loadVariantBank();
     invalidateMasteryRecords();
     if (!restoreActiveSession()) renderHome();
     refreshMasteryFromServer();
@@ -414,6 +435,79 @@ async function loadCourse() {
   } catch (error) {
     app.innerHTML = '<section class="error-card"><p class="eyebrow">' + uiText("Échec du chargement", "Laden mislukt") + '</p><h1>' + uiText("Le cours n'a pas pu être ouvert.", "De cursus kon niet worden geopend.") + '</h1><p>' + uiText("Vérifie ta connexion puis recharge la page.", "Controleer je verbinding en laad de pagina opnieuw.") + '</p><p>' + uiText("Ouvre cette application via un serveur web local.", "Open deze map via een lokale webserver; dubbelklikken op index.html is niet voldoende.") + '</p></section>';
   }
+}
+
+async function loadVariantBank() {
+  if (!window.MonParcoursExerciseVariants) return;
+  try {
+    const response = await fetch(VARIANT_DATA_URL);
+    if (!response.ok) throw new Error("Variant data could not be loaded (" + response.status + ")");
+    const bank = await response.json();
+    window.MonParcoursExerciseVariants.validateBank(bank, state.data);
+    state.variantBank = bank;
+    state.variantBankError = null;
+  } catch (error) {
+    state.variantBankError = error;
+    console.error("Curated exercise variants unavailable; legacy course remains usable.", error);
+  }
+}
+
+function curatedQuestions(variantIds) {
+  const engine = window.MonParcoursExerciseVariants;
+  if (!engine || !state.data) return [];
+  const selected = new Set(variantIds || []);
+  return state.variantBank.variants.filter(function (variant) { return selected.has(variant.id); })
+    .map(function (variant) { return engine.compileVariant(variant, state.data); });
+}
+
+function curatedVariantsForUnit(trajectory, unit) {
+  if (!trajectory || !unit) return [];
+  const unitItems = itemsForUnit(trajectory, unit);
+  const unitIds = new Set(unitItems.map(function (item) { return item.id; }));
+  const trajectoryIds = new Set(trajectory.items.map(function (item) { return item.id; }));
+  const unitIsRevision = /^Action/i.test(unit.top_category);
+  return (state.variantBank.variants || []).filter(function (variant) {
+    if (variant.trajectory !== trajectory.trajectory) return false;
+    if (variant.kind === "revision") return unitIsRevision;
+    if (unitIsRevision) return false;
+    const targets = variant.scoring === "multi_gap"
+      ? variant.gaps.flatMap(function (gap) { return gap.targets; }) : variant.targets;
+    const ids = targets.map(function (target) { return typeof target === "string" ? target : target.item_id; });
+    if (ids.some(function (id) { return unitIds.has(id); })) return true;
+    if (ids.some(function (id) { return trajectoryIds.has(id); })) return false;
+    return variant.kind === "context" || variant.kind === "actes" ? unit.top_category === "Atelier Parole" :
+      variant.kind === "conjugation" ? unit.top_category === "Atelier Verbes" :
+      variant.kind === "grammar" ? unit.top_category === "Atelier Grammaire" :
+      variant.kind === "number" ? unit.top_category === "Chiffres et lettres" : false;
+  });
+}
+
+function curatedVariantsForScope(exerciseKey, scopeOverride) {
+  if (!exerciseKey || !exerciseKey.startsWith("curated-")) return [];
+  const trajectory = currentTrajectory();
+  const unit = currentUnit();
+  const scope = scopeOverride || state.selectedScope || {};
+  if (!trajectory || !unit) return [];
+  const wanted = exerciseKey.slice("curated-".length);
+  const all = curatedVariantsForUnit(trajectory, unit).filter(function (variant) { return variant.kind === wanted; });
+  if (!scope.block && !scope.subsection && !scope.category && !scope.itemId) return all;
+  const scopeIds = new Set(itemsForScope(trajectory, unit, scope).map(function (item) { return item.id; }));
+  return all.filter(function (variant) {
+    const targets = variant.scoring === "multi_gap" ? variant.gaps.flatMap(function (gap) { return gap.targets; }) : variant.targets;
+    return targets.some(function (target) { return scopeIds.has(typeof target === "string" ? target : target.item_id); });
+  });
+}
+
+function curatedKeysForScope(scopeOverride) {
+  return ["context", "actes", "conjugation", "grammar", "number", "revision"]
+    .map(function (kind) { return "curated-" + kind; })
+    .filter(function (key) { return curatedVariantsForScope(key, scopeOverride).length > 0; });
+}
+
+function curatedCountForScope(scope) {
+  return curatedKeysForScope(scope).reduce(function (total, key) {
+    return total + curatedVariantsForScope(key, scope).length;
+  }, 0);
 }
 
 function renderHome() {
@@ -455,10 +549,11 @@ function renderHome() {
       '<div class="unit-list">' +
         trajectory.units.map(function (unit) {
           const count = exerciseItemCount(itemsForUnit(trajectory, unit).filter(isExerciseItem));
-          return '<button class="unit-card" type="button" data-action="select-unit" data-order="' + unit.order + '">' +
+          const curatedCount = curatedVariantsForUnit(trajectory, unit).length;
+          return '<button class="unit-card' + (/^Action/i.test(unit.top_category) ? ' tone-revision' : '') + '" type="button" data-action="select-unit" data-order="' + unit.order + '">' +
             '<span class="unit-order">' + unit.order + '</span>' +
             '<span class="unit-copy"><strong>' + contentIcon(contentTypeKey(unit.top_category)) + escapeHtml(unit.top_category) + '</strong><small>' + escapeHtml(unit.title) + '</small></span>' +
-            '<span class="unit-meta">' + (count ? count + ' ' + uiText("éléments", "items") : uiText("Information", "Cursusinfo")) + '<span class="unit-arrow" aria-hidden="true">→</span></span>' +
+            '<span class="unit-meta">' + (count ? count + ' ' + uiText("éléments", "items") : curatedCount ? curatedCount + ' ' + uiText("exercices", "oefeningen") : uiText("Information", "Cursusinfo")) + '<span class="unit-arrow" aria-hidden="true">→</span></span>' +
           '</button>';
         }).join("") +
       '</div>' +
@@ -554,11 +649,19 @@ function mergeAssignmentRounds(assignment) {
       const report = (assignment.reports || []).find(function (entry) {
         return entry.round_number === serverRound.number && entry.item_id === id;
       });
+      const rejected = report && report.status === "rejected";
+      const correctedAfterReturn = rejected && (remote && remote.completed_at && report.resolved_at &&
+        new Date(remote.completed_at) > new Date(report.resolved_at) ||
+        own && own.returned_for_retry && own.completed_at);
       existing.items[id] = { wrong_count: Math.max(Number(own && own.wrong_count || 0), Number(remote && remote.wrong_count || 0)),
         consulted: Boolean(own && own.consulted || remote && remote.consulted),
-        completed_at: report && report.status === "pending" || report && report.status === "rejected" ? null :
+        completed_at: report && report.status === "pending" || rejected && !correctedAfterReturn ? null :
           own && own.completed_at || remote && remote.completed_at || null,
-        reported_pending: report ? report.status === "pending" : Boolean(own && own.reported_pending) };
+        completion_kind: correctedAfterReturn ? "correct" : remote && remote.completion_kind || own && own.completion_kind || null,
+        reported_pending: report ? report.status === "pending" : Boolean(own && own.reported_pending),
+        returned_for_retry: Boolean(own && own.returned_for_retry),
+        wrong_since_return: own && own.wrong_since_return,
+        attempt_history: own && own.attempt_history || [] };
     });
   });
   (assignment.reports || []).forEach(function (report) {
@@ -566,9 +669,14 @@ function mergeAssignmentRounds(assignment) {
     const item = round && round.items[report.item_id];
     if (!item) return;
     item.reported_pending = report.status === "pending";
-    if (report.status === "pending" || report.status === "rejected") item.completed_at = null;
-    if (report.status === "rejected") item.returned_for_retry = true;
-    else item.returned_for_retry = false;
+    if (report.status === "pending") item.completed_at = null;
+    if (report.status === "rejected") {
+      if (!item.returned_for_retry) { item.wrong_since_return = 0; item.attempt_history = []; }
+      item.returned_for_retry = true;
+      if (item.completed_at && report.resolved_at && new Date(item.completed_at) > new Date(report.resolved_at))
+        item.completion_kind = "correct";
+      if (item.completion_kind !== "correct") item.completed_at = null;
+    } else item.returned_for_retry = false;
   });
   local.sort(function (left, right) { return left.number - right.number; });
   saveAssignmentRounds(assignment, local);
@@ -583,7 +691,7 @@ function assignmentProgress(assignment) {
       return total + Object.values(round.items || {}).filter(function (item) { return item.reported_pending; }).length;
     }, 0);
     progress.status = progress.pendingReports && progress.rounds.completed ? "pending_review" :
-      assignment.completed_at ? "completed" : progress.rounds.completed ? "completed" :
+      progress.rounds.completed ? "completed" :
       assignment.due_at && new Date(assignment.due_at) < new Date() ? "late" : savedRounds.length ? "in_progress" : "not_started";
   }
   return progress;
@@ -682,6 +790,7 @@ function assignmentShortProgress(progress) {
 // One quiet, fixed icon vocabulary for every student-facing content surface.
 function contentTypeKey(label, itemType) {
   const text = String(label || "").toLocaleLowerCase("fr");
+  if (/^action(?:\s|!|$)|révision|revision/.test(text)) return "revision";
   if (/expressions?/.test(text)) return "expressions";
   if (/actes de parole|se présenter|présenter quelqu/.test(text) || itemType === "phrase") return "speaking";
   if (/verbes?|être et avoir/.test(text) || itemType === "verb") return "verbs";
@@ -699,6 +808,7 @@ function contentIcon(kind) {
     grammar: '<rect x="3" y="4" width="7" height="7" rx="1"/><rect x="14" y="4" width="7" height="7" rx="1"/><rect x="8.5" y="15" width="7" height="6" rx="1"/><path d="M6.5 11v2h11v-2m-5.5 2v2"/>',
     speaking: '<path d="M3 5h12v9H8l-4 3V5Zm13 4h5v9h-4l-3 3v-5"/>',
     numbers: '<path d="M5 7h3v10m-3 0h6m3-8c0-1.2 1-2 2.5-2S19 8 19 9.5c0 3-5 4-5 7.5h6"/>',
+    revision: '<path d="M5 4h14v16H5zM8 8h8m-8 4h8m-8 4h5"/>',
     sounds: '<path d="M4 10h4l5-4v12l-5-4H4v-4Zm12-1c1.5 1 1.5 5 0 6m2-9c3 2 3 10 0 12"/>'
   };
   return '<svg class="content-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (paths[kind] || paths.vocabulary) + '</svg>';
@@ -810,7 +920,8 @@ function launchAssignment(id) {
     }
     const pendingIds = round.selected_item_ids.filter(function (itemId) { return !round.items[itemId].completed_at && !round.items[itemId].reported_pending; });
     const selected = allItems.filter(function (item) { return pendingIds.includes(item.id); });
-    const questions = taskQuestionsForItems(selected, "assignment-mixed", assignment.item_verb_exercise_key || "verb-nl-conj");
+    const questions = taskQuestionsForItems(selected, "assignment-mixed", assignment.item_verb_exercise_key || "verb-nl-conj",
+      assignment.include_integrative_sentences ? round.number : null);
     if (questions.length !== pendingIds.length) {
       app.innerHTML = '<section class="error-card"><h1>' + uiText("Ce devoir ne peut pas encore commencer.", "Deze taak kan nog niet starten.") +
         '</h1><p>' + uiText("Un élément du cours manque. Préviens ton professeur.", "Een cursusitem ontbreekt. Meld dit aan je leerkracht.") + '</p></section>';
@@ -908,15 +1019,18 @@ function renderUnit() {
   const unitItems = itemsForUnit(trajectory, unit);
   const exerciseItems = unitItems.filter(isExerciseItem);
   const exerciseCount = exerciseItems.length;
+  const curatedCount = curatedVariantsForUnit(trajectory, unit).length;
   const soundItems = unitItems.filter(function (item) { return item.type === "sound_rule"; });
   const sectionsHtml = unit.study_sections.length
     ? unit.study_sections.map(function (section) {
         const blockItems = unitItems.filter(function (item) { return item.block === section.title && isExerciseItem(item); });
         const blockCount = blockItems.length;
+        const blockCuratedCount = curatedCountForScope({ block: section.title });
         const blockDuplicatesUnit = samePermanentItemSet(blockItems, exerciseItems);
         return '<article class="structure-card">' +
           '<div class="structure-heading"><div><small>' + uiText("Bloc d'étude", "Studieblok") + '</small><h3>' + escapeHtml(section.title) + '</h3></div>' +
-          (blockCount && !blockDuplicatesUnit ? compactScopeButton(unit, section.title, "", section.title, blockCount) : "") + '</div>' +
+          ((blockCount && !blockDuplicatesUnit || blockCuratedCount && !blockCount)
+            ? compactScopeButton(unit, section.title, "", section.title, blockCount + blockCuratedCount) : "") + '</div>' +
           '<div class="subsection-list">' +
             section.subsections.map(function (subsection) {
               const subsectionScope = {
@@ -925,6 +1039,7 @@ function renderUnit() {
               };
               const subset = exerciseItemsForScope(trajectory, unit, subsectionScope);
               const subsetCount = subset.length;
+              const curatedSubsetCount = curatedCountForScope(subsectionScope);
               const categoryChoices = subsection.content_types.map(function (contentType) {
                 const categoryValue = isUmbrellaContentType(contentType) ? "" : contentType;
                 const categoryScope = {
@@ -946,21 +1061,22 @@ function renderUnit() {
                 ? renderVerbScopeGroups(unit, section.title, subsection.title, subset) : "";
               const categoryGrid = verbGrid || (categoryChoices.length
                 ? '<div class="scope-choice-grid">' + categoryChoices.join("") + '</div>'
-                : (subsetCount ? '<div class="scope-choice-grid">' + scopeChoiceCard(unit, section.title, subsection.title, subsection.title, subsetCount, "") + '</div>' : '<span class="source-only">' + uiText("Informations du cours", "Alleen cursusinfo") + '</span>'));
+                : (subsetCount || curatedSubsetCount ? '<div class="scope-choice-grid">' + scopeChoiceCard(unit, section.title, subsection.title, subsection.title, subsetCount + curatedSubsetCount, "") + '</div>' : '<span class="source-only">' + uiText("Informations du cours", "Alleen cursusinfo") + '</span>'));
               return '<section class="subsection-row"><div class="subsection-title"><div><h4>' + escapeHtml(subsection.title) + '</h4></div>' +
                 (subsetCount && categoryChoices.length > 1 ? compactScopeButton(unit, section.title, subsection.title, subsection.title, subsetCount) : "") +
                 '</div>' + categoryGrid + '</section>';
             }).join("") +
           '</div></article>';
       }).join("")
-    : '<article class="empty-panel"><p class="eyebrow">' + uiText("Structure du cours", "Cursusstructuur") + '</p><h3>' + uiText("Aucun exercice dans la source", "Geen oefenblokken in de bron") + '</h3><p>' + uiText("Cette partie reste visible parce qu'elle appartient au cours.", "Dit onderdeel blijft zichtbaar omdat het in de cursus staat. De JSON bevat hier geen oefenitems voor.") + '</p></article>';
+    : curatedCount ? '<article class="structure-card"><div class="structure-heading"><div><small>' + uiText("Exercices du trajet", "Oefeningen van het Trajet") + '</small><h3>' + escapeHtml(unit.title) + '</h3></div>' + compactScopeButton(unit, "", "", unit.title, curatedCount) + '</div></article>'
+      : '<article class="empty-panel"><p class="eyebrow">' + uiText("Structure du cours", "Cursusstructuur") + '</p><h3>' + uiText("Aucun exercice dans la source", "Geen oefenblokken in de bron") + '</h3><p>' + uiText("Cette partie reste visible parce qu'elle appartient au cours.", "Dit onderdeel blijft zichtbaar omdat het in de cursus staat. De JSON bevat hier geen oefenitems voor.") + '</p></article>';
 
   app.innerHTML =
     breadcrumbHtml([{ label: trajectory.trajectory, action: "home" }]) +
     journeySteps(3) +
     '<section class="unit-hero"><div><p class="eyebrow unit-kind">' + contentIcon(contentTypeKey(unit.top_category)) + escapeHtml(unit.top_category) + '</p><h1>' + escapeHtml(unit.title) + '</h1>' +
-    '<p class="lede">' + exerciseCount + ' ' + uiText("éléments d’exercice", "oefenitems") + '</p></div>' +
-    (exerciseCount ? compactScopeButton(unit, "", "", unit.title, exerciseCount) : "") + '</section>' +
+    '<p class="lede">' + (exerciseCount ? exerciseCount + ' ' + uiText("éléments d’exercice", "oefenitems") : curatedCount + ' ' + uiText("exercices", "oefeningen")) + '</p></div>' +
+    (exerciseCount || curatedCount ? compactScopeButton(unit, "", "", unit.title, exerciseCount || curatedCount) : "") + '</section>' +
     '<section class="structure-stack" aria-label="Cursusstructuur">' + sectionsHtml + '</section>' +
     renderSoundNotes(soundItems);
   focusApp();
@@ -1017,7 +1133,7 @@ function verbGoalCard(unit, block, subsection, title, dutch, count, category, it
 }
 
 function compactScopeButton(unit, block, subsection, title, count, category) {
-  return '<button class="scope-all-button" type="button"' + scopeAttributes(unit, block, subsection, title, category) +
+  return '<button class="scope-all-button' + (/^Action/i.test(unit.top_category) ? ' tone-revision' : '') + '" type="button"' + scopeAttributes(unit, block, subsection, title, category) +
     '<span class="scope-all-icon">' + dashboardIcon("play") + '</span>' + uiText("Tout pratiquer →", "Alles oefenen →") + '<span class="scope-all-count">' + count + '</span></button>';
 }
 
@@ -1066,7 +1182,9 @@ function scopeLabelDutch(title) {
 
 function renderSoundNotes(items) {
   if (!items.length) return "";
-  return '<section class="source-notes"><div class="section-heading"><div><p class="eyebrow">' + uiText("De ton cours", "Uit je cursus") + '</p><h2>' + contentIcon("sounds") + uiText("Règles de prononciation", "Klankregels") + '</h2></div></div>' +
+  const spelling = items.some(function (item) { return item.top_category === "Comment écrire ?"; });
+  return '<section class="source-notes"><div class="section-heading"><div><p class="eyebrow">' + uiText("De ton cours", "Uit je cursus") + '</p><h2>' + contentIcon(spelling ? "grammar" : "sounds") +
+    (spelling ? uiText("Orthographe", "Spelling") : uiText("Règles de prononciation", "Klankregels")) + '</h2></div></div>' +
     items.map(function (item) {
       const spelling = item.spelling || (item.spellings || []).join(", ") || item.category || item.word || "Klankregel";
       const heading = item.sound ? spelling + " → " + item.sound : spelling;
@@ -1086,8 +1204,22 @@ function renderSetup() {
   const assignment = assignmentById(state.activeAssignmentId);
   const items = assignment ? assignmentCourseItems(assignment) : itemsForScope(trajectory, unit, scope);
   const exerciseItems = items.filter(isExerciseItem);
-  const available = assignment ? ["assignment-mixed"].concat(exerciseKeysForItems(exerciseItems)) : exerciseKeysForItems(exerciseItems);
+  const curatedKeys = assignment ? [] : curatedKeysForScope();
+  const available = assignment ? ["assignment-mixed"].concat(exerciseKeysForItems(exerciseItems)) :
+    exerciseKeysForItems(exerciseItems).concat(curatedKeys);
   if (!available.length) return renderUnit();
+  const itemCount = exerciseItemCount(exerciseItems);
+  const variantCount = curatedKeys.reduce(function (total, key) { return total + curatedVariantsForScope(key).length; }, 0);
+  const setupCount = itemCount && variantCount
+    ? itemCount + " + " + variantCount + " " + uiText("éléments et variantes", "items en varianten")
+    : itemCount ? itemCount + " " + uiText("éléments", "items")
+      : variantCount + " " + uiText("exercices", "oefeningen");
+  const advancedKeys = new Set(["vocab-fr-nl", "verb-nl-inf", "verb-fr-nl", "verb-nl-conj", "verb-rule-recognition", "number-fr-nl"]);
+  const mainChoices = assignment ? available : available.filter(function (key) { return !advancedKeys.has(key); });
+  const extraChoices = assignment ? [] : available.filter(function (key) { return advancedKeys.has(key); });
+  const choicesHtml = renderExerciseChoices(mainChoices, items, assignment, scope, mainChoices[0]) +
+    (extraChoices.length ? '<details class="more-exercises"><summary>' + uiText("Autres exercices", "Meer oefenvormen") +
+      '</summary><div class="choice-list">' + renderExerciseChoices(extraChoices, items, assignment, scope, mainChoices[0]) + '</div></details>' : '');
 
   app.innerHTML =
     breadcrumbHtml([
@@ -1095,27 +1227,10 @@ function renderSetup() {
       { label: assignment ? "Mes devoirs" : unit.top_category, action: assignment ? "view-assignments" : "back-unit" }
     ]) +
     journeySteps(4) +
-    '<section class="setup-header"><h1>' + contentIcon(contentTypeKey(scope.category || scope.title)) + escapeHtml(scope.title) + '</h1><span class="setup-total">' + exerciseItemCount(exerciseItems) + ' ' + uiText("éléments", "items") + '</span></section>' +
+    '<section class="setup-header"><h1>' + contentIcon(contentTypeKey(scope.category || scope.title)) + escapeHtml(scope.title) + '</h1><span class="setup-total">' + setupCount + '</span></section>' +
     '<section class="setup-grid"><div class="setup-choices"><div class="section-heading compact"><h2>' + uiText("Que veux-tu travailler ?", "Wat wil je oefenen?") + '</h2></div>' +
       '<div class="choice-list" role="radiogroup">' +
-        available.map(function (key, index) {
-          const option = EXERCISES[key];
-          const exerciseItems = option.type === "mixed" ? items : items.filter(function (item) { return item.type === option.type; });
-          const count = assignment ? exerciseItems.length : questionCountForItems(exerciseItems, key);
-          const isConjugation = key === "verb-nl-conj" || key === "verb-fr-conj";
-          const countLabel = isConjugation ? exerciseItems.length + " verbes" : count;
-          const group = key === "verb-nl-inf" || key === "verb-fr-nl" ? "Vocabulaire" : isConjugation ? "Conjugaison" : key === "verb-rule-recognition" ? "Règle" : "";
-          const preceding = index ? available[index - 1] : "";
-          const precedingGroup = preceding === "verb-nl-inf" || preceding === "verb-fr-nl" ? "Vocabulaire" : preceding === "verb-nl-conj" || preceding === "verb-fr-conj" ? "Conjugaison" : preceding === "verb-rule-recognition" ? "Règle" : "";
-          const applyingRule = group === "Conjugaison" && exerciseItems.length && exerciseItems.every(function (item) {
-            const type = window.MonParcoursVerbMastery && window.MonParcoursVerbMastery.classification(item.id);
-            return type && type.kind === "regular";
-          });
-          const groupHeading = group && group !== precedingGroup ? '<h3 class="exercise-group-heading">' + uiText(group, { Vocabulaire: "Woordenschat", Conjugaison: "Vervoegen", Règle: "Regel" }[group]) +
-            (applyingRule ? ' · ' + uiText("Appliquer la règle", "De regel toepassen") : '') + '</h3>' : "";
-          return groupHeading + '<label class="radio-card"><input type="radio" name="exercise" value="' + key + '"' + (index === 0 ? " checked" : "") + '>' +
-            '<span><strong>' + contentIcon(contentTypeKey(scope.category || scope.title, option.type)) + uiText(option.labelFr, option.label) + '</strong><b class="choice-count">' + countLabel + '</b></span></label>';
-        }).join("") +
+        choicesHtml +
       '</div><section class="session-size-panel" aria-labelledby="session-size-heading"><div class="section-heading compact"><h2 id="session-size-heading">' + uiText("Combien veux-tu travailler ?", "Hoeveel wil je oefenen?") + '</h2></div>' +
         '<div id="session-size-picker"></div></section></div>' +
       '<div class="setup-modes"><div class="section-heading compact"><h2>' + uiText("Choisis ton mode", "Kies je modus") + '</h2></div><div class="mode-list">' +
@@ -1126,6 +1241,35 @@ function renderSetup() {
     '</section>';
   updateSessionSizePicker();
   focusApp();
+}
+
+function exerciseTone(key) {
+  if (key === "curated-revision") return "revision";
+  if (key === "curated-context" || key === "curated-actes") return "context";
+  if (key === "curated-conjugation" || /^verb-.*conj$/.test(key)) return "conjugation";
+  if (key === "curated-grammar" || key === "grammar") return "grammar";
+  return "translate";
+}
+
+function renderExerciseChoices(keys, items, assignment, scope, defaultKey) {
+  return keys.map(function (key, index) {
+    const option = EXERCISES[key];
+    const optionItems = option.type === "mixed" ? items : items.filter(function (item) { return item.type === option.type; });
+    const count = key.startsWith("curated-") ? curatedVariantsForScope(key).length : assignment ? optionItems.length : questionCountForItems(optionItems, key);
+    const isConjugation = key === "verb-nl-conj" || key === "verb-fr-conj";
+    const countLabel = isConjugation ? optionItems.length + " verbes" : count;
+    const group = key === "verb-nl-inf" || key === "verb-fr-nl" ? "Vocabulaire" : isConjugation ? "Conjugaison" : key === "verb-rule-recognition" ? "Règle" : "";
+    const preceding = index ? keys[index - 1] : "";
+    const precedingGroup = preceding === "verb-nl-inf" || preceding === "verb-fr-nl" ? "Vocabulaire" : preceding === "verb-nl-conj" || preceding === "verb-fr-conj" ? "Conjugaison" : preceding === "verb-rule-recognition" ? "Règle" : "";
+    const applyingRule = group === "Conjugaison" && optionItems.length && optionItems.every(function (item) {
+      const type = window.MonParcoursVerbMastery && window.MonParcoursVerbMastery.classification(item.id);
+      return type && type.kind === "regular";
+    });
+    const groupHeading = group && group !== precedingGroup ? '<h3 class="exercise-group-heading">' + uiText(group, { Vocabulaire: "Woordenschat", Conjugaison: "Vervoegen", Règle: "Regel" }[group]) +
+      (applyingRule ? ' · ' + uiText("Appliquer la règle", "De regel toepassen") : '') + '</h3>' : "";
+    return groupHeading + '<label class="radio-card tone-' + exerciseTone(key) + '"><input type="radio" name="exercise" value="' + key + '"' + (key === defaultKey ? " checked" : "") + '>' +
+      '<span><strong>' + contentIcon(contentTypeKey(scope.category || scope.title, option.type)) + uiText(option.labelFr, option.label) + '</strong><b class="choice-count">' + countLabel + '</b></span></label>';
+  }).join("");
 }
 
 function sessionSizeOptions(availableCount, includeAll) {
@@ -1144,6 +1288,7 @@ function preferredSessionSize(availableCount, includeAll) {
 }
 
 function exerciseItemsForSetup(exerciseKey) {
+  if (exerciseKey && exerciseKey.startsWith("curated-")) return [];
   const assignment = assignmentById(state.activeAssignmentId);
   if (assignment && EXERCISES[exerciseKey]) return assignmentCourseItems(assignment).filter(function (item) {
     return exerciseKey === "assignment-mixed" || item.type === EXERCISES[exerciseKey].type;
@@ -1157,6 +1302,8 @@ function exerciseItemsForSetup(exerciseKey) {
 }
 
 function questionsForSetup(exerciseKey, requestedCount) {
+  if (exerciseKey && exerciseKey.startsWith("curated-"))
+    return curatedQuestions(curatedVariantsForScope(exerciseKey).map(function (variant) { return variant.id; }));
   if (assignmentById(state.activeAssignmentId)) {
     const items = window.MonParcoursAssignments.selectItems(exerciseItemsForSetup(exerciseKey), currentMasteryRecords(), requestedCount);
     return taskQuestionsForItems(items, exerciseKey);
@@ -1164,8 +1311,18 @@ function questionsForSetup(exerciseKey, requestedCount) {
   return buildQuestionsForItems(exerciseItemsForSetup(exerciseKey), exerciseKey, requestedCount);
 }
 
-function taskQuestionsForItems(items, exerciseKey, verbExerciseKey) {
+function taskQuestionsForItems(items, exerciseKey, verbExerciseKey, integrativeRound) {
+  const selectedIds = new Set(items.map(function (item) { return item.id; }));
   return items.map(function (item) {
+      if (integrativeRound && state.variantBank && window.MonParcoursExerciseVariants) {
+        const sentences = state.variantBank.variants.filter(function (variant) {
+          return variant.scoring === "integrative" && variant.kind === "revision" &&
+            variant.targets.length > 0 && variant.targets[0] === item.id &&
+            variant.targets.every(function (target) { return selectedIds.has(target); });
+        });
+        if (sentences.length) return window.MonParcoursExerciseVariants.compileVariant(
+          sentences[(integrativeRound - 1) % sentences.length], state.data);
+      }
       const key = exerciseKey === "assignment-mixed" ?
         { vocabulary: "vocab-nl-fr", verb: verbExerciseKey || "verb-nl-inf", phrase: "phrase-nl-fr", grammar_rule: "grammar", number: "number-nl-fr" }[item.type] : exerciseKey;
       if (!key) return null;
@@ -1175,11 +1332,13 @@ function taskQuestionsForItems(items, exerciseKey, verbExerciseKey) {
 }
 
 function availableQuestionCount(exerciseKey) {
+  if (exerciseKey && exerciseKey.startsWith("curated-")) return curatedVariantsForScope(exerciseKey).length;
   if (assignmentById(state.activeAssignmentId)) return exerciseItemsForSetup(exerciseKey).length;
   return questionCountForItems(exerciseItemsForSetup(exerciseKey), exerciseKey);
 }
 
 function setupAllowsAll(exerciseKey) {
+  if (exerciseKey && exerciseKey.startsWith("curated-")) return exerciseKey !== "curated-number" || availableQuestionCount(exerciseKey) <= 101;
   if (assignmentById(state.activeAssignmentId)) return true;
   const items = exerciseItemsForSetup(exerciseKey);
   if (exerciseKey === "verb-nl-conj" || exerciseKey === "verb-fr-conj") return questionCountForItems(items, exerciseKey) <= 30;
@@ -1267,7 +1426,12 @@ function startSession(mode) {
   state.progress.settings.sessionSize = sizeValue === "all" ? "all" : requestedCount;
   const allQuestions = questionsForSetup(exerciseKey, requestedCount);
   const taskSession = Boolean(assignmentById(state.activeAssignmentId));
-  const questions = taskSession ? allQuestions : selectQuestions(allQuestions, requestedCount);
+  const balancedConjugation = exerciseKey === "curated-conjugation" && allQuestions.length &&
+    allQuestions.every(function (question) { return question.exerciseKey === "verb-fr-conj"; }) &&
+    window.MonParcoursVerbMastery;
+  const questions = taskSession ? allQuestions : balancedConjugation
+    ? window.MonParcoursVerbMastery.selectPracticeQuestions(allQuestions, currentVerbEvidence(), requestedCount)
+    : selectQuestions(allQuestions, requestedCount);
   beginSession(questions, mode, exerciseKey, state.selectedScope.title, { availableCount: availableCount, assignmentId: taskSession ? state.activeAssignmentId : null });
 }
 
@@ -1312,6 +1476,8 @@ function beginSession(questions, mode, exerciseKey, title, metadata) {
     identity_verified: identity.verified === true,
     course_path: sessionPath,
     sync_attempts: [],
+    question_submissions: [],
+    answered_variant_ids: [],
     results: [],
     startedAt: new Date().toISOString(),
     active_duration_seconds: 0,
@@ -1487,22 +1653,25 @@ function renderQuestion(message) {
   const roundProgress = roundState ? window.MonParcoursTaskRounds.progress(roundState, roundsForAssignment(roundState)) : null;
   const progress = roundProgress ? Math.round((roundProgress.done / Math.max(1, roundProgress.selected)) * 100) : Math.round((session.index / session.questions.length) * 100);
   const isTest = session.mode === "test";
+  const exercise = question.exerciseKey === "full-sentence-nl-fr"
+    ? { type: "phrase", label: "Volledige zin vertalen", labelFr: "Traduire la phrase entière" } :
+    EXERCISES[question.exerciseKey] || EXERCISES[session.exerciseKey] ||
+    { type: question.item && question.item.type || "vocabulary", labelFr: "Exercice", label: "Oefening" };
   app.innerHTML =
     '<section class="practice-shell">' +
       '<header class="practice-header"><button class="text-button" type="button" data-action="back-unit">' + uiText("Arrêter", "Stoppen") + '</button>' +
       (roundProgress ? '' : '<div class="practice-progress" aria-label="Voortgang"><span style="width:' + progress + '%"></span></div>') +
       (roundProgress ? '' : '<strong>' + (session.index + 1) + ' / ' + session.questions.length + '</strong>') + '</header>' +
       taskPracticeContextHtml(session) +
-      '<article class="question-card">' +
-        '<div class="question-meta"><span>' + uiText(modeLabelFr(session.mode), modeLabel(session.mode)) + '</span><span>' + contentIcon(contentTypeKey(question.item && question.item.category || state.selectedScope && (state.selectedScope.category || state.selectedScope.title), question.item && question.item.type || EXERCISES[session.exerciseKey].type)) + uiText(EXERCISES[session.exerciseKey].labelFr, EXERCISES[session.exerciseKey].label) + '</span></div>' +
+      '<article class="question-card tone-' + exerciseTone(session.exerciseKey) + '">' +
+        '<div class="question-meta"><span>' + uiText(modeLabelFr(session.mode), modeLabel(session.mode)) + '</span><span>' + contentIcon(contentTypeKey(question.item && question.item.category || state.selectedScope && (state.selectedScope.category || state.selectedScope.title), question.item && question.item.type || exercise.type)) + uiText(exercise.labelFr, exercise.label) + '</span></div>' +
         (roundState && roundsForAssignment(roundState).some(function (round) {
           const id = question.stableItemId || question.stableItemIds && question.stableItemIds[0];
           return round.number === session.assignment_round_number && round.items[id] && round.items[id].returned_for_retry;
         }) ? '<p class="retry-note">' + uiText("À refaire", "Opnieuw proberen") + '</p>' : '') +
-        '<p class="prompt-label">' + uiText(instructionFrench(question.instruction), question.instruction) + '</p><h1 class="question-prompt">' + escapeHtml(question.prompt) + '</h1>' +
+        '<p class="prompt-label">' + uiText(instructionFrench(question.instruction), question.instruction) + '</p><h1 class="question-prompt' + (question.prompt.includes("\n") ? ' is-dialogue' : '') + '">' + escapeHtml(question.prompt) + '</h1>' +
         (question.context ? '<p class="question-context">' + escapeHtml(question.context) + '</p>' : "") +
-        '<form id="answer-form" autocomplete="off"><label for="answer-input" class="sr-only">Ta réponse / Jouw antwoord</label>' +
-          '<input id="answer-input" name="answer" type="text" autocapitalize="none" spellcheck="false" placeholder="Écris ta réponse / Typ je antwoord" aria-describedby="answer-help" autofocus>' +
+        '<form id="answer-form" autocomplete="off">' + answerInputsHtml(question) +
           '<div class="accent-row" aria-label="Franse accenten">' + ACCENTS.map(function (accent) {
             return '<button type="button" data-action="insert-accent" data-accent="' + accent + '">' + accent + '</button>';
           }).join("") + '</div>' +
@@ -1513,6 +1682,17 @@ function renderQuestion(message) {
       '</article>' +
     '</section>';
   focusAnswer();
+}
+
+function answerInputsHtml(question) {
+  if (question.variantScoring !== "multi_gap") return '<label for="answer-input" class="sr-only">Ta réponse / Jouw antwoord</label>' +
+    '<input id="answer-input" name="answer" type="text" autocapitalize="none" spellcheck="false" placeholder="Écris ta réponse / Typ je antwoord" aria-describedby="answer-help" autofocus>';
+  return '<div class="gap-answer-list">' + question.gaps.map(function (gap, index) {
+    const inputId = index === 0 ? "answer-input" : "gap-input-" + index;
+    return '<label class="gap-answer"><span>' + uiText("Trou " + (index + 1), "Gat " + (index + 1)) + '</span>' +
+      '<input id="' + inputId + '" name="gap-' + index + '" type="text" autocapitalize="none" spellcheck="false" aria-describedby="answer-help"' +
+      (index === 0 ? " autofocus" : "") + '></label>';
+  }).join("") + '</div>';
 }
 
 function taskPracticeContextHtml(session) {
@@ -1543,24 +1723,41 @@ function currentRoundItemState(session, question) {
 function submitAnswer(rawAnswer) {
   const session = state.session;
   const question = session.questions[session.index];
-  if (!question || !rawAnswer.trim()) return;
+  if (!question || !(Array.isArray(rawAnswer) ? rawAnswer.some(function (value) { return String(value).trim(); }) : String(rawAnswer).trim())) return;
   markPracticeActivity();
   session.attempt_count += 1;
-  const correct = isCorrect(rawAnswer, question.answers);
-  session.lastMasteryFeedback = recordSyncAttempt(question, correct);
+  const graded = question.variantId && window.MonParcoursExerciseVariants
+    ? window.MonParcoursExerciseVariants.grade(question, rawAnswer) : null;
+  const correct = graded ? graded.correct : isCorrect(rawAnswer, question.answers);
+  if (graded) {
+    session.answered_variant_ids = session.answered_variant_ids || [];
+    if (!session.answered_variant_ids.includes(question.variantId)) session.answered_variant_ids.push(question.variantId);
+    session.question_submissions = session.question_submissions || [];
+    session.question_submissions.push({
+      client_submission_id: createClientId(), variant_id: question.variantId,
+      item_id: session.assignment_round_number ? question.stableItemId : null,
+      was_correct: correct, created_at: new Date().toISOString()
+    });
+  }
+  session.lastMasteryFeedback = recordSyncAttempt(question, correct, graded);
 
   if (session.assignment_round_number) {
     const assignment = assignmentById(session.assignment_id);
     const rounds = roundsForAssignment(assignment);
     const round = rounds.find(function (entry) { return entry.number === session.assignment_round_number; });
     const itemId = question.stableItemId || question.stableItemIds && question.stableItemIds[0];
-    window.MonParcoursTaskRounds.markAttempt(round, itemId, correct, new Date().toISOString());
-    if (!correct) {
-      const key = roundDraftKey(session, itemId);
-      state.roundAnswerDrafts[key] = (state.roundAnswerDrafts[key] || []).concat(String(rawAnswer).trim()).slice(-3);
-    }
+    const at = new Date().toISOString();
+    (correct && question.variantScoring === "integrative" ? question.stableItemIds : [itemId])
+      .forEach(function (id) { window.MonParcoursTaskRounds.markAttempt(round, id, correct, at); });
+    const itemState = round.items[itemId];
+    itemState.attempt_history = (itemState.attempt_history || []).concat({
+      answer: formatSubmittedAnswer(question, rawAnswer).trim(), at: at, was_correct: correct
+    });
+    if (itemState.returned_for_retry && !correct)
+      itemState.wrong_since_return = Number(itemState.wrong_since_return || 0) + 1;
+    if (correct) itemState.completion_kind = "correct";
     saveAssignmentRounds(assignment, rounds);
-    recordAttempt(question, correct);
+    recordAttempt(question, correct, graded);
     syncSessionSnapshot();
     if (correct) {
       showFeedback(true, "Bonne réponse !", "Juist antwoord!", true);
@@ -1574,7 +1771,7 @@ function submitAnswer(rawAnswer) {
   }
 
   if (session.mode === "test") {
-    session.results.push({ question: question, answer: rawAnswer, correct: correct });
+    session.results.push({ question: question, answer: rawAnswer, correct: correct, graded: graded });
     session.index += 1;
     session.phase = "answer";
     renderQuestion();
@@ -1584,7 +1781,7 @@ function submitAnswer(rawAnswer) {
   if (session.mode === "learn") {
     if (session.phase === "correction") {
       if (correct) {
-        recordAttempt(question, true);
+        recordAttempt(question, true, graded);
         showFeedback(true, "Bien corrigé ! Tu le retiendras mieux.", "Goed verbeterd. Zo blijft het beter hangen.", true);
       } else {
         showFeedback(false, 'Regarde bien et écris une bonne réponse : <strong>' + escapeHtml(formatAnswers(question)) + '</strong>', 'Kijk goed en typ een juist antwoord: <strong>' + escapeHtml(formatAnswers(question)) + '</strong>', false);
@@ -1592,10 +1789,10 @@ function submitAnswer(rawAnswer) {
       return;
     }
     if (correct) {
-      recordAttempt(question, true);
+      recordAttempt(question, true, graded);
       showFeedback(true, "Bonne réponse ! Bravo.", "Juist! Sterk gedaan.", true);
     } else {
-      recordAttempt(question, false);
+      recordAttempt(question, false, graded);
       requeueQuestion(question);
       session.phase = "correction";
       showFeedback(false, 'Réponses possibles : <strong>' + escapeHtml(formatAnswers(question)) + '</strong>. Écris-en une maintenant.', 'Mogelijke juiste antwoorden: <strong>' + escapeHtml(formatAnswers(question)) + '</strong>. Typ er nu zelf één opnieuw.', false, true);
@@ -1604,15 +1801,17 @@ function submitAnswer(rawAnswer) {
   }
 
   if (correct) {
-    recordAttempt(question, true);
+    recordAttempt(question, true, graded);
     showFeedback(true, "Bonne réponse ! Continue.", "Juist! Ga zo verder.", true);
   } else {
-    recordAttempt(question, false);
+    recordAttempt(question, false, graded);
     session.questionAttempts += 1;
     if (session.questionAttempts === 1) {
       const hint = nearCorrectHint(rawAnswer, question);
-      showFeedback(false, hint ? hint.fr : "Pas encore. Regarde bien et réessaie.",
-        hint ? hint.nl : "Nog niet juist. Kijk nog eens goed en probeer opnieuw.", false);
+      const wrongGaps = graded && graded.gapResults.filter(function (gap) { return !gap.correct; })
+        .map(function (gap, index) { return question.gaps.findIndex(function (candidate) { return candidate.id === gap.gapId; }) + 1; });
+      showFeedback(false, wrongGaps && wrongGaps.length ? "Vérifie les trous " + wrongGaps.join(", ") + "." : hint ? hint.fr : "Pas encore. Regarde bien et réessaie.",
+        wrongGaps && wrongGaps.length ? "Controleer gat " + wrongGaps.join(", ") + "." : hint ? hint.nl : "Nog niet juist. Kijk nog eens goed en probeer opnieuw.", false);
     } else {
       requeueQuestion(question);
       showFeedback(false, 'Réponses possibles : <strong>' + escapeHtml(formatAnswers(question)) + '</strong>. Cet élément reviendra plus tard.', 'Mogelijke juiste antwoorden: <strong>' + escapeHtml(formatAnswers(question)) + '</strong>. Dit item komt straks terug.', true, true);
@@ -1626,19 +1825,25 @@ function showFeedback(correct, messageFr, messageNl, allowNext, clearInput) {
   const submit = document.querySelector(".submit-button");
   const itemState = !correct && state.session && currentRoundItemState(state.session, state.session.questions[state.session.index]);
   const canReport = itemState && !itemState.item.reported_pending && !itemState.item.completed_at &&
-    Number(itemState.item.wrong_count || 0) >= 2 &&
-    (state.roundAnswerDrafts[roundDraftKey(state.session, itemState.itemId)] || []).length > 0;
+    Number(itemState.item.returned_for_retry ? itemState.item.wrong_since_return : itemState.item.wrong_count || 0) >= 2 &&
+    (itemState.item.attempt_history || []).length > 0;
   feedback.className = "feedback visible " + (correct ? "correct" : "wrong");
   feedback.innerHTML = '<span class="feedback-mark" aria-hidden="true">' + (correct ? "✓" : "!") + '</span><div><p>' + uiHtml(messageFr, messageNl) + '</p>' +
     (!correct && state.session && state.session.assignment_round_number === 1 ? '<button class="button button-primary consult-action" type="button" data-action="consult-round">' + contentIcon("vocabulary") + uiText("Consulter", "Opzoeken") + '</button>' : "") +
-    (canReport ? '<button class="text-button report-action" type="button" data-action="report-round-item">' + uiText("Signaler un problème", "Probleem melden") + '</button>' : '') +
+    (canReport ? '<p class="report-explanation">' + uiText("Si ta réponse semble correcte, si la question n’est pas claire ou s’il y a un problème technique. Ce n’est pas un bouton « je ne sais pas ».", "Alleen als je antwoord volgens jou juist is, de vraag onduidelijk lijkt of er een technisch probleem is. Niet voor ‘ik weet het niet’.") + '</p><button class="text-button report-action" type="button" data-action="report-round-item">' + uiText("Je pense que ma réponse est refusée à tort", "Mijn antwoord wordt volgens mij onterecht fout gerekend") + '</button>' : '') +
     (allowNext ? '<button class="button ' + (!correct && state.session && state.session.assignment_round_number === 1 ? 'button-secondary' : 'button-primary') + '" type="button" data-action="next-question">' + uiText("Suivant", "Volgende") + '</button>' : "") + '</div>';
   if (allowNext) {
     input.disabled = true;
+    if (state.session.questions[state.session.index].variantScoring === "multi_gap" && document.querySelectorAll)
+      document.querySelectorAll('input[name^="gap-"]').forEach(function (field) { field.disabled = true; });
     submit.hidden = true;
     feedback.querySelector("button").focus();
   } else {
-    if (clearInput !== false) input.value = "";
+    if (clearInput !== false) {
+      input.value = "";
+      if (state.session.questions[state.session.index].variantScoring === "multi_gap" && document.querySelectorAll)
+        document.querySelectorAll('input[name^="gap-"]').forEach(function (field) { field.value = ""; });
+    }
     input.focus();
   }
 }
@@ -1647,15 +1852,17 @@ function reportRoundItem() {
   const session = state.session;
   const question = session && session.questions[session.index];
   const current = currentRoundItemState(session, question);
-  if (!current || current.item.completed_at || current.item.reported_pending || Number(current.item.wrong_count || 0) < 2 ||
+  if (!current || current.item.completed_at || current.item.reported_pending ||
+      Number(current.item.returned_for_retry ? current.item.wrong_since_return : current.item.wrong_count || 0) < 2 ||
       !window.MonParcoursSync || typeof window.MonParcoursSync.enqueueIssueReport !== "function") return;
-  const answers = state.roundAnswerDrafts[roundDraftKey(session, current.itemId)] || [];
+  const answers = (current.item.attempt_history || []).filter(function (entry) { return !entry.was_correct; })
+    .map(function (entry) { return entry.answer; });
   if (!answers.length) return;
   const report = {
     client_report_id: createClientId(), assignment_id: session.assignment_id,
     round_number: session.assignment_round_number, item_id: current.itemId,
     prompt: question.prompt, exercise_direction: question.exerciseKey || session.exerciseKey,
-    submitted_answers: answers.slice(-3), accepted_answers: question.answers.slice(),
+    submitted_answers: answers, accepted_answers: question.answers.slice(),
     consulted: Boolean(current.item.consulted), app_version: APP_VERSION,
     created_at: new Date().toISOString()
   };
@@ -1742,7 +1949,7 @@ function finishSession() {
   const session = state.session;
   settleActiveTime(true);
   if (session.mode === "test") {
-    session.results.forEach(function (result) { recordAttempt(result.question, result.correct); });
+    session.results.forEach(function (result) { recordAttempt(result.question, result.correct, result.graded); });
   }
   state.progress.lastCompleted = {
     title: session.title,
@@ -1761,9 +1968,10 @@ function finishSession() {
   renderSummary();
 }
 
-function recordSyncAttempt(question, correct) {
+function recordSyncAttempt(question, correct, graded) {
   const session = state.session;
   if (!session || !session.identity_verified) return null;
+  if (question.variantId) return recordVariantEvidence(question, graded);
   const stableIds = question.stableItemIds || (question.stableItemId ? [question.stableItemId] : []);
   if (!stableIds.length) return null;
   const item = question.item || {};
@@ -1804,6 +2012,44 @@ function recordSyncAttempt(question, correct) {
   return { before: before, after: after, beforeLevel: beforeLevel, afterLevel: afterLevel };
 }
 
+function recordVariantEvidence(question, graded) {
+  const session = state.session;
+  if (!graded) return null;
+  if (!graded.evidence.length) {
+    syncSessionSnapshot();
+    return null;
+  }
+  const byId = window.MonParcoursExerciseVariants.itemIndex(state.data);
+  const before = masteryStatusForQuestion(question);
+  const beforeLevel = masteryLevelForQuestion(question);
+  const path = session.course_path;
+  graded.evidence.forEach(function (entry) {
+    const ids = entry.targets.map(function (target) { return typeof target === "string" ? target : target.item_id; });
+    const item = byId.get(ids[0]);
+    if (!item) return;
+    const variant = entry.key ? question.variantId + ":" + entry.key : question.itemVariant || question.variantId;
+    const attemptNumber = session.sync_attempts.filter(function (attempt) {
+      return attempt.item_id === ids[0] && attempt.item_variant === variant;
+    }).length + 1;
+    const attempt = {
+      client_attempt_id: createClientId(), item_id: ids[0], equivalent_item_ids: ids,
+      legacy_item_id: question.variantId, item_variant: variant, item_type: item.type,
+      trajectory: path.trajectory, top_category: path.top_category, lesson: path.lesson,
+      block: path.block, subsection: path.subsection, exercise_key: question.exerciseKey || "curated",
+      mode: session.mode, prompt: question.prompt, correct_answers: entry.accepted_answers.slice(),
+      was_correct: entry.correct, attempt_number: attemptNumber, created_at: new Date().toISOString(),
+      client_session_id: session.client_session_id, identity_subject: session.identity_subject
+    };
+    session.sync_attempts.push(attempt);
+    appendMasteryAttempt(attempt);
+    appendVerbEvidence(attempt);
+  });
+  const after = masteryStatusForQuestion(question);
+  const afterLevel = masteryLevelForQuestion(question);
+  syncSessionSnapshot();
+  return { before: before, after: after, beforeLevel: beforeLevel, afterLevel: afterLevel };
+}
+
 function syncSessionSnapshot() {
   const session = state.session;
   if (!session || !session.identity_verified || !window.MonParcoursSync) return;
@@ -1831,6 +2077,7 @@ function syncSessionSnapshot() {
       mode: session.mode,
       question_count: session.question_count,
       attempt_count: session.attempt_count,
+      question_submissions: (session.question_submissions || []).slice(),
       active_duration_seconds: Math.max(0, Math.floor(Number(session.active_duration_seconds || 0))),
       started_at: session.startedAt,
       finished_at: session.finishedAt || null
@@ -1866,17 +2113,14 @@ function renderSummary() {
     focusApp();
     return;
   }
-  const results = session.mode === "test"
-    ? session.results
-    : session.questions.slice(0, Math.min(session.index, session.questions.length)).map(function (question) {
-        return { question: question, correct: true, answer: "" };
-      });
-  const wrong = session.mode === "test" ? results.filter(function (result) { return !result.correct; }) : [];
-  const correctCount = session.mode === "test" ? results.length - wrong.length : results.length;
+  const results = session.mode === "test" ? session.results : [];
+  const wrong = results.filter(function (result) { return !result.correct; });
+  const correctCount = results.length - wrong.length;
   const score = results.length ? Math.round((correctCount / results.length) * 100) : 0;
   const headingNl = session.mode === "test" ? (score >= 80 ? "Sterk resultaat." : score >= 60 ? "Goed op weg." : "Nog even oefenen.") : "Sessie afgerond.";
   const headingFr = session.mode === "test" ? (score >= 80 ? "Excellent résultat !" : score >= 60 ? "Tu es sur la bonne voie." : "Encore un peu d'entraînement.") : "Session terminée.";
-  const madeCount = uniqueAnsweredExercises(session.sync_attempts);
+  const madeCount = session.answered_variant_ids && session.answered_variant_ids.length
+    ? session.answered_variant_ids.length : uniqueAnsweredExercises(session.sync_attempts);
   const remaining = Math.max(0, session.available_count - session.question_count);
   const coverageTextNl = session.question_count === session.available_count
     ? "Je oefende alle " + session.available_count + " beschikbare items."
@@ -1895,12 +2139,12 @@ function renderSummary() {
     '<section class="summary-card"><p class="eyebrow">' + uiText(modeLabelFr(session.mode), modeLabel(session.mode)) + '</p><h1>' + uiText(headingFr, headingNl) + '</h1>' +
       '<div class="summary-coverage"><strong>' + uiText(coverageTextFr, coverageTextNl) + '</strong><span>' + uiText("Exercices réellement faits : " + madeCount + ".", "Werkelijk gemaakte oefeningen: " + madeCount + ".") + '</span><span>' + uiText("Pas sélectionnés dans cette session : " + remaining + ".", "Nog niet in deze sessie geselecteerd: " + remaining + ".") + '</span><span>' + uiText("Tentatives : " + session.attempt_count + ".", "Aantal pogingen: " + session.attempt_count + ".") + '</span><span>' + uiText("Temps actif : " + formatActiveDurationFr(session.active_duration_seconds) + ".", "Actieve oefentijd: " + formatActiveDuration(session.active_duration_seconds) + ".") + '</span></div>' +
       '<p class="sync-note">' + uiText(storageNoteFr, storageNoteNl) + '</p>' +
-      '<div class="score-ring" style="--score:' + score + '"><span><strong>' + score + '%</strong><small>' + uiText(correctCount + " sur " + results.length + " correctes", correctCount + " van " + results.length + " juist") + '</small></span></div>' +
-      (wrong.length ? '<div class="review-list"><h2>' + uiText("Revois tes erreurs", "Bekijk je fouten") + '</h2>' + wrong.map(function (result) {
+      (session.mode === "test" ? '<div class="score-ring" style="--score:' + score + '"><span><strong>' + score + '%</strong><small>' + uiText(correctCount + " sur " + results.length + " correctes", correctCount + " van " + results.length + " juist") + '</small></span></div>' : '') +
+      (session.mode === "test" && wrong.length ? '<div class="review-list"><h2>' + uiText("Revois tes erreurs", "Bekijk je fouten") + '</h2>' + wrong.map(function (result) {
         return '<article><span><small>' + uiText("Question", "Vraag") + '</small><strong>' + escapeHtml(result.question.prompt) + '</strong></span>' +
-          '<span><small>' + uiText("Ta réponse", "Jouw antwoord") + '</small><del>' + escapeHtml(result.answer || "Aucune réponse / Geen antwoord") + '</del></span>' +
+          '<span><small>' + uiText("Ta réponse", "Jouw antwoord") + '</small><del>' + escapeHtml(formatSubmittedAnswer(result.question, result.answer)) + '</del></span>' +
           '<span><small>' + uiText("Réponse correcte", "Correct") + '</small><ins>' + escapeHtml(formatAnswers(result.question)) + '</ins></span></article>';
-      }).join("") + '</div>' : '<p class="perfect-note">' + uiText("Aucune erreur à retravailler.", "Geen fouten om opnieuw te oefenen.") + '</p>') +
+      }).join("") + '</div>' : session.mode === "test" ? '<p class="perfect-note">' + uiText("Aucune erreur à retravailler.", "Geen fouten om opnieuw te oefenen.") + '</p>' : '') +
       '<div class="summary-actions">' +
         (wrong.length ? '<button class="button button-primary" type="button" data-action="practice-test-errors">' + uiText("Retravailler mes erreurs", "Oefen mijn fouten") + '</button>' : "") +
         '<button class="button button-secondary" type="button" data-action="home">' + uiText("Retour à l'accueil", "Terug naar start") + '</button>' +
@@ -2155,7 +2399,7 @@ function buildQuestions(items, exerciseKey) {
     };
     if (exerciseKey === "vocab-nl-fr") questions.push(makeQuestion(base, item.nl, answerList(item.fr, item), "Vertaal naar het Frans"));
     if (exerciseKey === "vocab-fr-nl") questions.push(makeQuestion(base, item.fr, dutchAnswers(item.nl, item), "Vertaal naar het Nederlands"));
-    if (exerciseKey === "verb-nl-inf") questions.push(makeQuestion(base, item.nl, [item.infinitive], "Geef de Franse infinitief"));
+    if (exerciseKey === "verb-nl-inf") questions.push(makeQuestion(base, item.nl, answerList(item.infinitive, item), "Geef de Franse infinitief"));
     if (exerciseKey === "verb-fr-nl") questions.push(makeQuestion(base, item.infinitive, dutchAnswers(item.nl, item), "Vertaal naar het Nederlands"));
     if (exerciseKey === "phrase-nl-fr") questions.push(makeQuestion(base, item.nl, answerList(item.fr, item), "Schrijf de volledige Franse zin"));
     if (exerciseKey === "grammar") questions.push(makeQuestion(base, item.prompt, answerList(item.answer, item), "Vul de regel aan · " + item.category, item.example_fr || item.example_nl || ""));
@@ -2165,7 +2409,8 @@ function buildQuestions(items, exerciseKey) {
       (item.conjugations || []).forEach(function (conjugation) {
         concreteConjugations(conjugation).forEach(function (variant) {
           const prompt = (exerciseKey === "verb-nl-conj" ? item.nl : item.infinitive) + " — " + variant.subject;
-          questions.push(makeQuestion(Object.assign({}, base, { itemVariant: variant.subject }), prompt, [variant.form], "Vervoeg het werkwoord"));
+          questions.push(makeQuestion(Object.assign({}, base, { itemVariant: variant.subject }), prompt,
+            variant.accepted_answers || [variant.form], "Vervoeg het werkwoord"));
         });
       });
     }
@@ -2176,12 +2421,16 @@ function buildQuestions(items, exerciseKey) {
 function concreteConjugations(conjugation) {
   const subject = String(conjugation.subject || "").trim();
   const form = String(conjugation.form || "").trim();
-  if (!subject.includes("/")) return [{ subject: subject, form: form }];
+  if (!subject.includes("/")) return [{ subject: subject, form: form,
+    accepted_answers: conjugation.accepted_answers }];
   if (!form.startsWith(subject + " ")) return [];
   const ending = form.slice(subject.length).trim();
   return subject.split("/").map(function (person) {
     const name = person.trim();
-    return { subject: name, form: name + " " + ending };
+    return { subject: name, form: name + " " + ending,
+      accepted_answers: (conjugation.accepted_answers || [form]).map(function (answer) {
+        return name + " " + answer.slice(subject.length).trim();
+      }) };
   });
 }
 
@@ -2210,7 +2459,17 @@ function mergeEquivalentQuestions(questions) {
 }
 
 function formatAnswers(question) {
+  if (question.variantScoring === "multi_gap") return question.gaps.map(function (gap, index) {
+    return (index + 1) + ": " + unique(gap.accepted_answers || []).join(" / ");
+  }).join(" · ");
   return unique(question.answers).join(", ");
+}
+
+function formatSubmittedAnswer(question, answer) {
+  if (question.variantScoring === "multi_gap" && Array.isArray(answer)) return answer.map(function (value, index) {
+    return (index + 1) + ": " + (String(value || "").trim() || "—");
+  }).join(" · ");
+  return String(answer || "Aucune réponse / Geen antwoord");
 }
 
 function answerList(primary, item) {
@@ -2307,6 +2566,7 @@ function normalizeAnswer(value, strict) {
     .normalize("NFC")
     .toLocaleLowerCase("fr")
     .replace(/[’‘\u0060´]/g, "'")
+    .replace(/[\u200B-\u200F\u202A-\u202E\u2060\u2066-\u2069\uFEFF]/g, "")
     .replace(/\s+/g, " ")
     .replace(/\s+([?!.,;:])/g, "$1")
     .replace(/[.!?]+$/g, "")
@@ -2315,14 +2575,25 @@ function normalizeAnswer(value, strict) {
   return normalized;
 }
 
-function recordAttempt(question, correct) {
+function recordAttempt(question, correct, graded) {
   const progress = state.progress;
   const now = new Date().toISOString();
-  (question.itemIds || [question.itemId]).forEach(function (itemId) {
+  const byStableId = question.variantId && graded
+    ? new Map(allCourseItems().map(function (item) { return [item.id, item._id || item.id]; })) : null;
+  const gradedItems = byStableId
+    ? graded.evidence.flatMap(function (entry) {
+      return entry.targets.map(function (target) {
+        const id = typeof target === "string" ? target : target.item_id;
+        return { itemId: byStableId.get(id) || id, correct: entry.correct };
+      });
+    })
+    : (question.itemIds || [question.itemId]).map(function (itemId) { return { itemId: itemId, correct: correct }; });
+  gradedItems.forEach(function (entry) {
+    const itemId = entry.itemId;
     const itemStats = progress.items[itemId] || { attempts: 0, correct: 0, wrong: 0, last: null };
     itemStats.attempts += 1;
-    itemStats.correct += correct ? 1 : 0;
-    itemStats.wrong += correct ? 0 : 1;
+    itemStats.correct += entry.correct ? 1 : 0;
+    itemStats.wrong += entry.correct ? 0 : 1;
     itemStats.last = now;
     progress.items[itemId] = itemStats;
   });
@@ -2477,6 +2748,7 @@ function masteryStatusForQuestion(question) {
   const verbGoal = verbGoalForQuestion(question);
   if (verbGoal) return window.MonParcoursVerbMastery.calculate(verbGoal, currentVerbEvidence()).status;
   const itemId = question.stableItemId || (question.stableItemIds || [])[0];
+  if (question.variantId) return api.getItemMastery(itemId, currentMasteryRecords()).status;
   const record = currentMasteryRecords().get(api.keyFor(itemId, question.itemVariant || ""));
   return api.getMasteryStatus(record);
 }
@@ -2487,6 +2759,7 @@ function masteryLevelForQuestion(question) {
   const verbGoal = verbGoalForQuestion(question);
   if (verbGoal) return window.MonParcoursVerbMastery.calculate(verbGoal, currentVerbEvidence()).level;
   const itemId = question.stableItemId || (question.stableItemIds || [])[0];
+  if (question.variantId) return api.getItemMastery(itemId, currentMasteryRecords()).level;
   const record = currentMasteryRecords().get(api.keyFor(itemId, question.itemVariant || ""));
   return api.getMasteryLevel(record);
 }
@@ -2494,6 +2767,7 @@ function masteryLevelForQuestion(question) {
 function verbGoalForQuestion(question) {
   const api = window.MonParcoursVerbMastery;
   if (!api || !question || !question.item || question.item.type !== "verb" || !question.itemVariant) return null;
+  if (question.variantId && question.variantKind !== "conjugation") return null;
   return api.goalForItem(question.item);
 }
 
@@ -2680,6 +2954,7 @@ function modeLabelFr(mode) {
 
 function instructionFrench(instruction) {
   const value = String(instruction || "");
+  if (value === "Vul de zin aan") return "Complète la phrase";
   if (value === "Vertaal naar het Frans") return "Traduis en français";
   if (value === "Vertaal naar het Nederlands") return "Traduis en néerlandais";
   if (value === "Geef de Franse infinitief") return "Donne l'infinitif français";
@@ -2693,7 +2968,8 @@ function instructionFrench(instruction) {
 }
 
 function insertAccent(accent) {
-  const input = document.querySelector("#answer-input");
+  const input = activeAnswerInput && activeAnswerInput.isConnected && !activeAnswerInput.disabled
+    ? activeAnswerInput : document.querySelector("#answer-input");
   if (!input) return;
   const start = input.selectionStart;
   const end = input.selectionEnd;

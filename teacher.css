@@ -274,6 +274,8 @@ tr:last-child td { border-bottom: 0; }
 .task-fields, .task-class-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); gap: .8rem; }
 .task-class { display: flex !important; align-items: center; gap: .5rem; }
 .task-class input { width: auto !important; }
+.task-sentence-option { display: flex !important; align-items: flex-start; gap: .55rem; margin: .8rem 0; line-height: 1.4; }
+.task-sentence-option input { width: auto !important; margin-top: .2rem; flex: none; }
 .task-goal-details { display: grid; gap: .2rem; margin-top: .3rem; color: #5b7067; font-size: .73rem; font-weight: 500; white-space: nowrap; }
 .task-report-section { margin: 1.25rem 0; padding: 1rem; border: 1px solid #d9b46e; border-radius: 14px; background: #fffaf0; }
 .task-report-section .section-heading { display: flex; align-items: start; justify-content: space-between; gap: 1rem; }
