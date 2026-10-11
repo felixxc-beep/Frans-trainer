@@ -125,9 +125,9 @@ setImmediate(() => {
   assert.match(app.innerHTML, /data-subsection="A, à \/ ou, où \/ la, là"/, "written homophones can start from their own subsection");
   assert.doesNotMatch(app.innerHTML, /Alleen cursusinfo/, "active written homophones are not mislabeled as course information");
   assert.match(app.innerHTML, /Orthographe/, "T6 written homophones are presented as spelling, not pronunciation");
-  assert.ok(vm.runInContext("curatedVariantsForScope('curated-grammar').length", context) >= 21);
+  assert.ok(vm.runInContext("curatedVariantsForScope('curated-spelling').length", context) >= 21);
   vm.runInContext("renderSetup()", context);
-  assert.match(app.innerHTML, /value="curated-grammar"/, "T6 written homophones are selectable");
+  assert.match(app.innerHTML, /value="curated-spelling"/, "T6 written homophones are selectable as spelling");
   for (let t = 0; t < 6; t += 1) {
     context.trajectoryIndex = t;
     vm.runInContext("state.trajectoryIndex=trajectoryIndex", context);

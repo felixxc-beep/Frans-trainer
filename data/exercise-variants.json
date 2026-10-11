@@ -335,6 +335,7 @@
       "scoring": "single",
       "prompt": "J’aime ___ foot.",
       "source_line": 758,
+      "instruction": "Vul het bepaald lidwoord na aimer, adorer of détester in",
       "accepted_answers": [
         "le"
       ],
@@ -349,6 +350,7 @@
       "scoring": "single",
       "prompt": "Emma adore ___ musique.",
       "source_line": 759,
+      "instruction": "Vul het bepaald lidwoord na aimer, adorer of détester in",
       "accepted_answers": [
         "la"
       ],
@@ -363,6 +365,7 @@
       "scoring": "single",
       "prompt": "Tu aimes ___ basket ?",
       "source_line": 760,
+      "instruction": "Vul het bepaald lidwoord na aimer, adorer of détester in",
       "accepted_answers": [
         "le"
       ],
@@ -377,6 +380,7 @@
       "scoring": "single",
       "prompt": "Nous adorons ___ badminton.",
       "source_line": 761,
+      "instruction": "Vul het bepaald lidwoord na aimer, adorer of détester in",
       "accepted_answers": [
         "le"
       ],
@@ -391,6 +395,7 @@
       "scoring": "single",
       "prompt": "Lucas aime ___ cyclisme.",
       "source_line": 762,
+      "instruction": "Vul het bepaald lidwoord na aimer, adorer of détester in",
       "accepted_answers": [
         "le"
       ],
@@ -405,6 +410,7 @@
       "scoring": "single",
       "prompt": "Elle adore ___ danse.",
       "source_line": 763,
+      "instruction": "Vul het bepaald lidwoord na aimer, adorer of détester in",
       "accepted_answers": [
         "la"
       ],
@@ -419,6 +425,7 @@
       "scoring": "single",
       "prompt": "Vous aimez ___ jeux vidéo ?",
       "source_line": 764,
+      "instruction": "Vul het bepaald lidwoord na aimer, adorer of détester in",
       "accepted_answers": [
         "les"
       ],
@@ -433,6 +440,7 @@
       "scoring": "single",
       "prompt": "Mes amis adorent ___ réseaux sociaux.",
       "source_line": 765,
+      "instruction": "Vul het bepaald lidwoord na aimer, adorer of détester in",
       "accepted_answers": [
         "les"
       ],
@@ -447,6 +455,7 @@
       "scoring": "single",
       "prompt": "Je déteste ___ volley.",
       "source_line": 766,
+      "instruction": "Vul het bepaald lidwoord na aimer, adorer of détester in",
       "accepted_answers": [
         "le"
       ],
@@ -461,6 +470,7 @@
       "scoring": "single",
       "prompt": "Sarah déteste ___ gymnastique.",
       "source_line": 767,
+      "instruction": "Vul het bepaald lidwoord na aimer, adorer of détester in",
       "accepted_answers": [
         "la"
       ],
@@ -475,6 +485,7 @@
       "scoring": "single",
       "prompt": "Ils aiment ___ padel.",
       "source_line": 768,
+      "instruction": "Vul het bepaald lidwoord na aimer, adorer of détester in",
       "accepted_answers": [
         "le"
       ],
@@ -489,6 +500,7 @@
       "scoring": "single",
       "prompt": "J’aime ___ basket.",
       "source_line": 774,
+      "instruction": "Vul het bepaald lidwoord na aimer, adorer of détester in",
       "accepted_answers": [
         "le"
       ],
@@ -501,8 +513,9 @@
       "trajectory": "Trajet 1",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "J’aime ___ au basket.",
+      "prompt": "J’aime ___ au basket. (jouer / joues / joue)",
       "source_line": 775,
+      "instruction": "Kies de infinitief na aimer, adorer of détester",
       "accepted_answers": [
         "jouer"
       ],
@@ -517,6 +530,7 @@
       "scoring": "single",
       "prompt": "Emma adore ___ musique.",
       "source_line": 776,
+      "instruction": "Vul het bepaald lidwoord na aimer, adorer of détester in",
       "accepted_answers": [
         "la"
       ],
@@ -529,8 +543,9 @@
       "trajectory": "Trajet 1",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Emma adore ___ de la musique.",
+      "prompt": "Emma adore ___ de la musique. (écouter / écoutes / écoute)",
       "source_line": 777,
+      "instruction": "Kies de infinitief na aimer, adorer of détester",
       "accepted_answers": [
         "écouter"
       ],
@@ -545,6 +560,7 @@
       "scoring": "single",
       "prompt": "Lucas aime ___ danse.",
       "source_line": 778,
+      "instruction": "Vul het bepaald lidwoord na aimer, adorer of détester in",
       "accepted_answers": [
         "la"
       ],
@@ -557,8 +573,9 @@
       "trajectory": "Trajet 1",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Lucas aime ___ dans la salle de danse.",
+      "prompt": "Lucas aime ___ dans la salle de danse. (danser / danses / danse)",
       "source_line": 779,
+      "instruction": "Kies de infinitief na aimer, adorer of détester",
       "accepted_answers": [
         "danser"
       ],
@@ -573,6 +590,7 @@
       "scoring": "single",
       "prompt": "Nous aimons ___ films.",
       "source_line": 780,
+      "instruction": "Vul het bepaald lidwoord na aimer, adorer of détester in",
       "accepted_answers": [
         "les"
       ],
@@ -585,8 +603,9 @@
       "trajectory": "Trajet 1",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Nous aimons ___ des films.",
+      "prompt": "Nous aimons ___ des films. (regarder / regardes / regarde)",
       "source_line": 781,
+      "instruction": "Kies de infinitief na aimer, adorer of détester",
       "accepted_answers": [
         "regarder"
       ],
@@ -601,6 +620,7 @@
       "scoring": "single",
       "prompt": "Tu adores ___ cuisine.",
       "source_line": 782,
+      "instruction": "Vul het bepaald lidwoord na aimer, adorer of détester in",
       "accepted_answers": [
         "la"
       ],
@@ -613,8 +633,9 @@
       "trajectory": "Trajet 1",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Tu adores ___ : tu prépares des pâtes et des pizzas.",
+      "prompt": "Tu adores ___ : tu prépares des pâtes et des pizzas. (cuisiner / cuisines / cuisine)",
       "source_line": 783,
+      "instruction": "Kies de infinitief na aimer, adorer of détester",
       "accepted_answers": [
         "cuisiner"
       ],
@@ -627,8 +648,9 @@
       "trajectory": "Trajet 1",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Elles aiment ___ : elles vont à la piscine.",
+      "prompt": "Elles aiment ___ : elles vont à la piscine. (nager / nages / nage)",
       "source_line": 784,
+      "instruction": "Kies de infinitief na aimer, adorer of détester",
       "accepted_answers": [
         "nager"
       ],
@@ -643,6 +665,7 @@
       "scoring": "single",
       "prompt": "J’adore ___ musique.",
       "source_line": 790,
+      "instruction": "Vul het bepaald lidwoord na aimer, adorer of détester in",
       "accepted_answers": [
         "la"
       ],
@@ -655,8 +678,9 @@
       "trajectory": "Trajet 1",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "J’adore ___ de la musique.",
+      "prompt": "J’adore ___ de la musique. (écouter / écoutes / écoute)",
       "source_line": 791,
+      "instruction": "Kies de infinitief na aimer, adorer of détester",
       "accepted_answers": [
         "écouter"
       ],
@@ -671,6 +695,7 @@
       "scoring": "single",
       "prompt": "Ils aiment ___ jeux vidéo.",
       "source_line": 792,
+      "instruction": "Vul het bepaald lidwoord na aimer, adorer of détester in",
       "accepted_answers": [
         "les"
       ],
@@ -683,8 +708,9 @@
       "trajectory": "Trajet 1",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Ils aiment ___ à des jeux vidéo.",
+      "prompt": "Ils aiment ___ à des jeux vidéo. (jouer / joues / joue)",
       "source_line": 793,
+      "instruction": "Kies de infinitief na aimer, adorer of détester",
       "accepted_answers": [
         "jouer"
       ],
@@ -699,6 +725,7 @@
       "scoring": "single",
       "prompt": "Emma déteste ___ foot.",
       "source_line": 794,
+      "instruction": "Vul het bepaald lidwoord na aimer, adorer of détester in",
       "accepted_answers": [
         "le"
       ],
@@ -711,8 +738,9 @@
       "trajectory": "Trajet 1",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Emma déteste ___ au foot.",
+      "prompt": "Emma déteste ___ au foot. (jouer / joues / joue)",
       "source_line": 795,
+      "instruction": "Kies de infinitief na aimer, adorer of détester",
       "accepted_answers": [
         "jouer"
       ],
@@ -727,6 +755,7 @@
       "scoring": "multi_gap",
       "prompt": "J’ai ___ chien. ___ chien s’appelle Max.",
       "source_line": 809,
+      "instruction": "Gebruik onbepaald bij introductie, bepaald bij herhaling of na aimer",
       "gaps": [
         {
           "id": "gap-1",
@@ -755,6 +784,7 @@
       "scoring": "multi_gap",
       "prompt": "Emma porte ___ casquette rouge. ___ casquette est nouvelle.",
       "source_line": 810,
+      "instruction": "Gebruik onbepaald bij introductie, bepaald bij herhaling of na aimer",
       "gaps": [
         {
           "id": "gap-1",
@@ -783,6 +813,7 @@
       "scoring": "multi_gap",
       "prompt": "Dans la classe, il y a ___ horloge. ___ horloge indique neuf heures.",
       "source_line": 811,
+      "instruction": "Gebruik onbepaald bij introductie, bepaald bij herhaling of na aimer",
       "gaps": [
         {
           "id": "gap-1",
@@ -811,6 +842,7 @@
       "scoring": "multi_gap",
       "prompt": "Nous avons ___ professeur de français. ___ professeur est très sympa.",
       "source_line": 812,
+      "instruction": "Gebruik onbepaald bij introductie, bepaald bij herhaling of na aimer",
       "gaps": [
         {
           "id": "gap-1",
@@ -839,6 +871,7 @@
       "scoring": "multi_gap",
       "prompt": "Il y a ___ élèves devant l’école. ___ élèves attendent leur professeur.",
       "source_line": 813,
+      "instruction": "Gebruik onbepaald bij introductie, bepaald bij herhaling of na aimer",
       "gaps": [
         {
           "id": "gap-1",
@@ -867,6 +900,7 @@
       "scoring": "multi_gap",
       "prompt": "Lucas aime ___ foot mais il adore ___ basket.",
       "source_line": 814,
+      "instruction": "Gebruik onbepaald bij introductie, bepaald bij herhaling of na aimer",
       "gaps": [
         {
           "id": "gap-1",
@@ -874,7 +908,7 @@
             "le"
           ],
           "targets": [
-            "uf1-item-000129"
+            "uf1-item-000134"
           ]
         },
         {
@@ -883,7 +917,7 @@
             "le"
           ],
           "targets": [
-            "uf1-item-000129"
+            "uf1-item-000134"
           ]
         }
       ]
@@ -893,8 +927,9 @@
       "trajectory": "Trajet 1",
       "kind": "grammar",
       "scoring": "multi_gap",
-      "prompt": "Sarah adore ___ musique et elle aime ___ des films.",
+      "prompt": "Sarah adore ___ musique et elle aime ___ des films. (regarder / regardes / regarde)",
       "source_line": 815,
+      "instruction": "Kies lidwoorden volgens de context en de infinitief uit de opties",
       "gaps": [
         {
           "id": "gap-1",
@@ -902,7 +937,7 @@
             "la"
           ],
           "targets": [
-            "uf1-item-000130"
+            "uf1-item-000134"
           ]
         },
         {
@@ -911,7 +946,7 @@
             "regarder"
           ],
           "targets": [
-            "uf1-item-000126"
+            "uf1-item-000135"
           ]
         }
       ]
@@ -921,8 +956,9 @@
       "trajectory": "Trajet 1",
       "kind": "grammar",
       "scoring": "multi_gap",
-      "prompt": "Mes amis aiment ___ jeux vidéo et adorent ___ au badminton.",
+      "prompt": "Mes amis aiment ___ jeux vidéo et adorent ___ au badminton. (jouer / joues / joue)",
       "source_line": 816,
+      "instruction": "Kies lidwoorden volgens de context en de infinitief uit de opties",
       "gaps": [
         {
           "id": "gap-1",
@@ -930,7 +966,7 @@
             "les"
           ],
           "targets": [
-            "uf1-item-000132"
+            "uf1-item-000134"
           ]
         },
         {
@@ -939,7 +975,7 @@
             "jouer"
           ],
           "targets": [
-            "uf1-item-000126"
+            "uf1-item-000135"
           ]
         }
       ]
@@ -949,8 +985,9 @@
       "trajectory": "Trajet 1",
       "kind": "grammar",
       "scoring": "multi_gap",
-      "prompt": "Je déteste ___ gymnastique mais j’aime ___ à pied.",
+      "prompt": "Je déteste ___ gymnastique mais j’aime ___ à pied. (marcher / marches / marche)",
       "source_line": 817,
+      "instruction": "Kies lidwoorden volgens de context en de infinitief uit de opties",
       "gaps": [
         {
           "id": "gap-1",
@@ -958,7 +995,7 @@
             "la"
           ],
           "targets": [
-            "uf1-item-000130"
+            "uf1-item-000134"
           ]
         },
         {
@@ -967,7 +1004,7 @@
             "marcher"
           ],
           "targets": [
-            "uf1-item-000126"
+            "uf1-item-000135"
           ]
         }
       ]
@@ -979,6 +1016,7 @@
       "scoring": "multi_gap",
       "prompt": "Nous avons ___ jeux vidéo. Nous adorons ___ jeux vidéo.",
       "source_line": 818,
+      "instruction": "Gebruik onbepaald bij introductie, bepaald bij herhaling of na aimer",
       "gaps": [
         {
           "id": "gap-1",
@@ -995,7 +1033,7 @@
             "les"
           ],
           "targets": [
-            "uf1-item-000132"
+            "uf1-item-000134"
           ]
         }
       ]
@@ -1007,6 +1045,7 @@
       "scoring": "multi_gap",
       "prompt": "Hugo a ___ vélo rouge. ___ vélo est devant l’école.",
       "source_line": 819,
+      "instruction": "Gebruik onbepaald bij introductie, bepaald bij herhaling of na aimer",
       "gaps": [
         {
           "id": "gap-1",
@@ -1033,8 +1072,9 @@
       "trajectory": "Trajet 1",
       "kind": "grammar",
       "scoring": "multi_gap",
-      "prompt": "Emma a ___ frère et ___ sœur. Elle adore ___ au basket avec eux.",
+      "prompt": "Emma a ___ frère et ___ sœur. Elle adore ___ au basket avec eux. (jouer / joues / joue)",
       "source_line": 820,
+      "instruction": "Kies lidwoorden volgens de context en de infinitief uit de opties",
       "gaps": [
         {
           "id": "gap-1",
@@ -1060,7 +1100,7 @@
             "jouer"
           ],
           "targets": [
-            "uf1-item-000126"
+            "uf1-item-000135"
           ]
         }
       ]
@@ -1072,6 +1112,7 @@
       "scoring": "multi_gap",
       "prompt": "— Tu as un animal ? — Oui, j’ai ___ chien. ___ chien s’appelle Oscar.",
       "source_line": 826,
+      "instruction": "Gebruik onbepaald bij introductie, bepaald bij herhaling of na aimer",
       "gaps": [
         {
           "id": "gap-1",
@@ -1098,8 +1139,9 @@
       "trajectory": "Trajet 1",
       "kind": "grammar",
       "scoring": "multi_gap",
-      "prompt": "— Quels sont tes hobbies ? — J’aime ___ musique et j’adore ___ au basket.",
+      "prompt": "— Quels sont tes hobbies ? — J’aime ___ musique et j’adore ___ au basket. (jouer / joues / joue)",
       "source_line": 827,
+      "instruction": "Kies lidwoorden volgens de context en de infinitief uit de opties",
       "gaps": [
         {
           "id": "gap-1",
@@ -1107,7 +1149,7 @@
             "la"
           ],
           "targets": [
-            "uf1-item-000130"
+            "uf1-item-000134"
           ]
         },
         {
@@ -1116,7 +1158,7 @@
             "jouer"
           ],
           "targets": [
-            "uf1-item-000126"
+            "uf1-item-000135"
           ]
         }
       ]
@@ -1128,6 +1170,7 @@
       "scoring": "multi_gap",
       "prompt": "Dans mon sac à dos, j’ai ___ gourde et ___ teeshirt. ___ gourde est bleue.",
       "source_line": 828,
+      "instruction": "Gebruik onbepaald bij introductie, bepaald bij herhaling of na aimer",
       "gaps": [
         {
           "id": "gap-1",
@@ -1163,8 +1206,9 @@
       "trajectory": "Trajet 1",
       "kind": "grammar",
       "scoring": "multi_gap",
-      "prompt": "Lucas a ___ jeux vidéo dans sa chambre. Il adore ___ jeux vidéo et il aime aussi ___ des films.",
+      "prompt": "Lucas a ___ jeux vidéo dans sa chambre. Il adore ___ jeux vidéo et il aime aussi ___ des films. (regarder / regardes / regarde)",
       "source_line": 829,
+      "instruction": "Kies lidwoorden volgens de context en de infinitief uit de opties",
       "gaps": [
         {
           "id": "gap-1",
@@ -1181,7 +1225,7 @@
             "les"
           ],
           "targets": [
-            "uf1-item-000132"
+            "uf1-item-000134"
           ]
         },
         {
@@ -1202,6 +1246,7 @@
       "scoring": "multi_gap",
       "prompt": "Dans notre école, il y a ___ salle de sport. ___ salle est grande. Les élèves aiment ___ sport.",
       "source_line": 830,
+      "instruction": "Gebruik onbepaald bij introductie, bepaald bij herhaling of na aimer",
       "gaps": [
         {
           "id": "gap-1",
@@ -1227,7 +1272,7 @@
             "le"
           ],
           "targets": [
-            "uf1-item-000129"
+            "uf1-item-000134"
           ]
         }
       ]
@@ -1239,6 +1284,7 @@
       "scoring": "multi_gap",
       "prompt": "Emma a ___ casquette rouge et ___ vélo bleu. Elle aime ___ cyclisme.",
       "source_line": 831,
+      "instruction": "Gebruik onbepaald bij introductie, bepaald bij herhaling of na aimer",
       "gaps": [
         {
           "id": "gap-1",
@@ -1264,7 +1310,7 @@
             "le"
           ],
           "targets": [
-            "uf1-item-000129"
+            "uf1-item-000134"
           ]
         }
       ]
@@ -1276,6 +1322,7 @@
       "scoring": "single",
       "prompt": "J’aime un foot.",
       "source_line": 838,
+      "instruction": "Verbeter de zin volgens de grammaticale regel",
       "accepted_answers": [
         "J’aime le foot."
       ],
@@ -1290,6 +1337,7 @@
       "scoring": "single",
       "prompt": "Nous adorons des jeux vidéo.",
       "source_line": 839,
+      "instruction": "Verbeter de zin volgens de grammaticale regel",
       "accepted_answers": [
         "Nous adorons les jeux vidéo."
       ],
@@ -1304,6 +1352,7 @@
       "scoring": "single",
       "prompt": "J’aime le jouer au basket.",
       "source_line": 840,
+      "instruction": "Verbeter de zin volgens de grammaticale regel",
       "accepted_answers": [
         "J’aime jouer au basket."
       ],
@@ -1318,6 +1367,7 @@
       "scoring": "single",
       "prompt": "___ foot est mon sport préféré.",
       "source_line": 692,
+      "instruction": "Vul het bepaald lidwoord in",
       "accepted_answers": [
         "Le"
       ],
@@ -1332,6 +1382,7 @@
       "scoring": "single",
       "prompt": "___ musique est super.",
       "source_line": 693,
+      "instruction": "Vul het bepaald lidwoord in",
       "accepted_answers": [
         "La"
       ],
@@ -1346,6 +1397,7 @@
       "scoring": "single",
       "prompt": "___ école est près de chez moi.",
       "source_line": 694,
+      "instruction": "Vul het bepaald lidwoord in",
       "accepted_answers": [
         "L’"
       ],
@@ -1360,6 +1412,7 @@
       "scoring": "single",
       "prompt": "___ horloge est dans la classe.",
       "source_line": 695,
+      "instruction": "Vul het bepaald lidwoord in",
       "accepted_answers": [
         "L’"
       ],
@@ -1374,6 +1427,7 @@
       "scoring": "single",
       "prompt": "___ professeur est sympa.",
       "source_line": 696,
+      "instruction": "Vul het bepaald lidwoord in",
       "accepted_answers": [
         "Le"
       ],
@@ -1388,6 +1442,7 @@
       "scoring": "single",
       "prompt": "___ classe commence à huit heures.",
       "source_line": 697,
+      "instruction": "Vul het bepaald lidwoord in",
       "accepted_answers": [
         "La"
       ],
@@ -1402,6 +1457,7 @@
       "scoring": "single",
       "prompt": "___ élèves sont dans la classe.",
       "source_line": 698,
+      "instruction": "Vul het bepaald lidwoord in",
       "accepted_answers": [
         "Les"
       ],
@@ -1416,6 +1472,7 @@
       "scoring": "single",
       "prompt": "___ garçons jouent au foot.",
       "source_line": 699,
+      "instruction": "Vul het bepaald lidwoord in",
       "accepted_answers": [
         "Les"
       ],
@@ -1430,6 +1487,7 @@
       "scoring": "single",
       "prompt": "___ filles dansent.",
       "source_line": 700,
+      "instruction": "Vul het bepaald lidwoord in",
       "accepted_answers": [
         "Les"
       ],
@@ -1444,6 +1502,7 @@
       "scoring": "single",
       "prompt": "___ amis de Lucas sont sportifs.",
       "source_line": 701,
+      "instruction": "Vul het bepaald lidwoord in",
       "accepted_answers": [
         "Les"
       ],
@@ -1458,6 +1517,7 @@
       "scoring": "single",
       "prompt": "J’ai ___ frère.",
       "source_line": 677,
+      "instruction": "Vul het onbepaald lidwoord in",
       "accepted_answers": [
         "un"
       ],
@@ -1472,6 +1532,7 @@
       "scoring": "single",
       "prompt": "J’ai ___ sœur.",
       "source_line": 678,
+      "instruction": "Vul het onbepaald lidwoord in",
       "accepted_answers": [
         "une"
       ],
@@ -1486,6 +1547,7 @@
       "scoring": "single",
       "prompt": "Nous avons ___ chien.",
       "source_line": 679,
+      "instruction": "Vul het onbepaald lidwoord in",
       "accepted_answers": [
         "un"
       ],
@@ -1500,6 +1562,7 @@
       "scoring": "single",
       "prompt": "Elle a ___ gourde rouge.",
       "source_line": 680,
+      "instruction": "Vul het onbepaald lidwoord in",
       "accepted_answers": [
         "une"
       ],
@@ -1514,6 +1577,7 @@
       "scoring": "single",
       "prompt": "Il a ___ vélo.",
       "source_line": 681,
+      "instruction": "Vul het onbepaald lidwoord in",
       "accepted_answers": [
         "un"
       ],
@@ -1528,6 +1592,7 @@
       "scoring": "single",
       "prompt": "Emma porte ___ casquette.",
       "source_line": 682,
+      "instruction": "Vul het onbepaald lidwoord in",
       "accepted_answers": [
         "une"
       ],
@@ -1542,6 +1607,7 @@
       "scoring": "single",
       "prompt": "J’ai ___ amis dans ma classe.",
       "source_line": 683,
+      "instruction": "Vul het onbepaald lidwoord in",
       "accepted_answers": [
         "des"
       ],
@@ -1556,6 +1622,7 @@
       "scoring": "single",
       "prompt": "Elle regarde ___ films.",
       "source_line": 684,
+      "instruction": "Vul het onbepaald lidwoord in",
       "accepted_answers": [
         "des"
       ],
@@ -1570,6 +1637,7 @@
       "scoring": "single",
       "prompt": "Nous avons ___ jeux vidéo.",
       "source_line": 685,
+      "instruction": "Vul het onbepaald lidwoord in",
       "accepted_answers": [
         "des"
       ],
@@ -1584,6 +1652,7 @@
       "scoring": "single",
       "prompt": "Il envoie ___ messages.",
       "source_line": 686,
+      "instruction": "Vul het onbepaald lidwoord in",
       "accepted_answers": [
         "des"
       ],
@@ -1598,6 +1667,7 @@
       "scoring": "multi_gap",
       "prompt": "J’ai ___ chien. ___ chien s’appelle Max.",
       "source_line": 728,
+      "instruction": "Gebruik onbepaald bij introductie, bepaald bij herhaling of na aimer",
       "gaps": [
         {
           "id": "gap-1",
@@ -1626,6 +1696,7 @@
       "scoring": "multi_gap",
       "prompt": "Emma a ___ sœur. ___ sœur a treize ans.",
       "source_line": 729,
+      "instruction": "Gebruik onbepaald bij introductie, bepaald bij herhaling of na aimer",
       "gaps": [
         {
           "id": "gap-1",
@@ -1654,6 +1725,7 @@
       "scoring": "multi_gap",
       "prompt": "Nous avons ___ professeur de français. ___ professeur est très sympa.",
       "source_line": 730,
+      "instruction": "Gebruik onbepaald bij introductie, bepaald bij herhaling of na aimer",
       "gaps": [
         {
           "id": "gap-1",
@@ -1682,6 +1754,7 @@
       "scoring": "multi_gap",
       "prompt": "Lucas a ___ casquette. ___ casquette est rouge.",
       "source_line": 731,
+      "instruction": "Gebruik onbepaald bij introductie, bepaald bij herhaling of na aimer",
       "gaps": [
         {
           "id": "gap-1",
@@ -1710,6 +1783,7 @@
       "scoring": "multi_gap",
       "prompt": "J’ai ___ amis à Bruxelles. ___ amis habitent près de l’école.",
       "source_line": 732,
+      "instruction": "Gebruik onbepaald bij introductie, bepaald bij herhaling of na aimer",
       "gaps": [
         {
           "id": "gap-1",
@@ -1738,6 +1812,7 @@
       "scoring": "multi_gap",
       "prompt": "Il a ___ jeux vidéo. ___ jeux vidéo sont dans sa chambre.",
       "source_line": 733,
+      "instruction": "Gebruik onbepaald bij introductie, bepaald bij herhaling of na aimer",
       "gaps": [
         {
           "id": "gap-1",
@@ -1766,6 +1841,7 @@
       "scoring": "multi_gap",
       "prompt": "Sarah a ___ vélo. ___ vélo est bleu.",
       "source_line": 734,
+      "instruction": "Gebruik onbepaald bij introductie, bepaald bij herhaling of na aimer",
       "gaps": [
         {
           "id": "gap-1",
@@ -1794,6 +1870,7 @@
       "scoring": "multi_gap",
       "prompt": "Dans la classe, il y a ___ horloge. ___ horloge est au mur.",
       "source_line": 735,
+      "instruction": "Gebruik onbepaald bij introductie, bepaald bij herhaling of na aimer",
       "gaps": [
         {
           "id": "gap-1",
@@ -1822,6 +1899,7 @@
       "scoring": "multi_gap",
       "prompt": "Dans mon sac, il y a ___ livre et ___ gourde. ___ gourde est rouge.",
       "source_line": 736,
+      "instruction": "Gebruik onbepaald bij introductie, bepaald bij herhaling of na aimer",
       "gaps": [
         {
           "id": "gap-1",
@@ -1859,6 +1937,7 @@
       "scoring": "multi_gap",
       "prompt": "Lucas a ___ frère et ___ sœur. ___ frère a quinze ans.",
       "source_line": 737,
+      "instruction": "Gebruik onbepaald bij introductie, bepaald bij herhaling of na aimer",
       "gaps": [
         {
           "id": "gap-1",
@@ -1896,6 +1975,7 @@
       "scoring": "multi_gap",
       "prompt": "Dans notre école, il y a ___ salle de sport. ___ salle est très grande.",
       "source_line": 738,
+      "instruction": "Gebruik onbepaald bij introductie, bepaald bij herhaling of na aimer",
       "gaps": [
         {
           "id": "gap-1",
@@ -1924,6 +2004,7 @@
       "scoring": "multi_gap",
       "prompt": "J’ai ___ amis à Turnhout. ___ amis sont dans ma classe.",
       "source_line": 739,
+      "instruction": "Gebruik onbepaald bij introductie, bepaald bij herhaling of na aimer",
       "gaps": [
         {
           "id": "gap-1",
@@ -1952,6 +2033,7 @@
       "scoring": "multi_gap",
       "prompt": "Emma reçoit ___ message. ___ message vient de sa copine.",
       "source_line": 740,
+      "instruction": "Gebruik onbepaald bij introductie, bepaald bij herhaling of na aimer",
       "gaps": [
         {
           "id": "gap-1",
@@ -1980,6 +2062,7 @@
       "scoring": "multi_gap",
       "prompt": "Il y a ___ élèves devant l’école. ___ élèves attendent leur professeur.",
       "source_line": 741,
+      "instruction": "Gebruik onbepaald bij introductie, bepaald bij herhaling of na aimer",
       "gaps": [
         {
           "id": "gap-1",
@@ -6617,8 +6700,9 @@
       "trajectory": "Trajet 2",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Il a une sœur.",
+      "prompt": "Il a une sœur. (ne ... pas)",
       "source_line": 1666,
+      "instruction": "Let op het lidwoord na de ontkenning",
       "accepted_answers": [
         "Il n’a pas de sœur."
       ],
@@ -6631,8 +6715,9 @@
       "trajectory": "Trajet 2",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Elle a un frère.",
+      "prompt": "Elle a un frère. (ne ... pas)",
       "source_line": 1667,
+      "instruction": "Let op het lidwoord na de ontkenning",
       "accepted_answers": [
         "Elle n’a pas de frère."
       ],
@@ -6645,8 +6730,9 @@
       "trajectory": "Trajet 2",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Nous avons des cousins.",
+      "prompt": "Nous avons des cousins. (ne ... pas)",
       "source_line": 1668,
+      "instruction": "Let op het lidwoord na de ontkenning",
       "accepted_answers": [
         "Nous n’avons pas de cousins."
       ],
@@ -6659,8 +6745,9 @@
       "trajectory": "Trajet 2",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Tu manges une pomme.",
+      "prompt": "Tu manges une pomme. (ne ... pas)",
       "source_line": 1669,
+      "instruction": "Let op het lidwoord na de ontkenning",
       "accepted_answers": [
         "Tu ne manges pas de pomme."
       ],
@@ -6673,8 +6760,9 @@
       "trajectory": "Trajet 2",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Ils cherchent des photos.",
+      "prompt": "Ils cherchent des photos. (ne ... pas)",
       "source_line": 1670,
+      "instruction": "Let op het lidwoord na de ontkenning",
       "accepted_answers": [
         "Ils ne cherchent pas de photos."
       ],
@@ -6687,8 +6775,9 @@
       "trajectory": "Trajet 2",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Elle aime les frites.",
+      "prompt": "Elle aime les frites. (ne ... pas)",
       "source_line": 1671,
+      "instruction": "Let op het lidwoord na de ontkenning",
       "accepted_answers": [
         "Elle n’aime pas les frites."
       ],
@@ -6701,8 +6790,9 @@
       "trajectory": "Trajet 2",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Nous aimons le français.",
+      "prompt": "Nous aimons le français. (ne ... pas)",
       "source_line": 1672,
+      "instruction": "Let op het lidwoord na de ontkenning",
       "accepted_answers": [
         "Nous n’aimons pas le français."
       ],
@@ -6715,8 +6805,9 @@
       "trajectory": "Trajet 2",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Lucas adore la musique.",
+      "prompt": "Lucas adore la musique. (ne ... pas)",
       "source_line": 1673,
+      "instruction": "Let op het lidwoord na de ontkenning",
       "accepted_answers": [
         "Lucas n’adore pas la musique."
       ],
@@ -6731,6 +6822,7 @@
       "scoring": "multi_gap",
       "prompt": "Elle mange ___ frites. → Elle ne mange pas ___ frites.",
       "source_line": 1679,
+      "instruction": "Let op het lidwoord na de ontkenning",
       "gaps": [
         {
           "id": "gap-1",
@@ -6738,7 +6830,7 @@
             "des"
           ],
           "targets": [
-            "uf1-item-000279"
+            "uf1-item-000128"
           ]
         },
         {
@@ -6759,6 +6851,7 @@
       "scoring": "multi_gap",
       "prompt": "Elle aime ___ frites. → Elle n’aime pas ___ frites.",
       "source_line": 1680,
+      "instruction": "Let op het lidwoord na de ontkenning",
       "gaps": [
         {
           "id": "gap-1",
@@ -6766,7 +6859,7 @@
             "les"
           ],
           "targets": [
-            "uf1-item-000279"
+            "uf1-item-000132"
           ]
         },
         {
@@ -6787,6 +6880,7 @@
       "scoring": "multi_gap",
       "prompt": "Il a ___ frère. → Il n’a plus ___ frère.",
       "source_line": 1681,
+      "instruction": "Let op het lidwoord na de ontkenning",
       "gaps": [
         {
           "id": "gap-1",
@@ -6794,7 +6888,7 @@
             "un"
           ],
           "targets": [
-            "uf1-item-000279"
+            "uf1-item-000126"
           ]
         },
         {
@@ -6815,6 +6909,7 @@
       "scoring": "multi_gap",
       "prompt": "Nous avons ___ cousins. → Nous n’avons jamais ___ cousins à la maison.",
       "source_line": 1682,
+      "instruction": "Let op het lidwoord na de ontkenning",
       "gaps": [
         {
           "id": "gap-1",
@@ -6822,7 +6917,7 @@
             "des"
           ],
           "targets": [
-            "uf1-item-000279"
+            "uf1-item-000128"
           ]
         },
         {
@@ -6843,6 +6938,7 @@
       "scoring": "single",
       "prompt": "C’est un professeur sympa.",
       "source_line": 1692,
+      "instruction": "Maak de zin ontkennend met ne ... pas",
       "accepted_answers": [
         "Ce n’est pas un professeur sympa."
       ],
@@ -6857,6 +6953,7 @@
       "scoring": "single",
       "prompt": "C’est une copine de Lola.",
       "source_line": 1693,
+      "instruction": "Maak de zin ontkennend met ne ... pas",
       "accepted_answers": [
         "Ce n’est pas une copine de Lola."
       ],
@@ -6871,6 +6968,7 @@
       "scoring": "single",
       "prompt": "Il est un enfant unique.",
       "source_line": 1694,
+      "instruction": "Maak de zin ontkennend met ne ... pas",
       "accepted_answers": [
         "Il n’est pas un enfant unique."
       ],
@@ -6885,6 +6983,7 @@
       "scoring": "single",
       "prompt": "Elle est une Française.",
       "source_line": 1695,
+      "instruction": "Maak de zin ontkennend met ne ... pas",
       "accepted_answers": [
         "Elle n’est pas une Française."
       ],
@@ -6899,6 +6998,7 @@
       "scoring": "multi_gap",
       "prompt": "Je joue souvent au foot. → Je ___ joue ___ au foot.",
       "source_line": 1633,
+      "instruction": "Maak de zin ontkennend met ne ... jamais",
       "gaps": [
         {
           "id": "gap-1",
@@ -6927,6 +7027,7 @@
       "scoring": "multi_gap",
       "prompt": "Tu mens parfois. → Tu ___ mens ___.",
       "source_line": 1634,
+      "instruction": "Maak de zin ontkennend met ne ... jamais",
       "gaps": [
         {
           "id": "gap-1",
@@ -6955,6 +7056,7 @@
       "scoring": "multi_gap",
       "prompt": "Il sort souvent. → Il ___ sort ___.",
       "source_line": 1635,
+      "instruction": "Maak de zin ontkennend met ne ... jamais",
       "gaps": [
         {
           "id": "gap-1",
@@ -6983,6 +7085,7 @@
       "scoring": "multi_gap",
       "prompt": "Elle regarde parfois la télé. → Elle ___ regarde ___ la télé.",
       "source_line": 1636,
+      "instruction": "Maak de zin ontkennend met ne ... jamais",
       "gaps": [
         {
           "id": "gap-1",
@@ -7011,6 +7114,7 @@
       "scoring": "multi_gap",
       "prompt": "Nous dormons parfois ici. → Nous ___ dormons ___ ici.",
       "source_line": 1637,
+      "instruction": "Maak de zin ontkennend met ne ... jamais",
       "gaps": [
         {
           "id": "gap-1",
@@ -7039,6 +7143,7 @@
       "scoring": "multi_gap",
       "prompt": "Ils jouent souvent à des jeux vidéo. → Ils ___ jouent ___ à des jeux vidéo.",
       "source_line": 1638,
+      "instruction": "Maak de zin ontkennend met ne ... jamais",
       "gaps": [
         {
           "id": "gap-1",
@@ -7067,6 +7172,7 @@
       "scoring": "single",
       "prompt": "— Tu mens parfois ? — Non, ...",
       "source_line": 1643,
+      "instruction": "Maak de zin ontkennend met ne ... jamais",
       "accepted_answers": [
         "Non, je ne mens jamais."
       ],
@@ -7081,6 +7187,7 @@
       "scoring": "single",
       "prompt": "— Vous sortez souvent ? — Non, ...",
       "source_line": 1644,
+      "instruction": "Maak de zin ontkennend met ne ... jamais",
       "accepted_answers": [
         "Non, nous ne sortons jamais."
       ],
@@ -7095,6 +7202,7 @@
       "scoring": "single",
       "prompt": "— Lucas joue parfois au basket ? — Non, ...",
       "source_line": 1645,
+      "instruction": "Maak de zin ontkennend met ne ... jamais",
       "accepted_answers": [
         "Non, Lucas ne joue jamais au basket."
       ],
@@ -7107,8 +7215,9 @@
       "trajectory": "Trajet 2",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Tu habites encore à Bruxelles ? → Non, je ...",
+      "prompt": "Tu habites encore à Bruxelles ? → Non, je ... (ne ... plus)",
       "source_line": 1708,
+      "instruction": "Kies de ontkenning die bij de betekenis past",
       "accepted_answers": [
         "n’habite plus à Bruxelles"
       ],
@@ -7121,8 +7230,9 @@
       "trajectory": "Trajet 2",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Tu joues souvent au foot ? → Non, je ...",
+      "prompt": "Tu joues souvent au foot ? → Non, je ... (ne ... jamais)",
       "source_line": 1709,
+      "instruction": "Kies de ontkenning die bij de betekenis past",
       "accepted_answers": [
         "ne joue jamais au foot"
       ],
@@ -7135,8 +7245,9 @@
       "trajectory": "Trajet 2",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Tu aimes le coca ? → Non, je ...",
+      "prompt": "Tu aimes le coca ? → Non, je ... (ne ... pas)",
       "source_line": 1710,
+      "instruction": "Kies de ontkenning die bij de betekenis past",
       "accepted_answers": [
         "n’aime pas le coca"
       ],
@@ -7149,8 +7260,9 @@
       "trajectory": "Trajet 2",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Elle a encore une sœur à la maison ? → Non, elle ...",
+      "prompt": "Elle a encore une sœur à la maison ? → Non, elle ... (ne ... plus)",
       "source_line": 1711,
+      "instruction": "Kies de ontkenning die bij de betekenis past",
       "accepted_answers": [
         "n’a plus de sœur à la maison"
       ],
@@ -7163,8 +7275,9 @@
       "trajectory": "Trajet 2",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Ils mangent souvent des pommes ? → Non, ils ...",
+      "prompt": "Ils mangent souvent des pommes ? → Non, ils ... (ne ... jamais)",
       "source_line": 1712,
+      "instruction": "Kies de ontkenning die bij de betekenis past",
       "accepted_answers": [
         "ne mangent jamais de pommes"
       ],
@@ -7177,8 +7290,9 @@
       "trajectory": "Trajet 2",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "C’est un garçon paresseux ? → Non, ...",
+      "prompt": "C’est un garçon paresseux ? → Non, ... (ne ... pas)",
       "source_line": 1713,
+      "instruction": "Kies de ontkenning die bij de betekenis past",
       "accepted_answers": [
         "ce n’est pas un garçon paresseux"
       ],
@@ -7305,6 +7419,7 @@
       "scoring": "multi_gap",
       "prompt": "Je ___ parle ___ français.",
       "source_line": 1576,
+      "instruction": "Maak de zin ontkennend met ne ... pas",
       "gaps": [
         {
           "id": "gap-1",
@@ -7333,6 +7448,7 @@
       "scoring": "multi_gap",
       "prompt": "Tu ___ joues ___ au foot.",
       "source_line": 1577,
+      "instruction": "Maak de zin ontkennend met ne ... pas",
       "gaps": [
         {
           "id": "gap-1",
@@ -7361,6 +7477,7 @@
       "scoring": "multi_gap",
       "prompt": "Il ___ regarde ___ la télé.",
       "source_line": 1578,
+      "instruction": "Maak de zin ontkennend met ne ... pas",
       "gaps": [
         {
           "id": "gap-1",
@@ -7389,6 +7506,7 @@
       "scoring": "multi_gap",
       "prompt": "Elle ___ habite ___ à Paris.",
       "source_line": 1579,
+      "instruction": "Maak de zin ontkennend met ne ... pas",
       "gaps": [
         {
           "id": "gap-1",
@@ -7417,6 +7535,7 @@
       "scoring": "multi_gap",
       "prompt": "Nous ___ dormons ___ beaucoup.",
       "source_line": 1580,
+      "instruction": "Maak de zin ontkennend met ne ... pas",
       "gaps": [
         {
           "id": "gap-1",
@@ -7445,6 +7564,7 @@
       "scoring": "multi_gap",
       "prompt": "Vous ___ aimez ___ le café.",
       "source_line": 1581,
+      "instruction": "Maak de zin ontkennend met ne ... pas",
       "gaps": [
         {
           "id": "gap-1",
@@ -7473,6 +7593,7 @@
       "scoring": "multi_gap",
       "prompt": "Ils ___ sortent ___ ce soir.",
       "source_line": 1582,
+      "instruction": "Maak de zin ontkennend met ne ... pas",
       "gaps": [
         {
           "id": "gap-1",
@@ -7501,6 +7622,7 @@
       "scoring": "multi_gap",
       "prompt": "Emma ___ est ___ contente.",
       "source_line": 1583,
+      "instruction": "Maak de zin ontkennend met ne ... pas",
       "gaps": [
         {
           "id": "gap-1",
@@ -7529,6 +7651,7 @@
       "scoring": "single",
       "prompt": "Je parle français.",
       "source_line": 1589,
+      "instruction": "Maak de zin ontkennend met ne ... pas",
       "accepted_answers": [
         "Je ne parle pas français."
       ],
@@ -7543,6 +7666,7 @@
       "scoring": "single",
       "prompt": "Tu joues au foot.",
       "source_line": 1590,
+      "instruction": "Maak de zin ontkennend met ne ... pas",
       "accepted_answers": [
         "Tu ne joues pas au foot."
       ],
@@ -7557,6 +7681,7 @@
       "scoring": "single",
       "prompt": "Il habite à Bruxelles.",
       "source_line": 1591,
+      "instruction": "Maak de zin ontkennend met ne ... pas",
       "accepted_answers": [
         "Il n’habite pas à Bruxelles."
       ],
@@ -7571,6 +7696,7 @@
       "scoring": "single",
       "prompt": "Nous dormons beaucoup.",
       "source_line": 1592,
+      "instruction": "Maak de zin ontkennend met ne ... pas",
       "accepted_answers": [
         "Nous ne dormons pas beaucoup."
       ],
@@ -7585,6 +7711,7 @@
       "scoring": "single",
       "prompt": "Vous sortez ce soir.",
       "source_line": 1593,
+      "instruction": "Maak de zin ontkennend met ne ... pas",
       "accepted_answers": [
         "Vous ne sortez pas ce soir."
       ],
@@ -7599,6 +7726,7 @@
       "scoring": "single",
       "prompt": "Elles aiment le basket.",
       "source_line": 1594,
+      "instruction": "Maak de zin ontkennend met ne ... pas",
       "accepted_answers": [
         "Elles n’aiment pas le basket."
       ],
@@ -7613,6 +7741,7 @@
       "scoring": "multi_gap",
       "prompt": "J’habite encore à Paris. → Je ___ habite ___ à Paris.",
       "source_line": 1610,
+      "instruction": "Maak de zin ontkennend met ne ... plus",
       "gaps": [
         {
           "id": "gap-1",
@@ -7641,6 +7770,7 @@
       "scoring": "multi_gap",
       "prompt": "Tu joues encore au foot. → Tu ___ joues ___ au foot.",
       "source_line": 1611,
+      "instruction": "Maak de zin ontkennend met ne ... plus",
       "gaps": [
         {
           "id": "gap-1",
@@ -7669,6 +7799,7 @@
       "scoring": "multi_gap",
       "prompt": "Il sort encore le samedi. → Il ___ sort ___ le samedi.",
       "source_line": 1612,
+      "instruction": "Maak de zin ontkennend met ne ... plus",
       "gaps": [
         {
           "id": "gap-1",
@@ -7697,6 +7828,7 @@
       "scoring": "multi_gap",
       "prompt": "Emma est encore en première année. → Emma ___ est ___ en première année.",
       "source_line": 1613,
+      "instruction": "Maak de zin ontkennend met ne ... plus",
       "gaps": [
         {
           "id": "gap-1",
@@ -7725,6 +7857,7 @@
       "scoring": "multi_gap",
       "prompt": "Nous cohabitons encore. → Nous ___ cohabitons ___.",
       "source_line": 1614,
+      "instruction": "Maak de zin ontkennend met ne ... plus",
       "gaps": [
         {
           "id": "gap-1",
@@ -7753,6 +7886,7 @@
       "scoring": "multi_gap",
       "prompt": "Ils habitent encore à Bruxelles. → Ils ___ habitent ___ à Bruxelles.",
       "source_line": 1615,
+      "instruction": "Maak de zin ontkennend met ne ... plus",
       "gaps": [
         {
           "id": "gap-1",
@@ -7781,6 +7915,7 @@
       "scoring": "single",
       "prompt": "— Tu habites encore à Liège ? — Non, ...",
       "source_line": 1620,
+      "instruction": "Maak de zin ontkennend met ne ... plus",
       "accepted_answers": [
         "Non, je n’habite plus à Liège."
       ],
@@ -7795,6 +7930,7 @@
       "scoring": "single",
       "prompt": "— Tu joues encore au foot ? — Non, ...",
       "source_line": 1621,
+      "instruction": "Maak de zin ontkennend met ne ... plus",
       "accepted_answers": [
         "Non, je ne joue plus au foot."
       ],
@@ -7809,6 +7945,7 @@
       "scoring": "single",
       "prompt": "— Elle sort encore avec ses amis ? — Non, ...",
       "source_line": 1622,
+      "instruction": "Maak de zin ontkennend met ne ... plus",
       "accepted_answers": [
         "Non, elle ne sort plus avec ses amis."
       ],
@@ -10617,8 +10754,9 @@
       "trajectory": "Trajet 3",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Je vais ___ parc.",
+      "prompt": "Je vais ___ parc. (à + le)",
       "source_line": 2600,
+      "instruction": "Vorm het juiste lidwoord met à of de",
       "accepted_answers": [
         "au"
       ],
@@ -10631,8 +10769,9 @@
       "trajectory": "Trajet 3",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Tu vas ___ gare.",
+      "prompt": "Tu vas ___ gare. (à + la)",
       "source_line": 2601,
+      "instruction": "Vorm het juiste lidwoord met à of de",
       "accepted_answers": [
         "à la"
       ],
@@ -10645,8 +10784,9 @@
       "trajectory": "Trajet 3",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Elle va ___ école.",
+      "prompt": "Elle va ___ école. (à + l’)",
       "source_line": 2602,
+      "instruction": "Vorm het juiste lidwoord met à of de",
       "accepted_answers": [
         "à l’"
       ],
@@ -10659,8 +10799,9 @@
       "trajectory": "Trajet 3",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Nous allons ___ toilettes.",
+      "prompt": "Nous allons ___ toilettes. (à + les)",
       "source_line": 2603,
+      "instruction": "Vorm het juiste lidwoord met à of de",
       "accepted_answers": [
         "aux"
       ],
@@ -10673,8 +10814,9 @@
       "trajectory": "Trajet 3",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Lucas va ___ cinéma.",
+      "prompt": "Lucas va ___ cinéma. (à + le)",
       "source_line": 2604,
+      "instruction": "Vorm het juiste lidwoord met à of de",
       "accepted_answers": [
         "au"
       ],
@@ -10687,8 +10829,9 @@
       "trajectory": "Trajet 3",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Emma va ___ bibliothèque.",
+      "prompt": "Emma va ___ bibliothèque. (à + la)",
       "source_line": 2605,
+      "instruction": "Vorm het juiste lidwoord met à of de",
       "accepted_answers": [
         "à la"
       ],
@@ -10701,8 +10844,9 @@
       "trajectory": "Trajet 3",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Vous allez ___ hôpital.",
+      "prompt": "Vous allez ___ hôpital. (à + l’)",
       "source_line": 2606,
+      "instruction": "Vorm het juiste lidwoord met à of de",
       "accepted_answers": [
         "à l’"
       ],
@@ -10715,8 +10859,9 @@
       "trajectory": "Trajet 3",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Ils vont ___ jardins.",
+      "prompt": "Ils vont ___ jardins. (à + les)",
       "source_line": 2607,
+      "instruction": "Vorm het juiste lidwoord met à of de",
       "accepted_answers": [
         "aux"
       ],
@@ -10729,8 +10874,9 @@
       "trajectory": "Trajet 3",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "On va ___ marché.",
+      "prompt": "On va ___ marché. (à + le)",
       "source_line": 2608,
+      "instruction": "Vorm het juiste lidwoord met à of de",
       "accepted_answers": [
         "au"
       ],
@@ -10743,8 +10889,9 @@
       "trajectory": "Trajet 3",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Je vais ___ piscine.",
+      "prompt": "Je vais ___ piscine. (à + la)",
       "source_line": 2609,
+      "instruction": "Vorm het juiste lidwoord met à of de",
       "accepted_answers": [
         "à la"
       ],
@@ -10757,8 +10904,9 @@
       "trajectory": "Trajet 3",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Je viens ___ marché.",
+      "prompt": "Je viens ___ marché. (de + le)",
       "source_line": 2622,
+      "instruction": "Vorm het juiste lidwoord met à of de",
       "accepted_answers": [
         "du"
       ],
@@ -10771,8 +10919,9 @@
       "trajectory": "Trajet 3",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Tu viens ___ gare.",
+      "prompt": "Tu viens ___ gare. (de + la)",
       "source_line": 2623,
+      "instruction": "Vorm het juiste lidwoord met à of de",
       "accepted_answers": [
         "de la"
       ],
@@ -10785,8 +10934,9 @@
       "trajectory": "Trajet 3",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Elle vient ___ école.",
+      "prompt": "Elle vient ___ école. (de + l’)",
       "source_line": 2624,
+      "instruction": "Vorm het juiste lidwoord met à of de",
       "accepted_answers": [
         "de l’"
       ],
@@ -10799,8 +10949,9 @@
       "trajectory": "Trajet 3",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Nous venons ___ toilettes.",
+      "prompt": "Nous venons ___ toilettes. (de + les)",
       "source_line": 2625,
+      "instruction": "Vorm het juiste lidwoord met à of de",
       "accepted_answers": [
         "des"
       ],
@@ -10813,8 +10964,9 @@
       "trajectory": "Trajet 3",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Lucas revient ___ cinéma.",
+      "prompt": "Lucas revient ___ cinéma. (de + le)",
       "source_line": 2626,
+      "instruction": "Vorm het juiste lidwoord met à of de",
       "accepted_answers": [
         "du"
       ],
@@ -10827,8 +10979,9 @@
       "trajectory": "Trajet 3",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Emma revient ___ bibliothèque.",
+      "prompt": "Emma revient ___ bibliothèque. (de + la)",
       "source_line": 2627,
+      "instruction": "Vorm het juiste lidwoord met à of de",
       "accepted_answers": [
         "de la"
       ],
@@ -10841,8 +10994,9 @@
       "trajectory": "Trajet 3",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Vous venez ___ hôtel.",
+      "prompt": "Vous venez ___ hôtel. (de + l’)",
       "source_line": 2628,
+      "instruction": "Vorm het juiste lidwoord met à of de",
       "accepted_answers": [
         "de l’"
       ],
@@ -10855,8 +11009,9 @@
       "trajectory": "Trajet 3",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Ils reviennent ___ jardins.",
+      "prompt": "Ils reviennent ___ jardins. (de + les)",
       "source_line": 2629,
+      "instruction": "Vorm het juiste lidwoord met à of de",
       "accepted_answers": [
         "des"
       ],
@@ -10869,8 +11024,9 @@
       "trajectory": "Trajet 3",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "On vient ___ parc.",
+      "prompt": "On vient ___ parc. (de + le)",
       "source_line": 2630,
+      "instruction": "Vorm het juiste lidwoord met à of de",
       "accepted_answers": [
         "du"
       ],
@@ -10883,8 +11039,9 @@
       "trajectory": "Trajet 3",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Je viens ___ piscine.",
+      "prompt": "Je viens ___ piscine. (de + la)",
       "source_line": 2631,
+      "instruction": "Vorm het juiste lidwoord met à of de",
       "accepted_answers": [
         "de la"
       ],
@@ -10897,8 +11054,9 @@
       "trajectory": "Trajet 3",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Tu vas ___ centre commercial.",
+      "prompt": "Tu vas ___ centre commercial. (à + le)",
       "source_line": 2721,
+      "instruction": "Vorm het juiste lidwoord met à of de",
       "accepted_answers": [
         "au"
       ],
@@ -10911,8 +11069,9 @@
       "trajectory": "Trajet 3",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Tu viens ___ centre commercial.",
+      "prompt": "Tu viens ___ centre commercial. (de + le)",
       "source_line": 2722,
+      "instruction": "Vorm het juiste lidwoord met à of de",
       "accepted_answers": [
         "du"
       ],
@@ -10925,8 +11084,9 @@
       "trajectory": "Trajet 3",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Nous allons ___ gare.",
+      "prompt": "Nous allons ___ gare. (à + la)",
       "source_line": 2723,
+      "instruction": "Vorm het juiste lidwoord met à of de",
       "accepted_answers": [
         "à la"
       ],
@@ -10939,8 +11099,9 @@
       "trajectory": "Trajet 3",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Nous revenons ___ gare.",
+      "prompt": "Nous revenons ___ gare. (de + la)",
       "source_line": 2724,
+      "instruction": "Vorm het juiste lidwoord met à of de",
       "accepted_answers": [
         "de la"
       ],
@@ -10953,8 +11114,9 @@
       "trajectory": "Trajet 3",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Je téléphone ___ coach.",
+      "prompt": "Je téléphone ___ coach. (à + le)",
       "source_line": 2725,
+      "instruction": "Vorm het juiste lidwoord met à of de",
       "accepted_answers": [
         "au"
       ],
@@ -10967,8 +11129,9 @@
       "trajectory": "Trajet 3",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "La banque est en face ___ poste.",
+      "prompt": "La banque est en face ___ poste. (de + la)",
       "source_line": 2726,
+      "instruction": "Vorm het juiste lidwoord met à of de",
       "accepted_answers": [
         "de la"
       ],
@@ -10981,8 +11144,9 @@
       "trajectory": "Trajet 3",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Ils pensent ___ vacances.",
+      "prompt": "Ils pensent ___ vacances. (à + les)",
       "source_line": 2727,
+      "instruction": "Vorm het juiste lidwoord met à of de",
       "accepted_answers": [
         "aux"
       ],
@@ -10995,8 +11159,9 @@
       "trajectory": "Trajet 3",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Elle rêve ___ musée de Paris.",
+      "prompt": "Elle rêve ___ musée de Paris. (de + le)",
       "source_line": 2728,
+      "instruction": "Vorm het juiste lidwoord met à of de",
       "accepted_answers": [
         "du"
       ],
@@ -11009,8 +11174,9 @@
       "trajectory": "Trajet 3",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Le parc est à côté ___ école.",
+      "prompt": "Le parc est à côté ___ école. (de + l’)",
       "source_line": 2729,
+      "instruction": "Vorm het juiste lidwoord met à of de",
       "accepted_answers": [
         "de l’"
       ],
@@ -11023,8 +11189,9 @@
       "trajectory": "Trajet 3",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Vous demandez le chemin ___ passants.",
+      "prompt": "Vous demandez le chemin ___ passants. (à + les)",
       "source_line": 2730,
+      "instruction": "Vorm het juiste lidwoord met à of de",
       "accepted_answers": [
         "aux"
       ],
@@ -11037,8 +11204,9 @@
       "trajectory": "Trajet 3",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Je vais ___ boulangerie.",
+      "prompt": "Je vais ___ boulangerie. (à + la)",
       "source_line": 2644,
+      "instruction": "Vorm het juiste lidwoord met à of de",
       "accepted_answers": [
         "à la"
       ],
@@ -11051,8 +11219,9 @@
       "trajectory": "Trajet 3",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Je viens ___ boulangerie.",
+      "prompt": "Je viens ___ boulangerie. (de + la)",
       "source_line": 2645,
+      "instruction": "Vorm het juiste lidwoord met à of de",
       "accepted_answers": [
         "de la"
       ],
@@ -11065,8 +11234,9 @@
       "trajectory": "Trajet 3",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Nous allons ___ musée.",
+      "prompt": "Nous allons ___ musée. (à + le)",
       "source_line": 2646,
+      "instruction": "Vorm het juiste lidwoord met à of de",
       "accepted_answers": [
         "au"
       ],
@@ -11079,8 +11249,9 @@
       "trajectory": "Trajet 3",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Nous venons ___ musée.",
+      "prompt": "Nous venons ___ musée. (de + le)",
       "source_line": 2647,
+      "instruction": "Vorm het juiste lidwoord met à of de",
       "accepted_answers": [
         "du"
       ],
@@ -11093,8 +11264,9 @@
       "trajectory": "Trajet 3",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Ils vont ___ toilettes.",
+      "prompt": "Ils vont ___ toilettes. (à + les)",
       "source_line": 2648,
+      "instruction": "Vorm het juiste lidwoord met à of de",
       "accepted_answers": [
         "aux"
       ],
@@ -11107,8 +11279,9 @@
       "trajectory": "Trajet 3",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Ils viennent ___ toilettes.",
+      "prompt": "Ils viennent ___ toilettes. (de + les)",
       "source_line": 2649,
+      "instruction": "Vorm het juiste lidwoord met à of de",
       "accepted_answers": [
         "des"
       ],
@@ -11121,8 +11294,9 @@
       "trajectory": "Trajet 3",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Elle va ___ hôpital.",
+      "prompt": "Elle va ___ hôpital. (à + l’)",
       "source_line": 2650,
+      "instruction": "Vorm het juiste lidwoord met à of de",
       "accepted_answers": [
         "à l’"
       ],
@@ -11135,8 +11309,9 @@
       "trajectory": "Trajet 3",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Elle vient ___ hôpital.",
+      "prompt": "Elle vient ___ hôpital. (de + l’)",
       "source_line": 2651,
+      "instruction": "Vorm het juiste lidwoord met à of de",
       "accepted_answers": [
         "de l’"
       ],
@@ -11149,8 +11324,9 @@
       "trajectory": "Trajet 3",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Je rêve ___ vacances.",
+      "prompt": "Je rêve ___ vacances. (de + les)",
       "source_line": 2696,
+      "instruction": "Vorm het juiste lidwoord met à of de",
       "accepted_answers": [
         "des"
       ],
@@ -11163,8 +11339,9 @@
       "trajectory": "Trajet 3",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Elle rêve ___ château.",
+      "prompt": "Elle rêve ___ château. (de + le)",
       "source_line": 2697,
+      "instruction": "Vorm het juiste lidwoord met à of de",
       "accepted_answers": [
         "du"
       ],
@@ -11177,8 +11354,9 @@
       "trajectory": "Trajet 3",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Nous rêvons ___ mer.",
+      "prompt": "Nous rêvons ___ mer. (de + la)",
       "source_line": 2698,
+      "instruction": "Vorm het juiste lidwoord met à of de",
       "accepted_answers": [
         "de la"
       ],
@@ -11191,8 +11369,9 @@
       "trajectory": "Trajet 3",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Il rêve ___ hôtel magnifique.",
+      "prompt": "Il rêve ___ hôtel magnifique. (de + l’)",
       "source_line": 2699,
+      "instruction": "Vorm het juiste lidwoord met à of de",
       "accepted_answers": [
         "de l’"
       ],
@@ -11205,8 +11384,9 @@
       "trajectory": "Trajet 3",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "La banque est à côté ___ poste.",
+      "prompt": "La banque est à côté ___ poste. (de + la)",
       "source_line": 2705,
+      "instruction": "Vorm het juiste lidwoord met à of de",
       "accepted_answers": [
         "de la"
       ],
@@ -11219,8 +11399,9 @@
       "trajectory": "Trajet 3",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Le café est en face ___ gare.",
+      "prompt": "Le café est en face ___ gare. (de + la)",
       "source_line": 2706,
+      "instruction": "Vorm het juiste lidwoord met à of de",
       "accepted_answers": [
         "de la"
       ],
@@ -11233,8 +11414,9 @@
       "trajectory": "Trajet 3",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Le musée est à droite ___ hôtel.",
+      "prompt": "Le musée est à droite ___ hôtel. (de + l’)",
       "source_line": 2707,
+      "instruction": "Vorm het juiste lidwoord met à of de",
       "accepted_answers": [
         "de l’"
       ],
@@ -11247,8 +11429,9 @@
       "trajectory": "Trajet 3",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "La pharmacie est à gauche ___ supermarché.",
+      "prompt": "La pharmacie est à gauche ___ supermarché. (de + le)",
       "source_line": 2708,
+      "instruction": "Vorm het juiste lidwoord met à of de",
       "accepted_answers": [
         "du"
       ],
@@ -11261,8 +11444,9 @@
       "trajectory": "Trajet 3",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "L’école est à côté ___ parc.",
+      "prompt": "L’école est à côté ___ parc. (de + le)",
       "source_line": 2709,
+      "instruction": "Vorm het juiste lidwoord met à of de",
       "accepted_answers": [
         "du"
       ],
@@ -11275,8 +11459,9 @@
       "trajectory": "Trajet 3",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "La boulangerie est en face ___ toilettes.",
+      "prompt": "La boulangerie est en face ___ toilettes. (de + les)",
       "source_line": 2710,
+      "instruction": "Vorm het juiste lidwoord met à of de",
       "accepted_answers": [
         "des"
       ],
@@ -11289,8 +11474,9 @@
       "trajectory": "Trajet 3",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Je pense ___ parc.",
+      "prompt": "Je pense ___ parc. (à + le)",
       "source_line": 2665,
+      "instruction": "Vorm het juiste lidwoord met à of de",
       "accepted_answers": [
         "au"
       ],
@@ -11303,8 +11489,9 @@
       "trajectory": "Trajet 3",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Je pense ___ piscine.",
+      "prompt": "Je pense ___ piscine. (à + la)",
       "source_line": 2666,
+      "instruction": "Vorm het juiste lidwoord met à of de",
       "accepted_answers": [
         "à la"
       ],
@@ -11317,8 +11504,9 @@
       "trajectory": "Trajet 3",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Je pense ___ école.",
+      "prompt": "Je pense ___ école. (à + l’)",
       "source_line": 2667,
+      "instruction": "Vorm het juiste lidwoord met à of de",
       "accepted_answers": [
         "à l’"
       ],
@@ -11331,8 +11519,9 @@
       "trajectory": "Trajet 3",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Je pense ___ vacances.",
+      "prompt": "Je pense ___ vacances. (à + les)",
       "source_line": 2668,
+      "instruction": "Vorm het juiste lidwoord met à of de",
       "accepted_answers": [
         "aux"
       ],
@@ -11345,8 +11534,9 @@
       "trajectory": "Trajet 3",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Je téléphone ___ professeur.",
+      "prompt": "Je téléphone ___ professeur. (à + le)",
       "source_line": 2674,
+      "instruction": "Vorm het juiste lidwoord met à of de",
       "accepted_answers": [
         "au"
       ],
@@ -11359,8 +11549,9 @@
       "trajectory": "Trajet 3",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Je téléphone ___ tante de Lucas.",
+      "prompt": "Je téléphone ___ tante de Lucas. (à + la)",
       "source_line": 2675,
+      "instruction": "Vorm het juiste lidwoord met à of de",
       "accepted_answers": [
         "à la"
       ],
@@ -11373,8 +11564,9 @@
       "trajectory": "Trajet 3",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Je téléphone ___ élèves.",
+      "prompt": "Je téléphone ___ élèves. (à + les)",
       "source_line": 2676,
+      "instruction": "Vorm het juiste lidwoord met à of de",
       "accepted_answers": [
         "aux"
       ],
@@ -11387,8 +11579,9 @@
       "trajectory": "Trajet 3",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Je demande le chemin ___ passant.",
+      "prompt": "Je demande le chemin ___ passant. (à + le)",
       "source_line": 2682,
+      "instruction": "Vorm het juiste lidwoord met à of de",
       "accepted_answers": [
         "au"
       ],
@@ -11401,8 +11594,9 @@
       "trajectory": "Trajet 3",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Nous demandons l’adresse ___ professeure.",
+      "prompt": "Nous demandons l’adresse ___ professeure. (à + la)",
       "source_line": 2683,
+      "instruction": "Vorm het juiste lidwoord met à of de",
       "accepted_answers": [
         "à la"
       ],
@@ -11415,8 +11609,9 @@
       "trajectory": "Trajet 3",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Il demande l’heure ___ élèves.",
+      "prompt": "Il demande l’heure ___ élèves. (à + les)",
       "source_line": 2684,
+      "instruction": "Vorm het juiste lidwoord met à of de",
       "accepted_answers": [
         "aux"
       ],
@@ -12901,211 +13096,226 @@
     {
       "id": "T3-VILL-001",
       "trajectory": "Trajet 3",
-      "kind": "grammar",
+      "kind": "actes",
       "scoring": "single",
       "prompt": "Vraag: Waar woon je?",
       "source_line": 2373,
+      "instruction": "Schrijf de volledige Franse zin",
       "accepted_answers": [
         "Tu habites où ?"
       ],
       "targets": [
-        "uf1-item-000503"
+        "uf1-item-000389"
       ]
     },
     {
       "id": "T3-VILL-002",
       "trajectory": "Trajet 3",
-      "kind": "grammar",
+      "kind": "actes",
       "scoring": "single",
       "prompt": "Zeg: Ik woon in het centrum.",
       "source_line": 2374,
+      "instruction": "Schrijf de volledige Franse zin",
       "accepted_answers": [
         "J’habite dans le centre."
       ],
       "targets": [
-        "uf1-item-000503"
+        "uf1-item-000390"
       ]
     },
     {
       "id": "T3-VILL-003",
       "trajectory": "Trajet 3",
-      "kind": "grammar",
+      "kind": "actes",
       "scoring": "single",
       "prompt": "Zeg: Ik woon op het platteland.",
       "source_line": 2375,
+      "instruction": "Schrijf de volledige Franse zin",
       "accepted_answers": [
         "J’habite à la campagne."
       ],
       "targets": [
-        "uf1-item-000503"
+        "uf1-item-000391"
       ]
     },
     {
       "id": "T3-VILL-004",
       "trajectory": "Trajet 3",
-      "kind": "grammar",
+      "kind": "actes",
       "scoring": "single",
       "prompt": "Zeg: Ik woon aan zee.",
       "source_line": 2376,
+      "instruction": "Schrijf de volledige Franse zin",
       "accepted_answers": [
         "J’habite à la mer."
       ],
       "targets": [
-        "uf1-item-000503"
+        "uf1-item-000392"
       ]
     },
     {
       "id": "T3-VILL-005",
       "trajectory": "Trajet 3",
-      "kind": "grammar",
+      "kind": "actes",
       "scoring": "single",
       "prompt": "Zeg: Ik woon vlak bij de bakkerij.",
       "source_line": 2377,
+      "instruction": "Schrijf de volledige Franse zin",
       "accepted_answers": [
         "J’habite tout près de la boulangerie."
       ],
       "targets": [
-        "uf1-item-000503"
+        "uf1-item-000393"
       ]
     },
     {
       "id": "T3-VILL-006",
       "trajectory": "Trajet 3",
-      "kind": "grammar",
+      "kind": "actes",
       "scoring": "single",
       "prompt": "Zeg: Mijn dorp ligt tussen Dijon en Lyon.",
       "source_line": 2378,
+      "instruction": "Schrijf de volledige Franse zin",
       "accepted_answers": [
         "Mon village se trouve entre Dijon et Lyon."
       ],
       "targets": [
-        "uf1-item-000503"
+        "uf1-item-000394"
       ]
     },
     {
       "id": "T3-VILL-007",
       "trajectory": "Trajet 3",
-      "kind": "grammar",
+      "kind": "actes",
       "scoring": "single",
       "prompt": "Zeg: Mijn dorp ligt op 20 km hiervandaan.",
       "source_line": 2379,
+      "instruction": "Schrijf de volledige Franse zin",
       "accepted_answers": [
         "Mon village se trouve à 20 km d’ici."
       ],
       "targets": [
-        "uf1-item-000503"
+        "uf1-item-000396"
       ]
     },
     {
       "id": "T3-VILL-008",
       "trajectory": "Trajet 3",
-      "kind": "grammar",
+      "kind": "actes",
       "scoring": "single",
       "prompt": "Vraag: Hoe is je dorp?",
       "source_line": 2380,
+      "instruction": "Schrijf de volledige Franse zin",
       "accepted_answers": [
         "Il est comment, ton village ?"
       ],
       "targets": [
-        "uf1-item-000503"
+        "uf1-item-000397"
       ]
     },
     {
       "id": "T3-VILL-009",
       "trajectory": "Trajet 3",
-      "kind": "grammar",
+      "kind": "actes",
       "scoring": "single",
       "prompt": "Zeg: Mijn dorp is rustig.",
       "source_line": 2381,
+      "instruction": "Schrijf de volledige Franse zin",
       "accepted_answers": [
         "Il est calme."
       ],
       "targets": [
-        "uf1-item-000503"
+        "uf1-item-000401"
       ]
     },
     {
       "id": "T3-VILL-010",
       "trajectory": "Trajet 3",
-      "kind": "grammar",
+      "kind": "actes",
       "scoring": "single",
       "prompt": "Zeg: Mijn dorp is saai.",
       "source_line": 2382,
+      "instruction": "Schrijf de volledige Franse zin",
       "accepted_answers": [
         "Il est ennuyeux."
       ],
       "targets": [
-        "uf1-item-000503"
+        "uf1-item-000402"
       ]
     },
     {
       "id": "T3-VILL-011",
       "trajectory": "Trajet 3",
-      "kind": "grammar",
+      "kind": "actes",
       "scoring": "single",
       "prompt": "Vraag: Hoe is je stad?",
       "source_line": 2383,
+      "instruction": "Schrijf de volledige Franse zin",
       "accepted_answers": [
         "Elle est comment, ta ville ?"
       ],
       "targets": [
-        "uf1-item-000503"
+        "uf1-item-000403"
       ]
     },
     {
       "id": "T3-VILL-012",
       "trajectory": "Trajet 3",
-      "kind": "grammar",
+      "kind": "actes",
       "scoring": "single",
       "prompt": "Zeg: Mijn stad is bruisend.",
       "source_line": 2384,
+      "instruction": "Schrijf de volledige Franse zin",
       "accepted_answers": [
         "Elle est animée."
       ],
       "targets": [
-        "uf1-item-000503"
+        "uf1-item-000407"
       ]
     },
     {
       "id": "T3-VILL-013",
       "trajectory": "Trajet 3",
-      "kind": "grammar",
+      "kind": "actes",
       "scoring": "single",
       "prompt": "Zeg: Mijn stad is prachtig.",
       "source_line": 2385,
+      "instruction": "Schrijf de volledige Franse zin",
       "accepted_answers": [
         "Elle est magnifique."
       ],
       "targets": [
-        "uf1-item-000503"
+        "uf1-item-000405"
       ]
     },
     {
       "id": "T3-VILL-014",
       "trajectory": "Trajet 3",
-      "kind": "grammar",
+      "kind": "actes",
       "scoring": "single",
       "prompt": "Zeg: Er zijn veel winkels.",
       "source_line": 2386,
+      "instruction": "Schrijf de volledige Franse zin",
       "accepted_answers": [
         "Il y a beaucoup de magasins."
       ],
       "targets": [
-        "uf1-item-000503"
+        "uf1-item-000408"
       ]
     },
     {
       "id": "T3-VILL-015",
       "trajectory": "Trajet 3",
-      "kind": "grammar",
+      "kind": "actes",
       "scoring": "single",
       "prompt": "Zeg: Er zijn weinig winkels.",
       "source_line": 2387,
+      "instruction": "Schrijf de volledige Franse zin",
       "accepted_answers": [
         "Il y a peu de magasins."
       ],
       "targets": [
-        "uf1-item-000503"
+        "uf1-item-000409"
       ]
     },
     {
@@ -16778,7 +16988,7 @@
     {
       "id": "T4-TRSP-CTX-001",
       "trajectory": "Trajet 4",
-      "kind": "grammar",
+      "kind": "context",
       "scoring": "single",
       "prompt": "Je marche jusqu’à l’école. J’y vais ___.",
       "source_line": 3304,
@@ -16786,13 +16996,13 @@
         "à pied"
       ],
       "targets": [
-        "uf1-item-000706"
+        "uf1-item-000629"
       ]
     },
     {
       "id": "T4-TRSP-CTX-002",
       "trajectory": "Trajet 4",
-      "kind": "grammar",
+      "kind": "context",
       "scoring": "single",
       "prompt": "J’ai des rollers aux pieds. Je vais au parc ___.",
       "source_line": 3305,
@@ -16800,13 +17010,13 @@
         "à roller"
       ],
       "targets": [
-        "uf1-item-000713"
+        "uf1-item-000630"
       ]
     },
     {
       "id": "T4-TRSP-CTX-003",
       "trajectory": "Trajet 4",
-      "kind": "grammar",
+      "kind": "context",
       "scoring": "single",
       "prompt": "Je conduis une moto. Je vais au travail ___.",
       "source_line": 3306,
@@ -16814,13 +17024,13 @@
         "à moto"
       ],
       "targets": [
-        "uf1-item-000706"
+        "uf1-item-000631"
       ]
     },
     {
       "id": "T4-TRSP-CTX-004",
       "trajectory": "Trajet 4",
-      "kind": "grammar",
+      "kind": "context",
       "scoring": "single",
       "prompt": "Je pédale jusqu’à l’école. J’y vais ___.",
       "source_line": 3307,
@@ -16828,13 +17038,13 @@
         "à vélo"
       ],
       "targets": [
-        "uf1-item-000706"
+        "uf1-item-000632"
       ]
     },
     {
       "id": "T4-TRSP-CTX-005",
       "trajectory": "Trajet 4",
-      "kind": "grammar",
+      "kind": "context",
       "scoring": "single",
       "prompt": "Je conduis un scooter. Je me déplace ___.",
       "source_line": 3308,
@@ -16842,13 +17052,13 @@
         "à scooter"
       ],
       "targets": [
-        "uf1-item-000706"
+        "uf1-item-000633"
       ]
     },
     {
       "id": "T4-TRSP-CTX-006",
       "trajectory": "Trajet 4",
-      "kind": "grammar",
+      "kind": "context",
       "scoring": "single",
       "prompt": "Je roule sur une trottinette électrique. Je vais au centre ___.",
       "source_line": 3309,
@@ -16856,13 +17066,13 @@
         "à trottinette électrique"
       ],
       "targets": [
-        "uf1-item-000706"
+        "uf1-item-000634"
       ]
     },
     {
       "id": "T4-TRSP-CTX-007",
       "trajectory": "Trajet 4",
-      "kind": "grammar",
+      "kind": "context",
       "scoring": "single",
       "prompt": "Je roule sur mon skateboard. Je vais au parc ___.",
       "source_line": 3310,
@@ -16870,13 +17080,13 @@
         "en skateboard"
       ],
       "targets": [
-        "uf1-item-000706"
+        "uf1-item-000635"
       ]
     },
     {
       "id": "T4-TRSP-CTX-008",
       "trajectory": "Trajet 4",
-      "kind": "grammar",
+      "kind": "context",
       "scoring": "single",
       "prompt": "Je prends l’avion pour aller en Espagne. J’y vais ___.",
       "source_line": 3311,
@@ -16884,13 +17094,13 @@
         "en avion"
       ],
       "targets": [
-        "uf1-item-000706"
+        "uf1-item-000636"
       ]
     },
     {
       "id": "T4-TRSP-CTX-009",
       "trajectory": "Trajet 4",
-      "kind": "grammar",
+      "kind": "context",
       "scoring": "single",
       "prompt": "Nous traversons le lac avec un bateau. Nous y allons ___.",
       "source_line": 3312,
@@ -16898,13 +17108,13 @@
         "en bateau"
       ],
       "targets": [
-        "uf1-item-000706"
+        "uf1-item-000637"
       ]
     },
     {
       "id": "T4-TRSP-CTX-010",
       "trajectory": "Trajet 4",
-      "kind": "grammar",
+      "kind": "context",
       "scoring": "single",
       "prompt": "Je monte dans le bus. Je vais à l’école ___.",
       "source_line": 3313,
@@ -16912,13 +17122,13 @@
         "en bus"
       ],
       "targets": [
-        "uf1-item-000706"
+        "uf1-item-000638"
       ]
     },
     {
       "id": "T4-TRSP-CTX-011",
       "trajectory": "Trajet 4",
-      "kind": "grammar",
+      "kind": "context",
       "scoring": "single",
       "prompt": "Je prends le métro à la station. Je vais au centre ___.",
       "source_line": 3314,
@@ -16926,13 +17136,13 @@
         "en métro"
       ],
       "targets": [
-        "uf1-item-000706"
+        "uf1-item-000639"
       ]
     },
     {
       "id": "T4-TRSP-CTX-012",
       "trajectory": "Trajet 4",
-      "kind": "grammar",
+      "kind": "context",
       "scoring": "single",
       "prompt": "Je monte dans un taxi. Je vais à l’hôtel ___.",
       "source_line": 3315,
@@ -16940,13 +17150,13 @@
         "en taxi"
       ],
       "targets": [
-        "uf1-item-000706"
+        "uf1-item-000640"
       ]
     },
     {
       "id": "T4-TRSP-CTX-013",
       "trajectory": "Trajet 4",
-      "kind": "grammar",
+      "kind": "context",
       "scoring": "single",
       "prompt": "Je prends le tram numéro 4. Je vais au centre ___.",
       "source_line": 3316,
@@ -16954,13 +17164,13 @@
         "en tram"
       ],
       "targets": [
-        "uf1-item-000706"
+        "uf1-item-000641"
       ]
     },
     {
       "id": "T4-TRSP-CTX-014",
       "trajectory": "Trajet 4",
-      "kind": "grammar",
+      "kind": "context",
       "scoring": "single",
       "prompt": "Je prends le train à la gare. Je vais à Bruxelles ___.",
       "source_line": 3317,
@@ -16968,13 +17178,13 @@
         "en train"
       ],
       "targets": [
-        "uf1-item-000706"
+        "uf1-item-000642"
       ]
     },
     {
       "id": "T4-TRSP-CTX-015",
       "trajectory": "Trajet 4",
-      "kind": "grammar",
+      "kind": "context",
       "scoring": "single",
       "prompt": "Mon père conduit. Nous allons à Lille ___.",
       "source_line": 3318,
@@ -16982,7 +17192,7 @@
         "en voiture"
       ],
       "targets": [
-        "uf1-item-000706"
+        "uf1-item-000643"
       ]
     },
     {
@@ -19307,6 +19517,7 @@
       "scoring": "single",
       "prompt": "Les parents cherchent ___ enfant.",
       "source_line": 4857,
+      "instruction": "Gebruik het bezittelijk voornaamwoord van de aangeduide persoon",
       "accepted_answers": [
         "leur"
       ],
@@ -19321,6 +19532,7 @@
       "scoring": "single",
       "prompt": "Les parents cherchent ___ fille.",
       "source_line": 4858,
+      "instruction": "Gebruik het bezittelijk voornaamwoord van de aangeduide persoon",
       "accepted_answers": [
         "leur"
       ],
@@ -19335,6 +19547,7 @@
       "scoring": "single",
       "prompt": "Les parents cherchent ___ enfants.",
       "source_line": 4859,
+      "instruction": "Gebruik het bezittelijk voornaamwoord van de aangeduide persoon",
       "accepted_answers": [
         "leurs"
       ],
@@ -19349,6 +19562,7 @@
       "scoring": "single",
       "prompt": "Lucas et Emma montrent ___ maison.",
       "source_line": 4860,
+      "instruction": "Gebruik het bezittelijk voornaamwoord van de aangeduide persoon",
       "accepted_answers": [
         "leur"
       ],
@@ -19363,6 +19577,7 @@
       "scoring": "single",
       "prompt": "Lucas et Emma rangent ___ chambres.",
       "source_line": 4861,
+      "instruction": "Gebruik het bezittelijk voornaamwoord van de aangeduide persoon",
       "accepted_answers": [
         "leurs"
       ],
@@ -19377,6 +19592,7 @@
       "scoring": "single",
       "prompt": "Mes grands-parents aiment ___ jardin.",
       "source_line": 4862,
+      "instruction": "Gebruik het bezittelijk voornaamwoord van de aangeduide persoon",
       "accepted_answers": [
         "leur"
       ],
@@ -19391,6 +19607,7 @@
       "scoring": "single",
       "prompt": "Les élèves prennent ___ sacs.",
       "source_line": 4863,
+      "instruction": "Gebruik het bezittelijk voornaamwoord van de aangeduide persoon",
       "accepted_answers": [
         "leurs"
       ],
@@ -19405,6 +19622,7 @@
       "scoring": "single",
       "prompt": "Mes cousins visitent ___ grand-mère.",
       "source_line": 4864,
+      "instruction": "Gebruik het bezittelijk voornaamwoord van de aangeduide persoon",
       "accepted_answers": [
         "leur"
       ],
@@ -19419,6 +19637,7 @@
       "scoring": "single",
       "prompt": "Je ne joue plus souvent dans ___ chambre. (mijn)",
       "source_line": 4892,
+      "instruction": "Gebruik het bezittelijk voornaamwoord van de aangeduide persoon",
       "accepted_answers": [
         "ma"
       ],
@@ -19433,6 +19652,7 @@
       "scoring": "single",
       "prompt": "La salle à manger et la cuisine sont ___ pièces préférées. (mijn)",
       "source_line": 4893,
+      "instruction": "Gebruik het bezittelijk voornaamwoord van de aangeduide persoon",
       "accepted_answers": [
         "mes"
       ],
@@ -19447,6 +19667,7 @@
       "scoring": "single",
       "prompt": "Tu invites toute la famille pour ___ anniversaire. (jouw)",
       "source_line": 4894,
+      "instruction": "Gebruik het bezittelijk voornaamwoord van de aangeduide persoon",
       "accepted_answers": [
         "ton"
       ],
@@ -19461,6 +19682,7 @@
       "scoring": "single",
       "prompt": "___ parents travaillent trop. (jouw)",
       "source_line": 4895,
+      "instruction": "Gebruik het bezittelijk voornaamwoord van de aangeduide persoon",
       "accepted_answers": [
         "Tes"
       ],
@@ -19475,6 +19697,7 @@
       "scoring": "single",
       "prompt": "Voilà mon lapin. ___ oreilles sont très longues.",
       "source_line": 4896,
+      "instruction": "Gebruik het bezittelijk voornaamwoord van de aangeduide persoon",
       "accepted_answers": [
         "Ses"
       ],
@@ -19489,6 +19712,7 @@
       "scoring": "single",
       "prompt": "Marc montre ___ nouvelle voiture.",
       "source_line": 4897,
+      "instruction": "Gebruik het bezittelijk voornaamwoord van de aangeduide persoon",
       "accepted_answers": [
         "sa"
       ],
@@ -19503,6 +19727,7 @@
       "scoring": "single",
       "prompt": "Nous aimons beaucoup ___ grands-parents.",
       "source_line": 4898,
+      "instruction": "Gebruik het bezittelijk voornaamwoord van de aangeduide persoon",
       "accepted_answers": [
         "nos"
       ],
@@ -19517,6 +19742,7 @@
       "scoring": "single",
       "prompt": "Vous voyez ___ nouveau toit ?",
       "source_line": 4899,
+      "instruction": "Gebruik het bezittelijk voornaamwoord van de aangeduide persoon",
       "accepted_answers": [
         "votre"
       ],
@@ -19531,6 +19757,7 @@
       "scoring": "single",
       "prompt": "Les cousins viennent avec ___ parents.",
       "source_line": 4900,
+      "instruction": "Gebruik het bezittelijk voornaamwoord van de aangeduide persoon",
       "accepted_answers": [
         "leurs"
       ],
@@ -19545,6 +19772,7 @@
       "scoring": "single",
       "prompt": "Julie et Lucille vont chez ___ grands-parents.",
       "source_line": 4901,
+      "instruction": "Gebruik het bezittelijk voornaamwoord van de aangeduide persoon",
       "accepted_answers": [
         "leurs"
       ],
@@ -19559,6 +19787,7 @@
       "scoring": "single",
       "prompt": "C’est ___ premier voyage en France ? (hun)",
       "source_line": 4902,
+      "instruction": "Gebruik het bezittelijk voornaamwoord van de aangeduide persoon",
       "accepted_answers": [
         "leur"
       ],
@@ -19573,6 +19802,7 @@
       "scoring": "single",
       "prompt": "Où est ___ nouvelle maison ? (jullie)",
       "source_line": 4903,
+      "instruction": "Gebruik het bezittelijk voornaamwoord van de aangeduide persoon",
       "accepted_answers": [
         "votre"
       ],
@@ -19587,6 +19817,7 @@
       "scoring": "single",
       "prompt": "Ma sœur cherche ___ GSM.",
       "source_line": 4904,
+      "instruction": "Gebruik het bezittelijk voornaamwoord van de aangeduide persoon",
       "accepted_answers": [
         "son"
       ],
@@ -19601,6 +19832,7 @@
       "scoring": "single",
       "prompt": "Mon frère cherche ___ chambre.",
       "source_line": 4905,
+      "instruction": "Gebruik het bezittelijk voornaamwoord van de aangeduide persoon",
       "accepted_answers": [
         "sa"
       ],
@@ -19615,6 +19847,7 @@
       "scoring": "single",
       "prompt": "Mes parents rangent ___ affaires.",
       "source_line": 4906,
+      "instruction": "Gebruik het bezittelijk voornaamwoord van de aangeduide persoon",
       "accepted_answers": [
         "leurs"
       ],
@@ -19629,6 +19862,7 @@
       "scoring": "single",
       "prompt": "Nous montrons ___ appartement à nos amis.",
       "source_line": 4907,
+      "instruction": "Gebruik het bezittelijk voornaamwoord van de aangeduide persoon",
       "accepted_answers": [
         "notre"
       ],
@@ -19643,6 +19877,7 @@
       "scoring": "single",
       "prompt": "Je retrouve ___ amis dans le hall.",
       "source_line": 4908,
+      "instruction": "Gebruik het bezittelijk voornaamwoord van de aangeduide persoon",
       "accepted_answers": [
         "mes"
       ],
@@ -19657,6 +19892,7 @@
       "scoring": "single",
       "prompt": "Tu retrouves ___ amie devant l’école.",
       "source_line": 4909,
+      "instruction": "Gebruik het bezittelijk voornaamwoord van de aangeduide persoon",
       "accepted_answers": [
         "ton"
       ],
@@ -19671,6 +19907,7 @@
       "scoring": "single",
       "prompt": "Sarah retrouve ___ amie à la piscine.",
       "source_line": 4910,
+      "instruction": "Gebruik het bezittelijk voornaamwoord van de aangeduide persoon",
       "accepted_answers": [
         "son"
       ],
@@ -19685,6 +19922,7 @@
       "scoring": "single",
       "prompt": "Vous rangez ___ chaussures dans le couloir.",
       "source_line": 4911,
+      "instruction": "Gebruik het bezittelijk voornaamwoord van de aangeduide persoon",
       "accepted_answers": [
         "vos"
       ],
@@ -19699,6 +19937,7 @@
       "scoring": "single",
       "prompt": "C’est ___ vélo. (mijn)",
       "source_line": 4777,
+      "instruction": "Gebruik het bezittelijk voornaamwoord van de aangeduide persoon",
       "accepted_answers": [
         "mon"
       ],
@@ -19713,6 +19952,7 @@
       "scoring": "single",
       "prompt": "C’est ___ chambre. (mijn)",
       "source_line": 4778,
+      "instruction": "Gebruik het bezittelijk voornaamwoord van de aangeduide persoon",
       "accepted_answers": [
         "ma"
       ],
@@ -19727,6 +19967,7 @@
       "scoring": "single",
       "prompt": "Ce sont ___ parents. (mijn)",
       "source_line": 4779,
+      "instruction": "Gebruik het bezittelijk voornaamwoord van de aangeduide persoon",
       "accepted_answers": [
         "mes"
       ],
@@ -19741,6 +19982,7 @@
       "scoring": "single",
       "prompt": "Je cherche ___ sac à dos. (mijn)",
       "source_line": 4780,
+      "instruction": "Gebruik het bezittelijk voornaamwoord van de aangeduide persoon",
       "accepted_answers": [
         "mon"
       ],
@@ -19755,6 +19997,7 @@
       "scoring": "single",
       "prompt": "Je montre ___ maison. (mijn)",
       "source_line": 4781,
+      "instruction": "Gebruik het bezittelijk voornaamwoord van de aangeduide persoon",
       "accepted_answers": [
         "ma"
       ],
@@ -19769,6 +20012,7 @@
       "scoring": "single",
       "prompt": "Je range ___ chaussures. (mijn)",
       "source_line": 4782,
+      "instruction": "Gebruik het bezittelijk voornaamwoord van de aangeduide persoon",
       "accepted_answers": [
         "mes"
       ],
@@ -19783,6 +20027,7 @@
       "scoring": "single",
       "prompt": "___ frère habite à Bruxelles. (mijn)",
       "source_line": 4783,
+      "instruction": "Gebruik het bezittelijk voornaamwoord van de aangeduide persoon",
       "accepted_answers": [
         "Mon"
       ],
@@ -19797,6 +20042,7 @@
       "scoring": "single",
       "prompt": "___ sœur est sportive. (mijn)",
       "source_line": 4784,
+      "instruction": "Gebruik het bezittelijk voornaamwoord van de aangeduide persoon",
       "accepted_answers": [
         "Ma"
       ],
@@ -19811,6 +20057,7 @@
       "scoring": "single",
       "prompt": "___ cousins arrivent demain. (mijn)",
       "source_line": 4785,
+      "instruction": "Gebruik het bezittelijk voornaamwoord van de aangeduide persoon",
       "accepted_answers": [
         "Mes"
       ],
@@ -19825,6 +20072,7 @@
       "scoring": "single",
       "prompt": "C’est ___ maison. (onze)",
       "source_line": 4831,
+      "instruction": "Gebruik het bezittelijk voornaamwoord van de aangeduide persoon",
       "accepted_answers": [
         "notre"
       ],
@@ -19839,6 +20087,7 @@
       "scoring": "single",
       "prompt": "C’est ___ bureau. (ons)",
       "source_line": 4832,
+      "instruction": "Gebruik het bezittelijk voornaamwoord van de aangeduide persoon",
       "accepted_answers": [
         "notre"
       ],
@@ -19853,6 +20102,7 @@
       "scoring": "single",
       "prompt": "Ce sont ___ chambres. (onze)",
       "source_line": 4833,
+      "instruction": "Gebruik het bezittelijk voornaamwoord van de aangeduide persoon",
       "accepted_answers": [
         "nos"
       ],
@@ -19867,6 +20117,7 @@
       "scoring": "single",
       "prompt": "Nous aimons ___ jardin.",
       "source_line": 4834,
+      "instruction": "Gebruik het bezittelijk voornaamwoord van de aangeduide persoon",
       "accepted_answers": [
         "notre"
       ],
@@ -19881,6 +20132,7 @@
       "scoring": "single",
       "prompt": "Nous visitons ___ grands-parents.",
       "source_line": 4835,
+      "instruction": "Gebruik het bezittelijk voornaamwoord van de aangeduide persoon",
       "accepted_answers": [
         "nos"
       ],
@@ -19895,6 +20147,7 @@
       "scoring": "single",
       "prompt": "Voilà ___ nouvelle cuisine.",
       "source_line": 4836,
+      "instruction": "Gebruik het bezittelijk voornaamwoord van de aangeduide persoon",
       "accepted_answers": [
         "notre"
       ],
@@ -19909,6 +20162,7 @@
       "scoring": "single",
       "prompt": "Julie cherche ___ vélo.",
       "source_line": 4809,
+      "instruction": "Gebruik het bezittelijk voornaamwoord van de aangeduide persoon",
       "accepted_answers": [
         "son"
       ],
@@ -19923,6 +20177,7 @@
       "scoring": "single",
       "prompt": "Julie cherche ___ veste.",
       "source_line": 4810,
+      "instruction": "Gebruik het bezittelijk voornaamwoord van de aangeduide persoon",
       "accepted_answers": [
         "sa"
       ],
@@ -19937,6 +20192,7 @@
       "scoring": "single",
       "prompt": "Julie cherche ___ chaussures.",
       "source_line": 4811,
+      "instruction": "Gebruik het bezittelijk voornaamwoord van de aangeduide persoon",
       "accepted_answers": [
         "ses"
       ],
@@ -19951,6 +20207,7 @@
       "scoring": "single",
       "prompt": "Marc range ___ sac.",
       "source_line": 4812,
+      "instruction": "Gebruik het bezittelijk voornaamwoord van de aangeduide persoon",
       "accepted_answers": [
         "son"
       ],
@@ -19965,6 +20222,7 @@
       "scoring": "single",
       "prompt": "Marc montre ___ chambre.",
       "source_line": 4813,
+      "instruction": "Gebruik het bezittelijk voornaamwoord van de aangeduide persoon",
       "accepted_answers": [
         "sa"
       ],
@@ -19979,6 +20237,7 @@
       "scoring": "single",
       "prompt": "Marc appelle ___ parents.",
       "source_line": 4814,
+      "instruction": "Gebruik het bezittelijk voornaamwoord van de aangeduide persoon",
       "accepted_answers": [
         "ses"
       ],
@@ -19993,6 +20252,7 @@
       "scoring": "single",
       "prompt": "Emma aime ___ jardin.",
       "source_line": 4815,
+      "instruction": "Gebruik het bezittelijk voornaamwoord van de aangeduide persoon",
       "accepted_answers": [
         "son"
       ],
@@ -20007,6 +20267,7 @@
       "scoring": "single",
       "prompt": "Emma visite ___ tante.",
       "source_line": 4816,
+      "instruction": "Gebruik het bezittelijk voornaamwoord van de aangeduide persoon",
       "accepted_answers": [
         "sa"
       ],
@@ -20021,6 +20282,7 @@
       "scoring": "single",
       "prompt": "Emma voit ___ cousins.",
       "source_line": 4817,
+      "instruction": "Gebruik het bezittelijk voornaamwoord van de aangeduide persoon",
       "accepted_answers": [
         "ses"
       ],
@@ -20035,6 +20297,7 @@
       "scoring": "single",
       "prompt": "Lucas prend ___ vélo.",
       "source_line": 4818,
+      "instruction": "Gebruik het bezittelijk voornaamwoord van de aangeduide persoon",
       "accepted_answers": [
         "son"
       ],
@@ -20049,6 +20312,7 @@
       "scoring": "single",
       "prompt": "Lucas prépare ___ valise.",
       "source_line": 4819,
+      "instruction": "Gebruik het bezittelijk voornaamwoord van de aangeduide persoon",
       "accepted_answers": [
         "sa"
       ],
@@ -20063,6 +20327,7 @@
       "scoring": "single",
       "prompt": "Lucas cherche ___ affaires.",
       "source_line": 4820,
+      "instruction": "Gebruik het bezittelijk voornaamwoord van de aangeduide persoon",
       "accepted_answers": [
         "ses"
       ],
@@ -20077,6 +20342,7 @@
       "scoring": "single",
       "prompt": "Où est ___ vélo ? (jouw)",
       "source_line": 4793,
+      "instruction": "Gebruik het bezittelijk voornaamwoord van de aangeduide persoon",
       "accepted_answers": [
         "ton"
       ],
@@ -20091,6 +20357,7 @@
       "scoring": "single",
       "prompt": "J’aime ___ chambre. (jouw)",
       "source_line": 4794,
+      "instruction": "Gebruik het bezittelijk voornaamwoord van de aangeduide persoon",
       "accepted_answers": [
         "ta"
       ],
@@ -20105,6 +20372,7 @@
       "scoring": "single",
       "prompt": "Où sont ___ baskets ? (jouw)",
       "source_line": 4795,
+      "instruction": "Gebruik het bezittelijk voornaamwoord van de aangeduide persoon",
       "accepted_answers": [
         "tes"
       ],
@@ -20119,6 +20387,7 @@
       "scoring": "single",
       "prompt": "Tu ranges ___ sac. (jouw)",
       "source_line": 4796,
+      "instruction": "Gebruik het bezittelijk voornaamwoord van de aangeduide persoon",
       "accepted_answers": [
         "ton"
       ],
@@ -20133,6 +20402,7 @@
       "scoring": "single",
       "prompt": "Tu montres ___ maison. (jouw)",
       "source_line": 4797,
+      "instruction": "Gebruik het bezittelijk voornaamwoord van de aangeduide persoon",
       "accepted_answers": [
         "ta"
       ],
@@ -20147,6 +20417,7 @@
       "scoring": "single",
       "prompt": "Tu cherches ___ clés. (jouw)",
       "source_line": 4798,
+      "instruction": "Gebruik het bezittelijk voornaamwoord van de aangeduide persoon",
       "accepted_answers": [
         "tes"
       ],
@@ -20161,6 +20432,7 @@
       "scoring": "single",
       "prompt": "___ frère est à la maison. (jouw)",
       "source_line": 4799,
+      "instruction": "Gebruik het bezittelijk voornaamwoord van de aangeduide persoon",
       "accepted_answers": [
         "Ton"
       ],
@@ -20175,6 +20447,7 @@
       "scoring": "single",
       "prompt": "___ sœur est au jardin. (jouw)",
       "source_line": 4800,
+      "instruction": "Gebruik het bezittelijk voornaamwoord van de aangeduide persoon",
       "accepted_answers": [
         "Ta"
       ],
@@ -20189,6 +20462,7 @@
       "scoring": "single",
       "prompt": "___ parents travaillent. (jouw)",
       "source_line": 4801,
+      "instruction": "Gebruik het bezittelijk voornaamwoord van de aangeduide persoon",
       "accepted_answers": [
         "Tes"
       ],
@@ -20203,6 +20477,7 @@
       "scoring": "single",
       "prompt": "C’est ___ maison. (jullie/uw)",
       "source_line": 4844,
+      "instruction": "Gebruik het bezittelijk voornaamwoord van de aangeduide persoon",
       "accepted_answers": [
         "votre"
       ],
@@ -20217,6 +20492,7 @@
       "scoring": "single",
       "prompt": "C’est ___ garage. (jullie/uw)",
       "source_line": 4845,
+      "instruction": "Gebruik het bezittelijk voornaamwoord van de aangeduide persoon",
       "accepted_answers": [
         "votre"
       ],
@@ -20231,6 +20507,7 @@
       "scoring": "single",
       "prompt": "Ce sont ___ chambres. (jullie/uw)",
       "source_line": 4846,
+      "instruction": "Gebruik het bezittelijk voornaamwoord van de aangeduide persoon",
       "accepted_answers": [
         "vos"
       ],
@@ -20243,8 +20520,9 @@
       "trajectory": "Trajet 5",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Où est ___ chambre ?",
+      "prompt": "Où est ___ chambre ? (jullie/uw)",
       "source_line": 4847,
+      "instruction": "Gebruik het bezittelijk voornaamwoord van de aangeduide persoon",
       "accepted_answers": [
         "votre"
       ],
@@ -20257,8 +20535,9 @@
       "trajectory": "Trajet 5",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "J’aime beaucoup ___ jardin.",
+      "prompt": "J’aime beaucoup ___ jardin. (jullie/uw)",
       "source_line": 4848,
+      "instruction": "Gebruik het bezittelijk voornaamwoord van de aangeduide persoon",
       "accepted_answers": [
         "votre"
       ],
@@ -20271,8 +20550,9 @@
       "trajectory": "Trajet 5",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Où sont ___ chaussures ?",
+      "prompt": "Où sont ___ chaussures ? (jullie/uw)",
       "source_line": 4849,
+      "instruction": "Gebruik het bezittelijk voornaamwoord van de aangeduide persoon",
       "accepted_answers": [
         "vos"
       ],
@@ -20287,6 +20567,7 @@
       "scoring": "single",
       "prompt": "C’est ___ école. (mijn)",
       "source_line": 4876,
+      "instruction": "Gebruik het bezittelijk voornaamwoord van de aangeduide persoon",
       "accepted_answers": [
         "mon"
       ],
@@ -20301,6 +20582,7 @@
       "scoring": "single",
       "prompt": "Quelle est ___ adresse ? (jouw)",
       "source_line": 4877,
+      "instruction": "Gebruik het bezittelijk voornaamwoord van de aangeduide persoon",
       "accepted_answers": [
         "ton"
       ],
@@ -20315,6 +20597,7 @@
       "scoring": "single",
       "prompt": "Julie regarde ___ horloge.",
       "source_line": 4878,
+      "instruction": "Gebruik het bezittelijk voornaamwoord van de aangeduide persoon",
       "accepted_answers": [
         "son"
       ],
@@ -20329,6 +20612,7 @@
       "scoring": "single",
       "prompt": "Je montre ___ entrée.",
       "source_line": 4879,
+      "instruction": "Gebruik het bezittelijk voornaamwoord van de aangeduide persoon",
       "accepted_answers": [
         "mon"
       ],
@@ -20343,6 +20627,7 @@
       "scoring": "single",
       "prompt": "Tu cherches ___ amie.",
       "source_line": 4880,
+      "instruction": "Gebruik het bezittelijk voornaamwoord van de aangeduide persoon",
       "accepted_answers": [
         "ton"
       ],
@@ -20357,6 +20642,7 @@
       "scoring": "single",
       "prompt": "Emma parle à ___ amie.",
       "source_line": 4881,
+      "instruction": "Gebruik het bezittelijk voornaamwoord van de aangeduide persoon",
       "accepted_answers": [
         "son"
       ],
@@ -20772,7 +21058,7 @@
     {
       "id": "T5-PREP-001",
       "trajectory": "Trajet 5",
-      "kind": "grammar",
+      "kind": "context",
       "scoring": "single",
       "prompt": "Le salon est à gauche de la cuisine. La cuisine est ___ du salon.",
       "source_line": 4430,
@@ -20780,13 +21066,13 @@
         "à droite"
       ],
       "targets": [
-        "uf1-item-000851"
+        "uf1-item-000766"
       ]
     },
     {
       "id": "T5-PREP-002",
       "trajectory": "Trajet 5",
-      "kind": "grammar",
+      "kind": "context",
       "scoring": "single",
       "prompt": "La cuisine est à droite du salon. Le salon est ___ de la cuisine.",
       "source_line": 4431,
@@ -20794,13 +21080,13 @@
         "à gauche"
       ],
       "targets": [
-        "uf1-item-000851"
+        "uf1-item-000767"
       ]
     },
     {
       "id": "T5-PREP-003",
       "trajectory": "Trajet 5",
-      "kind": "grammar",
+      "kind": "context",
       "scoring": "single",
       "prompt": "La salle de bains est en face de la chambre. La chambre est ___ de la salle de bains.",
       "source_line": 4432,
@@ -20808,13 +21094,13 @@
         "en face"
       ],
       "targets": [
-        "uf1-item-000851"
+        "uf1-item-000768"
       ]
     },
     {
       "id": "T5-PREP-004",
       "trajectory": "Trajet 5",
-      "kind": "grammar",
+      "kind": "context",
       "scoring": "single",
       "prompt": "Le bureau est à côté de la chambre. La chambre est ___ du bureau.",
       "source_line": 4433,
@@ -20822,13 +21108,13 @@
         "à côté"
       ],
       "targets": [
-        "uf1-item-000851"
+        "uf1-item-000769"
       ]
     },
     {
       "id": "T5-PREP-005",
       "trajectory": "Trajet 5",
-      "kind": "grammar",
+      "kind": "context",
       "scoring": "single",
       "prompt": "Le garage est devant la remise. La remise est ___ le garage.",
       "source_line": 4434,
@@ -20836,13 +21122,13 @@
         "derrière"
       ],
       "targets": [
-        "uf1-item-000851"
+        "uf1-item-000771"
       ]
     },
     {
       "id": "T5-PREP-006",
       "trajectory": "Trajet 5",
-      "kind": "grammar",
+      "kind": "context",
       "scoring": "single",
       "prompt": "Le jardin est derrière la maison. La maison est ___ le jardin.",
       "source_line": 4435,
@@ -20850,13 +21136,13 @@
         "devant"
       ],
       "targets": [
-        "uf1-item-000851"
+        "uf1-item-000770"
       ]
     },
     {
       "id": "T5-PREP-007",
       "trajectory": "Trajet 5",
-      "kind": "grammar",
+      "kind": "context",
       "scoring": "single",
       "prompt": "Le garage est sous la chambre. La chambre est ___ le garage.",
       "source_line": 4436,
@@ -20864,13 +21150,13 @@
         "sur"
       ],
       "targets": [
-        "uf1-item-000851"
+        "uf1-item-000773"
       ]
     },
     {
       "id": "T5-PREP-008",
       "trajectory": "Trajet 5",
-      "kind": "grammar",
+      "kind": "context",
       "scoring": "single",
       "prompt": "La chambre est sur le garage. Le garage est ___ la chambre.",
       "source_line": 4437,
@@ -20878,13 +21164,13 @@
         "sous"
       ],
       "targets": [
-        "uf1-item-000851"
+        "uf1-item-000772"
       ]
     },
     {
       "id": "T5-PREP-009",
       "trajectory": "Trajet 5",
-      "kind": "grammar",
+      "kind": "context",
       "scoring": "single",
       "prompt": "La salle de bains est entre la chambre et le bureau. Elle est ___ la chambre et le bureau.",
       "source_line": 4438,
@@ -20892,13 +21178,13 @@
         "entre"
       ],
       "targets": [
-        "uf1-item-000851"
+        "uf1-item-000774"
       ]
     },
     {
       "id": "T5-PREP-010",
       "trajectory": "Trajet 5",
-      "kind": "grammar",
+      "kind": "context",
       "scoring": "single",
       "prompt": "Le vélo est dans le garage. Il est ___ le garage.",
       "source_line": 4439,
@@ -20906,13 +21192,13 @@
         "dans"
       ],
       "targets": [
-        "uf1-item-000851"
+        "uf1-item-000775"
       ]
     },
     {
       "id": "T5-PREP-011",
       "trajectory": "Trajet 5",
-      "kind": "grammar",
+      "kind": "context",
       "scoring": "single",
       "prompt": "Le salon est près de la cuisine. Il est ___ de la cuisine.",
       "source_line": 4440,
@@ -20920,13 +21206,13 @@
         "près"
       ],
       "targets": [
-        "uf1-item-000851"
+        "uf1-item-000764"
       ]
     },
     {
       "id": "T5-PREP-012",
       "trajectory": "Trajet 5",
-      "kind": "grammar",
+      "kind": "context",
       "scoring": "single",
       "prompt": "La cuisine est juste en face du salon. Elle est ___ du salon.",
       "source_line": 4441,
@@ -20934,7 +21220,7 @@
         "en face"
       ],
       "targets": [
-        "uf1-item-000851"
+        "uf1-item-000763"
       ]
     },
     {
@@ -23267,10 +23553,11 @@
     {
       "id": "T6-HOM-A-001",
       "trajectory": "Trajet 6",
-      "kind": "grammar",
+      "kind": "spelling",
       "scoring": "single",
       "prompt": "Il ___ deux mamans.",
       "source_line": 6069,
+      "instruction": "Kies de juiste schrijfwijze",
       "accepted_answers": [
         "a"
       ],
@@ -23281,10 +23568,11 @@
     {
       "id": "T6-HOM-A-002",
       "trajectory": "Trajet 6",
-      "kind": "grammar",
+      "kind": "spelling",
       "scoring": "single",
       "prompt": "Elle ___ treize ans.",
       "source_line": 6070,
+      "instruction": "Kies de juiste schrijfwijze",
       "accepted_answers": [
         "a"
       ],
@@ -23295,10 +23583,11 @@
     {
       "id": "T6-HOM-A-003",
       "trajectory": "Trajet 6",
-      "kind": "grammar",
+      "kind": "spelling",
       "scoring": "single",
       "prompt": "Mon frère ___ un vélo.",
       "source_line": 6071,
+      "instruction": "Kies de juiste schrijfwijze",
       "accepted_answers": [
         "a"
       ],
@@ -23309,10 +23598,11 @@
     {
       "id": "T6-HOM-A-004",
       "trajectory": "Trajet 6",
-      "kind": "grammar",
+      "kind": "spelling",
       "scoring": "single",
       "prompt": "Je vais ___ Wavre.",
       "source_line": 6072,
+      "instruction": "Kies de juiste schrijfwijze",
       "accepted_answers": [
         "à"
       ],
@@ -23323,10 +23613,11 @@
     {
       "id": "T6-HOM-A-005",
       "trajectory": "Trajet 6",
-      "kind": "grammar",
+      "kind": "spelling",
       "scoring": "single",
       "prompt": "Elle habite ___ Bruxelles.",
       "source_line": 6073,
+      "instruction": "Kies de juiste schrijfwijze",
       "accepted_answers": [
         "à"
       ],
@@ -23337,10 +23628,11 @@
     {
       "id": "T6-HOM-A-006",
       "trajectory": "Trajet 6",
-      "kind": "grammar",
+      "kind": "spelling",
       "scoring": "single",
       "prompt": "Nous allons ___ vélo.",
       "source_line": 6074,
+      "instruction": "Kies de juiste schrijfwijze",
       "accepted_answers": [
         "à"
       ],
@@ -23351,10 +23643,11 @@
     {
       "id": "T6-HOM-A-007",
       "trajectory": "Trajet 6",
-      "kind": "grammar",
+      "kind": "spelling",
       "scoring": "multi_gap",
       "prompt": "Lucas ___ un appartement ___ Lille.",
       "source_line": 6075,
+      "instruction": "Kies de juiste schrijfwijze",
       "gaps": [
         {
           "id": "gap-1",
@@ -23379,10 +23672,11 @@
     {
       "id": "T6-HOM-A-008",
       "trajectory": "Trajet 6",
-      "kind": "grammar",
+      "kind": "spelling",
       "scoring": "multi_gap",
       "prompt": "Ma sœur ___ rendez-vous ___ huit heures.",
       "source_line": 6076,
+      "instruction": "Kies de juiste schrijfwijze",
       "gaps": [
         {
           "id": "gap-1",
@@ -23407,10 +23701,11 @@
     {
       "id": "T6-HOM-LA-001",
       "trajectory": "Trajet 6",
-      "kind": "grammar",
+      "kind": "spelling",
       "scoring": "single",
       "prompt": "C’est ___ voiture de maman.",
       "source_line": 6107,
+      "instruction": "Kies de juiste schrijfwijze",
       "accepted_answers": [
         "la"
       ],
@@ -23421,10 +23716,11 @@
     {
       "id": "T6-HOM-LA-002",
       "trajectory": "Trajet 6",
-      "kind": "grammar",
+      "kind": "spelling",
       "scoring": "single",
       "prompt": "Je vois ___ maison.",
       "source_line": 6108,
+      "instruction": "Kies de juiste schrijfwijze",
       "accepted_answers": [
         "la"
       ],
@@ -23435,10 +23731,11 @@
     {
       "id": "T6-HOM-LA-003",
       "trajectory": "Trajet 6",
-      "kind": "grammar",
+      "kind": "spelling",
       "scoring": "single",
       "prompt": "___ cuisine est à gauche.",
       "source_line": 6109,
+      "instruction": "Kies de juiste schrijfwijze",
       "accepted_answers": [
         "La"
       ],
@@ -23449,10 +23746,11 @@
     {
       "id": "T6-HOM-LA-004",
       "trajectory": "Trajet 6",
-      "kind": "grammar",
+      "kind": "spelling",
       "scoring": "single",
       "prompt": "Ma sœur est ___.",
       "source_line": 6110,
+      "instruction": "Kies de juiste schrijfwijze",
       "accepted_answers": [
         "là"
       ],
@@ -23463,10 +23761,11 @@
     {
       "id": "T6-HOM-LA-005",
       "trajectory": "Trajet 6",
-      "kind": "grammar",
+      "kind": "spelling",
       "scoring": "single",
       "prompt": "Le sac est ___, sur la chaise.",
       "source_line": 6111,
+      "instruction": "Kies de juiste schrijfwijze",
       "accepted_answers": [
         "là"
       ],
@@ -23477,10 +23776,11 @@
     {
       "id": "T6-HOM-LA-006",
       "trajectory": "Trajet 6",
-      "kind": "grammar",
+      "kind": "spelling",
       "scoring": "single",
       "prompt": "Regarde ___ : la gare est juste devant nous.",
       "source_line": 6112,
+      "instruction": "Kies de juiste schrijfwijze",
       "accepted_answers": [
         "là"
       ],
@@ -23491,10 +23791,11 @@
     {
       "id": "T6-HOM-LA-007",
       "trajectory": "Trajet 6",
-      "kind": "grammar",
+      "kind": "spelling",
       "scoring": "multi_gap",
       "prompt": "___ voiture est ___, devant la maison.",
       "source_line": 6113,
+      "instruction": "Kies de juiste schrijfwijze",
       "gaps": [
         {
           "id": "gap-1",
@@ -23519,10 +23820,11 @@
     {
       "id": "T6-HOM-LA-008",
       "trajectory": "Trajet 6",
-      "kind": "grammar",
+      "kind": "spelling",
       "scoring": "multi_gap",
       "prompt": "___ pharmacie ? Elle est juste ___.",
       "source_line": 6114,
+      "instruction": "Kies de juiste schrijfwijze",
       "gaps": [
         {
           "id": "gap-1",
@@ -23547,10 +23849,11 @@
     {
       "id": "T6-HOM-OU-001",
       "trajectory": "Trajet 6",
-      "kind": "grammar",
+      "kind": "spelling",
       "scoring": "single",
       "prompt": "Tu prends du café ___ du thé ?",
       "source_line": 6088,
+      "instruction": "Kies de juiste schrijfwijze",
       "accepted_answers": [
         "ou"
       ],
@@ -23561,10 +23864,11 @@
     {
       "id": "T6-HOM-OU-002",
       "trajectory": "Trajet 6",
-      "kind": "grammar",
+      "kind": "spelling",
       "scoring": "single",
       "prompt": "Tu préfères le bus ___ le train ?",
       "source_line": 6089,
+      "instruction": "Kies de juiste schrijfwijze",
       "accepted_answers": [
         "ou"
       ],
@@ -23575,10 +23879,11 @@
     {
       "id": "T6-HOM-OU-003",
       "trajectory": "Trajet 6",
-      "kind": "grammar",
+      "kind": "spelling",
       "scoring": "single",
       "prompt": "Tu habites ___ ?",
       "source_line": 6090,
+      "instruction": "Kies de juiste schrijfwijze",
       "accepted_answers": [
         "où"
       ],
@@ -23589,10 +23894,11 @@
     {
       "id": "T6-HOM-OU-004",
       "trajectory": "Trajet 6",
-      "kind": "grammar",
+      "kind": "spelling",
       "scoring": "single",
       "prompt": "___ est la télécommande ?",
       "source_line": 6091,
+      "instruction": "Kies de juiste schrijfwijze",
       "accepted_answers": [
         "Où"
       ],
@@ -23603,10 +23909,11 @@
     {
       "id": "T6-HOM-OU-005",
       "trajectory": "Trajet 6",
-      "kind": "grammar",
+      "kind": "spelling",
       "scoring": "single",
       "prompt": "On va à pied ___ à vélo ?",
       "source_line": 6092,
+      "instruction": "Kies de juiste schrijfwijze",
       "accepted_answers": [
         "ou"
       ],
@@ -23617,10 +23924,11 @@
     {
       "id": "T6-HOM-OU-006",
       "trajectory": "Trajet 6",
-      "kind": "grammar",
+      "kind": "spelling",
       "scoring": "single",
       "prompt": "Tu sais ___ est la gare ?",
       "source_line": 6093,
+      "instruction": "Kies de juiste schrijfwijze",
       "accepted_answers": [
         "où"
       ],
@@ -23631,10 +23939,11 @@
     {
       "id": "T6-HOM-OU-007",
       "trajectory": "Trajet 6",
-      "kind": "grammar",
+      "kind": "spelling",
       "scoring": "multi_gap",
       "prompt": "Tu vas ___ : à Paris ___ à Lille ?",
       "source_line": 6094,
+      "instruction": "Kies de juiste schrijfwijze",
       "gaps": [
         {
           "id": "gap-1",
@@ -23659,10 +23968,11 @@
     {
       "id": "T6-HOM-OU-008",
       "trajectory": "Trajet 6",
-      "kind": "grammar",
+      "kind": "spelling",
       "scoring": "single",
       "prompt": "Je ne sais pas ___ il habite.",
       "source_line": 6095,
+      "instruction": "Kies de juiste schrijfwijze",
       "accepted_answers": [
         "où"
       ],
@@ -24590,8 +24900,9 @@
       "trajectory": "Trajet 6",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Je vraagt wanneer iemand een match heeft.",
+      "prompt": "Je vraagt wanneer iemand een match heeft. (intonation ou est-ce que)",
       "source_line": 6026,
+      "instruction": "Schrijf een volledige vraag",
       "accepted_answers": [
         "Tu as un match quand ?",
         "Quand est-ce que tu as un match ?"
@@ -24599,6 +24910,7 @@
       "targets": [
         "uf1-item-001005"
       ],
+      "evidence_policy": "practice_only",
       "requires_question_mark": true
     },
     {
@@ -24606,8 +24918,9 @@
       "trajectory": "Trajet 6",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Je vraagt welke sport iemand leuk vindt.",
+      "prompt": "Je vraagt welke sport iemand leuk vindt. (intonation ou est-ce que)",
       "source_line": 6027,
+      "instruction": "Schrijf een volledige vraag",
       "accepted_answers": [
         "Tu aimes quel sport ?",
         "Quel sport est-ce que tu aimes ?"
@@ -24615,6 +24928,7 @@
       "targets": [
         "uf1-item-001005"
       ],
+      "evidence_policy": "practice_only",
       "requires_question_mark": true
     },
     {
@@ -24622,8 +24936,9 @@
       "trajectory": "Trajet 6",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Je vraagt waar iemand op vakantie gaat.",
+      "prompt": "Je vraagt waar iemand op vakantie gaat. (intonation ou est-ce que)",
       "source_line": 6028,
+      "instruction": "Schrijf een volledige vraag",
       "accepted_answers": [
         "Tu pars en vacances où ?",
         "Où est-ce que tu pars en vacances ?"
@@ -24631,6 +24946,7 @@
       "targets": [
         "uf1-item-001005"
       ],
+      "evidence_policy": "practice_only",
       "requires_question_mark": true
     },
     {
@@ -24638,8 +24954,9 @@
       "trajectory": "Trajet 6",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Je vraagt hoeveel uren iemand slaapt.",
+      "prompt": "Je vraagt hoeveel uren iemand slaapt. (intonation ou est-ce que)",
       "source_line": 6029,
+      "instruction": "Schrijf een volledige vraag",
       "accepted_answers": [
         "Tu dors combien d’heures par nuit ?",
         "Combien d’heures est-ce que tu dors par nuit ?"
@@ -24647,6 +24964,7 @@
       "targets": [
         "uf1-item-001005"
       ],
+      "evidence_policy": "practice_only",
       "requires_question_mark": true
     },
     {
@@ -24654,8 +24972,9 @@
       "trajectory": "Trajet 6",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Je vraagt waarom iemand fruit eet.",
+      "prompt": "Je vraagt waarom iemand fruit eet. (intonation ou est-ce que)",
       "source_line": 6030,
+      "instruction": "Schrijf een volledige vraag",
       "accepted_answers": [
         "Tu manges des fruits pourquoi ?",
         "Pourquoi est-ce que tu manges des fruits ?"
@@ -24663,6 +24982,7 @@
       "targets": [
         "uf1-item-001005"
       ],
+      "evidence_policy": "practice_only",
       "requires_question_mark": true
     },
     {
@@ -24670,8 +24990,9 @@
       "trajectory": "Trajet 6",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Je vraagt wat iemand eet.",
+      "prompt": "Je vraagt wat iemand eet. (intonation ou est-ce que)",
       "source_line": 6031,
+      "instruction": "Schrijf een volledige vraag",
       "accepted_answers": [
         "Tu manges quoi ?",
         "Qu’est-ce que tu manges ?"
@@ -24679,6 +25000,7 @@
       "targets": [
         "uf1-item-001005"
       ],
+      "evidence_policy": "practice_only",
       "requires_question_mark": true
     },
     {
@@ -24686,8 +25008,9 @@
       "trajectory": "Trajet 6",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Tu joues au basket.",
+      "prompt": "Tu joues au basket. (est-ce que)",
       "source_line": 5966,
+      "instruction": "Schrijf de volledige vraag in de gevraagde vorm",
       "accepted_answers": [
         "Est-ce que tu joues au basket ?"
       ],
@@ -24701,8 +25024,9 @@
       "trajectory": "Trajet 6",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Tu aimes danser.",
+      "prompt": "Tu aimes danser. (est-ce que)",
       "source_line": 5967,
+      "instruction": "Schrijf de volledige vraag in de gevraagde vorm",
       "accepted_answers": [
         "Est-ce que tu aimes danser ?"
       ],
@@ -24716,8 +25040,9 @@
       "trajectory": "Trajet 6",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Vous partez en vacances.",
+      "prompt": "Vous partez en vacances. (est-ce que)",
       "source_line": 5968,
+      "instruction": "Schrijf de volledige vraag in de gevraagde vorm",
       "accepted_answers": [
         "Est-ce que vous partez en vacances ?"
       ],
@@ -24731,8 +25056,9 @@
       "trajectory": "Trajet 6",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Il habite à Bruxelles.",
+      "prompt": "Il habite à Bruxelles. (est-ce que)",
       "source_line": 5969,
+      "instruction": "Schrijf de volledige vraag in de gevraagde vorm",
       "accepted_answers": [
         "Est-ce qu’il habite à Bruxelles ?"
       ],
@@ -24746,8 +25072,9 @@
       "trajectory": "Trajet 6",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Elle aime le français.",
+      "prompt": "Elle aime le français. (est-ce que)",
       "source_line": 5970,
+      "instruction": "Schrijf de volledige vraag in de gevraagde vorm",
       "accepted_answers": [
         "Est-ce qu’elle aime le français ?"
       ],
@@ -24761,8 +25088,9 @@
       "trajectory": "Trajet 6",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Ils ont un chien.",
+      "prompt": "Ils ont un chien. (est-ce que)",
       "source_line": 5971,
+      "instruction": "Schrijf de volledige vraag in de gevraagde vorm",
       "accepted_answers": [
         "Est-ce qu’ils ont un chien ?"
       ],
@@ -24776,8 +25104,9 @@
       "trajectory": "Trajet 6",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "On va au cinéma.",
+      "prompt": "On va au cinéma. (est-ce que)",
       "source_line": 5972,
+      "instruction": "Schrijf de volledige vraag in de gevraagde vorm",
       "accepted_answers": [
         "Est-ce qu’on va au cinéma ?"
       ],
@@ -24791,8 +25120,9 @@
       "trajectory": "Trajet 6",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Emma joue au tennis.",
+      "prompt": "Emma joue au tennis. (est-ce que)",
       "source_line": 5973,
+      "instruction": "Schrijf de volledige vraag in de gevraagde vorm",
       "accepted_answers": [
         "Est-ce qu’Emma joue au tennis ?"
       ],
@@ -24806,8 +25136,9 @@
       "trajectory": "Trajet 6",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Vraag waarom iemand van voetbal houdt.",
+      "prompt": "Vraag waarom iemand van voetbal houdt. (est-ce que)",
       "source_line": 5983,
+      "instruction": "Schrijf de volledige vraag in de gevraagde vorm",
       "accepted_answers": [
         "Pourquoi est-ce que tu aimes le foot ?"
       ],
@@ -24821,8 +25152,9 @@
       "trajectory": "Trajet 6",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Vraag wanneer men eet in Frankrijk.",
+      "prompt": "Vraag wanneer men eet in Frankrijk. (est-ce que)",
       "source_line": 5984,
+      "instruction": "Schrijf de volledige vraag in de gevraagde vorm",
       "accepted_answers": [
         "Quand est-ce qu’on dîne en France ?"
       ],
@@ -24836,8 +25168,9 @@
       "trajectory": "Trajet 6",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Vraag waar iemand op vakantie gaat.",
+      "prompt": "Vraag waar iemand op vakantie gaat. (est-ce que)",
       "source_line": 5985,
+      "instruction": "Schrijf de volledige vraag in de gevraagde vorm",
       "accepted_answers": [
         "Où est-ce que tu pars en vacances ?"
       ],
@@ -24851,8 +25184,9 @@
       "trajectory": "Trajet 6",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Vraag hoe iemand naar school gaat.",
+      "prompt": "Vraag hoe iemand naar school gaat. (est-ce que)",
       "source_line": 5986,
+      "instruction": "Schrijf de volledige vraag in de gevraagde vorm",
       "accepted_answers": [
         "Comment est-ce que tu vas à l’école ?"
       ],
@@ -24866,8 +25200,9 @@
       "trajectory": "Trajet 6",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Vraag hoeveel uren iemand per nacht slaapt.",
+      "prompt": "Vraag hoeveel uren iemand per nacht slaapt. (est-ce que)",
       "source_line": 5987,
+      "instruction": "Schrijf de volledige vraag in de gevraagde vorm",
       "accepted_answers": [
         "Combien d’heures est-ce que tu dors par nuit ?"
       ],
@@ -24881,8 +25216,9 @@
       "trajectory": "Trajet 6",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Vraag welk sport iemand het liefst doet.",
+      "prompt": "Vraag welk sport iemand het liefst doet. (est-ce que)",
       "source_line": 5988,
+      "instruction": "Schrijf de volledige vraag in de gevraagde vorm",
       "accepted_answers": [
         "Quel sport est-ce que tu préfères ?"
       ],
@@ -24896,8 +25232,9 @@
       "trajectory": "Trajet 6",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Vraag hoe laat de trein aankomt.",
+      "prompt": "Vraag hoe laat de trein aankomt. (est-ce que)",
       "source_line": 5989,
+      "instruction": "Schrijf de volledige vraag in de gevraagde vorm",
       "accepted_answers": [
         "À quelle heure est-ce que le train arrive ?"
       ],
@@ -24911,8 +25248,9 @@
       "trajectory": "Trajet 6",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Vraag wie jij ziet.",
+      "prompt": "Vraag wie jij ziet. (est-ce que)",
       "source_line": 5990,
+      "instruction": "Schrijf de volledige vraag in de gevraagde vorm",
       "accepted_answers": [
         "Qui est-ce que tu vois ?"
       ],
@@ -24926,8 +25264,9 @@
       "trajectory": "Trajet 6",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Tu aimes la France.",
+      "prompt": "Tu aimes la France. (intonation)",
       "source_line": 5934,
+      "instruction": "Schrijf de volledige vraag in de gevraagde vorm",
       "accepted_answers": [
         "Tu aimes la France ?"
       ],
@@ -24941,8 +25280,9 @@
       "trajectory": "Trajet 6",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Tu joues au basket.",
+      "prompt": "Tu joues au basket. (intonation)",
       "source_line": 5935,
+      "instruction": "Schrijf de volledige vraag in de gevraagde vorm",
       "accepted_answers": [
         "Tu joues au basket ?"
       ],
@@ -24956,8 +25296,9 @@
       "trajectory": "Trajet 6",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Vous avez quatorze ans.",
+      "prompt": "Vous avez quatorze ans. (intonation)",
       "source_line": 5936,
+      "instruction": "Schrijf de volledige vraag in de gevraagde vorm",
       "accepted_answers": [
         "Vous avez quatorze ans ?"
       ],
@@ -24971,8 +25312,9 @@
       "trajectory": "Trajet 6",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Elle habite à Lille.",
+      "prompt": "Elle habite à Lille. (intonation)",
       "source_line": 5937,
+      "instruction": "Schrijf de volledige vraag in de gevraagde vorm",
       "accepted_answers": [
         "Elle habite à Lille ?"
       ],
@@ -24986,8 +25328,9 @@
       "trajectory": "Trajet 6",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Ils parlent français.",
+      "prompt": "Ils parlent français. (intonation)",
       "source_line": 5938,
+      "instruction": "Schrijf de volledige vraag in de gevraagde vorm",
       "accepted_answers": [
         "Ils parlent français ?"
       ],
@@ -25001,8 +25344,9 @@
       "trajectory": "Trajet 6",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Tu as un frère.",
+      "prompt": "Tu as un frère. (intonation)",
       "source_line": 5939,
+      "instruction": "Schrijf de volledige vraag in de gevraagde vorm",
       "accepted_answers": [
         "Tu as un frère ?"
       ],
@@ -25016,8 +25360,9 @@
       "trajectory": "Trajet 6",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Vous partez en vacances.",
+      "prompt": "Vous partez en vacances. (intonation)",
       "source_line": 5940,
+      "instruction": "Schrijf de volledige vraag in de gevraagde vorm",
       "accepted_answers": [
         "Vous partez en vacances ?"
       ],
@@ -25031,8 +25376,9 @@
       "trajectory": "Trajet 6",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Emma aime le sport.",
+      "prompt": "Emma aime le sport. (intonation)",
       "source_line": 5941,
+      "instruction": "Schrijf de volledige vraag in de gevraagde vorm",
       "accepted_answers": [
         "Emma aime le sport ?"
       ],
@@ -25046,8 +25392,9 @@
       "trajectory": "Trajet 6",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Vraag waar iemand woont met intonatie.",
+      "prompt": "Vraag waar iemand woont met intonatie. (intonation)",
       "source_line": 5951,
+      "instruction": "Schrijf de volledige vraag in de gevraagde vorm",
       "accepted_answers": [
         "Tu habites où ?"
       ],
@@ -25061,8 +25408,9 @@
       "trajectory": "Trajet 6",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Vraag hoe iemand heet met intonatie.",
+      "prompt": "Vraag hoe iemand heet met intonatie. (intonation)",
       "source_line": 5952,
+      "instruction": "Schrijf de volledige vraag in de gevraagde vorm",
       "accepted_answers": [
         "Tu t’appelles comment ?"
       ],
@@ -25076,8 +25424,9 @@
       "trajectory": "Trajet 6",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Vraag wat iemand eet met intonatie.",
+      "prompt": "Vraag wat iemand eet met intonatie. (intonation)",
       "source_line": 5953,
+      "instruction": "Schrijf de volledige vraag in de gevraagde vorm",
       "accepted_answers": [
         "Tu manges quoi ?"
       ],
@@ -25091,8 +25440,9 @@
       "trajectory": "Trajet 6",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Vraag wanneer iemand vertrekt met intonatie.",
+      "prompt": "Vraag wanneer iemand vertrekt met intonatie. (intonation)",
       "source_line": 5954,
+      "instruction": "Schrijf de volledige vraag in de gevraagde vorm",
       "accepted_answers": [
         "Tu pars quand ?"
       ],
@@ -25106,8 +25456,9 @@
       "trajectory": "Trajet 6",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Vraag hoeveel broers en zussen iemand heeft.",
+      "prompt": "Vraag hoeveel broers en zussen iemand heeft. (intonation)",
       "source_line": 5955,
+      "instruction": "Schrijf de volledige vraag in de gevraagde vorm",
       "accepted_answers": [
         "Tu as combien de frères et sœurs ?"
       ],
@@ -25121,8 +25472,9 @@
       "trajectory": "Trajet 6",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Vraag welk sport iemand doet.",
+      "prompt": "Vraag welk sport iemand doet. (intonation)",
       "source_line": 5956,
+      "instruction": "Schrijf de volledige vraag in de gevraagde vorm",
       "accepted_answers": [
         "Tu fais quel sport ?"
       ],
@@ -25136,8 +25488,9 @@
       "trajectory": "Trajet 6",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Vraag hoe laat de trein aankomt.",
+      "prompt": "Vraag hoe laat de trein aankomt. (intonation)",
       "source_line": 5957,
+      "instruction": "Schrijf de volledige vraag in de gevraagde vorm",
       "accepted_answers": [
         "Le train arrive à quelle heure ?"
       ],
@@ -25151,8 +25504,9 @@
       "trajectory": "Trajet 6",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Vraag wie de persoon is.",
+      "prompt": "Vraag wie de persoon is. (intonation)",
       "source_line": 5958,
+      "instruction": "Schrijf de volledige vraag in de gevraagde vorm",
       "accepted_answers": [
         "C’est qui ?"
       ],
@@ -25224,6 +25578,7 @@
       "scoring": "single",
       "prompt": "Tu fais quoi ? → formuleer met est-ce que.",
       "source_line": 6011,
+      "instruction": "Schrijf de volledige vraag in de gevraagde vorm",
       "accepted_answers": [
         "Qu’est-ce que tu fais ?"
       ],
@@ -25239,6 +25594,7 @@
       "scoring": "single",
       "prompt": "Qu’est-ce que tu regardes ? → formuleer met intonatie.",
       "source_line": 6012,
+      "instruction": "Schrijf de volledige vraag in de gevraagde vorm",
       "accepted_answers": [
         "Tu regardes quoi ?"
       ],
@@ -25254,6 +25610,7 @@
       "scoring": "single",
       "prompt": "Tu veux quoi ? → formuleer met est-ce que.",
       "source_line": 6013,
+      "instruction": "Schrijf de volledige vraag in de gevraagde vorm",
       "accepted_answers": [
         "Qu’est-ce que tu veux ?"
       ],
@@ -25269,6 +25626,7 @@
       "scoring": "single",
       "prompt": "Qu’est-ce que vous mangez ? → formuleer met intonatie.",
       "source_line": 6014,
+      "instruction": "Schrijf de volledige vraag in de gevraagde vorm",
       "accepted_answers": [
         "Vous mangez quoi ?"
       ],

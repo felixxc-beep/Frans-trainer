@@ -18,9 +18,13 @@ select
 -- Deze aantallen vergelijken met de eigen back-up/snapshot van vóór migratie.
 -- De migratie zelf mag ze niet verminderen.
 select
+  (select count(*) from public.students) as students,
+  (select count(*) from public.practice_sessions) as practice_sessions,
   (select count(*) from public.assignments) as assignments,
   (select count(*) from public.assignment_rounds) as rounds,
   (select count(*) from public.assignment_round_items) as round_items,
+  (select count(*) from public.assignment_completions) as assignment_completions,
   (select count(*) from public.practice_attempts) as practice_attempts,
+  (select count(*) from public.practice_question_submissions) as question_submissions,
   (select count(*) from public.assignment_item_reports) as item_reports,
   (select count(*) from public.assignment_completion_reopenings) as audited_reopenings;

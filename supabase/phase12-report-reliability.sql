@@ -2,6 +2,26 @@
 -- rondes, pogingen, mastery en rapporten blijven bewaard.
 begin;
 
+-- Fase 12 bouwt op fase 11 voort: practice_attempts bevat mastery-evidence,
+-- maar niet noodzakelijk één rij per werkelijk ingediend antwoord. Stop vóór
+-- enige DDL als de vraaginzendingen of de bijbehorende wrappers ontbreken.
+do $phase12_prerequisites$
+begin
+  if pg_catalog.to_regclass('public.practice_question_submissions') is null
+    or pg_catalog.to_regprocedure('public.curated_sync_version()') is null
+    or pg_catalog.to_regprocedure(
+      'private.ingest_practice_bundle_pre_curated_impl(text,jsonb,jsonb)') is null
+    or pg_catalog.to_regprocedure(
+      'private.get_class_activity_monitor_pre_curated_impl(uuid,timestamptz,timestamptz,text,text,text,text,uuid,text,boolean)') is null
+    then raise exception 'Fase 11 ontbreekt of is onvolledig: voer eerst phase11-curated-variants.sql uit en controleer phase11-verification.sql';
+  end if;
+  if pg_catalog.to_regclass('public.assignment_completion_reopenings') is not null
+    or pg_catalog.to_regprocedure('public.assignment_sentence_sync_version()') is not null
+    then raise exception 'Fase 12 is al (gedeeltelijk) aanwezig: stop en controleer de productiestatus voordat je deze eenmalige migratie herhaalt';
+  end if;
+end;
+$phase12_prerequisites$;
+
 -- Opt-in voor nieuwe rondetaken. Bestaande gepubliceerde taken blijven false.
 alter table public.assignments add column include_integrative_sentences boolean not null default false;
 alter table public.practice_question_submissions add column round_item_id text

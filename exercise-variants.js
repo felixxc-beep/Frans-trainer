@@ -5,7 +5,7 @@
 })(typeof window !== "undefined" ? window : globalThis, function () {
   "use strict";
 
-  const KINDS = new Set(["translate", "context", "actes", "conjugation", "grammar", "revision", "number"]);
+  const KINDS = new Set(["translate", "context", "actes", "conjugation", "grammar", "spelling", "revision", "number"]);
   const SCORING = new Set(["single", "multi_gap", "integrative"]);
 
   function normalizeAnswer(value) {
@@ -68,6 +68,20 @@
         if (variant.requires_question_mark === true && variant.accepted_answers.some(function (answer) { return !/\?\s*$/.test(answer); }))
           throw new Error(variant.id + ": question punctuation required in accepted answers");
         targetIds(variant.targets, index, variant.id);
+      }
+      if (variant.kind === "grammar") {
+        const grammarIds = variant.scoring === "multi_gap"
+          ? variant.gaps.flatMap(function (gap) { return targetIds(gap.targets, index, variant.id + "/" + gap.id); })
+          : targetIds(variant.targets, index, variant.id);
+        if (grammarIds.some(function (id) { return index.get(id).type !== "grammar_rule"; }))
+          throw new Error(variant.id + ": grammar exercise must target a grammar rule");
+      }
+      if (variant.kind === "spelling") {
+        const spellingIds = variant.scoring === "multi_gap"
+          ? variant.gaps.flatMap(function (gap) { return targetIds(gap.targets, index, variant.id + "/" + gap.id); })
+          : targetIds(variant.targets, index, variant.id);
+        if (spellingIds.some(function (id) { return index.get(id).type !== "sound_rule"; }))
+          throw new Error(variant.id + ": spelling exercise must target a spelling rule");
       }
     });
     return { variants: seen.size, permanentItems: index.size };

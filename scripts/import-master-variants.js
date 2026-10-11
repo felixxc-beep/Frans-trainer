@@ -100,6 +100,55 @@ function lexicalTargets(t, answer, kind, prompt) {
   return verb ? [verb.id] : [];
 }
 
+// These source sections are lexical/communicative, not grammar. Never let the
+// generic grammar fallback attach them to an unrelated grammar_rule item.
+function focusedContextTargets(t, id, answer) {
+  if (t === 3 && id.startsWith("T3-VILL-")) {
+    const matches = findItems(3, "phrase", (item) =>
+      [item.fr].concat(item.accepted_answers || []).some((form) => norm(form) === norm(answer)));
+    return matches.length === 1 ? [matches[0].id] : [];
+  }
+  if (t === 4 && id.startsWith("T4-TRSP-CTX-")) {
+    const ids = ["000629", "000630", "000631", "000632", "000633", "000634", "000635",
+      "000636", "000637", "000638", "000639", "000640", "000641", "000642", "000643"];
+    const itemId = "uf1-item-" + ids[Number(id.slice(-3)) - 1];
+    return byTrajet.get(4).some((item) => item.id === itemId && item.type === "vocabulary") ? [itemId] : [];
+  }
+  if (t === 5 && id.startsWith("T5-PREP-")) {
+    const ids = ["000766", "000767", "000768", "000769", "000771", "000770",
+      "000773", "000772", "000774", "000775", "000764", "000763"];
+    const itemId = "uf1-item-" + ids[Number(id.slice(-3)) - 1];
+    return byTrajet.get(5).some((item) => item.id === itemId && item.type === "vocabulary") ? [itemId] : [];
+  }
+  return null;
+}
+
+function infinitiveChoices(t, infinitive) {
+  const verb = byTrajet.get(t).find((item) => item.type === "verb" && norm(item.infinitive) === norm(infinitive));
+  if (!verb) throw new Error("No course verb for infinitive-form exercise: " + infinitive);
+  const tu = (verb.conjugations || []).find((row) => norm(row.subject) === "tu");
+  const il = (verb.conjugations || []).find((row) => norm(row.subject).startsWith("il/elle/on"));
+  if (!tu || !il) throw new Error("Missing course conjugations for " + infinitive);
+  const choices = [infinitive, tu.form.replace(/^tu\s+/i, ""), il.form.replace(/^il\/elle\/on\s+/i, "")];
+  if (new Set(choices.map(norm)).size !== 3) throw new Error("Non-distinct form choices for " + infinitive);
+  return choices.join(" / ");
+}
+
+function classifyVariant(t, suffix) {
+  if (suffix.startsWith("VOC") || suffix === "SIGN" ||
+      t === 4 && suffix === "TRSP-CTX" || t === 5 && suffix === "PREP") return "context";
+  if (suffix.startsWith("EXP") || suffix.startsWith("ACT") || suffix.startsWith("PRES") ||
+      suffix.startsWith("FAM") || t === 3 && suffix === "VILL") return "actes";
+  if (suffix.startsWith("VERB") || suffix === "FP" || suffix === "PR" ||
+      suffix.startsWith("PC") || suffix.startsWith("PP") || suffix.startsWith("TENSE")) return "conjugation";
+  if (suffix.startsWith("REV")) return "revision";
+  if (suffix.startsWith("NUM")) return "number";
+  if (suffix.startsWith("HOM")) return "spelling";
+  if (suffix.startsWith("GRAM") || suffix.startsWith("POSS") ||
+      suffix.startsWith("AUX") || suffix.startsWith("Q-") || suffix.startsWith("QW")) return "grammar";
+  throw new Error("No explicit exercise classification for " + t + "/" + suffix);
+}
+
 function verbTargets(t, prompt, answer, id) {
   const infinitive = [...prompt.matchAll(/\(([^)]+)\)/g)].map((match) => norm(match[1]));
   const verb = byTrajet.get(t).find((item) => item.type === "verb" && infinitive.includes(norm(item.infinitive)));
@@ -239,6 +288,18 @@ function grammarTarget(t, id, prompt, answer) {
     return verbTargets(6, prompt, answer, id)[0];
   }
   return null;
+}
+
+function grammarGapTarget(t, id, prompt, answer, index) {
+  const before = prompt.split("___")[index] || "";
+  if (t === 1 && /^T1-GRAM-(ALL|MIX)-/.test(id) &&
+      /(?:aime|aimes|aimons|aimez|aiment|adore|adores|adorons|adorez|adorent|déteste|détestes|détestons|détestez|détestent)\s*$/i.test(before))
+    return grammarTarget(1, "T1-GRAM-AIMER-001", prompt, answer);
+  if (t === 2 && /^T2-GRAM-ART-/.test(id) && prompt.includes("→") && index === 0) {
+    if (/^(un|une|des)$/i.test(answer)) return grammarTarget(1, "T1-GRAM-IND-001", prompt, answer);
+    if (/^(le|la|l’|les)$/i.test(answer)) return grammarTarget(1, "T1-GRAM-DEF-001", prompt, answer);
+  }
+  return grammarTarget(t, id, prompt, answer);
 }
 
 function revisionTargets(t, prompt, answers, id) {
@@ -477,26 +538,49 @@ for (const row of rows) {
   // De master spec noemt uitdrukkelijk de traditionele spelling van trainer.
   if (t === 1 && /^(trainer|traine|traines|trainons|trainez|trainent)$/.test(answer))
     accepted = unique(accepted.concat(accepted.map((form) => form.replace("trai", "traî"))));
-  let kind = suffix.startsWith("VOC") || suffix === "SIGN" ? "context" :
-    suffix.startsWith("EXP") || suffix.startsWith("ACT") || suffix.startsWith("PRES") || suffix.startsWith("FAM") ? "actes" :
-    suffix.startsWith("VERB") || suffix === "FP" || suffix === "PR" || suffix.startsWith("PC") || suffix.startsWith("PP") || suffix.startsWith("TENSE") ? "conjugation" :
-    suffix.startsWith("REV") ? "revision" : suffix.startsWith("NUM") ? "number" : "grammar";
+  let kind = classifyVariant(t, suffix);
   if (header.includes("Nederlands")) kind = "revision";
-  if (suffix.startsWith("Q-") && !suffix.startsWith("QW")) kind = "grammar";
-  if (suffix.startsWith("HOM")) kind = "grammar";
-  if (suffix === "SIGN") kind = "context";
   const gaps = (prompt.match(/___/g) || []).length;
   const parts = answer.split(/\s*·\s*/).map(clean);
   const multi = gaps > 1 && parts.length === gaps;
   let targets;
   if (kind === "number") targets = [numberItem(t)?.id || byTrajet.get(t).find((item) => item.type === "number")?.id];
-  else if (kind === "context" || kind === "actes") targets = lexicalTargets(t, answer, kind, prompt);
+  else if (kind === "context" || kind === "actes") targets = focusedContextTargets(t, id, answer) || lexicalTargets(t, answer, kind, prompt);
   else if (kind === "conjugation") targets = verbTargets(t, prompt, answer, id);
-  else if (kind === "grammar") targets = [grammarTarget(t, id, prompt, answer)];
+  else if (kind === "grammar" || kind === "spelling") targets = [grammarTarget(t, id, prompt, answer)];
   else targets = revisionTargets(t, prompt, accepted, id);
   if (explicitTargets[id]) targets = [explicitTargets[id]];
   targets = unique(targets);
   if (!targets.length) unresolved.push({ id, prompt, answer, line });
+  if (kind === "grammar" && t === 1 && suffix === "GRAM-AIMER") {
+    const infinitives = (multi ? parts : [answer]).filter((part) =>
+      byTrajet.get(1).some((item) => item.type === "verb" && norm(item.infinitive) === norm(part)));
+    if (infinitives.length) prompt += " (" + infinitives.map((form) => infinitiveChoices(1, form)).join(" ; ") + ")";
+  }
+  if (kind === "grammar" && t === 1 && (suffix === "GRAM-ALL" || suffix === "GRAM-MIX")) {
+    const infinitives = parts.filter((part) =>
+      byTrajet.get(1).some((item) => item.type === "verb" && norm(item.infinitive) === norm(part)));
+    if (infinitives.length) prompt += " (" + infinitives.map((form) => infinitiveChoices(1, form)).join(" ; ") + ")";
+  }
+  if (kind === "grammar" && t === 3 && suffix.startsWith("GRAM") && targets.length === 1) {
+    const rule = byTrajet.get(3).find((item) => item.id === targets[0]);
+    if (rule && /^(à|de) \+ /.test(rule.prompt || "")) prompt += " (" + rule.prompt + ")";
+  }
+  if (kind === "grammar" && t === 2 && suffix === "GRAM-MIX") {
+    const form = /\bjamais\b/.test(norm(answer)) ? "ne ... jamais" :
+      /\bplus\b/.test(norm(answer)) ? "ne ... plus" : "ne ... pas";
+    prompt += " (" + form + ")";
+  }
+  if (kind === "grammar" && t === 2 && suffix === "GRAM-ART" && !prompt.includes("→"))
+    prompt += " (ne ... pas)";
+  if (kind === "grammar" && t === 5 && suffix === "POSS-VOTRE" &&
+      Number(id.slice(-3)) >= 4 && !/\([^)]*\)/.test(prompt)) prompt += " (jullie/uw)";
+  if (kind === "grammar" && t === 6 && suffix.startsWith("Q-") && !gaps) {
+    const method = suffix === "Q-DOUBLE" ? "intonation ou est-ce que" :
+      suffix.startsWith("Q-ECQ") ? "est-ce que" :
+      suffix.startsWith("Q-INT") ? "intonation" : "";
+    if (method && !prompt.includes("(" + method + ")")) prompt += " (" + method + ")";
+  }
   const variant = { id, trajectory: "Trajet " + t, kind,
     scoring: multi ? "multi_gap" : kind === "revision" && !gaps ? "integrative" : "single",
     prompt, source_line: line };
@@ -505,9 +589,35 @@ for (const row of rows) {
   if (kind === "actes" && !gaps) variant.instruction = "Schrijf de volledige Franse zin";
   if (kind === "conjugation") variant.instruction = "Vervoeg het werkwoord";
   if (kind === "number") variant.instruction = /chiffres/i.test(prompt) ? "Schrijf het cijfer" : "Schrijf het getal in het Frans";
+  if (kind === "grammar" && t === 1 && suffix === "GRAM-AIMER")
+    variant.instruction = prompt.includes(" / ") ? "Kies de infinitief na aimer, adorer of détester" :
+      "Vul het bepaald lidwoord na aimer, adorer of détester in";
+  if (kind === "grammar" && t === 1 && suffix === "GRAM-IND") variant.instruction = "Vul het onbepaald lidwoord in";
+  if (kind === "grammar" && t === 1 && suffix === "GRAM-DEF") variant.instruction = "Vul het bepaald lidwoord in";
+  if (kind === "grammar" && t === 1 && suffix === "GRAM-CORR")
+    variant.instruction = "Verbeter de zin volgens de grammaticale regel";
+  if (kind === "grammar" && t === 1 && (suffix === "GRAM-ALL" || suffix === "GRAM-MIX"))
+    variant.instruction = prompt.includes(" / ") ?
+      "Kies lidwoorden volgens de context en de infinitief uit de opties" :
+      "Gebruik onbepaald bij introductie, bepaald bij herhaling of na aimer";
+  if (kind === "grammar" && t === 2 && suffix.startsWith("GRAM"))
+    variant.instruction = suffix === "GRAM-ART" ? "Let op het lidwoord na de ontkenning" :
+      suffix === "GRAM-PAS" || suffix === "GRAM-ETRE" ?
+      "Maak de zin ontkennend met ne ... pas" : suffix === "GRAM-JAM" ?
+      "Maak de zin ontkennend met ne ... jamais" : suffix === "GRAM-PLUS" ?
+      "Maak de zin ontkennend met ne ... plus" : "Kies de ontkenning die bij de betekenis past";
+  if (kind === "grammar" && t === 3 && suffix.startsWith("GRAM"))
+    variant.instruction = "Vorm het juiste lidwoord met à of de";
+  if (kind === "grammar" && t === 5 && suffix.startsWith("POSS"))
+    variant.instruction = "Gebruik het bezittelijk voornaamwoord van de aangeduide persoon";
+  if (kind === "grammar" && t === 6 && suffix.startsWith("Q-") && !gaps)
+    variant.instruction = suffix === "Q-DOUBLE" ? "Schrijf een volledige vraag" :
+      "Schrijf de volledige vraag in de gevraagde vorm";
+  if (kind === "spelling") variant.instruction = "Kies de juiste schrijfwijze";
   if (multi) {
     variant.gaps = parts.map((part, index) => ({ id: "gap-" + (index + 1), accepted_answers: [part],
-      targets: kind === "grammar" ? [grammarTarget(t, id, prompt, part)] : gapTargets(t, id, prompt, part, index) }));
+      targets: kind === "grammar" ? [grammarGapTarget(t, id, prompt, part, index)] :
+        kind === "spelling" ? [grammarTarget(t, id, prompt, part)] : gapTargets(t, id, prompt, part, index) }));
     if (variant.gaps.some((gap) => !gap.targets[0])) unresolved.push({ id, prompt, answer, line, gap: true });
   } else { variant.accepted_answers = accepted; variant.targets = targets; }
   if (kind === "conjugation" && targets.some((itemId) => byTrajet.get(t).some((item) => item.id === itemId && item.type === "verb")))
@@ -517,6 +627,7 @@ for (const row of rows) {
     variant.item_variant = conjugationPerson(prompt, answer, verb);
   }
   if (id.startsWith("T1-VERB-SUBJ-")) variant.evidence_policy = "practice_only";
+  if (id.startsWith("T6-Q-DOUBLE-")) variant.evidence_policy = "practice_only";
   if (kind === "grammar" && /\?\s*$/.test(answer) && suffix.startsWith("Q-")) variant.requires_question_mark = true;
   variants.push(variant);
 }

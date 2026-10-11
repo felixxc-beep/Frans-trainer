@@ -18,9 +18,11 @@ assert.deepEqual([1, 2, 3, 4, 5, 6].map(function (number) {
 }), [352, 222, 226, 292, 283, 337]);
 
 const [first, second] = course.trajectories[0].items.filter(function (item) { return item.type === "vocabulary"; });
+const articleUn = course.trajectories[0].items.find(function (item) { return item.id === "uf1-item-000126"; });
+const articleUne = course.trajectories[0].items.find(function (item) { return item.id === "uf1-item-000127"; });
 const numberSpec = course.trajectories[4].items.find(function (item) { return item.dynamic_range === true; });
 const spellingItem = course.trajectories[5].items.find(function (item) { return item.type === "sound_rule"; });
-assert.ok(first && second && numberSpec && spellingItem);
+assert.ok(first && second && articleUn && articleUne && numberSpec && spellingItem);
 
 const single = {
   id: "T1-TEST-CTX-001", trajectory: "Trajet 1", kind: "context", scoring: "single",
@@ -29,8 +31,8 @@ const single = {
 const multi = {
   id: "T1-TEST-GRAM-001", trajectory: "Trajet 1", kind: "grammar", scoring: "multi_gap",
   prompt: "J'ai ___ ami et ___ amie.", gaps: [
-    { id: "article-1", accepted_answers: ["un"], targets: [first.id] },
-    { id: "article-2", accepted_answers: ["une"], targets: [second.id] }
+    { id: "article-1", accepted_answers: ["un"], targets: [articleUn.id] },
+    { id: "article-2", accepted_answers: ["une"], targets: [articleUne.id] }
   ]
 };
 const revision = {
@@ -42,7 +44,7 @@ const number = {
   prompt: "742", accepted_answers: ["sept-cent-quarante-deux"], targets: [numberSpec.id]
 };
 const homophone = {
-  id: "T6-TEST-HOM-001", trajectory: "Trajet 6", kind: "grammar", scoring: "single",
+  id: "T6-TEST-HOM-001", trajectory: "Trajet 6", kind: "spelling", scoring: "single",
   prompt: "Il ___ un vélo.", accepted_answers: ["a"], targets: [spellingItem.id]
 };
 assert.deepEqual(engine.validateBank({ variants: [single, multi, revision, number, homophone] }, course),
@@ -51,6 +53,8 @@ assert.throws(function () { engine.validateBank({ variants: [single, single] }, 
 assert.throws(function () { engine.validateBank({ variants: [Object.assign({}, single, { targets: ["T1-TEST-NEW-ITEM"] })] }, course); }, /unknown permanent item ID/);
 assert.throws(function () { engine.validateBank({ variants: [Object.assign({}, single, { accepted_answers: [] })] }, course); }, /empty\/invalid accepted answers/);
 assert.throws(function () { engine.validateBank({ variants: [Object.assign({}, multi, { gaps: multi.gaps.slice(0, 1) })] }, course); }, /prompt\/gap count differs/);
+assert.throws(function () { engine.validateBank({ variants: [Object.assign({}, homophone, { kind: "grammar" })] }, course); },
+  /grammar exercise must target a grammar rule/);
 assert.equal(JSON.stringify(course), originalCourse, "validation and compilation never mutate the permanent course");
 
 const singleQuestion = engine.compileVariant(single, course);
@@ -61,7 +65,7 @@ const multiQuestion = engine.compileVariant(multi, course);
 const partial = engine.grade(multiQuestion, ["un", "faux"]);
 assert.equal(partial.correct, false);
 assert.deepEqual(partial.gapResults.map(function (row) { return row.correct; }), [true, false]);
-assert.deepEqual(partial.evidence.map(function (row) { return row.targets[0]; }), [first.id, second.id]);
+assert.deepEqual(partial.evidence.map(function (row) { return row.targets[0]; }), [articleUn.id, articleUne.id]);
 assert.equal(engine.grade(multiQuestion, ["un", "une"]).correct, true);
 const revisionQuestion = engine.compileVariant(revision, course);
 assert.equal(engine.grade(revisionQuestion, "fout").evidence.length, 0, "failed translation gives no blanket negative mastery");

@@ -1,5 +1,5 @@
 const DATA_URL = "./data/course.json?v=20261011-1";
-const VARIANT_DATA_URL = "./data/exercise-variants.json?v=20261011-1";
+const VARIANT_DATA_URL = "./data/exercise-variants.json?v=20261011-2";
 const STORAGE_KEY = "monParcoursProgressV1";
 const ACTIVE_SESSION_KEY = "monParcoursActiveSessionV1";
 const MASTERY_ATTEMPTS_KEY = "monParcoursMasteryAttemptsV1";
@@ -8,7 +8,7 @@ const ASSIGNMENTS_CACHE_KEY = "monParcoursAssignmentsCacheV1";
 const VERB_EVIDENCE_KEY = "monParcoursVerbEvidenceV1";
 const VERB_SERVER_CACHE_KEY = "monParcoursVerbServerCacheV1";
 const TASK_ROUNDS_KEY = "monParcoursTaskRoundsV1";
-const APP_VERSION = "20261011-1";
+const APP_VERSION = "20261011-2";
 const INACTIVITY_TIMEOUT_MS = 60000;
 const MAX_DYNAMIC_NUMBER_ALL = 101;
 const ACCENTS = ["é", "è", "ê", "ë", "à", "â", "ç", "ù", "û", "ô", "î", "ï"];
@@ -31,6 +31,7 @@ Object.assign(EXERCISES, {
   "curated-actes": { type: "curated", label: "Taalhandelingen", labelFr: "Actes de parole", short: "Zinnen", shortFr: "Phrases" },
   "curated-conjugation": { type: "curated", label: "Werkwoorden in een zin", labelFr: "Verbes dans une phrase", short: "Werkwoorden", shortFr: "Verbes" },
   "curated-grammar": { type: "curated", label: "Grammatica in een zin", labelFr: "Grammaire en contexte", short: "Grammatica", shortFr: "Grammaire" },
+  "curated-spelling": { type: "curated", label: "Spelling in een zin", labelFr: "Orthographe en contexte", short: "Spelling", shortFr: "Orthographe" },
   "curated-number": { type: "curated", label: "Getallen in context", labelFr: "Nombres en contexte", short: "Getallen", shortFr: "Nombres" },
   "curated-revision": { type: "curated", label: "Alles door elkaar", labelFr: "Révision du trajet", short: "Herhaling", shortFr: "Révision" }
 });
@@ -478,6 +479,7 @@ function curatedVariantsForUnit(trajectory, unit) {
     return variant.kind === "context" || variant.kind === "actes" ? unit.top_category === "Atelier Parole" :
       variant.kind === "conjugation" ? unit.top_category === "Atelier Verbes" :
       variant.kind === "grammar" ? unit.top_category === "Atelier Grammaire" :
+      variant.kind === "spelling" ? unit.top_category === "Comment écrire ?" :
       variant.kind === "number" ? unit.top_category === "Chiffres et lettres" : false;
   });
 }
@@ -499,7 +501,7 @@ function curatedVariantsForScope(exerciseKey, scopeOverride) {
 }
 
 function curatedKeysForScope(scopeOverride) {
-  return ["context", "actes", "conjugation", "grammar", "number", "revision"]
+  return ["context", "actes", "conjugation", "grammar", "spelling", "number", "revision"]
     .map(function (kind) { return "curated-" + kind; })
     .filter(function (key) { return curatedVariantsForScope(key, scopeOverride).length > 0; });
 }
@@ -1245,7 +1247,7 @@ function renderSetup() {
 
 function exerciseTone(key) {
   if (key === "curated-revision") return "revision";
-  if (key === "curated-context" || key === "curated-actes") return "context";
+  if (key === "curated-context" || key === "curated-actes" || key === "curated-spelling") return "context";
   if (key === "curated-conjugation" || /^verb-.*conj$/.test(key)) return "conjugation";
   if (key === "curated-grammar" || key === "grammar") return "grammar";
   return "translate";
@@ -2954,6 +2956,26 @@ function modeLabelFr(mode) {
 
 function instructionFrench(instruction) {
   const value = String(instruction || "");
+  const grammarInstructions = {
+    "Kies de infinitief na aimer, adorer of détester": "Choisis l'infinitif après aimer, adorer ou détester",
+    "Vul het bepaald lidwoord na aimer, adorer of détester in": "Complète avec l'article défini après aimer, adorer ou détester",
+    "Vul het onbepaald lidwoord in": "Complète avec l'article indéfini",
+    "Vul het bepaald lidwoord in": "Complète avec l'article défini",
+    "Verbeter de zin volgens de grammaticale regel": "Corrige la phrase selon la règle grammaticale",
+    "Kies lidwoorden volgens de context en de infinitief uit de opties": "Choisis les articles selon le contexte et l'infinitif parmi les options",
+    "Gebruik onbepaald bij introductie, bepaald bij herhaling of na aimer": "Utilise l'indéfini à la première mention, le défini à la reprise ou après aimer",
+    "Maak de zin ontkennend met ne ... pas": "Mets la phrase à la forme négative avec ne ... pas",
+    "Maak de zin ontkennend met ne ... jamais": "Mets la phrase à la forme négative avec ne ... jamais",
+    "Maak de zin ontkennend met ne ... plus": "Mets la phrase à la forme négative avec ne ... plus",
+    "Let op het lidwoord na de ontkenning": "Fais attention à l'article après la négation",
+    "Kies de ontkenning die bij de betekenis past": "Choisis la négation qui correspond au sens",
+    "Vorm het juiste lidwoord met à of de": "Forme l'article correct avec à ou de",
+    "Gebruik het bezittelijk voornaamwoord van de aangeduide persoon": "Utilise l'adjectif possessif de la personne indiquée",
+    "Kies de juiste schrijfwijze": "Choisis la bonne orthographe",
+    "Schrijf een volledige vraag": "Écris une question complète",
+    "Schrijf de volledige vraag in de gevraagde vorm": "Écris la question complète dans la forme demandée"
+  };
+  if (grammarInstructions[value]) return grammarInstructions[value];
   if (value === "Vul de zin aan") return "Complète la phrase";
   if (value === "Vertaal naar het Frans") return "Traduis en français";
   if (value === "Vertaal naar het Nederlands") return "Traduis en néerlandais";
