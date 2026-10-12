@@ -1,5 +1,10 @@
 # Supabase instellen voor Mon parcours
 
+**Voor de huidige gedeeltelijke productie-state:** volg
+`../HERSTELRAPPORT-FASEN-10-12.md` en gebruik alleen de state-aware herstelmigration
+met haar verification-query. De historische installatiestappen hieronder worden
+voor dit herstel niet herhaald. De PostgreSQL-integratietest is nog niet uitgevoerd.
+
 De statische site blijft zonder buildstap laden, maar een nieuwe leerling moet eenmaal online via Supabase met schoolmail worden geïdentificeerd voordat oefenen mogelijk is. Een eerder gekoppelde leerling kan offline verder. De frontend gebruikt alleen de publieke Project URL en publishable key. Gebruik nooit een secret key of de oude `service_role`-key in de webapp.
 
 ## 1. Project aanmaken
@@ -250,3 +255,19 @@ Probleemmeldingen bewaren alle foute invoeren van de meldcyclus in volgorde. Na 
 Publiceer daarna `index.html`, `app.js`, `exercise-variants.js`, `styles.css`, `teacher.html`, `teacher.js`, `teacher.css`, `data/course.json` en `data/exercise-variants.json` samen. Test met een bestaande taak die al gedeeltelijk afgewerkt is (bijvoorbeeld 9/42), een teruggestuurd item uit een oudere ronde, en een nieuwe concepttaak met volledige zinnen. SQL in deze map wordt nooit automatisch door de statische frontend uitgevoerd.
 Publiceer ook `sync-manager.js`: deze controleert `assignment_sentence_sync_version()` voordat een nieuwe zinnentaak wordt gesynchroniseerd. Zonder fase 12 blijven zulke sessies veilig in de lokale wachtrij.
 Voer optioneel daarna het alleen-lezen `phase12-verification.sql` uit en vergelijk de aantallen met de back-up van vóór de migratie.
+# Gedeeltelijke productie-state: herstel 10–12
+
+De instructies voor de historische eenmalige migraties hieronder gelden voor
+hun oorspronkelijke installatiemoment. Voor een gedeeltelijk uitgerolde fase
+10/11/12: voer alleen `phase10-12-state-aware-upgrade.sql` uit, en daarna
+`phase10-12-state-aware-verification.sql`.
+
+Dit herstel voegt de echte fase-11-vraaguitkomststructuur toe als die ontbreekt,
+herstelt de functieaanroepen zonder functierenames en bewaart oorspronkelijke
+completion-events bij terugsturen. Bestaande leerlingrijen worden binnen dezelfde
+transactie via hashes op hun oorspronkelijke kolommen gecontroleerd.
+
+Zie `../HERSTELRAPPORT-FASEN-10-12.md`. De PostgreSQL-integratietest is apart
+beschikbaar in `../scripts/test-state-aware-postgres.js`; ze werd in deze omgeving
+niet uitgevoerd omdat de bedrijfsfirewall de benodigde lokale runtime blokkeert.
+

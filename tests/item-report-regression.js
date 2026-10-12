@@ -34,7 +34,7 @@ assert.match(teacher, /state\.tasks\.reports = reportResult\.error \? \[\] : asA
 assert.match(teacher, /resolve_assignment_item_report", \{[\s\S]*p_report_id: id, p_decision: decision/);
 assert.match(teacher, /Probleemmeldingen/);
 assert.match(teacher, /data-action="resolve-item-report"/);
-assert.match(html, /teacher\.js\?v=20261011-1/);
+assert.match(html, /teacher\.js\?v=20261012-1/);
 assert.match(app, /Je pense que ma réponse est refusée à tort/);
 assert.match(app, /Mijn antwoord wordt volgens mij onterecht fout gerekend/);
 assert.match(teacher, /Als fout beoordeelde invoeren \(oudste → nieuwste\)/);

@@ -46,6 +46,16 @@ for (const variant of homophones) {
 }
 
 const infinitive = byId.get("T1-GRAM-AIMER-022");
+assert.deepEqual(byId.get("T4-GRAM-FEM-008").targets,["uf1-item-000707"],"calme stays unchanged at the feminine");
+assert.deepEqual(byId.get("T4-GRAM-PL-006").targets,["uf1-item-000713"],"rapide → rapides tests adding -s");
+assert.deepEqual(byId.get("T4-GRAM-PL-005").targets,["uf1-item-000713"],"dangerous feminine is already given; only plural is requested");
+assert.equal(byId.get("T4-GRAM-FCTX-008").scope_kind,"mixed","roux is relocated from the feminine scope as the master explicitly requires");
+for(const suffix of ["002","007","008","009","010"]) {
+  const variant=byId.get("T4-GRAM-PL-"+suffix);
+  assert.equal(variant.kind,"revision");assert.equal(variant.evidence_policy,"practice_only");
+  assert.equal(engine.grade(engine.compileVariant(variant,course),variant.accepted_answers[0]).evidence.length,0,
+    "a requested noun cannot prove adjective mastery");
+}
 assert.equal(infinitive.kind, "grammar");
 assert.match(infinitive.prompt, /cuisiner \/ cuisines \/ cuisine/);
 assert.equal(infinitive.targets[0], "uf1-item-000135");

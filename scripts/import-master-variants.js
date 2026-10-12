@@ -530,7 +530,8 @@ for (const row of rows) {
     "T3-REV-029": ["septante", "soixante-dix"],
     "T4-REV-026": ["septante-neuf", "soixante-dix-neuf"],
     "T6-REV-027": ["septante-huit-mille-huit-cent-quatorze", "soixante-dix-huit-mille-huit-cent-quatorze"],
-    "T6-REV-029": ["dix-neuf-cent-nonante-neuf", "dix-neuf-cent-quatre-vingt-dix-neuf"]
+    "T6-REV-029": ["dix-neuf-cent-nonante-neuf", "dix-neuf-cent-quatre-vingt-dix-neuf",
+      "mille-neuf-cent-nonante-neuf", "mille-neuf-cent-quatre-vingt-dix-neuf"]
   };
   if (id === "T6-VOC-CTX-046") continue; // ordinateur has no permanent course target.
   let accepted = header.includes("Antwoord 1") ? cells.slice(2, 4) : alternatives(answer, id);
@@ -550,6 +551,16 @@ for (const row of rows) {
   else if (kind === "grammar" || kind === "spelling") targets = [grammarTarget(t, id, prompt, answer)];
   else targets = revisionTargets(t, prompt, accepted, id);
   if (explicitTargets[id]) targets = [explicitTargets[id]];
+  // The source's explicit rule column is stronger than a suffix guess on the
+  // answer: "rapides" adds -s; it does not demonstrate an unchanged final -s.
+  if (t === 4 && header[header.length - 1] === "Regel") {
+    const rule = norm(cells[cells.length - 1]).replace(/\s/g, "");
+    const ruleIds = { "+e":"000706", "eindigtop-e":"000707", "-x→-se":"000708", "-f→-ve":"000709",
+      "-on→-onne":"000710", "-eau→-elle":"000711", "-er→-ère":"000712", "+s":"000713",
+      "-sonveranderd":"000714", "-xonveranderd":"000715", "-eau→-eaux":"000716", "-al→-aux":"000717",
+      "adjectief-xonveranderd":"000715", "beidewoordenmeervoud":"000716" };
+    if (ruleIds[rule]) targets = ["uf1-item-" + ruleIds[rule]];
+  }
   targets = unique(targets);
   if (!targets.length) unresolved.push({ id, prompt, answer, line });
   if (kind === "grammar" && t === 1 && suffix === "GRAM-AIMER") {
@@ -627,8 +638,17 @@ for (const row of rows) {
     variant.item_variant = conjugationPerson(prompt, answer, verb);
   }
   if (id.startsWith("T1-VERB-SUBJ-")) variant.evidence_policy = "practice_only";
+  if (["T1-VOC-CTX-032","T1-VOC-CTX-033"].includes(id)) variant.required_subsection = "On se rappelle ?";
   if (id.startsWith("T6-Q-DOUBLE-")) variant.evidence_policy = "practice_only";
   if (kind === "grammar" && /\?\s*$/.test(answer) && suffix.startsWith("Q-")) variant.requires_question_mark = true;
+  // Here the source marks a NOUN as the requested answer while the adjective
+  // is already given. Keep the approved exercise in revision, without claiming
+  // mastery of an adjective rule from the noun's spelling.
+  if (/^T4-GRAM-PL-(002|007|008|009|010)$/.test(id)) {
+    variant.kind = "revision";
+    variant.evidence_policy = "practice_only";
+    variant.instruction = "Vul de zin aan";
+  }
   variants.push(variant);
 }
 
@@ -665,6 +685,13 @@ for (let i = 0; i < lines.length; i += 1) {
 }
 
 variants.sort((left, right) => left.id.localeCompare(right.id, "en"));
+const permanentIndex = engine.itemIndex(course);
+for (const variant of variants) {
+  if (variant.kind !== "grammar") continue;
+  const categories = new Set(engine.targetsForVariant(variant).map(id => permanentIndex.get(id).category));
+  variant.scope_kind = categories.size > 1 || /-(MIX|ALL|MOVE)-|AUX-MIX|TENSE-MIX/.test(variant.id) ||
+    variant.id === "T4-GRAM-FCTX-008" ? "mixed" : "focused";
+}
 if (unresolved.length) {
   console.error(unresolved.map((row) => row.id + (row.gap ? "/gap" : "") + (row.reason ? ": " + row.reason : "")).join("\n"));
   throw new Error(unresolved.length + " variants have no defensible mapping or parse.");

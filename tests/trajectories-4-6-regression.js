@@ -182,7 +182,8 @@ setImmediate(function () {
   context.phraseQuestion = evaluate('buildQuestions([state.data.trajectories[3].items.find(i => i.id === "' + alternativePhrase.id + '")], "phrase-nl-fr")[0]');
   alternativePhrase.accepted_answers.forEach(function (answer) {
     context.acceptedAnswer = answer;
-    assert.equal(evaluate("isCorrect(acceptedAnswer, phraseQuestion.answers)"), true);
+    assert.equal(evaluate("isCorrect(acceptedAnswer, phraseQuestion.answers)"),
+      ["uf1-item-000665","uf1-item-000670","uf1-item-000830"].includes(alternativePhrase.id) ? answer === alternativePhrase.fr : true);
   });
   assert.equal(evaluate('isCorrect("ete", ["été"])'), false);
 

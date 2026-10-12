@@ -103,7 +103,7 @@ setImmediate(function () {
   assert.equal(wholeBlock.length, 146, "Oefen dit studieblok moet de Actes-de-parole-zinnen bevatten");
   assert.equal(wholeBlock.filter(function (item) { return item.type === "phrase"; }).length, 45);
   assert.equal(wholeBlock.filter(function (item) { return item.type !== "phrase"; }).length, 101);
-  assert.match(appElement.innerHTML, /146[\s\S]*éléments d’exercice[\s\S]*oefenitems/);
+  assert.match(appElement.innerHTML, /146[\s\S]*objectifs[\s\S]*leerdoelen/);
   assert.match(appElement.innerHTML, /Tout pratiquer →[\s\S]*Alles oefenen →[\s\S]*<span class="scope-all-count">146<\/span>/);
   assert.equal((appElement.innerHTML.match(/<span class="scope-all-count">146<\/span>/g) || []).length, 1,
     "de identieke blokactie wordt niet dubbel getoond");
@@ -128,11 +128,11 @@ setImmediate(function () {
   assert.ok(sePresenterItems.every(function (item) { return item.type === "phrase" && item.category === "Se présenter"; }));
   assert.ok(presenterQuelquunItems.every(function (item) { return item.type === "phrase" && item.category === "Présenter quelqu’un (1)"; }));
   evaluate("state.selectedScope = sePresenterScope; renderSetup()");
-  assert.match(appElement.innerHTML, /23[\s\S]*éléments[\s\S]*items/);
+  assert.match(appElement.innerHTML, /23[\s\S]*objectifs[\s\S]*leerdoelen/);
   assert.ok(appElement.innerHTML.includes('class="choice-count">23'));
   assert.deepEqual(Array.from(evaluate('sessionSizeOptions(questionsForSetup("phrase-nl-fr").length)')), [10, 20, "all"]);
   evaluate("state.selectedScope = presenterQuelquunScope; renderSetup()");
-  assert.match(appElement.innerHTML, /22[\s\S]*éléments[\s\S]*items/);
+  assert.match(appElement.innerHTML, /22[\s\S]*objectifs[\s\S]*leerdoelen/);
   assert.ok(appElement.innerHTML.includes('class="choice-count">22'));
   assert.deepEqual(Array.from(evaluate('sessionSizeOptions(questionsForSetup("phrase-nl-fr").length)')), [10, 20, "all"]);
 

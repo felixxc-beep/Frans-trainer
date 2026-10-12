@@ -106,7 +106,9 @@ setImmediate(function () {
     context.auditExercise = item.type === "phrase" ? "phrase-nl-fr" : item.type === "grammar_rule" ? "grammar" : "number-nl-fr";
     const questions = vm.runInContext("buildQuestions(auditItems, auditExercise)", context);
     item.accepted_answers.forEach(function (answer) {
-      assert.ok(questions[0].answers.includes(answer), (item.nl || item.prompt) + " moet " + answer + " aanvaarden");
+      const courseReproduction = ["uf1-item-000665","uf1-item-000670","uf1-item-000830"].includes(item.id);
+      assert.equal(questions[0].answers.includes(answer), courseReproduction ? answer === item.fr : true,
+        (item.nl || item.prompt) + " beoordeelt " + answer + " volgens cursusreproductie versus communicatie");
     });
   });
 

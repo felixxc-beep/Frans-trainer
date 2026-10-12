@@ -106,7 +106,7 @@ function evaluate(code) { return vm.runInContext(code, context); }
   assert.equal((home.match(/class="assignment-home-row"/g) || []).length, 0, "zonder taken blijft de homepage-taakzone één rij");
   assert.ok(home.indexOf('class="assignments-home"') < home.indexOf('class="home-browser"'), "Trajets blijven direct na het compacte overzicht bereikbaar");
   assert.doesNotMatch(firstTrajectoryCard, /mastery-bar|maîtrise|\d+%/, "Trajet toont geen mastery meer");
-  assert.match(firstTrajectoryCard, /éléments[\s\S]*onderdelen/);
+  assert.match(firstTrajectoryCard, /éléments du cours[\s\S]*cursusitems/);
   assert.match(firstTrajectoryCard, /travaillés[\s\S]*geoefend/);
   assert.match(home, /Ma progression[\s\S]*Mijn voortgang[\s\S]*Voir ma progression →/,
     "Mijn voortgang is de zichtbare mastery-ingang");

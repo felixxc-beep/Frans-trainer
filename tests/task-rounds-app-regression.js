@@ -328,5 +328,107 @@ setImmediate(() => {
   }
   assert.match(css, /@media \(max-width: 620px\)[\s\S]*\.assignment-home-row \{ grid-template-columns: 32px minmax\(0, 1fr\)/,
     "mobiele taakkaart behoudt compacte twee-kolomsindeling");
-  console.log("RONDES-APPREGRESSIE GESLAAGD");
+  {
+  context.salleRegression = run('allCourseItems().find(i => i.id === "uf1-item-000077")');
+  for (const answer of ["la salle", "la salle de danse", "la salle de sport", " La salle. ", "la\u00a0salle", "la\u200bsalle".replace("\u200b", "\u200b ")]) {
+    context.salleAnswer = answer;
+    assert.equal(run('isCorrect(salleAnswer, answerList(salleRegression.fr,salleRegression))'), true, JSON.stringify(answer));
+  }
+  for (const answer of ["le salle de sport", "amical"]) {
+    context.salleAnswer = answer;
+    assert.equal(run('isCorrect(salleAnswer, answerList(salleRegression.fr,salleRegression))'), false);
+  }
+  assert.equal(run('isCorrect("école", ["école"])'), true);
+  assert.equal(run('isCorrect("ecole", ["école"])'), false);
+  for (const [id,external] of [["uf1-item-000093","amical"],["uf1-item-000094","intelligent"],["uf1-item-000072","le passe-temps"],
+    ["uf1-item-000670","Non, pas du tout."],["uf1-item-000830","Oh, oui."]]) {
+    context.directId=id;context.externalAnswer=external;
+    assert.equal(run('(()=>{const item=allCourseItems().find(i=>i.id===directId); return isCorrect(externalAnswer,answerList(item.fr,item));})()'),false);
+  }
+  const reaction = variantBank.variants.find(v=>v.id==="T4-ACT-MOVE-018");
+  assert.equal(variantEngine.grade(variantEngine.compileVariant(reaction,course),"Top !").correct,true);
+  const trainer = run('allCourseItems().find(i => i.id === "uf1-item-000090")');
+  context.trainer = trainer;
+  assert.equal(run('isCorrect("traîner",answerList(trainer.fr,trainer))'), true);
+  run('state.trajectoryIndex=0;state.selectedUnitOrder=state.data.trajectories[0].units.find(u=>u.top_category==="Atelier Parole").order;state.selectedScope={}');
+  assert.equal(run('curatedVariantsForScope("curated-context").some(v=>v.id==="T1-VOC-CTX-032")'),false,
+    "the master excludes intelligent from the mixed scope where malin is active");
+  assert.equal(run('curatedVariantsForScope("curated-context",{subsection:"On se rappelle ?"}).some(v=>v.id==="T1-VOC-CTX-032")'),true);
+  run('state.trajectoryIndex=0; state.selectedUnitOrder=state.data.trajectories[0].units.find(u=>u.top_category==="Atelier Grammaire").order; state.selectedScope={category:"articles indéfinis"}');
+  const articleVariants = run('curatedVariantsForScope("curated-grammar")');
+  assert.ok(articleVariants.length > 0);
+  assert.equal(articleVariants.some(v => /cuisiner/.test(v.prompt) || v.scope_kind === "mixed"), false);
+  const narrow = new Set(course.trajectories[0].items.filter(i => i.category === "articles indéfinis").map(i => i.id));
+  for (const variant of articleVariants) assert.ok(variantEngine.targetsForVariant(variant).every(id => narrow.has(id)));
+  run('state.trajectoryIndex=5;state.selectedScope={};state.selectedUnitOrder=state.data.trajectories[5].units.find(u=>u.top_category==="Atelier Verbes").order');
+  assert.equal(run('curatedVariantsForScope("curated-grammar").some(v=>v.id==="T6-AUX-MIX-001")'),true,
+    "foreign T5 auxiliary targets stay in T6 Verbes");
+  run('state.selectedUnitOrder=state.data.trajectories[5].units.find(u=>u.top_category==="Atelier Grammaire").order');
+  assert.equal(run('curatedVariantsForScope("curated-grammar").some(v=>v.id==="T6-AUX-MIX-001")'),false,
+    "auxiliary conjugations must not appear among question-word grammar");
+  run('beginSession(buildQuestions([allCourseItems().find(i=>i.id==="uf1-item-000134")],"grammar"),"practice","grammar","Lidwoord",{availableCount:1})');
+  assert.match(app.innerHTML, /Welk lidwoord gebruik je\?/);
+  assert.match(app.innerHTML, /<select id="answer-input"[\s\S]*le \/ la \/ l’ \/ les/);
+  assert.doesNotMatch(app.innerHTML, /J’adore le chocolat/);
+  const contextVariant = variantBank.variants.find(v => v.kind === "context" && v.targets.length === 1);
+  context.contextItemId = contextVariant.targets[0];
+  run(`state.assignments.items=[{id:"00000000-0000-4000-8000-000000000070",title:"Varianten",item_ids:[contextItemId],required_rounds:1,
+    completion_strategy:"rounds",mastery_strategy:"item_mastery",use_exercise_variants:true}]; launchAssignment(state.assignments.items[0].id)`);
+  assert.ok(run('state.session.questions[0].variantId'));
+  run('submitAnswer("fout")');
+  const variantAttempt = run('state.session.sync_attempts[0]');
+  assert.equal(variantAttempt.client_submission_id, run('state.session.question_submissions[0].client_submission_id'));
+  assert.equal(run('state.session.question_submissions.length'), 1);
+  assert.equal(run('roundsForAssignment(state.assignments.items[0])[0].items[contextItemId].wrong_count'), 1);
+  assert.doesNotMatch(feedback.innerHTML, /report-round-item/);
+  run('submitAnswer("weer fout")');
+  assert.match(feedback.innerHTML, /report-round-item/);
+  const evidenceBeforeReport = run('state.mastery.localAttempts.length');
+  run('reportRoundItem()');
+  assert.equal(run('state.mastery.localAttempts.length'), evidenceBeforeReport);
+  assert.equal(reported.at(-1).report.exercise_direction, "vocab-nl-fr");
+  assert.equal(reported.at(-1).report.attempt_details.length, 2);
+  assert.equal(run('assignmentProgress(state.assignments.items[0]).rounds.completed'), true);
+  const t6Spelling = course.trajectories[5].items.filter(i => i.type === "sound_rule");
+  assert.equal(assignments.scopeItems(course,{trajectory:"Trajet 6",top_category:"Comment écrire ?"}).length, t6Spelling.length);
+  assert.equal(assignments.scopeItems(course,{trajectory:"Trajet 1",top_category:"Comment dire ?"}).length, 0);
+  assert.equal(run('exerciseItemCount(allCourseItems().filter(isDynamicNumberItem))'), 3);
+  assert.equal(run('frenchRegionalNumber(979)'), "neuf-cent-soixante-dix-neuf");
+  assert.equal(run('frenchRegionalNumber(78814)'), "soixante-dix-huit-mille-huit-cent-quatorze");
+  assert.deepEqual(Array.from(run('yearNumberAnswers(1999)')), ["dix-neuf-cent-nonante-neuf","dix-neuf-cent-quatre-vingt-dix-neuf","mille-neuf-cent-nonante-neuf","mille-neuf-cent-quatre-vingt-dix-neuf"]);
+  assert.equal(run('yearNumberAnswers(2025)[0]'), "deux-mille-vingt-cinq");
+  assert.equal(run('yearNumberAnswers(1800)[0]'), "dix-huit-cents");
+  run('state.activeAssignmentId=null; state.trajectoryIndex=5; state.selectedUnitOrder=state.data.trajectories[5].units.find(u=>u.top_category==="Chiffres et lettres").order;state.selectedScope={title:"Nombres"};renderSetup()');
+  assert.match(app.innerHTML, /1 [\s\S]*objectifs[\s\S]*leerdoelen/);
+  assert.match(app.innerHTML, /100001 nombres possibles/);
+  assert.doesNotMatch(app.innerHTML, /100001 [^<]*leerdoelen|éléments et variantes/);
+  const numberItem = run('allCourseItems().find(i=>i.id==="uf1-item-000879")');
+  context.numberItem = numberItem;
+  const numberQuestion = run('buildDynamicNumberQuestions(numberItem,"number-nl-fr",1)[0]');
+  assert.equal(numberQuestion.itemId,numberItem._id,'generated numbers use the permanent goal in local progress');
+  assert.match(numberQuestion.variantId,/T5-NUM-GENERATED-/);
+  const spellingOnly = variantEngine.grade(numberQuestion,numberQuestion.answers[0].replace(/-/g," "));
+  if(numberQuestion.answers[0].includes('-')) {
+    assert.equal(spellingOnly.correct,false);
+    assert.equal(spellingOnly.valueCorrect,true);
+    assert.equal(spellingOnly.evidence[0].correct,true,'value evidence stays positive after a pure hyphen error');
+  }
+  assert.equal(variantEngine.grade(numberQuestion,'geen getal').evidence[0].correct,false);
+  const mixedQuestion=variantEngine.compileVariant(variantBank.variants.find(v=>v.id==="T1-GRAM-MIX-001"),course);
+  context.mixedQuestion=mixedQuestion;
+  const partialMixed=variantEngine.grade(mixedQuestion,["fout","Le"]);
+  context.partialMixed=partialMixed;
+  const targets=Array.from(run('submissionTargetResults(mixedQuestion,partialMixed,false)'),r=>({item_id:r.item_id,was_correct:r.was_correct}));
+  assert.deepEqual(targets,[{item_id:mixedQuestion.stableItemId,was_correct:false},
+    {item_id:mixedQuestion.stableItemIds[1],was_correct:true}],"a reliable secondary gap is scored separately from the whole anchor question");
+  const originalTimeout=context.setTimeout;let continueRetry;
+  context.setTimeout=(fn)=>{continueRetry=fn;return 1;};
+  context.onlySentence=variantEngine.compileVariant(variantBank.variants.find(v=>v.scoring==="integrative"),course);
+  run('beginSession([onlySentence],"practice","curated-revision","Een zin",{availableCount:1});submitAnswer("fout");nextQuestion()');
+  assert.equal(run('state.view'),"practice_wait","even a one-question session cannot immediately repeat a failed full sentence");
+  assert.ok(!app.innerHTML.includes(context.onlySentence.answers[0]));
+  run('state.session.questions[state.session.index].retry_after=0');continueRetry();
+  assert.equal(run('state.view'),"practice");context.setTimeout=originalTimeout;
+  }
+  console.log("RONDES-APPREGRESSIE GESLAAGD: behouden voortgang, varianten, scoping, normalisatie, meldingen en getallen");
 });
