@@ -64,8 +64,11 @@
     return null;
   }
   function candidates(items, bank, course, scope) {
-    if (scope) return engine.eligibleVariants(bank, course, scope, items.map(function (item) { return item.id; }))
-      .filter(function (variant) { return variantForm(variant, engine.itemIndex(course)); });
+    if (scope) {
+      const revisionScope = /^Action/i.test(scope.top_category || "");
+      return engine.eligibleVariants(bank, course, scope, revisionScope ? undefined : items.map(function (item) { return item.id; }))
+        .filter(function (variant) { return variantForm(variant, engine.itemIndex(course)); });
+    }
     const ids = new Set(items.map(function (item) { return item.id; }));
     const index = engine.itemIndex(course);
     const trajectories = new Set((course.trajectories || []).filter(function (trajectory) {
@@ -85,9 +88,12 @@
   }
   function options(items, bank, course, scope) {
     const counts = new Map();
+    const revisionScope = /^Action/i.test(scope && scope.top_category || "");
     items.forEach(function (item) {
       const key = directForm(item);
-      if (!key) return;
+      // Direct "complete the grammar rule" drills are deliberately not offered.
+      // Grammar is practised through curated application/context variants instead.
+      if (!key || revisionScope || key === "grammar_rule") return;
       if (!counts.has(key)) counts.set(key, { key: key, variantCount: 0, courseCount: 0 });
       counts.get(key).courseCount += key === "verb_conjugation" ? (item.conjugations || []).reduce(function (count, row) {
         return count + String(row.subject).split("/").length;
@@ -106,7 +112,19 @@
   function available(items, bank, course, scope) {
     return options(items, bank, course, scope).map(function (option) { return option.key; });
   }
+  function normalizeForms(forms) {
+    const expanded = [];
+    (forms || []).forEach(function (key) {
+      if (key === "grammar_rule") {
+        // Backwards compatibility for already-published tasks: old rule drills
+        // transparently become real grammar application questions.
+        expanded.push("grammar_context", "grammar_mixed");
+      } else expanded.push(key);
+    });
+    return Array.from(new Set(expanded));
+  }
   function plan(item, items, bank, course, forms, round) {
+    forms = normalizeForms(forms);
     if (item.type === "number" && forms.includes("numbers")) return { direct: "numbers" };
     const index = engine.itemIndex(course);
     const variants = candidates(items, bank, course).filter(function (variant) {
@@ -123,15 +141,46 @@
     return forms.includes(directForm(item)) ? { direct: directForm(item) } : null;
   }
   function pool(items, bank, course, forms, scope) {
+    forms = normalizeForms(forms);
     const index = engine.itemIndex(course);
+    const revisionScope = /^Action/i.test(scope && scope.top_category || "");
     const entries = candidates(items,bank,course,scope).filter(function (variant) {
       return forms.includes(variantForm(variant,index));
     }).map(function (variant) { return { variant: variant, targetIds: engine.targetsForVariant(variant) }; });
-    items.forEach(function (item) {
+    if (!revisionScope) items.forEach(function (item) {
       const key = directForm(item);
-      if (forms.includes(key)) entries.push({ direct: key, item: item, targetIds: [item.id] });
+      if (key !== "grammar_rule" && forms.includes(key)) entries.push({ direct: key, item: item, targetIds: [item.id] });
     });
     return entries;
   }
-  return { labels: labels, read: read, write: write, options: options, available: available, plan: plan, candidates: candidates, variantForm: variantForm, pool: pool };
+  function entryKey(entry) {
+    return entry.variant ? "v:" + entry.variant.id : "d:" + entry.direct + ":" + (entry.item && entry.item.id || "");
+  }
+  function selectEntries(entries, size, preferredIds) {
+    const unique = Array.from(new Map((entries || []).map(function (entry) { return [entryKey(entry), entry]; })).values());
+    if (size === "all" || size == null) return unique;
+    const limit = Math.max(0, Math.min(unique.length, Number(size) || 0));
+    if (!limit) return [];
+    const chosen = [];
+    const covered = new Set();
+    const order = Array.isArray(preferredIds) && preferredIds.length ? preferredIds :
+      Array.from(new Set(unique.flatMap(function (entry) { return entry.targetIds || []; })));
+    order.some(function (id) {
+      if (chosen.length >= limit) return true;
+      if (covered.has(id)) return false;
+      const options = unique.filter(function (entry) { return !chosen.includes(entry) && (entry.targetIds || []).includes(id); })
+        .sort(function (a,b) {
+          const aNew=(a.targetIds||[]).filter(function (target) {return !covered.has(target);}).length;
+          const bNew=(b.targetIds||[]).filter(function (target) {return !covered.has(target);}).length;
+          return bNew-aNew;
+        });
+      if (!options.length) return false;
+      chosen.push(options[0]);
+      (options[0].targetIds || []).forEach(function (target) { covered.add(target); });
+      return false;
+    });
+    unique.forEach(function (entry) { if (chosen.length < limit && !chosen.includes(entry)) chosen.push(entry); });
+    return chosen;
+  }
+  return { labels: labels, read: read, write: write, options: options, available: available, plan: plan, candidates: candidates, variantForm: variantForm, pool: pool, selectEntries: selectEntries, normalizeForms: normalizeForms };
 });

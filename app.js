@@ -1,5 +1,5 @@
 const DATA_URL = "./data/course.json?v=20261011-1";
-const VARIANT_DATA_URL = "./data/exercise-variants.json?v=20261012-5";
+const VARIANT_DATA_URL = "./data/exercise-variants.json?v=20261012-6";
 const STORAGE_KEY = "monParcoursProgressV1";
 const ACTIVE_SESSION_KEY = "monParcoursActiveSessionV1";
 const MASTERY_ATTEMPTS_KEY = "monParcoursMasteryAttemptsV1";
@@ -8,7 +8,7 @@ const ASSIGNMENTS_CACHE_KEY = "monParcoursAssignmentsCacheV1";
 const VERB_EVIDENCE_KEY = "monParcoursVerbEvidenceV1";
 const VERB_SERVER_CACHE_KEY = "monParcoursVerbServerCacheV1";
 const TASK_ROUNDS_KEY = "monParcoursTaskRoundsV1";
-const APP_VERSION = "20261012-5";
+const APP_VERSION = "20261012-6";
 const INACTIVITY_TIMEOUT_MS = 60000;
 const MAX_DYNAMIC_NUMBER_ALL = 101;
 const ACCENTS = ["é", "è", "ê", "ë", "à", "â", "ç", "ù", "û", "ô", "î", "ï"];
@@ -22,7 +22,7 @@ const EXERCISES = {
   "verb-fr-conj": { type: "verb", label: "Vervoegen vanuit Frans", labelFr: "Conjuguer depuis le français", short: "Vervoegen", shortFr: "Conjuguer" },
   "verb-rule-recognition": { type: "verb", label: "De uitgangen herkennen", labelFr: "Reconnaître les terminaisons", short: "Regel", shortFr: "Règle" },
   "phrase-nl-fr": { type: "phrase", label: "Nederlandse zin → Franse zin", labelFr: "Phrase néerlandaise → phrase française", short: "Zinnen", shortFr: "Phrases" },
-  "grammar": { type: "grammar_rule", label: "Grammaticaregel aanvullen", labelFr: "Compléter la règle de grammaire", short: "Grammatica", shortFr: "Grammaire" },
+  "grammar": { type: "grammar_rule", label: "Grammatica toepassen", labelFr: "Appliquer la grammaire", short: "Grammatica", shortFr: "Grammaire" },
   "number-nl-fr": { type: "number", label: "Cijfer → Frans", labelFr: "Nombre → français", short: "Getallen", shortFr: "Nombres" },
   "number-fr-nl": { type: "number", label: "Frans → cijfer", labelFr: "Français → nombre", short: "Getallen", shortFr: "Nombres" }
 };
@@ -39,7 +39,7 @@ const TYPE_EXERCISES = {
   vocabulary: ["vocab-nl-fr", "vocab-fr-nl"],
   verb: ["verb-nl-inf", "verb-fr-nl", "verb-nl-conj", "verb-fr-conj", "verb-rule-recognition"],
   phrase: ["phrase-nl-fr"],
-  grammar_rule: ["grammar"],
+  grammar_rule: [],
   number: ["number-nl-fr", "number-fr-nl"]
 };
 
@@ -467,7 +467,7 @@ function curatedVariantsForUnit(trajectory, unit) {
     const goals = itemsForUnit(trajectory,unit).filter(isExerciseItem).map(function (item) {return item.id;});
     return window.MonParcoursExerciseVariants.eligibleVariants(state.variantBank, state.data,
       { trajectory: trajectory.trajectory, top_category: unit.top_category, lesson: unit.title },
-      /^Action/i.test(unit.top_category) || !goals.length ? undefined : goals);
+      undefined);
   }
   const unitItems = itemsForUnit(trajectory, unit);
   const unitIds = new Set(unitItems.map(function (item) { return item.id; }));
@@ -505,7 +505,8 @@ function curatedVariantsForScope(exerciseKey, scopeOverride) {
   if (window.MonParcoursExerciseVariants && window.MonParcoursExerciseVariants.eligibleVariants) {
     const path = Object.assign({}, scope, {trajectory:trajectory.trajectory,top_category:unit.top_category,lesson:unit.title});
     const items = itemsForScope(trajectory,unit,scope).filter(isExerciseItem);
-    const goals = /^Action/i.test(unit.top_category) || !items.length ? undefined : items.map(function (item) {return item.id;});
+    const broadUnit = !scope.block && !scope.subsection && !scope.category && !scope.itemId;
+    const goals = /^Action/i.test(unit.top_category) || !items.length || broadUnit ? undefined : items.map(function (item) {return item.id;});
     return window.MonParcoursExerciseVariants.eligibleVariants(state.variantBank,state.data,path,goals)
       .filter(function (variant) {return variant.kind === wanted;});
   }
@@ -2645,7 +2646,16 @@ function buildQuestions(items, exerciseKey) {
     if (exerciseKey === "verb-nl-inf") questions.push(makeQuestion(base, item.nl, answerList(item.infinitive, item), "Geef de Franse infinitief"));
     if (exerciseKey === "verb-fr-nl") questions.push(makeQuestion(base, item.infinitive, dutchAnswers(item.nl, item), "Vertaal naar het Nederlands"));
     if (exerciseKey === "phrase-nl-fr") questions.push(makeQuestion(base, item.nl, answerList(item.fr, item), "Schrijf de volledige Franse zin"));
-    if (exerciseKey === "grammar") questions.push(grammarRuleQuestion(base, item));
+    if (exerciseKey === "grammar") {
+      const candidate = (state.variantBank && state.variantBank.variants || []).find(function (variant) {
+        if (variant.evidence_policy === "practice_only" || variant.scoring === "integrative") return false;
+        if (!["grammar", "conjugation"].includes(variant.kind)) return false;
+        return window.MonParcoursExerciseVariants &&
+          window.MonParcoursExerciseVariants.targetsForVariant(variant).includes(item.id);
+      });
+      if (candidate && window.MonParcoursExerciseVariants)
+        questions.push(window.MonParcoursExerciseVariants.compileVariant(candidate, state.data));
+    }
     if (exerciseKey === "number-nl-fr") questions.push(makeQuestion(base, item.nl, answerList(item.fr, item), "Schrijf het getal in het Frans"));
     if (exerciseKey === "number-fr-nl") questions.push(makeQuestion(base, item.fr, [item.nl], "Schrijf het cijfer"));
     if (exerciseKey === "verb-nl-conj" || exerciseKey === "verb-fr-conj") {
@@ -3232,6 +3242,15 @@ function instructionFrench(instruction) {
     "Vul het bepaald lidwoord na aimer, adorer of détester in": "Complète avec l'article défini après aimer, adorer ou détester",
     "Vul het onbepaald lidwoord in": "Complète avec l'article indéfini",
     "Vul het bepaald lidwoord in": "Complète avec l'article défini",
+    "Vul de uitdrukking aan": "Complète l'expression",
+    "Vul de plaatsuitdrukking aan": "Complète l'expression de lieu",
+    "Zet het woord in het meervoud": "Mets le mot au pluriel",
+    "Vervoeg het werkwoord in le futur proche": "Conjugue le verbe au futur proche",
+    "Vervoeg het werkwoord in le passé récent": "Conjugue le verbe au passé récent",
+    "Vervoeg in le passé composé": "Conjugue au passé composé",
+    "Vul het juiste bezittelijk voornaamwoord in": "Complète avec l'adjectif possessif correct",
+    "Vul het juiste hulpwerkwoord in": "Complète avec l'auxiliaire correct",
+    "Vul het participe passé in": "Complète avec le participe passé",
     "Verbeter de zin volgens de grammaticale regel": "Corrige la phrase selon la règle grammaticale",
     "Kies lidwoorden volgens de context en de infinitief uit de opties": "Choisis les articles selon le contexte et l'infinitif parmi les options",
     "Gebruik onbepaald bij introductie, bepaald bij herhaling of na aimer": "Utilise l'indéfini à la première mention, le défini à la reprise ou après aimer",

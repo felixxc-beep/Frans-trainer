@@ -367,9 +367,8 @@ setImmediate(() => {
   assert.equal(run('curatedVariantsForScope("curated-grammar").some(v=>v.id==="T6-AUX-MIX-001")'),false,
     "auxiliary conjugations must not appear among question-word grammar");
   run('beginSession(buildQuestions([allCourseItems().find(i=>i.id==="uf1-item-000134")],"grammar"),"practice","grammar","Lidwoord",{availableCount:1})');
-  assert.match(app.innerHTML, /Welk lidwoord gebruik je\?/);
-  assert.match(app.innerHTML, /<select id="answer-input"[\s\S]*le \/ la \/ l’ \/ les/);
-  assert.doesNotMatch(app.innerHTML, /J’adore le chocolat/);
+  assert.match(app.innerHTML, /J’aime ___ foot/);
+  assert.doesNotMatch(app.innerHTML, /Welk lidwoord gebruik je\?|Vul de regel aan|Complète la règle/);
   const contextVariant = variantBank.variants.find(v => v.kind === "context" && v.targets.length === 1);
   context.contextItemId = contextVariant.targets[0];
   run(`state.assignments.items=[{id:"00000000-0000-4000-8000-000000000070",title:"Varianten",item_ids:[contextItemId],required_rounds:1,

@@ -3,7 +3,7 @@ const course = require("../data/course.json");
 const bank = require("../data/exercise-variants.json");
 const engine = require("../exercise-variants.js");
 
-assert.equal(engine.validateBank(bank, course).variants, 1712);
+assert.equal(engine.validateBank(bank, course).variants, 1735);
 const items = new Map(course.trajectories.flatMap((trajectory) =>
   trajectory.items.map((item) => [item.id, item])));
 const byId = new Map(bank.variants.map((variant) => [variant.id, variant]));

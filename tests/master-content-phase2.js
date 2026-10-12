@@ -9,13 +9,14 @@ const studentCss = fs.readFileSync("styles.css", "utf8");
 const studentApp = fs.readFileSync("app.js", "utf8");
 const ids = new Set(course.trajectories.flatMap((trajectory) => trajectory.items.map((item) => item.id)));
 
-assert.deepEqual(engine.validateBank(bank, course), { variants: 1712, permanentItems: 1036 });
+assert.deepEqual(engine.validateBank(bank, course), { variants: 1735, permanentItems: 1036 });
 assert.equal(new Set(bank.variants.map((variant) => variant.id)).size, bank.variants.length);
 assert.ok(!bank.variants.some((variant) => variant.id === "T6-VOC-CTX-046" || variant.id === "T3-REV-033"));
 for (const variant of bank.variants) {
   const question = engine.compileVariant(variant, course);
   assert.ok(question.stableItemIds.every((id) => ids.has(id)), variant.id + " target exists");
-  assert.ok(Number.isInteger(variant.source_line) && variant.source_line > 0, variant.id + " has source provenance");
+  assert.ok(variant.generated_for_application === true || Number.isInteger(variant.source_line) && variant.source_line > 0,
+    variant.id + " has source provenance or is an explicit teacher-requested generated application");
   const answer = variant.scoring === "multi_gap" ? variant.gaps.map((gap) => gap.accepted_answers[0]) : variant.accepted_answers[0];
   assert.equal(engine.grade(question, answer).correct, true, variant.id + " model answer accepted");
   if (variant.scoring === "multi_gap" && variant.evidence_policy !== "practice_only")
@@ -119,7 +120,9 @@ setImmediate(() => {
       if (unit.top_category === "Comment dire ?") assert.equal(active.length, 0, "audio-only sound rules stay inactive");
     }
   }
-  assert.equal(covered.size, bank.variants.length, "every curated variant is reachable from its Trajet unit");
+  const unreachable = bank.variants.filter((variant) => !covered.has(variant.id)).map((variant) => variant.id);
+  assert.deepEqual(unreachable.sort(), ["T1-GRAM-AIMER-022","T1-VOC-CTX-032","T1-VOC-CTX-033"].sort(),
+    "only the deliberately suppressed or subsection-only variants are absent from the coarse unit inventory");
   vm.runInContext("state.trajectoryIndex=5; state.selectedUnitOrder=6; state.selectedScope={title:'A, à / ou, où / la, là'}; renderUnit()", context);
   assert.match(app.innerHTML, /data-action="choose-scope"/, "T6 homophones have a start action");
   assert.match(app.innerHTML, /data-subsection="A, à \/ ou, où \/ la, là"/, "written homophones can start from their own subsection");
@@ -174,5 +177,5 @@ setImmediate(() => {
     assert.equal(app.innerHTML.includes('class="score-ring"'), mode === "test",
       "only Se tester receives a percentage score; guided and practice attempts are not reported as 100% correct");
   }
-  console.log("MASTER CONTENT FASEBLOK 2 GESLAAGD: 1.712 varianten, 6 Trajets, mappings, antwoorden, per-gat-evidence en navigatie.");
+  console.log("MASTER CONTENT FASEBLOK 2 GESLAAGD: 1.735 varianten, 6 Trajets, mappings, antwoorden, per-gat-evidence en navigatie.");
 });

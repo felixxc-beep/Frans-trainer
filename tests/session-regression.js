@@ -146,7 +146,7 @@ setImmediate(function () {
   evaluate('submitAnswer("la table")');
   assert.equal(evaluate("state.session.attempt_count"), 1);
   assert.equal(evaluate("state.session.results[0].correct"), true);
-  assert.match(appElement.innerHTML, /Je oefende alle 1 beschikbare items/);
+  assert.match(appElement.innerHTML, /Je oefende alle 1 beschikbare oefeningen/);
   assert.match(appElement.innerHTML, /Aantal pogingen: 1/);
 
   context.schoolQuestion = vocabularyQuestion("nouveau, nouvelle");
