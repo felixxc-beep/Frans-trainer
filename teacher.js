@@ -29,6 +29,7 @@
     user: null,
     teacherProfile: null,
     course: null,
+    variantBank: null,
     courseIndex: Object.create(null),
     raw: emptyDataset(),
     filters: { period: "today", trajectory: "all", mode: "all", classId: "all", studentId: "all", studentStatus: "active", category: "all", subsection: "all", assignmentId: "all" },
@@ -956,7 +957,7 @@
   }
 
   function renderDifficult(groups, title) {
-    if (!groups.length) return '<section class="panel"><h3>' + escapeHtml(title) + '</h3>' + emptyState("Geen moeilijke leerstof", "Er zijn binnen deze filters geen items met minstens 2 pogingen en 40% fout.") + '</section>';
+    if (!groups.length) return '<section class="panel"><h3>' + escapeHtml(title) + '</h3>' + emptyState("Geen moeilijke leerstof", "Er zijn binnen deze filters geen leerdoelen met minstens 2 pogingen en 40% fout.") + '</section>';
     return '<section class="panel"><h3>' + escapeHtml(title) + '</h3><ul class="difficult-list">' + groups.slice(0, 20).map(function (group) {
       return '<li class="difficult-item"><strong>' + escapeHtml(group.info.title) + '</strong>' +
         (group.info.answer ? '<span class="answer-line">→ ' + escapeHtml(group.info.answer) + '</span>' : "") +
@@ -979,9 +980,9 @@
     const studentById = Object.create(null);
     overview.students.forEach(function (student) { studentById[student.id] = student; });
     return breadcrumbs([{ label: "Dashboard", action: "view-dashboard" }, { label: classRow.name }]) +
-      '<div class="page-heading"><div><p class="eyebrow">Klasdetail</p><h2>' + escapeHtml(classRow.name) + '</h2><p class="muted">' + overview.activeStudents + ' actieve leerlingen</p></div><div class="export-actions"><button class="button button-secondary" type="button" data-action="export-class" data-id="' + escapeHtml(classRow.id) + '">Klasoverzicht CSV</button><button class="button button-secondary" type="button" data-action="export-difficult-class" data-id="' + escapeHtml(classRow.id) + '">Moeilijke items CSV</button></div></div>' +
+      '<div class="page-heading"><div><p class="eyebrow">Klasdetail</p><h2>' + escapeHtml(classRow.name) + '</h2><p class="muted">' + overview.activeStudents + ' actieve leerlingen</p></div><div class="export-actions"><button class="button button-secondary" type="button" data-action="export-class" data-id="' + escapeHtml(classRow.id) + '">Klasoverzicht CSV</button><button class="button button-secondary" type="button" data-action="export-difficult-class" data-id="' + escapeHtml(classRow.id) + '">Moeilijke leerdoelen CSV</button></div></div>' +
       '<section class="stat-grid">' + statCard("Leerlingen", overview.activeStudents, "actief") + statCard("Sessies", overview.sessions) + statCard("Oefeningen gemaakt", overview.exercisesMade, "werkelijk beantwoord") + statCard("Pogingen", overview.attempts, "incl. herhalingen") + statCard("Correct", overview.accuracy + "%") + statCard("Actieve oefentijd", overview.hasMeasuredDuration ? formatActiveDuration(overview.activeDurationSeconds) : "—", overview.hasMeasuredDuration ? "alleen gemeten sessies" : "nog niet gemeten") + '</section>' +
-      '<section class="section-block"><div class="section-heading"><div><h2>Leerlingen</h2><p>Klik op een leerling voor sessies en moeilijke items.</p></div></div>' +
+      '<section class="section-block"><div class="section-heading"><div><h2>Leerlingen</h2><p>Klik op een leerling voor sessies en moeilijke leerdoelen.</p></div></div>' +
       (rows ? '<div class="table-wrap"><table><thead><tr><th>Leerling</th><th>Sessies</th><th>Gemaakt</th><th>Pogingen</th><th>Correct</th><th>Actieve tijd</th><th>Laatste oefening</th></tr></thead><tbody>' + rows + '</tbody></table></div>' : emptyState("Geen leerlingen", "Supabase gaf voor deze klas geen leerlingen terug.")) + '</section>' +
       '<div class="two-column section-block"><section class="panel"><h3>Recente activiteit</h3>' + (recent.length ? '<ul class="activity-list">' + recent.map(function (session) {
         const student = studentById[session.student_id];
@@ -1016,7 +1017,7 @@
     const verbGoals = asArray(state.studentVerbGoals[studentId]).filter(function (goal) { return Number(goal.attempts || 0) > 0; });
     const sessions = overview.sessionRows.slice().sort(function (left, right) { return new Date(right.finished_at || right.started_at) - new Date(left.finished_at || left.started_at); });
     return breadcrumbs([{ label: "Dashboard", action: "view-dashboard" }, { label: classRow ? classRow.name : "Klas", action: "view-class", id: student.class_id }, { label: student.display_name || "Naamloze leerling" }]) +
-      '<div class="page-heading"><div><p class="eyebrow">Leerlingdetail · ' + escapeHtml(periodLabel(state.filters.period)) + '</p><h2>' + escapeHtml(student.display_name || "Naamloze leerling") + ' · ' + escapeHtml(classRow ? classRow.name : "Onbekende klas") + '</h2></div><div class="export-actions"><button class="button button-secondary" type="button" data-action="export-student" data-id="' + escapeHtml(student.id) + '">Sessies CSV</button><button class="button button-secondary" type="button" data-action="export-difficult-student" data-id="' + escapeHtml(student.id) + '">Moeilijke items CSV</button></div></div>' +
+      '<div class="page-heading"><div><p class="eyebrow">Leerlingdetail · ' + escapeHtml(periodLabel(state.filters.period)) + '</p><h2>' + escapeHtml(student.display_name || "Naamloze leerling") + ' · ' + escapeHtml(classRow ? classRow.name : "Onbekende klas") + '</h2></div><div class="export-actions"><button class="button button-secondary" type="button" data-action="export-student" data-id="' + escapeHtml(student.id) + '">Sessies CSV</button><button class="button button-secondary" type="button" data-action="export-difficult-student" data-id="' + escapeHtml(student.id) + '">Moeilijke leerdoelen CSV</button></div></div>' +
       '<section class="monitor-summary student-summary" aria-label="Leerlingoverzicht"><span><strong>' + periodExercises + '</strong> oefeningen</span><span><strong>' + escapeHtml(formatMonitorDuration(periodSeconds)) + '</strong> actieve tijd*</span><span><strong>' + (periodAccuracy == null ? '—' : periodAccuracy + '%') + '</strong> correct zelfstandig</span><span><strong>' + escapeHtml(monitorRow ? relativeActivity(monitorRow.lastActivity) : relativeActivity(overview.lastActivity)) + '</strong> laatst actief</span><span title="Huidige beheersing; niet beperkt tot deze periode"><strong>' + (mastery == null ? '—' : mastery + '%') + '</strong> huidige mastery</span><span><strong>' + escapeHtml(task ? task.title + ' · ' + Number(task.mastery_percentage || 0) + '%' : 'Geen actieve taak') + '</strong> actieve taak</span></section>' +
       '<p class="monitor-footnote">* De monitor rekent actieve sessieseconden toe aan de periode waarin de sessie begon.</p>' +
       (state.studentVerbGoalsError ? '<p class="monitor-error" role="status">Werkwoordbeheersing is tijdelijk niet beschikbaar. De overige leerlinggegevens blijven zichtbaar.</p>' : '') +
@@ -1124,7 +1125,8 @@
     return {
       id: source && source.id || null,
       title: source && source.title || "",
-      instructions: source && source.instructions || "",
+      instructions: window.MonParcoursExercisePolicy ? window.MonParcoursExercisePolicy.read(source && source.instructions).text : source && source.instructions || "",
+      exercise_forms: source ? (window.MonParcoursExercisePolicy ? window.MonParcoursExercisePolicy.read(source.instructions).forms : null) : [],
       due_at: source && source.due_at ? taskDeadlineLocal(source.due_at) : "",
       target_acquired_percentage: source && source.target_acquired_percentage || 80,
       mastery_strategy: source && source.mastery_strategy || "item_mastery",
@@ -1141,6 +1143,17 @@
       range_start: 1, range_end: null,
       fixed_item_ids: source && source.id ? asArray(source.item_ids).map(String) : null
     };
+  }
+
+  function renderTaskExerciseForms(draft, items) {
+    const policy = window.MonParcoursExercisePolicy;
+    if (!policy || !state.variantBank) return '<p class="error">Oefenvarianten konden niet worden geladen. Herlaad vóór het opslaan.</p>';
+    const available = policy.available(items, state.variantBank, state.course);
+    return '<fieldset><legend>Oefenvormen voor deze leerdoelen</legend>' + available.map(function (key) {
+      return '<label class="task-sentence-option"><input type="checkbox" name="exercise_forms" value="' + key + '"' +
+        (draft.exercise_forms.includes(key) ? ' checked' : '') + (draft.status !== 'draft' ? ' disabled' : '') +
+        '>' + escapeHtml(policy.labels[key]) + '</label>';
+    }).join('') + '<p>Elk geselecteerd leerdoel moet met minstens één gekozen oefenvorm oefenbaar zijn.</p></fieldset>';
   }
 
   function taskDeadlineLocal(value) {
@@ -1363,7 +1376,7 @@
     const trajectories = asArray(state.course && state.course.trajectories).map(function (row) { return row.trajectory; });
     const ranges = window.MonParcoursAssignments.numberedRanges(scopeItems.length);
     const strategies = taskStrategyChoices(rangeItems);
-    const strategyNames = { item_mastery: "Vocabulaire / losse leeritems", verb_rule_mastery: "Regel en vervoeging beheersen", irregular_verb_mastery: "Onregelmatige werkwoorden beheersen", mixed_verb_mastery: "Gemengd werkwoordblok: alle doelen" };
+    const strategyNames = { item_mastery: "Vocabulaire / losse leerdoelen", verb_rule_mastery: "Regel en vervoeging beheersen", irregular_verb_mastery: "Onregelmatige werkwoorden beheersen", mixed_verb_mastery: "Gemengd werkwoordblok: alle doelen" };
     const strategySelect = '<label><span>Wat moet de leerling beheersen?</span><select name="mastery_strategy">' + strategies.map(function (strategy) {
       return '<option value="' + strategy + '"' + (strategy === draft.mastery_strategy ? ' selected' : '') + '>' + strategyNames[strategy] + '</option>';
     }).join("") + '</select></label>';
@@ -1383,15 +1396,15 @@
       '<form class="task-form management-form" data-form="task-editor">' +
       '<fieldset><legend>1 · Klassen</legend><div class="task-class-grid">' + (classChoices || '<p>Geen actieve klassen beschikbaar.</p>') + '</div></fieldset>' +
       '<fieldset><legend>2 · Cursusonderdeel</legend>' +
-        (draft.fixed_item_ids ? '<p class="muted">Deze bestaande taak behoudt zijn vaste itemselectie. Maak een nieuwe taak voor een andere selectie.</p>' :
+        (draft.fixed_item_ids ? '<p class="muted">Deze bestaande taak behoudt zijn vaste leerdoelselectie. Maak een nieuwe taak voor een andere selectie.</p>' :
         '<div class="task-fields"><label><span>Trajet</span><select name="trajectory">' + trajectories.map(function (value) { return '<option value="' + escapeHtml(value) + '"' + (value === draft.trajectory ? ' selected' : '') + '>' + escapeHtml(value) + '</option>'; }).join("") + '</select></label>' +
         taskSelect("top_category", "Onderdeel", taskScopeChoices(draft, "top_category"), draft.top_category) +
         taskSelect("lesson", "Les / inhoud", taskScopeChoices(draft, "lesson"), draft.lesson) +
         taskSelect("block", "Blok", taskScopeChoices(draft, "block"), draft.block) +
         taskSelect("subsection", "Subsection", taskScopeChoices(draft, "subsection"), draft.subsection) +
         taskSelect("category", "Categorie", taskScopeChoices(draft, "category"), draft.category) + '</div>') + '</fieldset>' +
-      '<fieldset><legend>3 · Itemselectie</legend><p>' + scopeItems.length + ' oefenbare items in dit onderdeel.</p><div class="task-fields">' + strategySelect + '</div>' + verbSelector +
-        (draft.fixed_item_ids ? '' : '<div class="task-fields"><label><span>Van item</span><input name="range_start" type="number" min="1" max="' + scopeItems.length + '" value="' + draft.range_start + '"></label><label><span>Tot item</span><input name="range_end" type="number" min="1" max="' + scopeItems.length + '" value="' + (draft.range_end || scopeItems.length) + '"></label></div><div class="export-actions"><button class="small-button" type="button" data-action="task-range" data-start="1" data-end="' + scopeItems.length + '">Alle ' + scopeItems.length + '</button>' + ranges.map(function (range) { return '<button class="small-button" type="button" data-action="task-range" data-start="' + range.start + '" data-end="' + range.end + '">' + range.start + '–' + range.end + '</button>'; }).join("") + '</div>') +
+      '<fieldset><legend>3 · Leerdoelselectie</legend><p>' + scopeItems.length + ' oefenbare leerdoelen in dit onderdeel.</p><div class="task-fields">' + strategySelect + '</div>' + verbSelector +
+        (draft.fixed_item_ids ? '' : '<div class="task-fields"><label><span>Van leerdoel</span><input name="range_start" type="number" min="1" max="' + scopeItems.length + '" value="' + draft.range_start + '"></label><label><span>Tot leerdoel</span><input name="range_end" type="number" min="1" max="' + scopeItems.length + '" value="' + (draft.range_end || scopeItems.length) + '"></label></div><div class="export-actions"><button class="small-button" type="button" data-action="task-range" data-start="1" data-end="' + scopeItems.length + '">Alle ' + scopeItems.length + '</button>' + ranges.map(function (range) { return '<button class="small-button" type="button" data-action="task-range" data-start="' + range.start + '" data-end="' + range.end + '">' + range.start + '–' + range.end + '</button>'; }).join("") + '</div>') +
         '<p><strong>Voorbeeld: ' + selectedItems.length + ' geselecteerd.</strong></p><ol class="task-preview">' + selectedItems.slice(0, 20).map(function (item) { return '<li>' + escapeHtml(item.nl || item.prompt || item.infinitive || item.id) + ' — ' + escapeHtml(item.fr || item.answer || item.infinitive || '') + '</li>'; }).join("") + '</ol>' + (selectedItems.length > 20 ? '<p>… en ' + (selectedItems.length - 20) + ' meer.</p>' : '') + '</fieldset>' +
       '<fieldset><legend>4 · Doel en deadline</legend><div class="task-fields"><label><span>Titel</span><input name="title" maxlength="160" required value="' + escapeHtml(draft.title) + '"></label><label><span>Deadline (optioneel, lokale tijd)</span><input name="due_at" type="datetime-local" value="' + escapeHtml(draft.due_at) + '"></label>' +
         (draft.mastery_strategy === "item_mastery" && draft.completion_strategy === "rounds" ?
@@ -1400,16 +1413,12 @@
         (draft.mastery_strategy === "item_mastery" && draft.completion_strategy === "rounds" ? '<p>1× = één volledige ronde · 2× = twee volledige rondes · 3× = twee volledige rondes + gerichte herhaling · 4× = twee volledige rondes + twee gerichte herhalingen.</p>' :
           '<div class="export-actions">' + [70,80,90,100].map(function (value) { return '<button class="small-button" type="button" data-action="task-target" data-value="' + value + '">' + value + '%</button>'; }).join("") + '</div><p>' + (draft.mastery_strategy === "item_mastery" ? "Bestaande legacy-taak: voltooiing blijft gebaseerd op het percentage gekend." : "Voltooiing volgt de bestaande werkwoorddoelen.") + '</p>') +
         (draft.mastery_strategy === "item_mastery" && draft.completion_strategy === "rounds" ?
-          '<label class="task-sentence-option"><input type="checkbox" name="use_exercise_variants"' +
-          (draft.use_exercise_variants ? ' checked' : '') + (draft.status !== 'draft' ? ' disabled' : '') +
-          '> Gebruik context-, grammatica- en werkwoordvarianten voor de geselecteerde leerdoelen.</label>' +
-          '<label class="task-sentence-option"><input type="checkbox" name="include_integrative_sentences"' +
-          (draft.include_integrative_sentences ? ' checked' : '') + (draft.status !== 'draft' ? ' disabled' : '') +
-          '> Gebruik volledige NL → FR-zinnen uit Révision waar een expliciet gekoppeld item beschikbaar is.</label>' : '') +
-        (draft.mastery_strategy === "item_mastery" && draft.completion_strategy === "rounds" && selectedItems.some(function (item) { return item.type === "verb"; }) ?
+          draft.exercise_forms !== null ? renderTaskExerciseForms(draft, selectedItems) :
+          '<p>Bestaande taak: de oorspronkelijke oefenvormen blijven behouden.</p>' : '') +
+        (draft.mastery_strategy === "item_mastery" && draft.completion_strategy === "rounds" && draft.exercise_forms === null && selectedItems.some(function (item) { return item.type === "verb"; }) ?
           '<label><span>Werkwoordoefening</span><select name="item_verb_exercise_key"><option value="verb-nl-conj"' + (draft.item_verb_exercise_key === "verb-nl-conj" ? " selected" : "") + '>Nederlands → vervoeging</option><option value="verb-fr-conj"' + (draft.item_verb_exercise_key === "verb-fr-conj" ? " selected" : "") + '>Frans → vervoeging</option><option value="verb-nl-inf"' + (draft.item_verb_exercise_key === "verb-nl-inf" ? " selected" : "") + '>Nederlands → infinitief</option></select></label>' : '') +
         '<label><span>Instructies (optioneel)</span><textarea name="instructions" maxlength="1000">' + escapeHtml(draft.instructions) + '</textarea></label></fieldset>' +
-      '<fieldset><legend>5 · Controleren en publiceren</legend><p>' + selectedItems.length + ' vaste permanente item-ID’s · ' + draft.class_ids.length + ' klassen · ' +
+      '<fieldset><legend>5 · Controleren en publiceren</legend><p>' + selectedItems.length + ' permanente leerdoelen · ' + draft.class_ids.length + ' klassen · ' +
         (draft.mastery_strategy === "item_mastery" && draft.completion_strategy === "rounds" ? draft.required_rounds + ' rondes.' : 'doel ' + draft.target_acquired_percentage + '%.') +
         '</p><div class="export-actions">' + (draft.status === "draft" ? '<button class="button button-secondary" type="submit" name="task_status" value="draft">Concept opslaan</button>' : '') + '<button class="button button-primary" type="submit" name="task_status" value="published">' + (draft.status === "published" ? "Wijzigingen opslaan" : "Publiceren") + '</button></div></fieldset></form>';
   }
@@ -1456,9 +1465,9 @@
             ' · ' + escapeHtml(formatDate(report.resolved_at || report.created_at)) + '</p>' :
             '<div class="export-actions"><button class="button button-primary" type="button" data-action="resolve-item-report" data-id="' + escapeHtml(report.id) + '" data-decision="approved">Goedkeuren</button><button class="button button-secondary" type="button" data-action="resolve-item-report" data-id="' + escapeHtml(report.id) + '" data-decision="rejected">Terugsturen</button></div>') + '</article>';
       }).join('') + '</div>' : '<p class="muted">Geen meldingen die op beoordeling wachten.</p>') + '</section>' : '';
-    return '<div class="page-heading"><div><p class="eyebrow">Taak · ' + escapeHtml(taskLifecycle(task) === "recent" ? "Recent afgelopen" : taskLifecycle(task) === "archived" ? "Gearchiveerd" : taskLifecycle(task) === "draft" ? "Concept" : "Actief") + '</p><h2>' + escapeHtml(task.title) + '</h2><p class="muted">' + (verbTask ? asArray(task.requirements).length + ' werkwoorddoelen' : asArray(task.item_ids).length + ' items') + ' · ' + (task.completion_strategy === "rounds" ? task.required_rounds + ' rondes' : 'doel ' + task.target_acquired_percentage + '%') + ' · ' + escapeHtml(task.due_at ? formatDate(task.due_at) : "Geen deadline") + '</p></div><div class="export-actions"><button class="button button-secondary" type="button" data-action="view-tasks">Terug</button><button class="button button-secondary" type="button" data-action="export-task">CSV</button>' + (editable ? '<button class="button button-primary" type="button" data-action="edit-task">Bewerken</button>' + (task.status === "published" ? '<button class="button button-secondary" type="button" data-action="archive-task">Archiveren</button>' : '') : task.status === "archived" && canManage ? '<button class="button button-primary" type="button" data-action="restore-task">Herstellen</button>' : '') + '</div></div>' +
+    return '<div class="page-heading"><div><p class="eyebrow">Taak · ' + escapeHtml(taskLifecycle(task) === "recent" ? "Recent afgelopen" : taskLifecycle(task) === "archived" ? "Gearchiveerd" : taskLifecycle(task) === "draft" ? "Concept" : "Actief") + '</p><h2>' + escapeHtml(task.title) + '</h2><p class="muted">' + (verbTask ? asArray(task.requirements).length + ' werkwoorddoelen' : asArray(task.item_ids).length + ' leerdoelen') + ' · ' + (task.completion_strategy === "rounds" ? task.required_rounds + ' rondes' : 'doel ' + task.target_acquired_percentage + '%') + ' · ' + escapeHtml(task.due_at ? formatDate(task.due_at) : "Geen deadline") + '</p></div><div class="export-actions"><button class="button button-secondary" type="button" data-action="view-tasks">Terug</button><button class="button button-secondary" type="button" data-action="export-task">CSV</button>' + (editable ? '<button class="button button-primary" type="button" data-action="edit-task">Bewerken</button>' + (task.status === "published" ? '<button class="button button-secondary" type="button" data-action="archive-task">Archiveren</button>' : '') : task.status === "archived" && canManage ? '<button class="button button-primary" type="button" data-action="restore-task">Herstellen</button>' : '') + '</div></div>' +
       (task.status === "archived" && canManage && taskLifecycle(Object.assign({}, task, { status: "published" }), Date.now()) === "archived" ? '<p class="muted">Na herstel blijft deze taak wegens de oorspronkelijke deadline in het archief. Pas de deadline daarna aan als je haar opnieuw actief wilt maken.</p>' : '') +
-      (task.instructions ? '<p>' + escapeHtml(task.instructions) + '</p>' : '') +
+      (task.instructions ? '<p>' + escapeHtml(window.MonParcoursExercisePolicy ? window.MonParcoursExercisePolicy.read(task.instructions).text : task.instructions) + '</p>' : '') +
       '<div class="task-summary"><span><strong>' + completedCount + '/' + rows.length + '</strong> afgerond</span><span><strong>' + startedCount + '</strong> bezig</span><span><strong>' + (rows.length - completedCount - startedCount) + '</strong> niet gestart</span><span><strong>' + averageMastery + '%</strong> gemiddelde beheersing</span></div>' + reportSection +
       '<label class="task-filter"><span>Status</span><select id="taskStatusFilter"><option value="all"' + (state.tasks.filter === "all" ? ' selected' : '') + '>Alle</option>' + Object.entries(statuses).map(function (entry) { return '<option value="' + entry[0] + '"' + (state.tasks.filter === entry[0] ? ' selected' : '') + '>' + entry[1] + '</option>'; }).join("") + '</select></label>' +
       '<div class="table-wrap"><table><thead><tr><th>Klas / leerling</th><th>Status</th><th>Geoefend</th><th>Beheersing</th><th>Gekend</th><th>Doel / rondes</th><th>Laatste activiteit</th><th>Actieve taaktijd</th></tr></thead><tbody>' + filteredRows.map(function (row) {
@@ -1804,11 +1813,14 @@
       if (field) draft[name] = field.value;
     });
     draft.class_ids = Array.from(form.querySelectorAll('input[name="class_ids"]:checked')).map(function (field) { return field.value; });
-    if (draft.status === "draft") {
+    if (draft.status === "draft" && draft.exercise_forms !== null && form.querySelector('input[name="exercise_forms"]')) {
+      draft.exercise_forms = Array.from(form.querySelectorAll('input[name="exercise_forms"]:checked')).map(function (field) { return field.value; });
+    }
+    if (draft.status === "draft" && draft.exercise_forms === null) {
       const sentences = form.elements.namedItem("include_integrative_sentences");
-      draft.include_integrative_sentences = Boolean(sentences && sentences.checked);
+      if (sentences) draft.include_integrative_sentences = Boolean(sentences.checked);
       const variants = form.elements.namedItem("use_exercise_variants");
-      draft.use_exercise_variants = Boolean(variants && variants.checked);
+      if (variants) draft.use_exercise_variants = Boolean(variants.checked);
     }
     if (form.querySelector && form.querySelector('input[name="verb_item_ids"]')) draft.verb_item_ids = Array.from(form.querySelectorAll('input[name="verb_item_ids"]:checked')).map(function (field) { return field.value; });
   }
@@ -1824,7 +1836,7 @@
       return renderCurrent();
     }
     if (!draft.class_ids.length || !items.length || !draft.title.trim()) {
-      state.tasks.message = "Kies minstens één klas en één item en vul een titel in.";
+      state.tasks.message = "Kies minstens één klas en één leerdoel en vul een titel in.";
       return renderCurrent();
     }
     if (draft.mastery_strategy === "verb_rule_mastery" || draft.mastery_strategy === "mixed_verb_mastery") {
@@ -1838,8 +1850,25 @@
     let deadline;
     try { deadline = taskDeadlineUtc(draft.due_at); }
     catch (error) { state.tasks.message = error.message; return renderCurrent(); }
+    let instructions = draft.instructions.trim();
+    if (draft.mastery_strategy === "item_mastery" && draft.completion_strategy === "rounds" && draft.exercise_forms !== null) {
+      try {
+        if (!window.MonParcoursExercisePolicy || !state.variantBank) throw Error("Herlaad eerst de oefenvarianten.");
+        const policy = window.MonParcoursExercisePolicy;
+        const available = policy.available(items, state.variantBank, state.course);
+        draft.exercise_forms = draft.exercise_forms.filter(function (key) { return available.includes(key); });
+        if (items.some(function (item) { return !policy.plan(item, items, state.variantBank, state.course, draft.exercise_forms, 1); }))
+          throw Error("Kies voor elk geselecteerd leerdoel minstens één beschikbare oefenvorm.");
+        if (Number(draft.required_rounds) > 2 && items.some(function (item) {
+          return !policy.plan(item, [item], state.variantBank, state.course, draft.exercise_forms, 3);
+        })) throw Error("Kies ook een oefenvorm die elk leerdoel afzonderlijk kan testen: vanaf ronde 3 kan de herhaalset kleiner zijn.");
+        instructions = policy.write(instructions, draft.exercise_forms);
+        draft.include_integrative_sentences = draft.exercise_forms.includes("revision");
+        draft.use_exercise_variants = draft.exercise_forms.some(function (key) { return !["vocabulary_direct","verb_conjugation","grammar_rule","phrase_direct","spelling"].includes(key); });
+      } catch (error) { state.tasks.message = error.message; return renderCurrent(); }
+    }
     const payload = {
-      id: draft.id, title: draft.title.trim(), instructions: draft.instructions.trim(),
+      id: draft.id, title: draft.title.trim(), instructions: instructions,
       due_at: deadline,
       target_acquired_percentage: Number(draft.target_acquired_percentage),
       mastery_strategy: draft.mastery_strategy,
@@ -2011,10 +2040,10 @@
       downloadCsv("sessies-" + safeFilename(student.display_name) + ".csv", ["Datum", "Status", "Modus", "Trajet", "Cursusonderdeel", "Les", "Blok", "Subsection", "Geselecteerd", "Oefeningen gemaakt", "Pogingen", "Correct", "Fout", "Percentage correct", "Actieve tijd (seconden)", "Actieve tijd"], studentSessionRows(data, student.id));
     }
     if (action === "export-difficult-class" && classRow) {
-      downloadCsv("moeilijke-items-" + safeFilename(classRow.name) + ".csv", ["Leerling", "Klas", "Nederlandse prompt / item", "Frans modelantwoord", "Trajet", "Onderdeel", "Itemvariant", "Pogingen", "Fout", "Foutpercentage"], difficultItemRows(data, state.courseIndex, classRow.id, null));
+      downloadCsv("moeilijke-items-" + safeFilename(classRow.name) + ".csv", ["Leerling", "Klas", "Nederlandse prompt / leerdoel", "Frans modelantwoord", "Trajet", "Onderdeel", "Itemvariant", "Pogingen", "Fout", "Foutpercentage"], difficultItemRows(data, state.courseIndex, classRow.id, null));
     }
     if (action === "export-difficult-student" && student) {
-      downloadCsv("moeilijke-items-" + safeFilename(student.display_name) + ".csv", ["Leerling", "Klas", "Nederlandse prompt / item", "Frans modelantwoord", "Trajet", "Onderdeel", "Itemvariant", "Pogingen", "Fout", "Foutpercentage"], difficultItemRows(data, state.courseIndex, null, student.id));
+      downloadCsv("moeilijke-items-" + safeFilename(student.display_name) + ".csv", ["Leerling", "Klas", "Nederlandse prompt / leerdoel", "Frans modelantwoord", "Trajet", "Onderdeel", "Itemvariant", "Pogingen", "Fout", "Foutpercentage"], difficultItemRows(data, state.courseIndex, null, student.id));
     }
   }
 
@@ -2155,7 +2184,7 @@
     if (action === "export-task") {
       const task = state.tasks.list.find(function (row) { return row.id === state.tasks.selectedId; });
       if (!task) return;
-      downloadCsv("taak-" + safeFilename(task.title) + ".csv", ["Taak", "Klas", "Leerling", "Status", "Items geoefend", "Items totaal", "Beheersing %", "Gekend", "Gekend %", "Doel %", "Voltooid op", "Laatste activiteit", "Actieve taaktijd (s)", "Completion strategy", "Ronde", "Rondes vereist", "Ronde-items juist", "Ronde-items totaal"],
+      downloadCsv("taak-" + safeFilename(task.title) + ".csv", ["Taak", "Klas", "Leerling", "Status", "Leerdoelen geoefend", "Leerdoelen totaal", "Beheersing %", "Gekend", "Gekend %", "Doel %", "Voltooid op", "Laatste activiteit", "Actieve taaktijd (s)", "Completion strategy", "Ronde", "Rondes vereist", "Rondeleerdoelen juist", "Rondeleerdoelen totaal"],
         asArray(state.tasks.detail).map(function (row) { const p = row.progress || {}; const r = row.round_progress || {}; const status = row.completed_at ? "Afgerond" : task.due_at && new Date(task.due_at) < new Date() ? "Te laat" : task.completion_strategy === "rounds" ? r.round_number ? "Bezig" : "Niet gestart" : Number(p.practiced || 0) ? "Bezig" : "Niet gestart"; return [task.title, row.class_name, row.student_name, status, p.practiced, p.total, p.mastery_level, p.acquired, Number(p.total || 0) ? Math.round(Number(p.acquired || 0) * 100 / Number(p.total)) : 0, task.completion_strategy === "rounds" ? "" : task.target_acquired_percentage, row.completed_at || "", p.last_activity || "", row.active_task_time || 0, task.completion_strategy || "legacy_mastery", r.round_number || "", r.required_rounds || (task.completion_strategy === "rounds" ? task.required_rounds : ""), r.completed || 0, r.total || 0]; }));
       return;
     }
@@ -2410,6 +2439,13 @@
       if (!response.ok) throw new Error("COURSE_LOAD_FAILED");
       state.course = await response.json();
       state.courseIndex = buildCourseIndex(state.course);
+      try {
+        const variantsResponse = await fetch("./data/exercise-variants.json?v=20261012-2");
+        if (!variantsResponse.ok) throw Error("VARIANT_LOAD_FAILED");
+        const bank = await variantsResponse.json();
+        window.MonParcoursExerciseVariants.validateBank(bank, state.course);
+        state.variantBank = bank;
+      } catch (_) { state.variantBank = null; }
     } catch (error) {
       state.course = { trajectories: [] };
       state.courseIndex = Object.create(null);
@@ -2525,7 +2561,9 @@
     window.MonParcoursTeacherTestState = state;
     window.MonParcoursTeacherTaskTest = Object.freeze({ taskLifecycle: taskLifecycle,
       taskDeadlineLabel: taskDeadlineLabel, taskArchiveFilterRows: taskArchiveFilterRows,
-      renderTasksPage: renderTasksPage, renderTaskDetail: renderTaskDetail });
+      renderTasksPage: renderTasksPage, renderTaskDetail: renderTaskDetail,
+      taskDraftDefaults: taskDraftDefaults, renderTaskExerciseForms: renderTaskExerciseForms,
+      updateTaskDraftFromForm: updateTaskDraftFromForm });
   }
 
   if (!window.MON_PARCOURS_TEACHER_TEST) {

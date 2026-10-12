@@ -13,7 +13,7 @@ const INACTIVITY_TIMEOUT_MS = 60000;
 const MAX_DYNAMIC_NUMBER_ALL = 101;
 const ACCENTS = ["é", "è", "ê", "ë", "à", "â", "ç", "ù", "û", "ô", "î", "ï"];
 const EXERCISES = {
-  "assignment-mixed": { type: "mixed", label: "Taakitems", labelFr: "Éléments du devoir", short: "Taak", shortFr: "Devoir" },
+  "assignment-mixed": { type: "mixed", label: "Taakleerdoelen", labelFr: "Objectifs du devoir", short: "Taak", shortFr: "Devoir" },
   "vocab-nl-fr": { type: "vocabulary", label: "Nederlands → Frans", labelFr: "Néerlandais → français", short: "Woordenschat", shortFr: "Vocabulaire" },
   "vocab-fr-nl": { type: "vocabulary", label: "Frans → Nederlands", labelFr: "Français → néerlandais", short: "Woordenschat", shortFr: "Vocabulaire" },
   "verb-nl-inf": { type: "verb", label: "Nederlands → Frans", labelFr: "Néerlandais → français", short: "Werkwoorden", shortFr: "Verbes" },
@@ -547,14 +547,14 @@ function renderHome() {
           const total = (entry.items || []).length;
           const activeTotal = (entry.items || []).filter(isExerciseItem).length;
           return '<button class="trajectory-card" type="button" data-action="select-trajectory" data-index="' + index + '" aria-pressed="' + (index === state.trajectoryIndex) + '">' +
-            '<span class="trajectory-number"><strong>' + escapeHtml(entry.trajectory) + '</strong><span class="trajectory-total">' + uiText(total + " éléments du cours", total + " cursusitems") + '</span></span>' +
+            '<span class="trajectory-number"><strong>' + escapeHtml(entry.trajectory) + '</strong><span class="trajectory-total">' + uiText(activeTotal + " objectifs", activeTotal + " leerdoelen") + '</span></span>' +
             '<small class="trajectory-progress">' + uiText(stats.practiced + " / " + activeTotal + " objectifs actifs travaillés", stats.practiced + " / " + activeTotal + " actieve leerdoelen geoefend") + '</small>' +
           '</button>';
         }).join("") +
       '</div>' +
     '</section>' +
     '<section aria-labelledby="unit-heading">' +
-      '<div class="section-heading home-heading"><h2 id="unit-heading">' + uiText("Parties de " + trajectory.trajectory, "Onderdelen van " + trajectory.trajectory) + '</h2><span class="step-label">' + (trajectory.items || []).length + '</span></div>' +
+      '<div class="section-heading home-heading"><h2 id="unit-heading">' + uiText("Parties de " + trajectory.trajectory, "Onderdelen van " + trajectory.trajectory) + '</h2><span class="step-label">' + (trajectory.items || []).filter(isExerciseItem).length + '</span></div>' +
       '<div class="unit-list">' +
         trajectory.units.map(function (unit) {
           const count = exerciseItemCount(itemsForUnit(trajectory, unit).filter(isExerciseItem));
@@ -562,7 +562,7 @@ function renderHome() {
           return '<button class="unit-card' + (/^Action/i.test(unit.top_category) ? ' tone-revision' : '') + '" type="button" data-action="select-unit" data-order="' + unit.order + '">' +
             '<span class="unit-order">' + unit.order + '</span>' +
             '<span class="unit-copy"><strong>' + contentIcon(contentTypeKey(unit.top_category)) + escapeHtml(unit.top_category) + '</strong><small>' + escapeHtml(unit.title) + '</small></span>' +
-            '<span class="unit-meta">' + (count || curatedCount ? learningCountsHtml(count, curatedCount) : uiText("Information", "Cursusinfo")) + '<span class="unit-arrow" aria-hidden="true">→</span></span>' +
+            '<span class="unit-meta">' + (count || curatedCount ? learningCountsHtml(count, curatedCount, /^Action/i.test(unit.top_category)) : uiText("Information", "Cursusinfo")) + '<span class="unit-arrow" aria-hidden="true">→</span></span>' +
           '</button>';
         }).join("") +
       '</div>' +
@@ -777,7 +777,7 @@ function roundStatusHtml(rounds, completed, compact, pendingCount, notStarted) {
       '<strong class="task-round-label">' + uiText("Passage " + rounds.round + " sur " + rounds.required,
         "Ronde " + rounds.round + " van " + rounds.required) + '</strong>' +
       '<span class="task-round-score"><b>' + rounds.done + ' / ' + rounds.selected + '</b><small>' + uiText("traités", "afgewerkt") + '</small></span>' +
-      '<span class="task-round-bar" role="progressbar" aria-label="Éléments terminés dans ce passage / Items klaar in deze ronde" aria-valuenow="' + rounds.done + '" aria-valuemin="0" aria-valuemax="' + rounds.selected + '"><i style="width:' + Math.round(100 * rounds.done / Math.max(1, rounds.selected)) + '%"></i></span>' +
+      '<span class="task-round-bar" role="progressbar" aria-label="Objectifs terminés dans ce passage / Leerdoelen klaar in deze ronde" aria-valuenow="' + rounds.done + '" aria-valuemin="0" aria-valuemax="' + rounds.selected + '"><i style="width:' + Math.round(100 * rounds.done / Math.max(1, rounds.selected)) + '%"></i></span>' +
       '<span class="task-round-remaining">' + uiText("Encore " + rounds.remaining, "Nog " + rounds.remaining) + '</span>') + '</span>';
 }
 
@@ -888,7 +888,7 @@ function renderAssignmentDetail(id) {
   app.innerHTML = breadcrumbHtml([{ label: "Mon parcours", action: "home" }, { label: "Mes devoirs", action: "view-assignments" }]) +
     '<section class="assignment-detail"><p class="eyebrow">' + assignmentStatus(progress) + '</p><h1>' + assignmentContentIcon(assignment) + escapeHtml(assignment.title) + '</h1>' +
     '<p>' + assignmentDue(assignment) + '</p>' +
-    (assignment.instructions ? '<p class="assignment-instructions">' + escapeHtml(assignment.instructions) + '</p>' : '') +
+    (assignment.instructions ? '<p class="assignment-instructions">' + escapeHtml(window.MonParcoursExercisePolicy ? window.MonParcoursExercisePolicy.read(assignment.instructions).text : assignment.instructions) + '</p>' : '') +
     (progress.rounds ? roundStatusHtml(progress.rounds, progress.status === "completed", false, progress.pendingReports) :
       progress.goals ? '<div class="assignment-stats"><strong>' + assignmentShortProgress(progress) + '</strong></div>' :
       '<div class="assignment-stats"><strong>' + progress.practiced + '/' + progress.total + ' ' + uiText("travaillés", "geoefend") + '</strong>' +
@@ -901,7 +901,7 @@ function renderAssignmentDetail(id) {
       uiText("Révision", "Herhaling")) + '</p>') : progress.completedAt ? '<p class="perfect-note">' + uiText("Objectif atteint ! Le " + new Date(progress.completedAt).toLocaleDateString("fr-BE") + ".", "Doel behaald! Op " + new Date(progress.completedAt).toLocaleDateString("nl-BE") + ".") + '</p>' :
       progress.reachedLocally ? '<p class="sync-note">' + uiText("Objectif atteint sur cet appareil. Confirmation après synchronisation.", "Doel op dit toestel behaald. Bevestiging volgt na synchronisatie.") + '</p>' :
       (progress.goals ? '<p>' + uiText("Travaille les personnes et les verbes indiqués pour atteindre l’objectif.", "Oefen de persoonsgroepen en werkwoorden om het doel te bereiken.") + '</p>' :
-      '<p>' + uiText("La tâche est terminée quand tous les éléments ont été travaillés et que le pourcentage acquis atteint l’objectif.", "De taak is klaar als alle items geoefend zijn en het gekend-percentage het doel bereikt.") + '</p>')) +
+      '<p>' + uiText("La tâche est terminée quand tous les objectifs ont été travaillés et que le pourcentage acquis atteint l’objectif.", "De taak is klaar als alle leerdoelen geoefend zijn en het gekend-percentage het doel bereikt.") + '</p>')) +
     (progress.rounds && (progress.status === "completed" || progress.status === "pending_review") ? '' : '<button class="button button-primary" type="button" data-action="launch-assignment" data-id="' + escapeAttr(id) + '">' + uiText(progress.rounds ? progress.status === "not_started" ? "Commencer" : "Continuer" : progress.practiced ? "Continuer" : "Commencer",
       progress.rounds ? progress.status === "not_started" ? "Starten" : "Verder oefenen" : progress.practiced ? "Verder oefenen" : "Starten") + '</button>') + '</section>';
   focusApp();
@@ -930,7 +930,9 @@ function launchAssignment(id) {
     const pendingIds = round.selected_item_ids.filter(function (itemId) { return !round.items[itemId].completed_at && !round.items[itemId].reported_pending; });
     const selected = allItems.filter(function (item) { return pendingIds.includes(item.id); });
     const questions = taskQuestionsForItems(selected, "assignment-mixed", assignment.item_verb_exercise_key || "verb-nl-conj",
-      assignment.include_integrative_sentences ? round.number : null, assignment.use_exercise_variants === true, round.number);
+      assignment.include_integrative_sentences ? round.number : null, assignment.use_exercise_variants === true, round.number,
+      window.MonParcoursExercisePolicy ? window.MonParcoursExercisePolicy.read(assignment.instructions).forms : null,
+      allItems.filter(function (item) { return round.selected_item_ids.includes(item.id); }));
     if (questions.length !== pendingIds.length) {
       app.innerHTML = '<section class="error-card"><h1>' + uiText("Ce devoir ne peut pas encore commencer.", "Deze taak kan nog niet starten.") +
         '</h1><p>' + uiText("Un élément du cours manque. Préviens ton professeur.", "Een cursusitem ontbreekt. Meld dit aan je leerkracht.") + '</p></section>';
@@ -1084,7 +1086,7 @@ function renderUnit() {
     breadcrumbHtml([{ label: trajectory.trajectory, action: "home" }]) +
     journeySteps(3) +
     '<section class="unit-hero"><div><p class="eyebrow unit-kind">' + contentIcon(contentTypeKey(unit.top_category)) + escapeHtml(unit.top_category) + '</p><h1>' + escapeHtml(unit.title) + '</h1>' +
-    '<p class="lede">' + learningCountsHtml(exerciseCount, curatedCount) + '</p></div>' +
+    '<p class="lede">' + learningCountsHtml(exerciseCount, curatedCount, /^Action/i.test(unit.top_category)) + '</p></div>' +
     (exerciseCount || curatedCount ? compactScopeButton(unit, "", "", unit.title, exerciseCount || curatedCount) : "") + '</section>' +
     '<section class="structure-stack" aria-label="Cursusstructuur">' + sectionsHtml + '</section>' +
     renderSoundNotes(soundItems);
@@ -1147,7 +1149,7 @@ function compactScopeButton(unit, block, subsection, title, count, category) {
   const variants = curatedCountForScope(scope);
   return '<button class="scope-all-button' + (/^Action/i.test(unit.top_category) ? ' tone-revision' : '') + '" type="button"' + scopeAttributes(unit, block, subsection, title, category) +
     '<span class="scope-all-icon">' + dashboardIcon("play") + '</span>' + uiText("Tout pratiquer →", "Alles oefenen →") + '<span class="scope-all-count">' + (goals || variants) + '</span>' +
-    scopeCountLabelHtml(goals, variants) + '</button>';
+    scopeCountLabelHtml(goals, variants, /^Action/i.test(unit.top_category)) + '</button>';
 }
 
 function scopeChoiceCard(unit, block, subsection, title, count, category) {
@@ -1160,12 +1162,14 @@ function scopeChoiceCard(unit, block, subsection, title, count, category) {
     '<small lang="nl">' + escapeHtml(scopeLabelDutch(title)) + '</small><span class="scope-cta">' + uiText("Pratiquer →", "Oefenen →") + '</span></button>';
 }
 
-function scopeCountLabelHtml(goals, variants) {
-  return '<span class="scope-count-kind">' + (goals ? uiText("objectifs", "leerdoelen") : uiText("variantes", "oefenvarianten")) +
-    (goals && variants ? ' · ' + variants + ' ' + uiText("variantes", "oefenvarianten") : '') + '</span>';
+function scopeCountLabelHtml(goals, variants, revision) {
+  if (revision) return '<span class="scope-count-kind">' + uiText("exercices", "oefeningen") + '</span>';
+  return '<span class="scope-count-kind">' + (goals ? uiText("objectifs", "leerdoelen") : uiText("variantes d’exercice", "oefenvarianten")) +
+    (goals && variants ? ' · ' + variants + ' ' + uiText("variantes d’exercice", "oefenvarianten") : '') + '</span>';
 }
 
-function learningCountsHtml(goals, variants) {
+function learningCountsHtml(goals, variants, revision) {
+  if (revision) return variants + " " + uiText("exercices", "oefeningen");
   return (goals ? goals + ' ' + uiText("objectifs", "leerdoelen") : '') +
     (goals && variants ? ' · ' : '') + (variants ? variants + ' ' + uiText("variantes d’exercice", "oefenvarianten") : '');
 }
@@ -1237,7 +1241,7 @@ function renderSetup() {
   if (!available.length) return renderUnit();
   const itemCount = exerciseItemCount(exerciseItems);
   const variantCount = curatedKeys.reduce(function (total, key) { return total + curatedVariantsForScope(key).length; }, 0);
-  const setupCount = itemCount && variantCount
+  const setupCount = /^Action/i.test(unit.top_category) && !assignment ? variantCount + " " + uiText("exercices", "oefeningen") : itemCount && variantCount
     ? itemCount + " " + uiText("objectifs", "leerdoelen") + " · " + variantCount + " " + uiText("variantes d’exercice", "oefenvarianten")
     : itemCount ? itemCount + " " + uiText("objectifs", "leerdoelen")
       : variantCount + " " + uiText("variantes d’exercice", "oefenvarianten");
@@ -1339,9 +1343,24 @@ function questionsForSetup(exerciseKey, requestedCount) {
   return buildQuestionsForItems(exerciseItemsForSetup(exerciseKey), exerciseKey, requestedCount);
 }
 
-function taskQuestionsForItems(items, exerciseKey, verbExerciseKey, integrativeRound, useVariants, roundNumber) {
+function taskQuestionsForItems(items, exerciseKey, verbExerciseKey, integrativeRound, useVariants, roundNumber, exerciseForms, policyItems) {
   const selectedIds = new Set(items.map(function (item) { return item.id; }));
   return items.map(function (item) {
+      if (exerciseForms && window.MonParcoursExercisePolicy) {
+        const plan = window.MonParcoursExercisePolicy.plan(item, policyItems || items, state.variantBank, state.data, exerciseForms, roundNumber);
+        if (!plan) return null;
+        if (plan.variant) return Object.assign(window.MonParcoursExerciseVariants.compileVariant(plan.variant, state.data),
+          { item: item, itemId: item._id || item.id, stableItemId: item.id });
+        const directKey = { vocabulary_direct: "vocab-nl-fr", verb_conjugation: "verb-nl-conj", grammar_rule: "grammar",
+          numbers: "number-nl-fr", phrase_direct: "phrase-nl-fr", spelling: "curated-spelling" }[plan.direct];
+        if (plan.direct !== "spelling") {
+          const direct = buildQuestionsForItems([item], directKey, 1);
+          return direct[Math.floor(Math.random() * direct.length)] || null;
+        }
+        // Written homophones retain their existing compiled course question.
+        useVariants = false;
+        integrativeRound = null;
+      }
       if (integrativeRound && state.variantBank && window.MonParcoursExerciseVariants) {
         const sentences = state.variantBank.variants.filter(function (variant) {
           const targets = window.MonParcoursExerciseVariants.targetsForVariant(variant);
@@ -1432,14 +1451,14 @@ function updateSessionPlan() {
 }
 
 function sessionPlanText(selectedSize, availableCount, dynamicNumbers) {
-  const noun = dynamicNumbers ? "mogelijke getallen" : "items";
+  const noun = dynamicNumbers ? "mogelijke getallen" : "oefeningen";
   return selectedSize === "all"
     ? "Je oefent alle " + availableCount + " " + noun + "."
     : "Je oefent " + selectedSize + " van " + availableCount + " " + noun + ".";
 }
 
 function sessionPlanFrench(selectedSize, availableCount, dynamicNumbers) {
-  const noun = dynamicNumbers ? "nombres possibles" : "éléments";
+  const noun = dynamicNumbers ? "nombres possibles" : "exercices";
   return selectedSize === "all"
     ? "Tu travailleras les " + availableCount + " " + noun + "."
     : "Tu travailleras " + selectedSize + " des " + availableCount + " " + noun + ".";
@@ -2228,11 +2247,11 @@ function renderSummary() {
     ? session.answered_variant_ids.length : uniqueAnsweredExercises(session.sync_attempts);
   const remaining = Math.max(0, session.available_count - session.question_count);
   const coverageTextNl = session.question_count === session.available_count
-    ? "Je oefende alle " + session.available_count + " beschikbare items."
-    : "Je oefende " + session.question_count + " van de " + session.available_count + " beschikbare items.";
+    ? "Je oefende alle " + session.available_count + " beschikbare oefeningen."
+    : "Je oefende " + session.question_count + " van de " + session.available_count + " beschikbare oefeningen.";
   const coverageTextFr = session.question_count === session.available_count
-    ? "Tu as travaillé les " + session.available_count + " éléments disponibles."
-    : "Tu as travaillé " + session.question_count + " des " + session.available_count + " éléments disponibles.";
+    ? "Tu as travaillé les " + session.available_count + " exercices disponibles."
+    : "Tu as travaillé " + session.question_count + " des " + session.available_count + " exercices disponibles.";
   const storageNoteNl = session.identity_verified
     ? "Je voortgang is lokaal bewaard. Online synchronisatie gebeurt automatisch."
     : "Je voortgang is lokaal bewaard op dit toestel.";
