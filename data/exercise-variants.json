@@ -28425,6 +28425,293 @@
       "targets": [
         "uf1-item-000944"
       ]
+    },
+    {
+      "id": "T1-APPLY-RULE-133",
+      "trajectory": "Trajet 1",
+      "kind": "grammar",
+      "scoring": "single",
+      "prompt": "Je porte ___ lunettes.",
+      "instruction": "Complète la phrase",
+      "accepted_answers": [
+        "des"
+      ],
+      "targets": [
+        "uf1-item-000133"
+      ],
+      "scope_kind": "focused"
+    },
+    {
+      "id": "T1-APPLY-AIMER-136",
+      "trajectory": "Trajet 1",
+      "kind": "grammar",
+      "scoring": "single",
+      "prompt": "Ik hou van muziek.",
+      "instruction": "Schrijf de volledige Franse zin",
+      "accepted_answers": [
+        "J’aime la musique.",
+        "J'aime la musique."
+      ],
+      "targets": [
+        "uf1-item-000136"
+      ],
+      "scope_kind": "focused"
+    },
+    {
+      "id": "T1-APPLY-AIMER-137",
+      "trajectory": "Trajet 1",
+      "kind": "grammar",
+      "scoring": "single",
+      "prompt": "Ik zwem graag.",
+      "instruction": "Schrijf de volledige Franse zin",
+      "accepted_answers": [
+        "J’aime nager.",
+        "J'aime nager."
+      ],
+      "targets": [
+        "uf1-item-000137"
+      ],
+      "scope_kind": "focused"
+    },
+    {
+      "id": "T3-APPLY-PREP-512",
+      "trajectory": "Trajet 3",
+      "kind": "grammar",
+      "scoring": "single",
+      "prompt": "Je ___ ma grand-mère.",
+      "instruction": "Vul de uitdrukking aan",
+      "accepted_answers": [
+        "téléphone à"
+      ],
+      "targets": [
+        "uf1-item-000512"
+      ],
+      "scope_kind": "focused"
+    },
+    {
+      "id": "T3-APPLY-PREP-513",
+      "trajectory": "Trajet 3",
+      "kind": "grammar",
+      "scoring": "single",
+      "prompt": "Je ___ mon professeur.",
+      "instruction": "Vul de uitdrukking aan",
+      "accepted_answers": [
+        "demande à"
+      ],
+      "targets": [
+        "uf1-item-000513"
+      ],
+      "scope_kind": "focused"
+    },
+    {
+      "id": "T3-APPLY-PREP-514",
+      "trajectory": "Trajet 3",
+      "kind": "grammar",
+      "scoring": "single",
+      "prompt": "Je ___ vacances.",
+      "instruction": "Vul de uitdrukking aan",
+      "accepted_answers": [
+        "rêve de"
+      ],
+      "targets": [
+        "uf1-item-000514"
+      ],
+      "scope_kind": "focused"
+    },
+    {
+      "id": "T3-APPLY-PREP-515",
+      "trajectory": "Trajet 3",
+      "kind": "grammar",
+      "scoring": "single",
+      "prompt": "La banque est ___ la pharmacie.",
+      "instruction": "Vul de plaatsuitdrukking aan",
+      "accepted_answers": [
+        "à droite de"
+      ],
+      "targets": [
+        "uf1-item-000515"
+      ],
+      "scope_kind": "focused"
+    },
+    {
+      "id": "T3-APPLY-PREP-516",
+      "trajectory": "Trajet 3",
+      "kind": "grammar",
+      "scoring": "single",
+      "prompt": "La gare est ___ l’école.",
+      "instruction": "Vul de plaatsuitdrukking aan",
+      "accepted_answers": [
+        "à gauche de"
+      ],
+      "targets": [
+        "uf1-item-000516"
+      ],
+      "scope_kind": "focused"
+    },
+    {
+      "id": "T3-APPLY-PREP-517",
+      "trajectory": "Trajet 3",
+      "kind": "grammar",
+      "scoring": "single",
+      "prompt": "Le cinéma est ___ la gare.",
+      "instruction": "Vul de plaatsuitdrukking aan",
+      "accepted_answers": [
+        "en face de"
+      ],
+      "targets": [
+        "uf1-item-000517"
+      ],
+      "scope_kind": "focused"
+    },
+    {
+      "id": "T3-APPLY-PREP-518",
+      "trajectory": "Trajet 3",
+      "kind": "grammar",
+      "scoring": "single",
+      "prompt": "La bibliothèque est ___ l’école.",
+      "instruction": "Vul de plaatsuitdrukking aan",
+      "accepted_answers": [
+        "à côté de"
+      ],
+      "targets": [
+        "uf1-item-000518"
+      ],
+      "scope_kind": "focused"
+    },
+    {
+      "id": "T4-APPLY-FP-694",
+      "trajectory": "Trajet 4",
+      "kind": "grammar",
+      "scoring": "single",
+      "prompt": "Ce soir, je ___ regarder un film. (aller)",
+      "instruction": "Vervoeg het werkwoord in le futur proche",
+      "accepted_answers": [
+        "vais"
+      ],
+      "targets": [
+        "uf1-item-000694"
+      ],
+      "scope_kind": "focused"
+    },
+    {
+      "id": "T4-APPLY-PR-696",
+      "trajectory": "Trajet 4",
+      "kind": "grammar",
+      "scoring": "single",
+      "prompt": "Il y a une minute, Emma ___ de manger. (venir)",
+      "instruction": "Vervoeg het werkwoord in le passé récent",
+      "accepted_answers": [
+        "vient"
+      ],
+      "targets": [
+        "uf1-item-000696"
+      ],
+      "scope_kind": "focused"
+    },
+    {
+      "id": "T4-APPLY-PL-716",
+      "trajectory": "Trajet 4",
+      "kind": "grammar",
+      "scoring": "single",
+      "prompt": "un beau cadeau → de beaux ___",
+      "instruction": "Zet het woord in het meervoud",
+      "accepted_answers": [
+        "cadeaux"
+      ],
+      "targets": [
+        "uf1-item-000716"
+      ],
+      "scope_kind": "focused"
+    },
+    {
+      "id": "T5-APPLY-PC-852",
+      "trajectory": "Trajet 5",
+      "kind": "grammar",
+      "scoring": "single",
+      "prompt": "Hier, nous ___ Bruxelles. (visiter)",
+      "instruction": "Vervoeg in le passé composé",
+      "accepted_answers": [
+        "avons visité"
+      ],
+      "targets": [
+        "uf1-item-000852"
+      ],
+      "scope_kind": "focused"
+    },
+    {
+      "id": "T5-APPLY-POSS-869",
+      "trajectory": "Trajet 5",
+      "kind": "grammar",
+      "scoring": "single",
+      "prompt": "Nous aimons ___ maison.",
+      "instruction": "Vul het juiste bezittelijk voornaamwoord in",
+      "accepted_answers": [
+        "notre"
+      ],
+      "targets": [
+        "uf1-item-000869"
+      ],
+      "scope_kind": "focused"
+    },
+    {
+      "id": "T5-APPLY-POSS-875",
+      "trajectory": "Trajet 5",
+      "kind": "grammar",
+      "scoring": "single",
+      "prompt": "Mes grands-parents aiment ___ maison.",
+      "instruction": "Vul het juiste bezittelijk voornaamwoord in",
+      "accepted_answers": [
+        "leur"
+      ],
+      "targets": [
+        "uf1-item-000875"
+      ],
+      "scope_kind": "focused"
+    },
+    {
+      "id": "T5-APPLY-POSS-877",
+      "trajectory": "Trajet 5",
+      "kind": "grammar",
+      "scoring": "single",
+      "prompt": "C’est ___ amie.",
+      "instruction": "Vul het juiste bezittelijk voornaamwoord in",
+      "accepted_answers": [
+        "mon"
+      ],
+      "targets": [
+        "uf1-item-000877"
+      ],
+      "scope_kind": "focused"
+    },
+    {
+      "id": "T6-APPLY-ETRE-988",
+      "trajectory": "Trajet 6",
+      "kind": "grammar",
+      "scoring": "single",
+      "prompt": "Emma ___ arrivée à huit heures.",
+      "instruction": "Vul het juiste hulpwerkwoord in",
+      "accepted_answers": [
+        "est"
+      ],
+      "targets": [
+        "uf1-item-000988"
+      ],
+      "scope_kind": "focused"
+    },
+    {
+      "id": "T6-APPLY-ENTRER-996",
+      "trajectory": "Trajet 6",
+      "kind": "grammar",
+      "scoring": "single",
+      "prompt": "Emma est ___ à huit heures. (rentrer)",
+      "instruction": "Vul het participe passé in",
+      "accepted_answers": [
+        "rentrée"
+      ],
+      "targets": [
+        "uf1-item-000996"
+      ],
+      "scope_kind": "focused"
     }
   ]
 }
