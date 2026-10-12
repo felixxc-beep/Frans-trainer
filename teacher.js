@@ -1122,11 +1122,14 @@
 
   function taskDraftDefaults(source) {
     const first = asArray(state.course && state.course.trajectories)[0];
+    const policy = window.MonParcoursExercisePolicy;
+    const metadata = policy && typeof policy.read === 'function' ? policy.read(source && source.instructions) :
+      { text: source && source.instructions || '', forms: null };
     return {
       id: source && source.id || null,
       title: source && source.title || "",
-      instructions: window.MonParcoursExercisePolicy ? window.MonParcoursExercisePolicy.read(source && source.instructions).text : source && source.instructions || "",
-      exercise_forms: source ? (window.MonParcoursExercisePolicy ? window.MonParcoursExercisePolicy.read(source.instructions).forms : null) : [],
+      instructions: metadata.text,
+      exercise_forms: source ? metadata.forms : [],
       due_at: source && source.due_at ? taskDeadlineLocal(source.due_at) : "",
       target_acquired_percentage: source && source.target_acquired_percentage || 80,
       mastery_strategy: source && source.mastery_strategy || "item_mastery",
@@ -1148,8 +1151,10 @@
   function renderTaskExerciseForms(draft, items) {
     const policy = window.MonParcoursExercisePolicy;
     const heading = '<fieldset class="task-exercise-forms" data-exercise-forms><legend>4 · Oefenvormen</legend>';
-    if (!policy || !state.variantBank) return heading + '<p class="error" role="alert">Oefenvarianten konden niet worden geladen. Herlaad deze pagina vóór het opslaan.</p></fieldset>';
-    const available = policy.options(items, state.variantBank, state.course);
+    if (!policy || !state.variantBank || !window.MonParcoursExerciseVariants ||
+        typeof policy.options !== 'function' && (typeof policy.candidates !== 'function' || typeof policy.variantForm !== 'function'))
+      return heading + '<p class="error" role="alert">Oefenvarianten konden niet worden geladen. Herlaad deze pagina vóór het opslaan.</p></fieldset>';
+    const available = taskExerciseFormOptions(policy, items);
     return heading + (available.length ? available.map(function (option) {
       const key = option.key;
       const count = option.variantCount ? option.variantCount + ' oefenvarianten' :
@@ -1159,6 +1164,38 @@
         '><span>' + escapeHtml(policy.labels[key]) + ' — ' + count + '</span></label>';
     }).join('') : '<p>Selecteer eerst oefenbare leerdoelen. Binnen deze selectie zijn geen oefenvormen beschikbaar.</p>') +
       '<p>Vink één of meer oefenvormen aan. Alleen deze vormen verschijnen in de taak. Elk geselecteerd leerdoel moet oefenbaar blijven.</p></fieldset>';
+  }
+
+  function taskExerciseFormOptions(policy, items) {
+    if (typeof policy.options === 'function') return policy.options(items, state.variantBank, state.course);
+    // The preceding policy API has candidates()/variantForm(), but no
+    // options(). Keep opening the editor during a staged frontend deployment.
+    const counts = new Map();
+    const directForms = { vocabulary: 'vocabulary_direct', verb: 'verb_conjugation', grammar_rule: 'grammar_rule',
+      number: 'numbers', phrase: 'phrase_direct', sound_rule: 'spelling' };
+    items.forEach(function (item) {
+      const key = directForms[item.type];
+      if (!key) return;
+      if (!counts.has(key)) counts.set(key, { key: key, variantCount: 0, courseCount: 0 });
+      counts.get(key).courseCount += key === 'verb_conjugation' ? (item.conjugations || []).reduce(function (count, row) {
+        return count + String(row.subject).split('/').length;
+      }, 0) : 1;
+    });
+    const index = window.MonParcoursExerciseVariants.itemIndex(state.course);
+    const ids = new Set(items.map(function (item) { return item.id; }));
+    const trajectories = new Set((state.course.trajectories || []).filter(function (trajectory) {
+      return trajectory.items.some(function (item) { return ids.has(item.id); });
+    }).map(function (trajectory) { return trajectory.trajectory; }));
+    policy.candidates(items, state.variantBank, state.course).forEach(function (variant) {
+      if (!trajectories.has(variant.trajectory) || variant.id === 'T1-GRAM-AIMER-022') return;
+      const key = policy.variantForm(variant, index);
+      if (!key || !policy.labels[key]) return;
+      if (!counts.has(key)) counts.set(key, { key: key, variantCount: 0, courseCount: 0 });
+      counts.get(key).variantCount += 1;
+    });
+    return Object.keys(policy.labels).filter(function (key) {
+      return counts.has(key) && (counts.get(key).variantCount || counts.get(key).courseCount);
+    }).map(function (key) { return counts.get(key); });
   }
 
   function taskDeadlineLocal(value) {
@@ -2568,7 +2605,7 @@
       taskDeadlineLabel: taskDeadlineLabel, taskArchiveFilterRows: taskArchiveFilterRows,
       renderTasksPage: renderTasksPage, renderTaskDetail: renderTaskDetail,
       taskDraftDefaults: taskDraftDefaults, renderTaskExerciseForms: renderTaskExerciseForms, renderTaskEditor: renderTaskEditor,
-      updateTaskDraftFromForm: updateTaskDraftFromForm, saveTask: saveTask, loadCourse: loadCourse });
+      updateTaskDraftFromForm: updateTaskDraftFromForm, saveTask: saveTask, loadCourse: loadCourse, init: init });
   }
 
   if (!window.MON_PARCOURS_TEACHER_TEST) {

@@ -14,6 +14,7 @@
     grammar_context: "Grammatica · En contexte / In een zin",
     grammar_mixed: "Grammatica · Application mixte / Gemengde toepassing",
     revision: "Révision · Phrases NL → FR / Integratieve zinnen",
+    revision_other: "Révision · Autres exercices / Andere revisievragen",
     numbers: "Getallen · Nombres dynamiques / Dynamische getallen",
     phrase_direct: "Zinnen · Traduire / Direct vertalen",
     spelling: "Spelling · Homophones / Schriftelijke homofonen"
@@ -40,6 +41,7 @@
   }
   function variantForm(variant, index) {
     if (variant.kind === "revision" && variant.scoring === "integrative") return "revision";
+    if (variant.kind === "revision") return "revision_other";
     if (variant.scope_kind === "mixed" && variant.kind === "grammar") return "grammar_mixed";
     if (variant.kind === "grammar") return "grammar_context";
     if (variant.kind === "conjugation") return "verb_context";
@@ -56,20 +58,43 @@
   function candidates(items, bank, course) {
     const ids = new Set(items.map(function (item) { return item.id; }));
     const index = engine.itemIndex(course);
+    const trajectories = new Set((course.trajectories || []).filter(function (trajectory) {
+      return (trajectory.items || []).some(function (item) { return ids.has(item.id); });
+    }).map(function (trajectory) { return trajectory.trajectory; }));
     const mixed = new Set(items.filter(function (item) { return item.type === "grammar_rule"; }).map(function (item) { return item.category; })).size > 1;
     return (bank.variants || []).filter(function (variant) {
       const targets = engine.targetsForVariant(variant);
-      return variant.evidence_policy !== "practice_only" && targets.length && targets.every(function (id) { return ids.has(id); }) &&
+      // This bank entry asks for the lexical infinitive "cuisiner" from a
+      // situation. It is not offered as a grammar form in the task creator.
+      return variant.id !== "T1-GRAM-AIMER-022" && trajectories.has(variant.trajectory) &&
+        variant.evidence_policy !== "practice_only" && targets.length && targets.every(function (id) { return ids.has(id); }) &&
         engine.matchesScope(variant, ids, !mixed && variant.kind !== "revision") &&
         (!variant.required_subsection || items.every(function (item) { return item.subsection === variant.required_subsection; })) &&
         variantForm(variant, index);
     });
   }
-  function available(items, bank, course) {
-    const keys = new Set(items.map(directForm).filter(Boolean));
+  function options(items, bank, course) {
+    const counts = new Map();
+    items.forEach(function (item) {
+      const key = directForm(item);
+      if (!key) return;
+      if (!counts.has(key)) counts.set(key, { key: key, variantCount: 0, courseCount: 0 });
+      counts.get(key).courseCount += key === "verb_conjugation" ? (item.conjugations || []).reduce(function (count, row) {
+        return count + String(row.subject).split("/").length;
+      }, 0) : 1;
+    });
     const index = engine.itemIndex(course);
-    candidates(items, bank, course).forEach(function (variant) { keys.add(variantForm(variant, index)); });
-    return Object.keys(labels).filter(function (key) { return keys.has(key); });
+    candidates(items, bank, course).forEach(function (variant) {
+      const key = variantForm(variant, index);
+      if (!counts.has(key)) counts.set(key, { key: key, variantCount: 0, courseCount: 0 });
+      counts.get(key).variantCount += 1;
+    });
+    return Object.keys(labels).filter(function (key) {
+      return counts.has(key) && (counts.get(key).variantCount || counts.get(key).courseCount);
+    }).map(function (key) { return counts.get(key); });
+  }
+  function available(items, bank, course) {
+    return options(items, bank, course).map(function (option) { return option.key; });
   }
   function plan(item, items, bank, course, forms, round) {
     if (item.type === "number" && forms.includes("numbers")) return { direct: "numbers" };
@@ -87,5 +112,5 @@
     if (matching.length) return { variant: matching[((round || 1) - 1) % matching.length] };
     return forms.includes(directForm(item)) ? { direct: directForm(item) } : null;
   }
-  return { labels: labels, read: read, write: write, available: available, plan: plan, candidates: candidates, variantForm: variantForm };
+  return { labels: labels, read: read, write: write, options: options, available: available, plan: plan, candidates: candidates, variantForm: variantForm };
 });
