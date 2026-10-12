@@ -15,7 +15,8 @@ assert.ok(!bank.variants.some((variant) => variant.id === "T6-VOC-CTX-046" || va
 for (const variant of bank.variants) {
   const question = engine.compileVariant(variant, course);
   assert.ok(question.stableItemIds.every((id) => ids.has(id)), variant.id + " target exists");
-  assert.ok(Number.isInteger(variant.source_line) && variant.source_line > 0, variant.id + " has source provenance");
+  assert.ok(variant.generated_for_application === true || Number.isInteger(variant.source_line) && variant.source_line > 0,
+    variant.id + " has source provenance or is an explicit teacher-requested generated application");
   const answer = variant.scoring === "multi_gap" ? variant.gaps.map((gap) => gap.accepted_answers[0]) : variant.accepted_answers[0];
   assert.equal(engine.grade(question, answer).correct, true, variant.id + " model answer accepted");
   if (variant.scoring === "multi_gap" && variant.evidence_policy !== "practice_only")
