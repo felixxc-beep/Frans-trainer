@@ -15,7 +15,7 @@ assert.equal(new Set(allItems.map(function (item) { return item.id; })).size, 10
 assert.deepEqual(engine.validateBank(bank, course), { variants: 1731, permanentItems: 1036 });
 assert.deepEqual([1, 2, 3, 4, 5, 6].map(function (number) {
   return bank.variants.filter(function (variant) { return variant.trajectory === "Trajet " + number; }).length;
-}), [352, 222, 226, 292, 283, 337]);
+}), [355, 222, 233, 295, 287, 339]);
 
 const [first, second] = course.trajectories[0].items.filter(function (item) { return item.type === "vocabulary"; });
 const articleUn = course.trajectories[0].items.find(function (item) { return item.id === "uf1-item-000126"; });
