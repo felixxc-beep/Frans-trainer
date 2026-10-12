@@ -29,8 +29,8 @@ assert.equal(policy.selectEntries(entries,20,t1Grammar.map(i=>i.id)).length,20);
 assert.equal(policy.selectEntries(entries,30,t1Grammar.map(i=>i.id)).length,30);
 
 const revisionScope={trajectory:"Trajet 1",top_category:"Action !",lesson:"Révision Trajet 1",block:"",subsection:"",category:""};
-const revisionEntries=policy.pool([],bank,course,["revision"],revisionScope);
-assert.ok(revisionEntries.length >= 30,"Révision is assignable as an exercise pool");
+const revisionEntries=policy.pool([],bank,course,["revision","revision_other"],revisionScope);
+assert.ok(revisionEntries.length >= 30,"Révision is assignable as one complete exercise pool");
 
 const teacher=fs.readFileSync("teacher.js","utf8");
 assert.match(teacher,/Hoeveel oefeningen per ronde\?/);
