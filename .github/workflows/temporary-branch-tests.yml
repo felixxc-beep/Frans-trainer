@@ -1,0 +1,20 @@
+name: temporary-branch-tests
+on:
+  push:
+    branches:
+      - simplify-tasks-remove-rule-drills-20261012
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node --check teacher.js && node --check app.js && node --check exercise-policy.js && node --check exercise-variants.js
+      - run: |
+          set -e
+          for f in tests/*.js; do
+            echo "Running $f"
+            node "$f"
+          done
