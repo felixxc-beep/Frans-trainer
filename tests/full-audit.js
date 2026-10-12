@@ -100,10 +100,10 @@ setImmediate(function () {
   });
 
   allItems.filter(function (item) {
-    return Array.isArray(item.accepted_answers) && ["vocabulary", "phrase", "grammar_rule", "number"].includes(item.type);
+    return Array.isArray(item.accepted_answers) && ["vocabulary", "phrase", "number"].includes(item.type);
   }).forEach(function (item) {
     context.auditItems = [item];
-    context.auditExercise = item.type === "phrase" ? "phrase-nl-fr" : item.type === "grammar_rule" ? "grammar" : "number-nl-fr";
+    context.auditExercise = item.type === "phrase" ? "phrase-nl-fr" : "number-nl-fr";
     const questions = vm.runInContext("buildQuestions(auditItems, auditExercise)", context);
     item.accepted_answers.forEach(function (answer) {
       const courseReproduction = ["uf1-item-000665","uf1-item-000670","uf1-item-000830"].includes(item.id);
