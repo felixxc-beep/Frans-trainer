@@ -120,7 +120,8 @@ setImmediate(() => {
       if (unit.top_category === "Comment dire ?") assert.equal(active.length, 0, "audio-only sound rules stay inactive");
     }
   }
-  assert.equal(covered.size, bank.variants.length, "every curated variant is reachable from its Trajet unit");
+  const unreachable = bank.variants.filter((variant) => !covered.has(variant.id)).map((variant) => variant.id);
+  assert.deepEqual(unreachable, [], "every curated variant is reachable from its Trajet unit");
   vm.runInContext("state.trajectoryIndex=5; state.selectedUnitOrder=6; state.selectedScope={title:'A, à / ou, où / la, là'}; renderUnit()", context);
   assert.match(app.innerHTML, /data-action="choose-scope"/, "T6 homophones have a start action");
   assert.match(app.innerHTML, /data-subsection="A, à \/ ou, où \/ la, là"/, "written homophones can start from their own subsection");
