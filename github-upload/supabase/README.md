@@ -1,0 +1,273 @@
+# Supabase instellen voor Mon parcours
+
+**Voor de huidige gedeeltelijke productie-state:** volg
+`../HERSTELRAPPORT-FASEN-10-12.md` en gebruik alleen de state-aware herstelmigration
+met haar verification-query. De historische installatiestappen hieronder worden
+voor dit herstel niet herhaald. De PostgreSQL-integratietest is nog niet uitgevoerd.
+
+De statische site blijft zonder buildstap laden, maar een nieuwe leerling moet eenmaal online via Supabase met schoolmail worden geïdentificeerd voordat oefenen mogelijk is. Een eerder gekoppelde leerling kan offline verder. De frontend gebruikt alleen de publieke Project URL en publishable key. Gebruik nooit een secret key of de oude `service_role`-key in de webapp.
+
+## 1. Project aanmaken
+
+1. Ga naar https://supabase.com en maak een account aan.
+2. Kies **New project**.
+3. Kies je organisatie, geef het project een naam en maak een sterk databasewachtwoord.
+4. Kies een Europese regio die bij de school past.
+5. Wacht tot het project volledig klaar is.
+
+## 2. Database installeren
+
+1. Open in het projectmenu **SQL Editor**.
+2. Kies **New query**.
+3. Open lokaal `supabase/schema.sql`, kopieer de volledige inhoud naar de editor en klik **Run**.
+4. Maak daarna opnieuw een lege query.
+5. Open `supabase/rls.sql`, kopieer de volledige inhoud en klik **Run**.
+6. Controleer onder **Database → Tables** dat `classes`, `students`, `practice_sessions` en `practice_attempts` bestaan.
+7. Controleer onder **Database → Policies** dat RLS op alle vier tabellen actief is.
+8. Open **Settings → API → Exposed schemas** en controleer dat `private` daar NIET tussen staat. Het `private` schema mag nooit via de Data API worden blootgesteld.
+
+Voer `schema.sql` altijd vóór `rls.sql` uit. Bewaar beide bestanden in Git; ze documenteren exact hoe de database is beveiligd.
+
+## 3. Eerste leerkracht voor testdata maken
+
+Fase 2 bevat nog geen leerkrachtendashboard, maar een Auth-gebruiker is al de eigenaar van een klas.
+
+1. Open **Authentication → Users**.
+2. Kies **Add user** en daarna **Create new user**.
+3. Vul het school-e-mailadres van de leerkracht en een tijdelijk sterk wachtwoord in.
+4. Zet de gebruiker voor deze test als bevestigd aan als Supabase die keuze toont.
+5. Open de aangemaakte gebruiker en kopieer zijn UUID.
+
+## 4. Testklas en leerlingen toevoegen
+
+1. Open `supabase/seed.example.sql`.
+2. Vervang `00000000-0000-0000-0000-000000000000` door de gekopieerde leerkracht-UUID.
+3. Pas desgewenst klasnaam, klascode, leerlingcodes en weergavenamen aan. Leerlingcodes moeten 8–64 tekens lang zijn.
+4. Kopieer de aangepaste SQL naar een nieuwe query in **SQL Editor** en klik **Run**.
+5. Kijk onder **Database → Tables → classes** en **students** of de testregels bestaan.
+
+Gebruik voor echte klassen willekeurige, niet eenvoudig te raden leerlingcodes van minimaal 8 tekens. Als later bij het toevoegen van een leerling geen code wordt meegegeven, genereert de database automatisch een willekeurige code van 16 tekens. Leerlingcodes zijn pseudonieme identificatiegeheimen, geen gewone volgnummers of wachtwoorden.
+
+## 5. Publieke browserconfiguratie invullen
+
+1. Open bovenaan het Supabase-project de **Connect**-dialoog.
+2. Kopieer de **Project URL**.
+3. Kopieer de **Publishable key** die begint met `sb_publishable_`.
+4. Als de Connect-dialoog de sleutel niet toont, ga naar **Settings → API Keys**. Maak daar zo nodig eerst een publishable key.
+5. Open lokaal `config.js` en vul alleen deze twee waarden in:
+
+```js
+window.MON_PARCOURS_CONFIG = Object.freeze({
+  supabaseUrl: "https://jouw-project.supabase.co",
+  supabasePublishableKey: "sb_publishable_..."
+});
+```
+
+Een publishable key mag in browsercode staan: de echte beveiliging zit in grants, RLS en de begrensde databasefuncties. Kopieer nooit een `sb_secret_...`, secret key of `service_role`-key naar `config.js`.
+
+## 6. Leerlingkoppeling testen
+
+1. Start de website lokaal via een webserver of open de GitHub Pages-site.
+2. Klik bovenaan op **Lokaal**.
+3. Vul de schoolmail van een actieve testleerling in. De klas- en leerlingcode blijven alleen beschikbaar als technische hersteloptie.
+4. Na een geldige combinatie toont de knop de leerlingnaam.
+5. Start een korte oefensessie en beantwoord enkele vragen.
+6. Controleer in Supabase onder **Table Editor** dat één `practice_sessions`-regel en de bijbehorende `practice_attempts` zijn toegevoegd.
+7. Vernieuw de pagina of klik opnieuw op synchroniseren door weer online te gaan: dezelfde `client_session_id` en `client_attempt_id` mogen geen dubbele regels opleveren.
+
+## 7. Offline gedrag testen
+
+1. Koppel eerst een leerling terwijl internet werkt.
+2. Zet in de browserontwikkelaarstools **Network → Offline** aan.
+3. Maak een oefensessie. De trainer moet normaal blijven werken.
+4. In localStorage staat de nog te verzenden data onder `monParcoursSyncQueueV1`.
+5. Zet **Offline** weer uit. De browser probeert de outbox automatisch opnieuw te verzenden.
+6. Controleer dat de outbox na succes leeg is en de database geen dubbele pogingen bevat.
+
+## 8. GitHub Pages bijwerken
+
+1. Commit en push `index.html`, de JavaScriptbestanden, `styles.css`, `data/course.json`, `config.js`, `supabase/` en de tests naar dezelfde branch als de Pages-site.
+2. Open **GitHub → Settings → Pages** en controleer dat nog steeds **Deploy from a branch** en `/(root)` gekozen zijn.
+3. Wacht op de groene Pages-deployment en test de publieke URL.
+
+Er is geen Node-server of buildstap nodig. Supabase wordt rechtstreeks via beveiligde HTTPS-RPC-calls gebruikt.
+
+## Beveiligingscontrole
+
+- `anon` krijgt geen SELECT-, INSERT-, UPDATE- of DELETE-recht op leerlingtabellen.
+- Leerling-RPC’s blijven afzonderlijk begrensd; teacherbeheer gebruikt alleen authenticated toegang en de gecontroleerde admin-RPC.
+- Deze publieke functies zijn dunne `SECURITY INVOKER`-wrappers. De bevoorrechte `SECURITY DEFINER`-logica staat in het niet-blootgestelde `private` schema met `search_path = ''`.
+- Een leerlingtoken kan resultaten insturen, maar geen resultaten uitlezen.
+- Getypte antwoorden worden alleen lokaal verwerkt en nooit in `practice_attempts` opgeslagen.
+- Ingelogde leerkrachten kunnen via RLS alleen klassen, leerlingen en resultaten zien waarvan `classes.owner_id` hun eigen Auth-UUID is.
+- Het leerkrachtendashboard gebruikt voor beheer uitsluitend de bestaande `authenticated` grants en RLS-policies; resultaat-tabellen blijven read-only.
+
+## Fase 4: eenmalige klascode-migratie
+
+Voer na een back-up **handmatig** `phase4-management.sql` uit in de Supabase SQL Editor. Dit brengt de databasecontrole voor klascodes in lijn met de beheerinterface: 2–20 letters, cijfers of streepjes. Het script controleert eerst bestaande klascodes en stopt zonder wijziging wanneer een bestaande code niet aan de nieuwe regel voldoet.
+
+Deze migratie verandert geen grants, RLS-policies, leerling-RPC's, sessies of pogingen. De globale uniciteit van `class_code` blijft behouden, zodat leerlingkoppeling zonder extra school- of leerkrachtidentifier ondubbelzinnig blijft.
+
+## Fase 5A: schoolmailidentificatie
+
+Voer **handmatig** `phase5-school-email.sql` uit voordat je de fase-5A-frontend publiceert. Het script:
+
+- voegt nullable `school_email` en de gegenereerde lowercase-vergelijkingskolom toe;
+- accepteert uitsluitend `@camposturnhout.be`;
+- bewaakt globale uniciteit van de genormaliseerde schoolmail;
+- geeft authenticated leerkrachten via de bestaande RLS-policies toegang tot deze ene beheerkolom;
+- maakt de minimale publieke RPC `verify_student_email(text)` met private `SECURITY DEFINER`-implementatie;
+- wijzigt geen leerlingcodes, sync-tokens, leerling-ID's of historische resultaten.
+
+Deze login is eenvoudige identificatie, geen geverifieerde e-mailauthenticatie. Gebruik ze alleen voor dezelfde oefen- en syncmogelijkheden als de bestaande leerlingcode-login.
+
+## Fase 5B: actieve oefentijd
+
+Voer na `phase5-school-email.sql` **handmatig** `phase5-active-time.sql` uit voordat je de fase-5B-frontend en het bijgewerkte dashboard publiceert. Het script:
+
+- voegt de nullable/backward-compatible kolom `practice_sessions.active_duration_seconds` toe;
+- bewaart nieuwe sessietijd als een geheel aantal seconden;
+- vervangt de ingestfunctie zodat snapshots met dezelfde `client_session_id` de hoogste totale tijd bewaren en retries nooit tijd optellen;
+- laat oude sessies zonder gemeten tijd op `NULL`, zodat het dashboard daarvoor `—` toont;
+- verfijnt de schoolmail-RPC met afzonderlijke resultaten voor onbekende en inactieve leerlingen;
+- verandert geen leerling-ID's, sync-tokens, pogingen, RLS-policies of cursusdata.
+
+Publiceer de nieuwe frontend pas na deze migratie: de nieuwe dashboardquery verwacht dat de kolom bestaat.
+
+## Fase 5: beheersingsmodel
+
+Voer na de eerdere fase-5-migraties **handmatig** `phase5-mastery.sql` uit voordat je de mastery-frontend publiceert. Het script:
+
+- maakt geen nieuwe tabel en slaat geen permanente statusvlag op;
+- leidt beheersing telkens af uit de bestaande, idempotente sessies en pogingen;
+- geeft een leerling via `get_student_mastery` uitsluitend eigen aggregaten per `item_id` en `item_variant`;
+- geeft geen prompts, modelantwoorden of getypte antwoorden terug;
+- gebruikt een publieke `SECURITY INVOKER`-wrapper en private `SECURITY DEFINER`-logica met `search_path = ''`;
+- laat alle directe rechten op `practice_attempts` ongewijzigd.
+
+Live procedure:
+
+1. Open Supabase → **SQL Editor** → **New query**.
+2. Kopieer de volledige inhoud van `supabase/phase5-mastery.sql` en klik **Run**.
+3. Controleer onder **Database → Functions** dat `public.get_student_mastery` en `private.get_student_mastery_impl` bestaan.
+4. Publiceer daarna `mastery.js`, de bijgewerkte HTML/CSS/JavaScriptbestanden en de overige repositorybestanden naar GitHub Pages.
+5. Meld een testleerling aan, maak zelfstandige pogingen in minstens twee sessies en vernieuw de pagina.
+6. Controleer dat de voortgang behouden blijft, dat offline gemaakte pogingen onmiddellijk meetellen en dat `monParcoursSyncQueueV1` na herverbinden leegloopt zonder dubbele databasepogingen.
+
+## Fase 6: meerdere leerkrachten en klastoegang
+
+Voer **handmatig** `phase6-multi-teacher.sql` uit na alle eerdere migraties en vóór publicatie van het nieuwe dashboard. De migratie maakt `teachers` en `class_teachers`, activeert RLS, vervangt de oude `classes.owner_id`-policies door many-to-many klastoegang en voegt de admin-RPC voor leerkrachtentoegang toe. Leerlingidentificatie, ingest, mastery en historische resultaten worden niet gewijzigd.
+
+Bootstrap:
+
+- Is er exact één bestaande Auth-user en zijn er nog geen teacherprofielen, dan wordt die gebruiker automatisch actieve admin.
+- Zijn er meerdere bestaande Auth-users, dan raadt de migratie niemand als admin. Voer dan in de SQL Editor onderstaande instructie uit met het juiste e-mailadres:
+
+```sql
+update public.teachers t
+set role = 'admin', is_active = true
+from auth.users u
+where t.auth_user_id = u.id
+  and lower(u.email) = lower('VUL-HIER-HET-ADMIN-EMAILADRES-IN');
+```
+
+Nieuwe collega toevoegen:
+
+1. Open Supabase → **Authentication → Users** en nodig de collega uit of maak het Auth-account aan.
+2. De database-trigger maakt automatisch een profiel met `role = teacher` en `is_active = false`.
+3. Meld aan als admin en open **Leerkrachten**.
+4. Controleer de naam, activeer het account en vink één of meerdere klassen aan.
+5. De collega kan daarna met het eigen Auth-account inloggen en ziet uitsluitend die klassen.
+
+De frontend bevat geen Admin API, service-role-key of uitnodigingsfunctionaliteit. Het intrekken van toegang gebeurt door het teacherprofiel inactief te zetten; historische data en klastoewijzingen blijven bestaan. De laatste actieve admin kan server-side niet worden gedeactiveerd, verwijderd of naar teacher worden teruggezet.
+
+## Fase 7: taken op basis van beheersing
+
+Voer **handmatig en éénmalig** `supabase/phase7-assignments.sql` uit in de Supabase SQL Editor, ná `phase6-multi-teacher.sql` en vóór publicatie van de fase-7-frontend. Het script is een migratie en is niet bedoeld om twee keer uit te voeren. Maak vooraf een databaseback-up. De migratie maakt `assignments`, `assignment_classes`, `assignment_items`, `assignment_completions` en een register van de huidige 1.036 permanente item-ID's. Ze voegt een nullable `assignment_id` aan `practice_sessions` toe en vervangt de **private** `ingest_practice_bundle_impl`; de publieke ingest-RPC behoudt zijn signatuur.
+
+Daarna kun je optioneel `supabase/phase7-verification.sql` uitvoeren: dit is alleen-lezen en controleert ID-aantal, RLS, tabelrechten en RPC-rechten. De migratie zelf is hier niet automatisch op jouw project uitgevoerd.
+
+Taken gebruiken uitsluitend vaste item-ID's en geen gekopieerde cursusinhoud. Bij nieuwe Trajets moet het ID-register uitsluitend worden **aangevuld** met nieuwe permanente ID's; bestaande ID's blijven staan. Een taak kan meerdere klassen hebben. De huidige mastery wordt uit alle pogingen op die items berekend, ook buiten de taak; eerste voltooiing wordt server-side éénmaal in `assignment_completions` vastgelegd. Task-gestarte sessies dragen `assignment_id` en leveren actieve taaktijd. De bestaande offline queue synchroniseert ze idempotent.
+
+Een gearchiveerde taak wordt niet meer aan leerlingen uitgedeeld. Om reeds lokaal gestarte/offline sessies niet kwijt te raken, accepteert ingest nog geldige task-sessies van een eerder gepubliceerde, inmiddels gearchiveerde taak. Alleen task-gelinkte pogingen kunnen dan nog een historische completion vastleggen; gewone oefenpogingen activeren na archivering geen nieuwe completion.
+
+Nieuwe publieke RPC's zijn `get_student_assignments(text)` (alleen na verificatie van het eigen sync-token), `get_teacher_assignments()`, `get_teacher_assignment_detail(uuid)` en `save_assignment(jsonb)`. Privileged functies blijven in `private`, met `search_path = ''`. Er is geen publieke tabel-SELECT voor leerlingen of frontend-service-role. Actieve admins beheren alle taken; actieve leerkrachten maken taken alleen voor klassen met toegang. Alleen de maker of een admin kan wijzigen of archiveren; co-teachers met klastoegang kunnen details lezen, uitsluitend voor hun toegestane leerlingen. Bij een gepubliceerde taak met activiteit blokkeert de server een wijziging van klassen of items. Archiveren verwijdert geen historische resultaten.
+
+Publiceer na de SQL-migratie `index.html`, `teacher.html`, `app.js`, `teacher.js`, `assignments.js`, beide CSS-bestanden en de overige repositorybestanden naar GitHub Pages. Test met een concept (onzichtbaar voor leerlingen), een gepubliceerde taak voor twee klassen, een offline leerling, een co-teacher en een teacher zonder toegang tot een van die klassen. De taakdefinitie is op de leerlingbrowser per identiteit gecachet; nieuw gepubliceerde taken vereisen eerst internet. De eerste definitieve voltooiing verschijnt pas na synchronisatie.
+## Fase 7b — werkwoordbeheersing
+
+Voer `phase7b-verb-mastery.sql` **handmatig en één keer** uit in Supabase SQL Editor, na `phase7-assignments.sql`. Het script wordt niet door de frontend uitgevoerd. Maak vooraf een databaseback-up. Voer daarna optioneel het alleen-lezen `phase7b-verification.sql` uit: verwacht 55 werkwoord-ID's, 39 reguliere en 16 onregelmatige items, drie regeldoelen, RLS aan en geen directe leerling-SELECT. Het voegt alleen classificatie en taakvereisten toe; bestaande course-ID's, sessies, pogingen en taken blijven bestaan. Taken zonder `mastery_strategy` blijven `item_mastery`.
+
+De vaste classificatie staat ook in `verb-mastery.js`: 22 expliciet als `verbes en -ER` aangeduide items vormen één regeldoel `present_er`; `type finir` en `verbes en -RE` zijn andere regeldoelen; de expliciet afwijkende werkwoorden worden per permanent item-ID gevolgd. Classificatie gebeurt **niet** op basis van de infinitiefuitgang. `aller` is bijvoorbeeld onregelmatig.
+
+Zes canonieke persoonsgroepen: `je/j’`, `tu`, `il/elle/on`, `nous`, `vous`, `ils/elles`. Een regel wordt `Acquis` bij zes correct toegepaste persoonsgroepen, drie verschillende werkwoorden, acht correcte zelfstandige vervoegingen, minstens 75% accuracy **op vervoegingen**, twee sessies met vervoegingen en een laatste juiste zelfstandige **vervoeging**. Voor een onregelmatig werkwoord gelden dezelfde eisen zonder de drie-werkwoordenvoorwaarde. `Apprendre` levert geen zelfstandig bewijs. Regelherkenning draagt bij aan de continue score en oefenactiviteit, maar kan zwakke of laatst foutieve vervoegingen niet maskeren.
+
+De continue score voor een regel is `30% accuracy-evidence + 40% persoonsdekking + 20% werkwoorddiversiteit + 10% sessiespreiding`. Accuracy-evidence is `correct / max(8, pogingen)` (vervoegingen én regelherkenning), persoonsdekking `correct toegepaste groepen / 6`, diversiteit `correct toegepaste werkwoorden / 3` (maximaal 1), spreiding `bewijs-sessies / 2` (maximaal 1). Voor een onregelmatig werkwoord zijn de gewichten 40%, 50% en 10% zonder diversiteit. Alleen `Acquis` toont 100%; anders maximaal 99%. SQL en JavaScript gebruiken dezelfde definities. Oude pogingen met een betrouwbaar `item_variant` en `exercise_key` tellen mee; onduidelijke legacy-tellers worden niet als regelbewijs verzonnen.
+
+`get_student_verb_evidence` geeft uitsluitend pogingsmetadata van de leerling met een geldige identiteitstoken terug (geen getypte antwoorden). De student bewaart eigen pogingsmetadata ook lokaal zodat offline oefening en latere synchronisatie blijven werken. Lokale oude records zonder betrouwbaar `identity_subject` worden niet aan een leerling toegeschreven. Er is geen publieke tabel-SELECT of service-role-sleutel in de browser.
+
+## Fase 8 — live klasmonitor
+
+Voer `phase8-class-monitor.sql` **handmatig één keer** uit in de Supabase SQL Editor, na `phase7b-verb-mastery.sql` en vóór publicatie van de fase-8-frontend. Maak eerst een databaseback-up. Voer daarna desgewenst het alleen-lezen `phase8-verification.sql` uit. De migratie voegt twee begrensde teacher-RPC's en één index toe; ze maakt geen duplicerende tabel en wijzigt geen leerlingdata, opdrachten of beheersingsdrempels. Interne `SECURITY DEFINER`-functies staan in `private` met `search_path = ''`; publiek blootgestelde functies zijn `SECURITY INVOKER` en alleen voor `authenticated` uitvoerbaar. De server controleert actieve leerkrachtstatus en klastoegang, ook wanneer iemand handmatig een andere klas-ID aan de RPC doorgeeft.
+
+De dashboard-start laadt via RLS uitsluitend klas- en leerlingbasisgegevens. De live monitor haalt alleen aggregaten uit `get_class_activity_monitor` op; elke 30 seconden voor korte perioden, zonder volledige pogingshistorie te downloaden. Detailanalyse wordt pas op verzoek geladen. Huidige item-mastery wordt bij openen van een klas en daarna hoogstens ongeveer elke vijf minuten herberekend met dezelfde itemformule als `mastery.js`; werkwoorddoelen komen op aanvraag uit de bestaande fase-7b-helper. `Bezig` vereist een nog open sessie én activiteit binnen 180 seconden. `Mogelijk vastgelopen` vereist minstens vijf zelfstandige pogingen en minder dan 40% juistheid in de gekozen periode.
+
+**Beperking van bestaande data:** `active_duration_seconds` bewaart een sessietotaal, geen tijdlijn. De monitor schrijft deze seconden toe aan de periode waarin de sessie begon. Een sessie die over een periodegrens loopt kan zonder extra historische tijdmetingen niet exact worden opgesplitst. Dit wordt in het dashboard en CSV-label vermeld; er wordt geen verstreken kloktijd als actieve tijd verzonnen.
+
+## Fase 8b — leerlingdetail-hotfix
+
+Voer `phase8b-student-detail-hotfix.sql` **handmatig** uit na fase 8. De fase-8-RPC `get_teacher_student_verb_goals(uuid)` gebruikt de fase-7b-helper `private.verb_goal_progress`. Daarin stonden nog gekwalificeerde SQL-special forms (`pg_catalog.least/greatest`), die pas bij het openen van leerlingdetails runtime-fouten geven. De kleine migratie herbouwt de bestaande functieomschrijving met uitsluitend `least/greatest` zonder die prefix, ook in de aanroepende taakvoortgang-helper. Functiesignatures, `SECURITY DEFINER`, grants, RLS en historische gegevens blijven ongewijzigd. De migratie wordt niet automatisch uitgevoerd; publiceer daarna de nieuwe `teacher.js`-versie. Bij een tijdelijke fout van alleen de werkwoord-RPC blijft het overige leerlingdetail zichtbaar en verschijnt een nette melding; technische foutdetails staan uitsluitend in de browserconsole.
+
+## Mastery-hotfix — snellere groei voor gewone items
+
+Voer `phase8c-mastery-growth.sql` **handmatig** uit ná fase 8 (en ná fase 8b als die voor dit project nodig is), vóór publicatie van de bijgewerkte `mastery.js` en `app.js`. De migratie maakt één private scorehelper en vernieuwt de bestaande leerling-evidence-RPC, itemtaakberekening en klasmonitor-mastery. Ze wijzigt geen tabel, RLS-regel, bestaande poging of Acquis-drempel. Bestaande pogingen worden bij het opvragen opnieuw geïnterpreteerd. De browser bewaart nieuwe pogingen offline zoals voorheen; een oude offline servercache kan tot de volgende succesvolle synchronisatie tijdelijk conservatiever scoren.
+
+Itemgroei: 0% nooit, 10% alleen Leren, 15% zelfstandig fout, 60% onmiddellijk zelfstandig juist, 40% na een eerste fout en correctie in dezelfde sessie, 70% bij twee correcte recalls in één sessie, 80–90% na correcte recalls in meerdere sessies. Slechte nauwkeurigheid verlaagt de tussenstand en een laatste fout kapt die op 70%. Alleen de ongewijzigde strikte Acquis-voorwaarden geven 100%. Dezelfde curve geldt voor vrije en rechtstreeks gestarte itemtaken; directe itemtaken starten daarom voortaan in `practice`, niet automatisch in `learn`. Regel- en onregelmatige werkwoorddoelen blijven op het bestaande fase-7b-model.
+
+## Fase 9 — adaptieve taakrondes
+
+Voer `phase9-task-rounds.sql` **handmatig en één keer** uit na fase 8c, vóór de bijgewerkte leerling- en leerkrachtenbestanden worden gepubliceerd. Maak vooraf een databaseback-up. De migratie verwijdert geen historische data. Bestaande itemtaken krijgen `legacy_mastery`; bestaande werkwoorddoeltaken behouden hun eigen strategie en voltooiingen. Nieuwe gewone itemtaken krijgen `rounds` met 1–4 rondes (standaard 3). `verb_rule_mastery` blijft apart.
+
+Voer daarna desgewenst het alleen-lezen `phase9-verification.sql` uit. Publiceer vervolgens ook het **nieuwe** `task-rounds.js`, samen met `index.html`, `app.js`, `teacher.html`, `teacher.js`, `styles.css` en `sync-manager.js`; alleen de oude HTML publiceren is onvoldoende. Ververs openstaande leerling- en leerkrachtentabs na publicatie.
+
+Ronde 1 en 2 bevatten alle taakitems. Vanaf ronde 3 bewaart de server per leerling een onveranderlijke reviewset van minstens `ceil(items × 0,33)`, inclusief alle fouten uit de onmiddellijk vorige ronde. Per item/ronde bewaart hij fouten, `consulted` en de eerste zelfstandige correcte voltooiing. Een taak is voltooid na de laatste volledige ronde, onafhankelijk van het masterypercentage. De bestaande practice attempts blijven mastery en werkwoorddoelen voeden.
+
+De browser bewaart reeds geladen taken en rondes ook lokaal en stuurt ze via de bestaande idempotente sessiequeue. Een nieuwe ronde op een tweede toestel haalt eerst de serverselectie op. `Consulter` is alleen in ronde 1 beschikbaar en opent cursusinhoud, niet de individuele antwoordfeedback. Bij gelijktijdig offline starten op twee toestellen kan één verschillende reviewselectie door de server worden geweigerd; synchroniseer daarom eerst vóór je op het tweede toestel verdergaat.
+
+## Gecureerde oefenvarianten Trajet 1–6
+
+Voer `phase11-curated-variants.sql` **handmatig één keer** uit in de Supabase SQL Editor, na `phase10-item-reports.sql` en vóór publicatie van de bijgewerkte leerlingtool. Maak vooraf een databaseback-up. De migratie wijzigt geen bestaande course-ID, masteryregel, taak of historische poging. Zij voegt een RLS-afgeschermde tabel voor idempotente vraaginzendingen toe en private wrappers voor ingest en de klasmonitor; de publieke RPC-signatures blijven gelijk. Er wordt geen getypt antwoord centraal bewaard.
+
+Een gecureerde vraag kan per gat meerdere evidence-rijen opleveren, of bij een foute volledige vertaling nul. Daarom komen `attempt_count`, `correct_count` en `incorrect_count` voor `curated-*` voortaan van vraaginzendingen, terwijl `practice_attempts` mastery-evidence blijft bevatten. De klasmonitor trekt bij gecureerde sessies de oude evidence-telling af en telt de unieke beantwoorde vraagvarianten en pogingen erbij op; bestaande filters en docent-klastoegang blijven behouden. `client_submission_id` voorkomt dubbels na herhaald synchroniseren. De frontend controleert eerst `public.curated_sync_version()`. Zolang die RPC ontbreekt, blijft de gecureerde sessie in `monParcoursSyncQueueV1`; gewone sessies kunnen blijven synchroniseren. Na de migratie en herladen wordt de queue alsnog verzonden. Voer optioneel daarna `phase11-verification.sql` uit: dit script is alleen-lezen en alle `*_ok`-kolommen moeten `true` tonen.
+
+## Fase 12 — volledige zinnen in taken en betrouwbare probleemmeldingen
+
+**Productiecontrole bij fout `relation public.practice_question_submissions does not exist`:** voer eerst het alleen-lezen `phase12-production-preflight.sql` uit. `practice_attempts` is de bestaande tabel voor pogingen/mastery-evidence en wordt niet vervangen of geleegd. Eén gecureerde vraag kan echter nul of meerdere evidence-rijen hebben; daarom definieert de reeds bestaande fase-11-migratie een afzonderlijke, RLS-afgeschermde tabel voor idempotente vraaguitkomsten. Een ontbrekende `practice_question_submissions` betekent dat fase 11 niet of slechts gedeeltelijk is uitgevoerd, niet dat fase 12 naar een verouderde tabelnaam verwijst.
+
+Als `phase12_base_ready`, `phase11_cleanly_absent` en `phase12_not_started` allemaal `true` zijn en de verwachte practice-kolommen aanwezig zijn: maak een back-up, voer `phase11-curated-variants.sql` uit, controleer `phase11-verification.sql` (alle `*_ok` = `true`), voer pas dan `phase12-report-reliability.sql` uit en controleer `phase12-verification.sql`. Als `phase11_complete` al `true` is, sla fase 11 over. Bij een gedeeltelijke fase 11, ontbrekende kolom of afwijkende RPC: stop en vergelijk de productieschema-definities voordat je iets schrijft. De SQL Editor moet telkens het **hele** migratiebestand uitvoeren, inclusief `BEGIN` en `COMMIT`; fase 12 controleert zijn voorganger vóór de eerste schemawijziging en is niet opnieuw uitvoerbaar.
+
+Voer `phase12-report-reliability.sql` **handmatig en één keer** uit ná fase 11, vóór publicatie van de nieuwe leerling- en leerkrachtenbestanden. Maak vooraf een databaseback-up. Voer dit bestand niet uit op een database waarop fase 10 of 11 nog ontbreekt. De migratie wijzigt geen permanente item-ID en reset geen ronde, poging, mastery of bestaand rapport. Bestaande taken krijgen `include_integrative_sentences = false`; een leerkracht kan deze optie alleen bij een nieuwe of nog niet gepubliceerde rondetaak aanzetten. Voor gepubliceerde taken blijft de keuze vergrendeld.
+
+Volledige Révision-zinnen worden alleen gekozen wanneer **alle expliciet gekoppelde permanente items** in de huidige rondeselectie aanwezig zijn. Eén volledig juist antwoord levert positieve evidence voor die doelen; een fout antwoord wordt als afzonderlijke vraagpoging bijgehouden, zonder blanket negative mastery. De bestaande ronde-ID's en itemselecties blijven intact. De klasmonitor telt zulke vragen als beantwoorde oefeningen in plaats van evidence-rijen.
+
+Probleemmeldingen bewaren alle foute invoeren van de meldcyclus in volgorde. Na terugsturen kan dezelfde leerling na twee nieuwe foute pogingen opnieuw melden; elke cyclus blijft afzonderlijk bewaard. Een teruggestuurde oefening heropent de betreffende ronde en de afgeleide taakvoltooiing, ook als er al latere rondes bestaan. Een eerdere completion wordt vóór heropening als JSON in `assignment_completion_reopenings` geaudit; alle pogingen en mastery blijven staan. Oude correcte pogingen van vóór het terugsturen mogen de oefening niet opnieuw automatisch sluiten. De migratie bevat geen directe leerling-SELECT en de browser krijgt geen service-role-key.
+
+Publiceer daarna `index.html`, `app.js`, `exercise-variants.js`, `styles.css`, `teacher.html`, `teacher.js`, `teacher.css`, `data/course.json` en `data/exercise-variants.json` samen. Test met een bestaande taak die al gedeeltelijk afgewerkt is (bijvoorbeeld 9/42), een teruggestuurd item uit een oudere ronde, en een nieuwe concepttaak met volledige zinnen. SQL in deze map wordt nooit automatisch door de statische frontend uitgevoerd.
+Publiceer ook `sync-manager.js`: deze controleert `assignment_sentence_sync_version()` voordat een nieuwe zinnentaak wordt gesynchroniseerd. Zonder fase 12 blijven zulke sessies veilig in de lokale wachtrij.
+Voer optioneel daarna het alleen-lezen `phase12-verification.sql` uit en vergelijk de aantallen met de back-up van vóór de migratie.
+# Gedeeltelijke productie-state: herstel 10–12
+
+De instructies voor de historische eenmalige migraties hieronder gelden voor
+hun oorspronkelijke installatiemoment. Voor een gedeeltelijk uitgerolde fase
+10/11/12: voer alleen `phase10-12-state-aware-upgrade.sql` uit, en daarna
+`phase10-12-state-aware-verification.sql`.
+
+Dit herstel voegt de echte fase-11-vraaguitkomststructuur toe als die ontbreekt,
+herstelt de functieaanroepen zonder functierenames en bewaart oorspronkelijke
+completion-events bij terugsturen. Bestaande leerlingrijen worden binnen dezelfde
+transactie via hashes op hun oorspronkelijke kolommen gecontroleerd.
+
+Zie `../HERSTELRAPPORT-FASEN-10-12.md`. De PostgreSQL-integratietest is apart
+beschikbaar in `../scripts/test-state-aware-postgres.js`; ze werd in deze omgeving
+niet uitgevoerd omdat de bedrijfsfirewall de benodigde lokale runtime blokkeert.
+
