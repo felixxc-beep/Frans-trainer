@@ -28439,7 +28439,8 @@
       "targets": [
         "uf1-item-000133"
       ],
-      "scope_kind": "focused"
+      "scope_kind": "focused",
+      "generated_for_application": true
     },
     {
       "id": "T1-APPLY-AIMER-136",
@@ -28455,7 +28456,8 @@
       "targets": [
         "uf1-item-000136"
       ],
-      "scope_kind": "focused"
+      "scope_kind": "focused",
+      "generated_for_application": true
     },
     {
       "id": "T1-APPLY-AIMER-137",
@@ -28471,7 +28473,8 @@
       "targets": [
         "uf1-item-000137"
       ],
-      "scope_kind": "focused"
+      "scope_kind": "focused",
+      "generated_for_application": true
     },
     {
       "id": "T3-APPLY-PREP-512",
@@ -28486,7 +28489,8 @@
       "targets": [
         "uf1-item-000512"
       ],
-      "scope_kind": "focused"
+      "scope_kind": "focused",
+      "generated_for_application": true
     },
     {
       "id": "T3-APPLY-PREP-513",
@@ -28501,7 +28505,8 @@
       "targets": [
         "uf1-item-000513"
       ],
-      "scope_kind": "focused"
+      "scope_kind": "focused",
+      "generated_for_application": true
     },
     {
       "id": "T3-APPLY-PREP-514",
@@ -28516,7 +28521,8 @@
       "targets": [
         "uf1-item-000514"
       ],
-      "scope_kind": "focused"
+      "scope_kind": "focused",
+      "generated_for_application": true
     },
     {
       "id": "T3-APPLY-PREP-515",
@@ -28531,7 +28537,8 @@
       "targets": [
         "uf1-item-000515"
       ],
-      "scope_kind": "focused"
+      "scope_kind": "focused",
+      "generated_for_application": true
     },
     {
       "id": "T3-APPLY-PREP-516",
@@ -28546,7 +28553,8 @@
       "targets": [
         "uf1-item-000516"
       ],
-      "scope_kind": "focused"
+      "scope_kind": "focused",
+      "generated_for_application": true
     },
     {
       "id": "T3-APPLY-PREP-517",
@@ -28561,7 +28569,8 @@
       "targets": [
         "uf1-item-000517"
       ],
-      "scope_kind": "focused"
+      "scope_kind": "focused",
+      "generated_for_application": true
     },
     {
       "id": "T3-APPLY-PREP-518",
@@ -28576,7 +28585,8 @@
       "targets": [
         "uf1-item-000518"
       ],
-      "scope_kind": "focused"
+      "scope_kind": "focused",
+      "generated_for_application": true
     },
     {
       "id": "T4-APPLY-FP-694",
@@ -28591,7 +28601,8 @@
       "targets": [
         "uf1-item-000694"
       ],
-      "scope_kind": "focused"
+      "scope_kind": "focused",
+      "generated_for_application": true
     },
     {
       "id": "T4-APPLY-PR-696",
@@ -28606,7 +28617,8 @@
       "targets": [
         "uf1-item-000696"
       ],
-      "scope_kind": "focused"
+      "scope_kind": "focused",
+      "generated_for_application": true
     },
     {
       "id": "T4-APPLY-PL-716",
@@ -28621,7 +28633,8 @@
       "targets": [
         "uf1-item-000716"
       ],
-      "scope_kind": "focused"
+      "scope_kind": "focused",
+      "generated_for_application": true
     },
     {
       "id": "T5-APPLY-PC-852",
@@ -28636,7 +28649,8 @@
       "targets": [
         "uf1-item-000852"
       ],
-      "scope_kind": "focused"
+      "scope_kind": "focused",
+      "generated_for_application": true
     },
     {
       "id": "T5-APPLY-POSS-869",
@@ -28651,7 +28665,8 @@
       "targets": [
         "uf1-item-000869"
       ],
-      "scope_kind": "focused"
+      "scope_kind": "focused",
+      "generated_for_application": true
     },
     {
       "id": "T5-APPLY-POSS-875",
@@ -28666,7 +28681,8 @@
       "targets": [
         "uf1-item-000875"
       ],
-      "scope_kind": "focused"
+      "scope_kind": "focused",
+      "generated_for_application": true
     },
     {
       "id": "T5-APPLY-POSS-877",
@@ -28681,7 +28697,8 @@
       "targets": [
         "uf1-item-000877"
       ],
-      "scope_kind": "focused"
+      "scope_kind": "focused",
+      "generated_for_application": true
     },
     {
       "id": "T6-APPLY-ETRE-988",
@@ -28696,7 +28713,8 @@
       "targets": [
         "uf1-item-000988"
       ],
-      "scope_kind": "focused"
+      "scope_kind": "focused",
+      "generated_for_application": true
     },
     {
       "id": "T6-APPLY-ENTRER-996",
@@ -28711,7 +28729,8 @@
       "targets": [
         "uf1-item-000996"
       ],
-      "scope_kind": "focused"
+      "scope_kind": "focused",
+      "generated_for_application": true
     }
   ]
 }
