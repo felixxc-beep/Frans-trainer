@@ -28731,6 +28731,70 @@
       ],
       "scope_kind": "focused",
       "generated_for_application": true
+    },
+    {
+      "id": "T3-APPLY-PREP-511",
+      "trajectory": "Trajet 3",
+      "kind": "grammar",
+      "scoring": "single",
+      "prompt": "Je ___ mes vacances.",
+      "instruction": "Vul de uitdrukking aan",
+      "accepted_answers": [
+        "pense à"
+      ],
+      "targets": [
+        "uf1-item-000511"
+      ],
+      "scope_kind": "focused",
+      "generated_for_application": true
+    },
+    {
+      "id": "T5-APPLY-PC-858",
+      "trajectory": "Trajet 5",
+      "kind": "grammar",
+      "scoring": "single",
+      "prompt": "Nous avons ___ les nouveaux mots. (retenir)",
+      "instruction": "Vul het participe passé in",
+      "accepted_answers": [
+        "retenu"
+      ],
+      "targets": [
+        "uf1-item-000858"
+      ],
+      "scope_kind": "focused",
+      "generated_for_application": true
+    },
+    {
+      "id": "T5-APPLY-POSS-872",
+      "trajectory": "Trajet 5",
+      "kind": "grammar",
+      "scoring": "single",
+      "prompt": "Vous aimez ___ maison.",
+      "instruction": "Vul het juiste bezittelijk voornaamwoord in",
+      "accepted_answers": [
+        "votre"
+      ],
+      "targets": [
+        "uf1-item-000872"
+      ],
+      "scope_kind": "focused",
+      "generated_for_application": true
+    },
+    {
+      "id": "T6-APPLY-AGR-990",
+      "trajectory": "Trajet 6",
+      "kind": "grammar",
+      "scoring": "single",
+      "prompt": "Lucas et Emma sont ___. (sortir)",
+      "instruction": "Vul het participe passé in",
+      "accepted_answers": [
+        "sortis"
+      ],
+      "targets": [
+        "uf1-item-000990"
+      ],
+      "scope_kind": "focused",
+      "generated_for_application": true
     }
   ]
 }
