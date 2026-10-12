@@ -1147,13 +1147,18 @@
 
   function renderTaskExerciseForms(draft, items) {
     const policy = window.MonParcoursExercisePolicy;
-    if (!policy || !state.variantBank) return '<p class="error">Oefenvarianten konden niet worden geladen. Herlaad vóór het opslaan.</p>';
-    const available = policy.available(items, state.variantBank, state.course);
-    return '<fieldset><legend>Oefenvormen voor deze leerdoelen</legend>' + available.map(function (key) {
+    const heading = '<fieldset class="task-exercise-forms" data-exercise-forms><legend>4 · Oefenvormen</legend>';
+    if (!policy || !state.variantBank) return heading + '<p class="error" role="alert">Oefenvarianten konden niet worden geladen. Herlaad deze pagina vóór het opslaan.</p></fieldset>';
+    const available = policy.options(items, state.variantBank, state.course);
+    return heading + (available.length ? available.map(function (option) {
+      const key = option.key;
+      const count = option.variantCount ? option.variantCount + ' oefenvarianten' :
+        key === 'numbers' ? option.courseCount + ' dynamisch getallendoel' : option.courseCount + ' cursusvragen';
       return '<label class="task-sentence-option"><input type="checkbox" name="exercise_forms" value="' + key + '"' +
         (draft.exercise_forms.includes(key) ? ' checked' : '') + (draft.status !== 'draft' ? ' disabled' : '') +
-        '>' + escapeHtml(policy.labels[key]) + '</label>';
-    }).join('') + '<p>Elk geselecteerd leerdoel moet met minstens één gekozen oefenvorm oefenbaar zijn.</p></fieldset>';
+        '><span>' + escapeHtml(policy.labels[key]) + ' — ' + count + '</span></label>';
+    }).join('') : '<p>Selecteer eerst oefenbare leerdoelen. Binnen deze selectie zijn geen oefenvormen beschikbaar.</p>') +
+      '<p>Vink één of meer oefenvormen aan. Alleen deze vormen verschijnen in de taak. Elk geselecteerd leerdoel moet oefenbaar blijven.</p></fieldset>';
   }
 
   function taskDeadlineLocal(value) {
@@ -1406,19 +1411,19 @@
       '<fieldset><legend>3 · Leerdoelselectie</legend><p>' + scopeItems.length + ' oefenbare leerdoelen in dit onderdeel.</p><div class="task-fields">' + strategySelect + '</div>' + verbSelector +
         (draft.fixed_item_ids ? '' : '<div class="task-fields"><label><span>Van leerdoel</span><input name="range_start" type="number" min="1" max="' + scopeItems.length + '" value="' + draft.range_start + '"></label><label><span>Tot leerdoel</span><input name="range_end" type="number" min="1" max="' + scopeItems.length + '" value="' + (draft.range_end || scopeItems.length) + '"></label></div><div class="export-actions"><button class="small-button" type="button" data-action="task-range" data-start="1" data-end="' + scopeItems.length + '">Alle ' + scopeItems.length + '</button>' + ranges.map(function (range) { return '<button class="small-button" type="button" data-action="task-range" data-start="' + range.start + '" data-end="' + range.end + '">' + range.start + '–' + range.end + '</button>'; }).join("") + '</div>') +
         '<p><strong>Voorbeeld: ' + selectedItems.length + ' geselecteerd.</strong></p><ol class="task-preview">' + selectedItems.slice(0, 20).map(function (item) { return '<li>' + escapeHtml(item.nl || item.prompt || item.infinitive || item.id) + ' — ' + escapeHtml(item.fr || item.answer || item.infinitive || '') + '</li>'; }).join("") + '</ol>' + (selectedItems.length > 20 ? '<p>… en ' + (selectedItems.length - 20) + ' meer.</p>' : '') + '</fieldset>' +
-      '<fieldset><legend>4 · Doel en deadline</legend><div class="task-fields"><label><span>Titel</span><input name="title" maxlength="160" required value="' + escapeHtml(draft.title) + '"></label><label><span>Deadline (optioneel, lokale tijd)</span><input name="due_at" type="datetime-local" value="' + escapeHtml(draft.due_at) + '"></label>' +
+      (draft.mastery_strategy === "item_mastery" && draft.completion_strategy === "rounds" ?
+        draft.exercise_forms !== null ? renderTaskExerciseForms(draft, selectedItems) :
+        '<fieldset><legend>4 · Oefenvormen</legend><p>Bestaande taak: de oorspronkelijke oefenvormen blijven behouden.</p></fieldset>' : '') +
+      '<fieldset><legend>5 · Doel en deadline</legend><div class="task-fields"><label><span>Titel</span><input name="title" maxlength="160" required value="' + escapeHtml(draft.title) + '"></label><label><span>Deadline (optioneel, lokale tijd)</span><input name="due_at" type="datetime-local" value="' + escapeHtml(draft.due_at) + '"></label>' +
         (draft.mastery_strategy === "item_mastery" && draft.completion_strategy === "rounds" ?
           '<label><span>Aantal rondes</span><select name="required_rounds">' + [1,2,3,4].map(function (value) { return '<option value="' + value + '"' + (Number(draft.required_rounds) === value ? ' selected' : '') + '>' + value + '×</option>'; }).join("") + '</select></label>' :
           '<label><span>Doel: % ' + (draft.mastery_strategy === "verb_rule_mastery" ? "regelbeheersing" : "gekend") + '</span><input name="target_acquired_percentage" type="number" min="1" max="100" value="' + draft.target_acquired_percentage + '"></label>') + '</div>' +
         (draft.mastery_strategy === "item_mastery" && draft.completion_strategy === "rounds" ? '<p>1× = één volledige ronde · 2× = twee volledige rondes · 3× = twee volledige rondes + gerichte herhaling · 4× = twee volledige rondes + twee gerichte herhalingen.</p>' :
           '<div class="export-actions">' + [70,80,90,100].map(function (value) { return '<button class="small-button" type="button" data-action="task-target" data-value="' + value + '">' + value + '%</button>'; }).join("") + '</div><p>' + (draft.mastery_strategy === "item_mastery" ? "Bestaande legacy-taak: voltooiing blijft gebaseerd op het percentage gekend." : "Voltooiing volgt de bestaande werkwoorddoelen.") + '</p>') +
-        (draft.mastery_strategy === "item_mastery" && draft.completion_strategy === "rounds" ?
-          draft.exercise_forms !== null ? renderTaskExerciseForms(draft, selectedItems) :
-          '<p>Bestaande taak: de oorspronkelijke oefenvormen blijven behouden.</p>' : '') +
         (draft.mastery_strategy === "item_mastery" && draft.completion_strategy === "rounds" && draft.exercise_forms === null && selectedItems.some(function (item) { return item.type === "verb"; }) ?
           '<label><span>Werkwoordoefening</span><select name="item_verb_exercise_key"><option value="verb-nl-conj"' + (draft.item_verb_exercise_key === "verb-nl-conj" ? " selected" : "") + '>Nederlands → vervoeging</option><option value="verb-fr-conj"' + (draft.item_verb_exercise_key === "verb-fr-conj" ? " selected" : "") + '>Frans → vervoeging</option><option value="verb-nl-inf"' + (draft.item_verb_exercise_key === "verb-nl-inf" ? " selected" : "") + '>Nederlands → infinitief</option></select></label>' : '') +
         '<label><span>Instructies (optioneel)</span><textarea name="instructions" maxlength="1000">' + escapeHtml(draft.instructions) + '</textarea></label></fieldset>' +
-      '<fieldset><legend>5 · Controleren en publiceren</legend><p>' + selectedItems.length + ' permanente leerdoelen · ' + draft.class_ids.length + ' klassen · ' +
+      '<fieldset><legend>6 · Controleren en publiceren</legend><p>' + selectedItems.length + ' permanente leerdoelen · ' + draft.class_ids.length + ' klassen · ' +
         (draft.mastery_strategy === "item_mastery" && draft.completion_strategy === "rounds" ? draft.required_rounds + ' rondes.' : 'doel ' + draft.target_acquired_percentage + '%.') +
         '</p><div class="export-actions">' + (draft.status === "draft" ? '<button class="button button-secondary" type="submit" name="task_status" value="draft">Concept opslaan</button>' : '') + '<button class="button button-primary" type="submit" name="task_status" value="published">' + (draft.status === "published" ? "Wijzigingen opslaan" : "Publiceren") + '</button></div></fieldset></form>';
   }
@@ -1813,7 +1818,7 @@
       if (field) draft[name] = field.value;
     });
     draft.class_ids = Array.from(form.querySelectorAll('input[name="class_ids"]:checked')).map(function (field) { return field.value; });
-    if (draft.status === "draft" && draft.exercise_forms !== null && form.querySelector('input[name="exercise_forms"]')) {
+    if (draft.status === "draft" && draft.exercise_forms !== null && form.querySelector('[data-exercise-forms]')) {
       draft.exercise_forms = Array.from(form.querySelectorAll('input[name="exercise_forms"]:checked')).map(function (field) { return field.value; });
     }
     if (draft.status === "draft" && draft.exercise_forms === null) {
@@ -2440,7 +2445,7 @@
       state.course = await response.json();
       state.courseIndex = buildCourseIndex(state.course);
       try {
-        const variantsResponse = await fetch("./data/exercise-variants.json?v=20261012-2");
+        const variantsResponse = await fetch("./data/exercise-variants.json?v=20261012-3");
         if (!variantsResponse.ok) throw Error("VARIANT_LOAD_FAILED");
         const bank = await variantsResponse.json();
         window.MonParcoursExerciseVariants.validateBank(bank, state.course);
@@ -2562,8 +2567,8 @@
     window.MonParcoursTeacherTaskTest = Object.freeze({ taskLifecycle: taskLifecycle,
       taskDeadlineLabel: taskDeadlineLabel, taskArchiveFilterRows: taskArchiveFilterRows,
       renderTasksPage: renderTasksPage, renderTaskDetail: renderTaskDetail,
-      taskDraftDefaults: taskDraftDefaults, renderTaskExerciseForms: renderTaskExerciseForms,
-      updateTaskDraftFromForm: updateTaskDraftFromForm });
+      taskDraftDefaults: taskDraftDefaults, renderTaskExerciseForms: renderTaskExerciseForms, renderTaskEditor: renderTaskEditor,
+      updateTaskDraftFromForm: updateTaskDraftFromForm, saveTask: saveTask, loadCourse: loadCourse });
   }
 
   if (!window.MON_PARCOURS_TEACHER_TEST) {
