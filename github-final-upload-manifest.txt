@@ -1,0 +1,25 @@
+GitHub final upload - brede scopes en gedeelde oefenpool - 12 oktober 2026
+
+Upload de INHOUD van github-final-upload vanuit de repositoryroot.
+6 productiebestanden; actuele frontendcacheversie 20261012-5.
+Deze map vervangt de vorige github-final-upload-batch.
+BELANGRIJK: exercise-variants.js moet nu ook mee; die bevat de gedeelde eligibleVariants-functie.
+De bestaande data/course.json en data/exercise-variants.json blijven ongewijzigd.
+
+Relatief repositorypad | Status | Uploadbatch | SHA-256
+app.js | gewijzigd | github-final-upload | 77C0438F12FCE5799FB7F04E4306DBFACF791B9DE332BEA43CB551125D3DE507
+teacher.js | gewijzigd | github-final-upload | 79068FA208EDC441F408843535853E8856913D8C52EEA7CBD3292E30B8439460
+exercise-policy.js | gewijzigd | github-final-upload | D92D748637A5539768F9D5431A3E7A55E92EA56549A3F0E666EAE7EE2082D7B1
+exercise-variants.js | gewijzigd | github-final-upload | 619EB63E604B2E0E2B388ED4337189C02EB0CED3882807580342B48EAC8C183D
+index.html | gewijzigd | github-final-upload | 4E0B2E5F6F770E9A6F7910AF14B4B4E9C753806008C4F1660DDC54EEF131E8D4
+teacher.html | gewijzigd | github-final-upload | 1D9AC27B82CD79C925BCDBE93EFDA5A58A91B9A24BC2AE1AABCE1F6E56AA6589
+
+Alle 6 kopieen SHA-256-identiek aan hun huidige bron.
+38/38 tests geslaagd; syntaxcontrole geslaagd.
+Brede T1-les: 12 doelen; 12 cursusregelvragen, 56 contextvarianten en 32 gemengde varianten.
+Smalle On decouvre-scope: 2 doelen en dezelfde 27 geldige varianten in vrij oefenen, teacher en runtime.
+Oude taken zonder nieuwe poolmetadata behouden hun bestaande vraagselectie.
+Hoeveelheid/scope/categorieen worden als nieuwe poolmetadata in het bestaande instructieveld opgeslagen.
+De bestaande servercompletion blijft gebaseerd op permanente ronde-items; geen SQL gewijzigd.
+Geen SQL, tests, output, caches, runtimes of lokale documentatie in de uploadmap.
+Geen bronbestanden verplaatst/verwijderd; geen GitHub-upload uitgevoerd.

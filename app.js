@@ -1,5 +1,5 @@
 const DATA_URL = "./data/course.json?v=20261011-1";
-const VARIANT_DATA_URL = "./data/exercise-variants.json?v=20261012-1";
+const VARIANT_DATA_URL = "./data/exercise-variants.json?v=20261012-5";
 const STORAGE_KEY = "monParcoursProgressV1";
 const ACTIVE_SESSION_KEY = "monParcoursActiveSessionV1";
 const MASTERY_ATTEMPTS_KEY = "monParcoursMasteryAttemptsV1";
@@ -8,7 +8,7 @@ const ASSIGNMENTS_CACHE_KEY = "monParcoursAssignmentsCacheV1";
 const VERB_EVIDENCE_KEY = "monParcoursVerbEvidenceV1";
 const VERB_SERVER_CACHE_KEY = "monParcoursVerbServerCacheV1";
 const TASK_ROUNDS_KEY = "monParcoursTaskRoundsV1";
-const APP_VERSION = "20261012-1";
+const APP_VERSION = "20261012-5";
 const INACTIVITY_TIMEOUT_MS = 60000;
 const MAX_DYNAMIC_NUMBER_ALL = 101;
 const ACCENTS = ["é", "è", "ê", "ë", "à", "â", "ç", "ù", "û", "ô", "î", "ï"];
@@ -463,6 +463,12 @@ function curatedQuestions(variantIds) {
 
 function curatedVariantsForUnit(trajectory, unit) {
   if (!trajectory || !unit) return [];
+  if (window.MonParcoursExerciseVariants && window.MonParcoursExerciseVariants.eligibleVariants) {
+    const goals = itemsForUnit(trajectory,unit).filter(isExerciseItem).map(function (item) {return item.id;});
+    return window.MonParcoursExerciseVariants.eligibleVariants(state.variantBank, state.data,
+      { trajectory: trajectory.trajectory, top_category: unit.top_category, lesson: unit.title },
+      /^Action/i.test(unit.top_category) || !goals.length ? undefined : goals);
+  }
   const unitItems = itemsForUnit(trajectory, unit);
   const unitIds = new Set(unitItems.map(function (item) { return item.id; }));
   const trajectoryIds = new Set(trajectory.items.map(function (item) { return item.id; }));
@@ -496,6 +502,13 @@ function curatedVariantsForScope(exerciseKey, scopeOverride) {
   const scope = scopeOverride || state.selectedScope || {};
   if (!trajectory || !unit) return [];
   const wanted = exerciseKey.slice("curated-".length);
+  if (window.MonParcoursExerciseVariants && window.MonParcoursExerciseVariants.eligibleVariants) {
+    const path = Object.assign({}, scope, {trajectory:trajectory.trajectory,top_category:unit.top_category,lesson:unit.title});
+    const items = itemsForScope(trajectory,unit,scope).filter(isExerciseItem);
+    const goals = /^Action/i.test(unit.top_category) || !items.length ? undefined : items.map(function (item) {return item.id;});
+    return window.MonParcoursExerciseVariants.eligibleVariants(state.variantBank,state.data,path,goals)
+      .filter(function (variant) {return variant.kind === wanted;});
+  }
   const all = curatedVariantsForUnit(trajectory, unit).filter(function (variant) {
     return variant.kind === wanted && (!variant.required_subsection || scope.subsection === variant.required_subsection);
   });
@@ -932,14 +945,15 @@ function launchAssignment(id) {
     const questions = taskQuestionsForItems(selected, "assignment-mixed", assignment.item_verb_exercise_key || "verb-nl-conj",
       assignment.include_integrative_sentences ? round.number : null, assignment.use_exercise_variants === true, round.number,
       window.MonParcoursExercisePolicy ? window.MonParcoursExercisePolicy.read(assignment.instructions).forms : null,
-      allItems.filter(function (item) { return round.selected_item_ids.includes(item.id); }));
-    if (questions.length !== pendingIds.length) {
+      allItems.filter(function (item) { return round.selected_item_ids.includes(item.id); }),
+      window.MonParcoursExercisePolicy ? window.MonParcoursExercisePolicy.read(assignment.instructions).poolSettings : null);
+    if (!questions.length || pendingIds.some(function (id) {return !questions.some(function (question) {return question.stableItemIds.includes(id);});})) {
       app.innerHTML = '<section class="error-card"><h1>' + uiText("Ce devoir ne peut pas encore commencer.", "Deze taak kan nog niet starten.") +
         '</h1><p>' + uiText("Un élément du cours manque. Préviens ton professeur.", "Een cursusitem ontbreekt. Meld dit aan je leerkracht.") + '</p></section>';
       return;
     }
     beginSession(questions, "practice", "assignment-mixed", assignment.title,
-      { availableCount: round.selected_item_ids.length, assignmentId: id, roundNumber: round.number,
+      { availableCount: questions.some(function (question) {return question.taskPoolQuestion;}) ? questions.length : round.selected_item_ids.length, assignmentId: id, roundNumber: round.number,
         roundSelectedIds: round.selected_item_ids.slice(), roundReasons: round.selection_reasons });
     return;
   }
@@ -1130,16 +1144,18 @@ function renderVerbScopeGroups(unit, block, subsection, items) {
 
 function irregularGroupCard(unit, block, subsection, items) {
   const title = items.map(function (item) { return displayScopeTitle(item.infinitive); }).join(" + ");
+  const variants = curatedCountForScope({block:block,subsection:subsection,category:items[0].category});
   return '<button class="scope-choice-card verb-goal-card" type="button"' +
     scopeAttributes(unit, block, subsection, title, items[0].category) +
-    '<span class="content-icon-wrap">' + contentIcon("verbs") + '</span><strong>' + escapeHtml(title) + '</strong><b class="scope-count">' + items.length + '</b>' +
+    '<span class="content-icon-wrap">' + contentIcon("verbs") + '</span><strong>' + escapeHtml(title) + '</strong><b class="scope-count">' + (variants || items.length) + '</b>' + learningCountsHtml(items.length,variants) +
     '<small>' + uiText("Ensemble", "Samen oefenen") + '</small><span class="scope-cta">' + uiText("Pratiquer →", "Oefenen →") + '</span></button>';
 }
 
 function verbGoalCard(unit, block, subsection, title, dutch, count, category, itemId, goalId) {
+  const variants = curatedCountForScope({block:block,subsection:subsection,category:category || '',itemId:itemId || ''});
   return '<button class="scope-choice-card verb-goal-card" type="button" data-goal-id="' + escapeAttr(goalId) + '"' +
     scopeAttributes(unit, block, subsection, title, category, itemId) +
-    '<span class="content-icon-wrap">' + contentIcon("verbs") + '</span><strong>' + escapeHtml(title) + '</strong><b class="scope-count">' + count + '</b>' +
+    '<span class="content-icon-wrap">' + contentIcon("verbs") + '</span><strong>' + escapeHtml(title) + '</strong><b class="scope-count">' + (variants || count) + '</b>' + learningCountsHtml(count,variants) +
     '<small lang="nl">' + escapeHtml(dutch) + '</small><span class="scope-cta">' + uiText("Pratiquer →", "Oefenen →") + '</span></button>';
 }
 
@@ -1148,7 +1164,7 @@ function compactScopeButton(unit, block, subsection, title, count, category) {
   const goals = exerciseItemsForScope(currentTrajectory(), unit, scope).length;
   const variants = curatedCountForScope(scope);
   return '<button class="scope-all-button' + (/^Action/i.test(unit.top_category) ? ' tone-revision' : '') + '" type="button"' + scopeAttributes(unit, block, subsection, title, category) +
-    '<span class="scope-all-icon">' + dashboardIcon("play") + '</span>' + uiText("Tout pratiquer →", "Alles oefenen →") + '<span class="scope-all-count">' + (goals || variants) + '</span>' +
+    '<span class="scope-all-icon">' + dashboardIcon("play") + '</span>' + uiText("Tout pratiquer →", "Alles oefenen →") + '<span class="scope-all-count">' + (variants || count || goals) + '</span>' +
     scopeCountLabelHtml(goals, variants, /^Action/i.test(unit.top_category)) + '</button>';
 }
 
@@ -1158,20 +1174,18 @@ function scopeChoiceCard(unit, block, subsection, title, count, category) {
   const variants = curatedCountForScope(scope);
   const kind = contentTypeKey(subsection === "Actes de parole" ? subsection : title);
   return '<button class="scope-choice-card" type="button"' + scopeAttributes(unit, block, subsection, title, category) +
-    '<span class="content-icon-wrap">' + contentIcon(kind) + '</span><strong>' + escapeHtml(displayScopeTitle(title)) + '</strong><b class="scope-count">' + (goals || variants) + '</b>' + scopeCountLabelHtml(goals, variants) +
+    '<span class="content-icon-wrap">' + contentIcon(kind) + '</span><strong>' + escapeHtml(displayScopeTitle(title)) + '</strong><b class="scope-count">' + (variants || count || goals) + '</b>' + scopeCountLabelHtml(goals, variants) +
     '<small lang="nl">' + escapeHtml(scopeLabelDutch(title)) + '</small><span class="scope-cta">' + uiText("Pratiquer →", "Oefenen →") + '</span></button>';
 }
 
 function scopeCountLabelHtml(goals, variants, revision) {
-  if (revision) return '<span class="scope-count-kind">' + uiText("exercices", "oefeningen") + '</span>';
-  return '<span class="scope-count-kind">' + (goals ? uiText("objectifs", "leerdoelen") : uiText("variantes d’exercice", "oefenvarianten")) +
-    (goals && variants ? ' · ' + variants + ' ' + uiText("variantes d’exercice", "oefenvarianten") : '') + '</span>';
+  return '<span class="scope-count-kind">' + learningCountsHtml(goals,variants,revision) + '</span>';
 }
 
 function learningCountsHtml(goals, variants, revision) {
   if (revision) return variants + " " + uiText("exercices", "oefeningen");
-  return (goals ? goals + ' ' + uiText("objectifs", "leerdoelen") : '') +
-    (goals && variants ? ' · ' : '') + (variants ? variants + ' ' + uiText("variantes d’exercice", "oefenvarianten") : '');
+  return uiText((goals ? goals+' objectifs' : '')+(goals && variants ? ' · ' : '')+(variants ? variants+' variantes d’exercice' : ''),
+    (goals ? goals+' leerdoelen' : '')+(goals && variants ? ' · ' : '')+(variants ? variants+' oefenvarianten' : ''));
 }
 
 function samePermanentItemSet(left, right) {
@@ -1343,7 +1357,11 @@ function questionsForSetup(exerciseKey, requestedCount) {
   return buildQuestionsForItems(exerciseItemsForSetup(exerciseKey), exerciseKey, requestedCount);
 }
 
-function taskQuestionsForItems(items, exerciseKey, verbExerciseKey, integrativeRound, useVariants, roundNumber, exerciseForms, policyItems) {
+function taskQuestionsForItems(items, exerciseKey, verbExerciseKey, integrativeRound, useVariants, roundNumber, exerciseForms, policyItems, poolSettings) {
+  if (poolSettings && poolSettings.pool === 2) {
+    if (!window.MonParcoursExercisePolicy || !window.MonParcoursExercisePolicy.pool || !window.MonParcoursExerciseVariants || !window.MonParcoursExerciseVariants.eligibleVariants) return [];
+    return taskPoolQuestions(items,policyItems || items,exerciseForms,poolSettings,roundNumber);
+  }
   const selectedIds = new Set(items.map(function (item) { return item.id; }));
   return items.map(function (item) {
       if (exerciseForms && window.MonParcoursExercisePolicy) {
@@ -1397,6 +1415,41 @@ function taskQuestionsForItems(items, exerciseKey, verbExerciseKey, integrativeR
       const questions = buildQuestionsForItems([item], key, 1);
       return questions[Math.floor(Math.random() * questions.length)] || null;
   }).filter(Boolean);
+}
+
+function taskPoolQuestions(pendingItems, goalItems, forms, settings, roundNumber) {
+  const pending = new Set(pendingItems.map(function (item) {return item.id;}));
+  const entries = window.MonParcoursExercisePolicy.pool(goalItems,state.variantBank,state.data,forms,settings.scope);
+  const questions = [];
+  entries.forEach(function (entry) {
+    if (!entry.targetIds.some(function (id) {return pending.has(id);})) return;
+    if (entry.variant) questions.push(window.MonParcoursExerciseVariants.compileVariant(entry.variant,state.data));
+    else {
+      const key = {vocabulary_direct:'vocab-nl-fr',verb_conjugation:'verb-nl-conj',grammar_rule:'grammar',numbers:'number-nl-fr',phrase_direct:'phrase-nl-fr',spelling:'curated-spelling'}[entry.direct];
+      if (entry.direct === 'spelling') {
+        const variant = state.variantBank.variants.find(function (row) {return row.kind==='spelling' && window.MonParcoursExerciseVariants.targetsForVariant(row).includes(entry.item.id);});
+        if (variant) questions.push(window.MonParcoursExerciseVariants.compileVariant(variant,state.data));
+      } else if (entry.item.dynamic_range) {
+        const total = dynamicNumberCount(entry.item);
+        questions.push.apply(questions,buildQuestionsForItems([entry.item],key,settings.size==='all' ? Math.min(total,MAX_DYNAMIC_NUMBER_ALL) : Number(settings.size)));
+      } else questions.push.apply(questions,buildQuestions([entry.item],key));
+    }
+  });
+  const unique = Array.from(new Map(questions.map(function (question) {
+    return [question.variantId || question.stableItemId+':'+question.itemVariant+':'+question.prompt,question];
+  })).values());
+  const size = settings.size==='all' ? unique.length : Math.min(unique.length,Number(settings.size));
+  const chosen = [];
+  pending.forEach(function (id) {
+    if (chosen.some(function (q) {return q.stableItemIds.includes(id);})) return;
+    const options=unique.filter(function (q) {return q.stableItemIds.includes(id);}).sort(function (a,b) {
+      return b.stableItemIds.filter(function (goal) {return pending.has(goal);}).length-a.stableItemIds.filter(function (goal) {return pending.has(goal);}).length;
+    });
+    if(options.length) chosen.push(options[((roundNumber || 1)-1)%options.length]);
+  });
+  unique.forEach(function (question) {if(chosen.length<size && !chosen.includes(question)) chosen.push(question);});
+  return chosen.map(function (question) {return Object.assign({},question,{taskPoolQuestion:true,
+    taskPoolKey:question.variantId || question.stableItemId+':'+question.itemVariant+':'+question.prompt});});
 }
 
 function availableQuestionCount(exerciseKey) {
@@ -1545,6 +1598,7 @@ function beginSession(questions, mode, exerciseKey, title, metadata) {
     course_path: sessionPath,
     sync_attempts: [],
     question_submissions: [],
+    task_pool_completed: [],
     answered_variant_ids: [],
     results: [],
     startedAt: new Date().toISOString(),
@@ -1675,7 +1729,8 @@ function restoreActiveSession() {
     while (round && saved.index < saved.questions.length) {
       const question = saved.questions[saved.index];
       const id = question.stableItemId || question.stableItemIds && question.stableItemIds[0];
-      if (!round.items[id] || !round.items[id].completed_at && !round.items[id].reported_pending) break;
+      if (question.taskPoolQuestion && (saved.task_pool_completed || []).includes(question.taskPoolKey)) {saved.index += 1; continue;}
+      if (!round.items[id] || question.taskPoolQuestion && !round.items[id].reported_pending || !round.items[id].completed_at && !round.items[id].reported_pending) break;
       saved.index += 1;
     }
   }
@@ -1741,7 +1796,7 @@ function renderQuestion(message) {
     '<section class="practice-shell">' +
       '<header class="practice-header"><button class="text-button" type="button" data-action="back-unit">' + uiText("Arrêter", "Stoppen") + '</button>' +
       (roundProgress ? '' : '<div class="practice-progress" aria-label="Voortgang"><span style="width:' + progress + '%"></span></div>') +
-      (roundProgress ? '' : '<strong>' + (session.index + 1) + ' / ' + session.questions.length + '</strong>') + '</header>' +
+      (roundProgress ? question.taskPoolQuestion ? '<strong>' + (session.task_pool_completed || []).length + ' / ' + session.available_count + ' ' + uiText('exercices','oefeningen') + '</strong>' : '' : '<strong>' + (session.index + 1) + ' / ' + session.questions.length + '</strong>') + '</header>' +
       taskPracticeContextHtml(session) +
       '<article class="question-card tone-' + exerciseTone(session.exerciseKey) + '">' +
         '<div class="question-meta"><span>' + uiText(modeLabelFr(session.mode), modeLabel(session.mode)) + '</span><span>' + contentIcon(contentTypeKey(question.item && question.item.category || state.selectedScope && (state.selectedScope.category || state.selectedScope.title), question.item && question.item.type || exercise.type)) + uiText(exercise.labelFr, exercise.label) + '</span></div>' +
@@ -1813,6 +1868,10 @@ function submitAnswer(rawAnswer) {
   const graded = question.variantId && window.MonParcoursExerciseVariants
     ? window.MonParcoursExerciseVariants.grade(question, rawAnswer) : null;
   const correct = graded ? graded.correct : isCorrect(rawAnswer, question.answers);
+  if (question.taskPoolQuestion && correct) {
+    session.task_pool_completed = session.task_pool_completed || [];
+    if (!session.task_pool_completed.includes(question.taskPoolKey)) session.task_pool_completed.push(question.taskPoolKey);
+  }
   if (graded) {
     session.answered_variant_ids = session.answered_variant_ids || [];
     if (!session.answered_variant_ids.includes(question.variantId)) session.answered_variant_ids.push(question.variantId);
@@ -1835,9 +1894,19 @@ function submitAnswer(rawAnswer) {
     const itemId = question.stableItemId || question.stableItemIds && question.stableItemIds[0];
     const at = new Date().toISOString();
     (correct && question.variantScoring === "integrative" ? question.stableItemIds : [itemId])
-      .forEach(function (id) { window.MonParcoursTaskRounds.markAttempt(round, id, correct, at); });
+      .forEach(function (id) {
+        if (question.taskPoolQuestion && correct && session.questions.some(function (q) {
+          return q.stableItemIds.includes(id) && !(session.task_pool_completed || []).includes(q.taskPoolKey);
+        })) return;
+        window.MonParcoursTaskRounds.markAttempt(round, id, correct, at);
+      });
     if (graded && question.variantScoring === "multi_gap") submissionTargetResults(question,graded,correct).forEach(function (result) {
-      if (result.item_id !== itemId) window.MonParcoursTaskRounds.markAttempt(round,result.item_id,result.was_correct,at);
+      if (result.item_id !== itemId) {
+        if (question.taskPoolQuestion && result.was_correct && session.questions.some(function (q) {
+          return q.stableItemIds.includes(result.item_id) && !(session.task_pool_completed || []).includes(q.taskPoolKey);
+        })) return;
+        window.MonParcoursTaskRounds.markAttempt(round,result.item_id,result.was_correct,at);
+      }
     });
     const itemState = round.items[itemId];
     itemState.attempt_history = (itemState.attempt_history || []).concat({
@@ -2011,7 +2080,8 @@ function nextQuestion() {
     while (session.index < session.questions.length) {
       const next = session.questions[session.index];
       const id = next.stableItemId || next.stableItemIds && next.stableItemIds[0];
-      if (!round || !round.items[id] || !round.items[id].completed_at && !round.items[id].reported_pending) break;
+      if (next.taskPoolQuestion && (session.task_pool_completed || []).includes(next.taskPoolKey)) {session.index += 1; continue;}
+      if (!round || !round.items[id] || next.taskPoolQuestion && !round.items[id].reported_pending || !round.items[id].completed_at && !round.items[id].reported_pending) break;
       session.index += 1;
     }
   }

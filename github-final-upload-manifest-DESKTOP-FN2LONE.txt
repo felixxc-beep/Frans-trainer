@@ -1,0 +1,46 @@
+Mon parcours — definitieve GitHub Pages-uploadset (12 oktober 2026)
+
+Upload de INHOUD van github-final-upload/ naar de root van de repository
+(Frans-trainer/), met behoud van data/. Upload niet de omhullende map.
+18 bestanden; geen batches nodig. Alle kopieën zijn SHA-256-identiek aan de
+bronnen in de huidige werkmap.
+
+BELANGRIJKE LIVEVERGELIJKING
+De publieke live site https://felixxc-beep.github.io/Frans-trainer/ geeft voor
+alle 17 via HTTP bereikbare runtimebestanden exact dezelfde SHA-256-hash als
+de huidige lokale bron. .nojekyll geeft via HTTP 404, wat geen betrouwbare
+controle op aanwezigheid in de GitHub-repository is. Er is hier geen .git-map
+of remote repositorydiff. Daarom kan geen bestand eerlijk als nieuw of
+gewijzigd TEN OPZICHTE VAN LIVE worden aangeduid. De kolom 'pakketstatus'
+zegt alleen of het bestand in de vorige onvolledige github-upload/ zat.
+
+Relatief repositorypad | Waarom nodig | Pakketstatus | Livevergelijking
+.nojekyll | schakelt Jekyll-verwerking voor Pages uit | nieuw in volledig pakket | HTTP niet controleerbaar
+index.html | leerlingpagina, scriptvolgorde en cacheversies | al in deelpakket | identiek
+styles.css | leerling-UI en responsieve vormgeving | al in deelpakket | identiek
+app.js | leerlingnavigatie, labels, sessies, varianten, taken, getallen, meldingen | al in deelpakket | identiek
+exercise-variants.js | validatie, compilatie en beoordeling van oefenvarianten | al in deelpakket | identiek
+assignments.js | taakselectie, bereik en voortgang | al in deelpakket | identiek
+task-rounds.js | rondestatus en hervatten van taken | nieuw in volledig pakket | identiek
+mastery.js | leerdoelen en beheersing/evidence | nieuw in volledig pakket | identiek
+verb-mastery.js | werkwoordbeheersing en taakdoelen | nieuw in volledig pakket | identiek
+student-identity.js | leerlingidentificatie en offline-identiteit | nieuw in volledig pakket | identiek
+supabase-client.js | publieke Supabase-browserclient en lokale fallback | nieuw in volledig pakket | identiek
+sync-manager.js | lokale syncqueue, idempotentie en capabilitycontroles | al in deelpakket | identiek
+config.js | publieke Supabase-URL en publishable key; GEEN secret/service_role | nieuw in volledig pakket | identiek
+teacher.html | leerkrachtpagina en scriptvolgorde | al in deelpakket | identiek
+teacher.css | leerkracht-UI en responsieve vormgeving | nieuw in volledig pakket | identiek
+teacher.js | taakmaker, serialisatie, dashboard en probleemmeldingen | al in deelpakket | identiek
+data/course.json | alle 1036 permanente cursusleeritems, Trajet 1–6 | nieuw in volledig pakket | identiek
+data/exercise-variants.json | 1712 gecureerde varianten, o.a. context/grammatica/Révision | al in deelpakket | identiek
+
+Niet in de Pages-uploadset: SQL-migraties, tests/, scripts/, tmp/, logs,
+README's, bron-/handoffdocumenten, github-upload/ en node_modules.
+
+SQL is een afzonderlijke handmatige stap in Supabase, niet een Pages-bestand.
+Voor de eerder beschreven gedeeltelijk uitgerolde fases 10–12 is de enige
+bedoelde herstelmigratie supabase/phase10-12-state-aware-upgrade.sql;
+controleer daarna met supabase/phase10-12-state-aware-verification.sql.
+Niet blind uitvoeren als de actuele productie-state onbekend is: verifieer
+eerst de vereiste fases 7–9 en maak een databaseback-up. Voer geen oudere
+fase-10/11/12-migraties ernaast uit.

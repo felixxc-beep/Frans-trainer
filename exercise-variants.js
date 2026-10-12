@@ -125,6 +125,50 @@
         targets.every(function (id) { return ids.has(id); }));
   }
 
+  // Shared by free practice, the task creator and new task sessions. Scope
+  // describes course content; goalIds remain permanent mastery IDs.
+  function eligibleVariants(bank, course, scope, goalIds) {
+    scope = scope || {};
+    const trajectory = (course.trajectories || []).find(function (row) { return row.trajectory === scope.trajectory; });
+    if (!trajectory) return [];
+    const revision = /^Action/i.test(scope.top_category || '');
+    const items = (trajectory.items || []).filter(function (item) {
+      return ['top_category','lesson','block','subsection','category'].every(function (key) { return !scope[key] || item[key] === scope[key]; }) &&
+        (!scope.itemId || item.id === scope.itemId);
+    });
+    const ids = new Set(goalIds || items.map(function (item) { return item.id; }));
+    const explicitGoals = Array.isArray(goalIds);
+    const index = itemIndex(course);
+    const grammarCategories = new Set(Array.from(ids).map(function (id) { return index.get(id); })
+      .filter(function (item) { return item && item.type === 'grammar_rule'; }).map(function (item) { return item.category; }));
+    const narrow = Boolean(scope.category || scope.itemId || grammarCategories.size <= 1);
+    const unitIds = new Set(items.map(function (item) {return item.id;}));
+    const trajectoryIds = new Set((trajectory.items || []).map(function (item) {return item.id;}));
+    return (bank.variants || []).filter(function (variant) {
+      if (variant.trajectory !== scope.trajectory || variant.id === 'T1-GRAM-AIMER-022') return false;
+      if (scope.top_category && (variant.kind === 'revision') !== revision) return false;
+      const targets = targetsForVariant(variant);
+      if (!targets.length) return false;
+      if (scope.inventory || !explicitGoals && (!ids.size || !scope.block && !scope.subsection && !scope.category && !scope.itemId)) {
+        if (!scope.inventory && variant.required_subsection && scope.subsection !== variant.required_subsection) return false;
+        if (revision) return variant.kind === 'revision';
+        if (targets.some(function (id) {return unitIds.has(id);})) return true;
+        if (targets.some(function (id) {return trajectoryIds.has(id);})) return false;
+        if (variant.kind === 'grammar') {
+          const verbGoals=targets.every(function (id) {return index.get(id) && index.get(id).top_category==='Atelier Verbes';});
+          return scope.top_category===(verbGoals?'Atelier Verbes':'Atelier Grammaire');
+        }
+        return ['context','actes'].includes(variant.kind) ? scope.top_category==='Atelier Parole' :
+          variant.kind==='conjugation' ? scope.top_category==='Atelier Verbes' :
+          variant.kind==='spelling' ? scope.top_category==='Comment écrire ?' : variant.kind==='number' && scope.top_category==='Chiffres et lettres';
+      }
+      if (revision && !explicitGoals) return !variant.required_subsection || !scope.subsection || scope.subsection === variant.required_subsection;
+      if (!targets.every(function (id) { return ids.has(id); })) return false;
+      if (variant.required_subsection && scope.subsection !== variant.required_subsection) return false;
+      return matchesScope(variant, ids, narrow && variant.kind !== 'revision');
+    });
+  }
+
   function grade(question, response) {
     if (!question || !question.variantId) throw new Error("Not an exercise variant");
     if (question.variantScoring === "multi_gap") {
@@ -155,5 +199,5 @@
 
   return { KINDS: KINDS, SCORING: SCORING, normalizeAnswer: normalizeAnswer,
     itemIndex: itemIndex, validateBank: validateBank, compileVariant: compileVariant, grade: grade,
-    targetsForVariant: targetsForVariant, matchesScope: matchesScope };
+    targetsForVariant: targetsForVariant, matchesScope: matchesScope, eligibleVariants: eligibleVariants };
 });
