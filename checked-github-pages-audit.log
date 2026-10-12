@@ -1,0 +1,5 @@
+GITHUB PAGES AUDIT GESLAAGD
+index.html staat in de root
+CSS, JavaScript en JSON blijven onder /frans-trainer/
+Geen lokale absolute paden, buildstap of eigen backend; initiële schoolmailidentificatie verloopt via Supabase
+Een eerder gekoppelde leerling behoudt de browserlokale offline fallback

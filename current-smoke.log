@@ -1,0 +1,19 @@
+node:assert:152
+  throw new AssertionError(obj);
+  ^
+
+AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+
+0 !== 2
+
+    at Immediate._onImmediate (C:\Users\FelixCabanier.AzureAD\OneDrive - Campos\Taalkunde\Woordenschat\tests\smoke.js:91:10)
+    at process.processImmediate (node:internal/timers:534:21) {
+  generatedMessage: true,
+  code: 'ERR_ASSERTION',
+  actual: 0,
+  expected: 2,
+  operator: 'strictEqual',
+  diff: 'simple'
+}
+
+Node.js v24.19.0
