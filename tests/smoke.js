@@ -88,9 +88,7 @@ setImmediate(function () {
     '(() => { const items = state.data.trajectories[0].items.filter(i => i.type === "grammar_rule"); return buildQuestions(items, "grammar").filter(q => q.prompt === "mannelijk enkelvoud"); })()',
     context
   );
-  assert.equal(articleQuestions.length, 2);
-  assert.ok(articleQuestions.some(function (question) { return question.instruction.includes("articles indéfinis") && question.answers.includes("un"); }));
-  assert.ok(articleQuestions.some(function (question) { return question.instruction.includes("articles définis") && question.answers.includes("le"); }));
+  assert.equal(articleQuestions.length, 0, "losse grammaticaregels worden niet meer als opdreunvraag aangeboden");
 
   assert.equal(vm.runInContext('isCorrect("école", ["école"])', context), true);
   assert.equal(vm.runInContext('isCorrect("ecole", ["école"])', context), false);
