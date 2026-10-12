@@ -8,7 +8,7 @@ const ASSIGNMENTS_CACHE_KEY = "monParcoursAssignmentsCacheV1";
 const VERB_EVIDENCE_KEY = "monParcoursVerbEvidenceV1";
 const VERB_SERVER_CACHE_KEY = "monParcoursVerbServerCacheV1";
 const TASK_ROUNDS_KEY = "monParcoursTaskRoundsV1";
-const APP_VERSION = "20261012-5";
+const APP_VERSION = "20261012-6";
 const INACTIVITY_TIMEOUT_MS = 60000;
 const MAX_DYNAMIC_NUMBER_ALL = 101;
 const ACCENTS = ["é", "è", "ê", "ë", "à", "â", "ç", "ù", "û", "ô", "î", "ï"];
@@ -22,7 +22,7 @@ const EXERCISES = {
   "verb-fr-conj": { type: "verb", label: "Vervoegen vanuit Frans", labelFr: "Conjuguer depuis le français", short: "Vervoegen", shortFr: "Conjuguer" },
   "verb-rule-recognition": { type: "verb", label: "De uitgangen herkennen", labelFr: "Reconnaître les terminaisons", short: "Regel", shortFr: "Règle" },
   "phrase-nl-fr": { type: "phrase", label: "Nederlandse zin → Franse zin", labelFr: "Phrase néerlandaise → phrase française", short: "Zinnen", shortFr: "Phrases" },
-  "grammar": { type: "grammar_rule", label: "Grammaticaregel aanvullen", labelFr: "Compléter la règle de grammaire", short: "Grammatica", shortFr: "Grammaire" },
+  "grammar": { type: "grammar_rule", label: "Grammatica toepassen", labelFr: "Appliquer la grammaire", short: "Grammatica", shortFr: "Grammaire" },
   "number-nl-fr": { type: "number", label: "Cijfer → Frans", labelFr: "Nombre → français", short: "Getallen", shortFr: "Nombres" },
   "number-fr-nl": { type: "number", label: "Frans → cijfer", labelFr: "Français → nombre", short: "Getallen", shortFr: "Nombres" }
 };
@@ -39,7 +39,7 @@ const TYPE_EXERCISES = {
   vocabulary: ["vocab-nl-fr", "vocab-fr-nl"],
   verb: ["verb-nl-inf", "verb-fr-nl", "verb-nl-conj", "verb-fr-conj", "verb-rule-recognition"],
   phrase: ["phrase-nl-fr"],
-  grammar_rule: ["grammar"],
+  grammar_rule: [],
   number: ["number-nl-fr", "number-fr-nl"]
 };
 
@@ -2645,7 +2645,16 @@ function buildQuestions(items, exerciseKey) {
     if (exerciseKey === "verb-nl-inf") questions.push(makeQuestion(base, item.nl, answerList(item.infinitive, item), "Geef de Franse infinitief"));
     if (exerciseKey === "verb-fr-nl") questions.push(makeQuestion(base, item.infinitive, dutchAnswers(item.nl, item), "Vertaal naar het Nederlands"));
     if (exerciseKey === "phrase-nl-fr") questions.push(makeQuestion(base, item.nl, answerList(item.fr, item), "Schrijf de volledige Franse zin"));
-    if (exerciseKey === "grammar") questions.push(grammarRuleQuestion(base, item));
+    if (exerciseKey === "grammar") {
+      const candidate = (state.variantBank && state.variantBank.variants || []).find(function (variant) {
+        if (variant.evidence_policy === "practice_only" || variant.scoring === "integrative") return false;
+        if (!["grammar", "conjugation"].includes(variant.kind)) return false;
+        return window.MonParcoursExerciseVariants &&
+          window.MonParcoursExerciseVariants.targetsForVariant(variant).includes(item.id);
+      });
+      if (candidate && window.MonParcoursExerciseVariants)
+        questions.push(window.MonParcoursExerciseVariants.compileVariant(candidate, state.data));
+    }
     if (exerciseKey === "number-nl-fr") questions.push(makeQuestion(base, item.nl, answerList(item.fr, item), "Schrijf het getal in het Frans"));
     if (exerciseKey === "number-fr-nl") questions.push(makeQuestion(base, item.fr, [item.nl], "Schrijf het cijfer"));
     if (exerciseKey === "verb-nl-conj" || exerciseKey === "verb-fr-conj") {
