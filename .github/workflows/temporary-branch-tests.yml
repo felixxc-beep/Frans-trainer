@@ -13,8 +13,10 @@ jobs:
           node-version: 20
       - run: node --check teacher.js && node --check app.js && node --check exercise-policy.js && node --check exercise-variants.js
       - run: |
-          set -e
+          failures=0
           for f in tests/*.js; do
             echo "Running $f"
-            node "$f"
+            node "$f" || failures=$((failures+1))
           done
+          echo "FAILED_TEST_FILES=$failures"
+          test "$failures" -eq 0
