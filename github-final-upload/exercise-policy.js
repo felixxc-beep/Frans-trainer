@@ -17,6 +17,7 @@
     revision_other: "Révision · Autres exercices / Andere revisievragen",
     numbers: "Getallen · Nombres dynamiques / Dynamische getallen",
     phrase_direct: "Zinnen · Traduire / Direct vertalen",
+    phrase_context: "Zinnen · En contexte / In een zin",
     spelling: "Spelling · Homophones / Schriftelijke homofonen"
   };
   function read(instructions) {
@@ -24,15 +25,21 @@
     const start = text.lastIndexOf(marker);
     if (start < 0 || !text.endsWith("]")) return { text: text, forms: null };
     try {
-      const forms = JSON.parse(text.slice(start + marker.length, -1));
+      const metadata = JSON.parse(text.slice(start + marker.length, -1));
+      const forms = Array.isArray(metadata) ? metadata : metadata.forms;
       if (!Array.isArray(forms) || !forms.length || forms.some(function (key) { return !Object.hasOwn(labels, key); })) throw Error("Invalid policy");
-      return { text: text.slice(0, start), forms: Array.from(new Set(forms)) };
+      const result = { text: text.slice(0, start), forms: Array.from(new Set(forms)) };
+      if (!Array.isArray(metadata) && metadata.pool === 2) result.poolSettings = {
+        pool: 2, size: [10,20,30].includes(metadata.size) ? metadata.size : 'all', scope: metadata.scope || {}
+      };
+      return result;
     } catch (_) { return { text: text, forms: null }; }
   }
-  function write(text, forms) {
+  function write(text, forms, poolSettings) {
     const keys = Array.from(new Set(forms));
     if (!keys.length || keys.some(function (key) { return !Object.hasOwn(labels, key); })) throw Error("Kies minstens één oefenvorm.");
-    const value = String(text || "").trim() + marker + JSON.stringify(keys) + "]";
+    const metadata = poolSettings ? { forms: keys, pool: 2, size: poolSettings.size, scope: poolSettings.scope } : keys;
+    const value = String(text || "").trim() + marker + JSON.stringify(metadata) + "]";
     if (Array.from(value).length > 1000) throw Error("Verkort de instructies: instructies en oefenkeuzes mogen samen maximaal 1000 tekens bevatten.");
     return value;
   }
@@ -52,10 +59,13 @@
       const goals = engine.targetsForVariant(variant).map(function (id) { return index.get(id); });
       if (goals.length && goals.every(function (goal) { return goal && goal.type === "verb"; })) return "verb_context";
       if (goals.length && goals.every(function (goal) { return goal && goal.type === "vocabulary"; })) return "vocabulary_context";
+      if (goals.length && goals.every(function (goal) { return goal && goal.type === "phrase"; })) return "phrase_context";
     }
     return null;
   }
-  function candidates(items, bank, course) {
+  function candidates(items, bank, course, scope) {
+    if (scope) return engine.eligibleVariants(bank, course, scope, items.map(function (item) { return item.id; }))
+      .filter(function (variant) { return variantForm(variant, engine.itemIndex(course)); });
     const ids = new Set(items.map(function (item) { return item.id; }));
     const index = engine.itemIndex(course);
     const trajectories = new Set((course.trajectories || []).filter(function (trajectory) {
@@ -73,7 +83,7 @@
         variantForm(variant, index);
     });
   }
-  function options(items, bank, course) {
+  function options(items, bank, course, scope) {
     const counts = new Map();
     items.forEach(function (item) {
       const key = directForm(item);
@@ -84,7 +94,7 @@
       }, 0) : 1;
     });
     const index = engine.itemIndex(course);
-    candidates(items, bank, course).forEach(function (variant) {
+    candidates(items, bank, course, scope).forEach(function (variant) {
       const key = variantForm(variant, index);
       if (!counts.has(key)) counts.set(key, { key: key, variantCount: 0, courseCount: 0 });
       counts.get(key).variantCount += 1;
@@ -93,8 +103,8 @@
       return counts.has(key) && (counts.get(key).variantCount || counts.get(key).courseCount);
     }).map(function (key) { return counts.get(key); });
   }
-  function available(items, bank, course) {
-    return options(items, bank, course).map(function (option) { return option.key; });
+  function available(items, bank, course, scope) {
+    return options(items, bank, course, scope).map(function (option) { return option.key; });
   }
   function plan(item, items, bank, course, forms, round) {
     if (item.type === "number" && forms.includes("numbers")) return { direct: "numbers" };
@@ -112,5 +122,16 @@
     if (matching.length) return { variant: matching[((round || 1) - 1) % matching.length] };
     return forms.includes(directForm(item)) ? { direct: directForm(item) } : null;
   }
-  return { labels: labels, read: read, write: write, options: options, available: available, plan: plan, candidates: candidates, variantForm: variantForm };
+  function pool(items, bank, course, forms, scope) {
+    const index = engine.itemIndex(course);
+    const entries = candidates(items,bank,course,scope).filter(function (variant) {
+      return forms.includes(variantForm(variant,index));
+    }).map(function (variant) { return { variant: variant, targetIds: engine.targetsForVariant(variant) }; });
+    items.forEach(function (item) {
+      const key = directForm(item);
+      if (forms.includes(key)) entries.push({ direct: key, item: item, targetIds: [item.id] });
+    });
+    return entries;
+  }
+  return { labels: labels, read: read, write: write, options: options, available: available, plan: plan, candidates: candidates, variantForm: variantForm, pool: pool };
 });
