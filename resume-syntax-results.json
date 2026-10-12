@@ -1,0 +1,202 @@
+[
+  {
+    "File": "app.js",
+    "Exit": 0
+  },
+  {
+    "File": "assignments.js",
+    "Exit": 0
+  },
+  {
+    "File": "config.js",
+    "Exit": 0
+  },
+  {
+    "File": "exercise-variants.js",
+    "Exit": 0
+  },
+  {
+    "File": "mastery.js",
+    "Exit": 0
+  },
+  {
+    "File": "student-identity.js",
+    "Exit": 0
+  },
+  {
+    "File": "supabase-client.js",
+    "Exit": 0
+  },
+  {
+    "File": "sync-manager.js",
+    "Exit": 0
+  },
+  {
+    "File": "task-rounds.js",
+    "Exit": 0
+  },
+  {
+    "File": "teacher.js",
+    "Exit": 0
+  },
+  {
+    "File": "verb-mastery.js",
+    "Exit": 0
+  },
+  {
+    "File": "assign-stable-item-ids.js",
+    "Exit": 0
+  },
+  {
+    "File": "build-state-aware-upgrade.js",
+    "Exit": 0
+  },
+  {
+    "File": "import-master-variants.js",
+    "Exit": 0
+  },
+  {
+    "File": "import-trajectories-4-6.js",
+    "Exit": 0
+  },
+  {
+    "File": "test-state-aware-postgres.js",
+    "Exit": 0
+  },
+  {
+    "File": "actes-de-parole-regression.js",
+    "Exit": 0
+  },
+  {
+    "File": "bilingual-student-ui-regression.js",
+    "Exit": 0
+  },
+  {
+    "File": "curated-sync-regression.js",
+    "Exit": 0
+  },
+  {
+    "File": "exercise-variants-regression.js",
+    "Exit": 0
+  },
+  {
+    "File": "final-ux-redesign-regression.js",
+    "Exit": 0
+  },
+  {
+    "File": "full-audit.js",
+    "Exit": 0
+  },
+  {
+    "File": "github-pages-audit.js",
+    "Exit": 0
+  },
+  {
+    "File": "grammar-context-classification-regression.js",
+    "Exit": 0
+  },
+  {
+    "File": "identity-button-regression.js",
+    "Exit": 0
+  },
+  {
+    "File": "item-report-regression.js",
+    "Exit": 0
+  },
+  {
+    "File": "master-content-phase2.js",
+    "Exit": 0
+  },
+  {
+    "File": "mastery-growth-regression.js",
+    "Exit": 0
+  },
+  {
+    "File": "mastery-regression.js",
+    "Exit": 0
+  },
+  {
+    "File": "phase12-migration-order-regression.js",
+    "Exit": 0
+  },
+  {
+    "File": "phase2-security-audit.js",
+    "Exit": 0
+  },
+  {
+    "File": "phase2-sync.js",
+    "Exit": 0
+  },
+  {
+    "File": "phase4-management-regression.js",
+    "Exit": 0
+  },
+  {
+    "File": "phase5-school-email-regression.js",
+    "Exit": 0
+  },
+  {
+    "File": "phase5b-active-time-regression.js",
+    "Exit": 0
+  },
+  {
+    "File": "phase6-multi-teacher-regression.js",
+    "Exit": 0
+  },
+  {
+    "File": "phase7-assignments-regression.js",
+    "Exit": 0
+  },
+  {
+    "File": "phase7b-verb-mastery-regression.js",
+    "Exit": 0
+  },
+  {
+    "File": "phase8-class-monitor-regression.js",
+    "Exit": 0
+  },
+  {
+    "File": "phase8b-student-detail-regression.js",
+    "Exit": 0
+  },
+  {
+    "File": "session-regression.js",
+    "Exit": 0
+  },
+  {
+    "File": "smoke.js",
+    "Exit": 0
+  },
+  {
+    "File": "state-aware-upgrade-regression.js",
+    "Exit": 0
+  },
+  {
+    "File": "supabase-browser-client-regression.js",
+    "Exit": 0
+  },
+  {
+    "File": "task-rounds-app-regression.js",
+    "Exit": 0
+  },
+  {
+    "File": "task-rounds-regression.js",
+    "Exit": 0
+  },
+  {
+    "File": "teacher-dashboard-regression.js",
+    "Exit": 0
+  },
+  {
+    "File": "teacher-task-lifecycle-regression.js",
+    "Exit": 0
+  },
+  {
+    "File": "trajectories-4-6-regression.js",
+    "Exit": 0
+  },
+  {
+    "File": "variant-sync-capability-regression.js",
+    "Exit": 0
+  }
+]

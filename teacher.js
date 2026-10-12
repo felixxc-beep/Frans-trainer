@@ -1132,6 +1132,7 @@
       required_rounds: source && source.required_rounds || 3,
       item_verb_exercise_key: source && source.item_verb_exercise_key || "verb-nl-conj",
       include_integrative_sentences: Boolean(source && source.include_integrative_sentences),
+      use_exercise_variants: source ? source.use_exercise_variants === true : true,
       verb_item_ids: source && source.mastery_strategy && source.mastery_strategy !== "item_mastery" ? asArray(source.item_ids).map(String) : null,
       status: source && source.status || "draft",
       class_ids: asArray(source && source.class_ids).map(String),
@@ -1171,9 +1172,9 @@
   }
 
   function taskScopeItems(draft) {
-    if (draft.fixed_item_ids) return draft.fixed_item_ids.map(function (id) { return state.courseIndex[id]; }).filter(function (item) { return item && item.type !== "sound_rule"; });
+    if (draft.fixed_item_ids) return draft.fixed_item_ids.map(function (id) { return state.courseIndex[id]; }).filter(Boolean);
     return window.MonParcoursAssignments.scopeItems(state.course || { trajectories: [] }, draft).filter(function (item) {
-      return item && item.id && ["vocabulary", "verb", "phrase", "grammar_rule", "number"].includes(item.type);
+      return item && item.id && ["vocabulary", "verb", "phrase", "grammar_rule", "number", "sound_rule"].includes(item.type);
     });
   }
 
@@ -1399,6 +1400,9 @@
         (draft.mastery_strategy === "item_mastery" && draft.completion_strategy === "rounds" ? '<p>1× = één volledige ronde · 2× = twee volledige rondes · 3× = twee volledige rondes + gerichte herhaling · 4× = twee volledige rondes + twee gerichte herhalingen.</p>' :
           '<div class="export-actions">' + [70,80,90,100].map(function (value) { return '<button class="small-button" type="button" data-action="task-target" data-value="' + value + '">' + value + '%</button>'; }).join("") + '</div><p>' + (draft.mastery_strategy === "item_mastery" ? "Bestaande legacy-taak: voltooiing blijft gebaseerd op het percentage gekend." : "Voltooiing volgt de bestaande werkwoorddoelen.") + '</p>') +
         (draft.mastery_strategy === "item_mastery" && draft.completion_strategy === "rounds" ?
+          '<label class="task-sentence-option"><input type="checkbox" name="use_exercise_variants"' +
+          (draft.use_exercise_variants ? ' checked' : '') + (draft.status !== 'draft' ? ' disabled' : '') +
+          '> Gebruik context-, grammatica- en werkwoordvarianten voor de geselecteerde leerdoelen.</label>' +
           '<label class="task-sentence-option"><input type="checkbox" name="include_integrative_sentences"' +
           (draft.include_integrative_sentences ? ' checked' : '') + (draft.status !== 'draft' ? ' disabled' : '') +
           '> Gebruik volledige NL → FR-zinnen uit Révision waar een expliciet gekoppeld item beschikbaar is.</label>' : '') +
@@ -1430,20 +1434,27 @@
     const verbTask = task.mastery_strategy && task.mastery_strategy !== "item_mastery";
     const reports = asArray(state.tasks.reports);
     const reportSection = task.completion_strategy === "rounds" ?
-      '<section class="task-report-section"><div class="section-heading"><div><h3>Probleemmeldingen</h3><p>Goedkeuren rondt dit item af zonder extra beheersingspunten; terugsturen geeft het item terug.</p></div><span class="task-report-badge">' + reports.length + ' wachtend</span></div>' +
+      '<section class="task-report-section"><div class="section-heading"><div><h3>Probleemmeldingen</h3><p>Goedkeuren rondt dit item af zonder extra beheersingspunten; terugsturen geeft het item terug. Eerdere meldcycli blijven zichtbaar als QA-data.</p></div><span class="task-report-badge">' + reports.filter(function (report) { return !report.status || report.status === "pending"; }).length + ' wachtend</span></div>' +
       (state.tasks.message ? '<p class="task-report-message" role="status">' + escapeHtml(state.tasks.message) + '</p>' : '') +
       (reports.length ? '<div class="task-report-list">' + reports.map(function (report) {
         const courseItem = state.courseIndex[report.item_id];
-        const model = report.exercise_direction === "full-sentence-nl-fr"
+        const model = report.model_answer || (report.exercise_direction === "full-sentence-nl-fr"
           ? asArray(report.accepted_answers)[0] || ''
-          : courseItem && (courseItem.fr || courseItem.infinitive || courseItem.answer) || '';
+          : courseItem && (courseItem.fr || courseItem.infinitive || courseItem.answer) || '');
         return '<article class="task-report-card"><div><strong>' + escapeHtml(report.student_name) + '</strong> · ' + escapeHtml(report.class_name) +
           ' · ronde ' + Number(report.round_number) + '<p class="muted">' + escapeHtml(task.title) + ' · ' + escapeHtml(formatDate(report.created_at)) + ' · ' + escapeHtml(report.item_id) + '</p></div>' +
           '<p><b>Prompt:</b> ' + escapeHtml(report.prompt) + '</p><div><b>Als fout beoordeelde invoeren (oudste → nieuwste):</b><ol>' +
-          asArray(report.submitted_answers).map(function (answer) { return '<li>' + escapeHtml(answer) + '</li>'; }).join('') + '</ol></div>' +
+          asArray(report.submitted_answers).map(function (answer, index) {
+            const detail = asArray(report.attempt_details)[index];
+            return '<li><b>Poging ' + (index + 1) + ':</b> ' + escapeHtml(answer) +
+              (detail ? ' <small>' + escapeHtml(detail.at || '') + ' · ' + escapeHtml(detail.variant_id || 'cursusitem') +
+                ' · ' + escapeHtml(detail.prompt || '') + '</small>' : '') + '</li>';
+          }).join('') + '</ol></div>' +
           '<p><b>Verwacht:</b> ' + asArray(report.accepted_answers).map(escapeHtml).join(' / ') + (model ? ' · model: ' + escapeHtml(model) : '') + '</p>' +
-          '<p class="muted">' + escapeHtml(report.exercise_direction) + ' · opgezocht: ' + (report.consulted ? 'ja' : 'nee') + ' · app ' + escapeHtml(report.app_version || 'onbekend') + '</p>' +
-          '<div class="export-actions"><button class="button button-primary" type="button" data-action="resolve-item-report" data-id="' + escapeHtml(report.id) + '" data-decision="approved">Goedkeuren</button><button class="button button-secondary" type="button" data-action="resolve-item-report" data-id="' + escapeHtml(report.id) + '" data-decision="rejected">Terugsturen</button></div></article>';
+          '<p class="muted">' + escapeHtml(report.exercise_type || report.exercise_direction) + ' · ' + escapeHtml(report.variant_id || 'cursusitem') + ' · opgezocht: ' + (report.consulted ? 'ja' : 'nee') + ' · app ' + escapeHtml(report.app_version || 'onbekend') + '</p>' +
+          (report.status === "approved" || report.status === "rejected" ? '<p class="muted">' + (report.status === "approved" ? "Goedgekeurd" : "Teruggestuurd") +
+            ' · ' + escapeHtml(formatDate(report.resolved_at || report.created_at)) + '</p>' :
+            '<div class="export-actions"><button class="button button-primary" type="button" data-action="resolve-item-report" data-id="' + escapeHtml(report.id) + '" data-decision="approved">Goedkeuren</button><button class="button button-secondary" type="button" data-action="resolve-item-report" data-id="' + escapeHtml(report.id) + '" data-decision="rejected">Terugsturen</button></div>') + '</article>';
       }).join('') + '</div>' : '<p class="muted">Geen meldingen die op beoordeling wachten.</p>') + '</section>' : '';
     return '<div class="page-heading"><div><p class="eyebrow">Taak · ' + escapeHtml(taskLifecycle(task) === "recent" ? "Recent afgelopen" : taskLifecycle(task) === "archived" ? "Gearchiveerd" : taskLifecycle(task) === "draft" ? "Concept" : "Actief") + '</p><h2>' + escapeHtml(task.title) + '</h2><p class="muted">' + (verbTask ? asArray(task.requirements).length + ' werkwoorddoelen' : asArray(task.item_ids).length + ' items') + ' · ' + (task.completion_strategy === "rounds" ? task.required_rounds + ' rondes' : 'doel ' + task.target_acquired_percentage + '%') + ' · ' + escapeHtml(task.due_at ? formatDate(task.due_at) : "Geen deadline") + '</p></div><div class="export-actions"><button class="button button-secondary" type="button" data-action="view-tasks">Terug</button><button class="button button-secondary" type="button" data-action="export-task">CSV</button>' + (editable ? '<button class="button button-primary" type="button" data-action="edit-task">Bewerken</button>' + (task.status === "published" ? '<button class="button button-secondary" type="button" data-action="archive-task">Archiveren</button>' : '') : task.status === "archived" && canManage ? '<button class="button button-primary" type="button" data-action="restore-task">Herstellen</button>' : '') + '</div></div>' +
       (task.status === "archived" && canManage && taskLifecycle(Object.assign({}, task, { status: "published" }), Date.now()) === "archived" ? '<p class="muted">Na herstel blijft deze taak wegens de oorspronkelijke deadline in het archief. Pas de deadline daarna aan als je haar opnieuw actief wilt maken.</p>' : '') +
@@ -1796,6 +1807,8 @@
     if (draft.status === "draft") {
       const sentences = form.elements.namedItem("include_integrative_sentences");
       draft.include_integrative_sentences = Boolean(sentences && sentences.checked);
+      const variants = form.elements.namedItem("use_exercise_variants");
+      draft.use_exercise_variants = Boolean(variants && variants.checked);
     }
     if (form.querySelector && form.querySelector('input[name="verb_item_ids"]')) draft.verb_item_ids = Array.from(form.querySelectorAll('input[name="verb_item_ids"]:checked')).map(function (field) { return field.value; });
   }
@@ -1836,6 +1849,8 @@
       item_verb_exercise_key: draft.item_verb_exercise_key,
       include_integrative_sentences: draft.mastery_strategy === "item_mastery" &&
         draft.completion_strategy === "rounds" && draft.include_integrative_sentences,
+      use_exercise_variants: draft.mastery_strategy === "item_mastery" &&
+        draft.completion_strategy === "rounds" && draft.use_exercise_variants,
       requirements: taskRequirements(draft, items),
       class_ids: draft.class_ids, item_ids: items.map(function (item) { return item.id; }), status: status
     };

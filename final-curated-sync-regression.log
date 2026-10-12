@@ -1,0 +1,15 @@
+AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
++ actual - expected
+
++ 'assignment_variant_sync_version'
+- 'assignment_sentence_sync_version'
+              ^
+
+    at C:\Users\FelixCabanier.AzureAD\OneDrive - Campos\Taalkunde\Woordenschat\tests\curated-sync-regression.js:95:10 {
+  generatedMessage: true,
+  code: 'ERR_ASSERTION',
+  actual: 'assignment_variant_sync_version',
+  expected: 'assignment_sentence_sync_version',
+  operator: 'strictEqual',
+  diff: 'simple'
+}

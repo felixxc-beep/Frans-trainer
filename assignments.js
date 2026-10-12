@@ -74,8 +74,13 @@
         (!path.lesson || item.lesson === path.lesson) &&
         (!path.block || item.block === path.block) &&
         (!path.subsection || item.subsection === path.subsection) &&
-        (!path.category || item.category === path.category) && item.type !== "sound_rule";
+        (!path.category || item.category === path.category) && isActiveItem(item, trajectory.trajectory);
     });
+  }
+
+  function isActiveItem(item, trajectory) {
+    return Boolean(item && !/Kiosque|alphabet/i.test((item.top_category || "") + " " + (item.lesson || "")) &&
+      (item.type !== "sound_rule" || trajectory === "Trajet 6" && item.top_category === "Comment écrire ?"));
   }
 
   function numberedRanges(length) {
@@ -84,5 +89,5 @@
     return ranges;
   }
 
-  return { progress: progress, prioritizedItems: prioritizedItems, selectItems: selectItems, scopeItems: scopeItems, numberedRanges: numberedRanges };
+  return { progress: progress, prioritizedItems: prioritizedItems, selectItems: selectItems, scopeItems: scopeItems, numberedRanges: numberedRanges, isActiveItem: isActiveItem };
 });

@@ -95,10 +95,19 @@
               const version = await window.MonParcoursSupabase.rpc("curated_sync_version", {});
               if (version !== 1) throw new Error("Curated sync migration is not available");
             }
+            if (!candidate.session.assignment_id && !candidate.session.assignment_round_number && !/^curated-/.test(candidate.session.exercise_key || "") &&
+                (candidate.session.question_submissions || []).length) {
+              const version = await window.MonParcoursSupabase.rpc("assignment_variant_sync_version", {});
+              if (version !== 1) throw new Error("Dynamic number sync migration is not available");
+            }
             if (candidate.session.assignment_round_number &&
                 (candidate.session.question_submissions || []).length) {
               const version = await window.MonParcoursSupabase.rpc("assignment_sentence_sync_version", {});
               if (version !== 1) throw new Error("Assignment sentence sync migration is not available");
+              if ((candidate.attempts || []).some(function (attempt) { return attempt.client_submission_id; })) {
+                const variantVersion = await window.MonParcoursSupabase.rpc("assignment_variant_sync_version", {});
+                if (variantVersion !== 1) throw new Error("Assignment variant sync migration is not available");
+              }
             }
             await window.MonParcoursSupabase.rpc("ingest_practice_bundle", {
               p_identity_token: credential,

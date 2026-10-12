@@ -1,0 +1,20 @@
+node:internal/assert/utils:77
+    throw err;
+    ^
+
+AssertionError [ERR_ASSERTION]: Leuk! moet Super ! aanvaarden
+    at C:\Users\FelixCabanier.AzureAD\OneDrive - Campos\Taalkunde\Woordenschat\tests\full-audit.js:109:14
+    at Array.forEach (<anonymous>)
+    at C:\Users\FelixCabanier.AzureAD\OneDrive - Campos\Taalkunde\Woordenschat\tests\full-audit.js:108:27
+    at Array.forEach (<anonymous>)
+    at Immediate._onImmediate (C:\Users\FelixCabanier.AzureAD\OneDrive - Campos\Taalkunde\Woordenschat\tests\full-audit.js:104:6)
+    at process.processImmediate (node:internal/timers:534:21) {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+
+Node.js v24.19.0

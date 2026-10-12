@@ -1,5 +1,9 @@
 # Mon parcours — Univers français 1
 
+**Gedeeltelijke rollout 10–12:** gebruik het herstelpad in
+`HERSTELRAPPORT-FASEN-10-12.md`. Voer de oorspronkelijke eenmalige migraties daarvoor
+niet opnieuw uit. PostgreSQL-uitvoering van het nieuwe bestand is nog niet getest.
+
 Een leerlingvriendelijke, statische en tweetalige studietool voor Franse woordenschat, zinnen, werkwoorden, grammatica en getallen. De 1.036 permanente leeritems staan onveranderd in `data/course.json`; de aparte bank `data/exercise-variants.json` bevat 1.712 gecureerde oefenvarianten voor Trajet 1–6. Een leerling meldt zich vóór het oefenen aan met de gekoppelde schoolmail; daarna blijft oefenen bij tijdelijke internetuitval mogelijk via localStorage en de offline syncqueue.
 
 ## Wat zit erin?
@@ -142,3 +146,14 @@ Gewone nieuwe Trajets vereisen geen JavaScript-aanpassing zolang dezelfde datast
 ## Privacy
 
 De schoolmail wordt alleen aan de Supabase-RPC doorgegeven om het bestaande leerlingprofiel te vinden en staat niet in localStorage, oefensessies, pogingen of de syncqueue. Centraal worden uitsluitend de interne leerling-ID, oefensessies en pogingen bewaard. Letterlijk getypte antwoorden worden niet centraal opgeslagen. De browser bevat nooit een secret/service-role key.
+# Herstel van gedeeltelijk uitgerolde fases 10–12
+
+Voor de huidige gedeeltelijke productie-state: gebruik uitsluitend
+`supabase/phase10-12-state-aware-upgrade.sql`, gevolgd door
+`supabase/phase10-12-state-aware-verification.sql`. De afzonderlijke eenmalige
+fase-10/11/12-bestanden worden voor dit herstel niet opnieuw uitgevoerd.
+
+Zie `HERSTELRAPPORT-FASEN-10-12.md` voor wijzigingen, defaults, testresultaten en
+de beperking van de nog niet uitgevoerde PostgreSQL-integratietest. Productie-SQL
+wordt uitsluitend handmatig door de beheerder uitgevoerd.
+

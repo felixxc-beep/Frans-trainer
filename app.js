@@ -1,5 +1,5 @@
 const DATA_URL = "./data/course.json?v=20261011-1";
-const VARIANT_DATA_URL = "./data/exercise-variants.json?v=20261011-2";
+const VARIANT_DATA_URL = "./data/exercise-variants.json?v=20261012-1";
 const STORAGE_KEY = "monParcoursProgressV1";
 const ACTIVE_SESSION_KEY = "monParcoursActiveSessionV1";
 const MASTERY_ATTEMPTS_KEY = "monParcoursMasteryAttemptsV1";
@@ -8,7 +8,7 @@ const ASSIGNMENTS_CACHE_KEY = "monParcoursAssignmentsCacheV1";
 const VERB_EVIDENCE_KEY = "monParcoursVerbEvidenceV1";
 const VERB_SERVER_CACHE_KEY = "monParcoursVerbServerCacheV1";
 const TASK_ROUNDS_KEY = "monParcoursTaskRoundsV1";
-const APP_VERSION = "20261011-2";
+const APP_VERSION = "20261012-1";
 const INACTIVITY_TIMEOUT_MS = 60000;
 const MAX_DYNAMIC_NUMBER_ALL = 101;
 const ACCENTS = ["é", "è", "ê", "ë", "à", "â", "ç", "ù", "û", "ô", "î", "ï"];
@@ -476,6 +476,11 @@ function curatedVariantsForUnit(trajectory, unit) {
     const ids = targets.map(function (target) { return typeof target === "string" ? target : target.item_id; });
     if (ids.some(function (id) { return unitIds.has(id); })) return true;
     if (ids.some(function (id) { return trajectoryIds.has(id); })) return false;
+    if (variant.kind === "grammar") {
+      const index = window.MonParcoursExerciseVariants.itemIndex(state.data);
+      const verbGoals = ids.length && ids.every(function (id) { return index.get(id) && index.get(id).top_category === "Atelier Verbes"; });
+      return unit.top_category === (verbGoals ? "Atelier Verbes" : "Atelier Grammaire");
+    }
     return variant.kind === "context" || variant.kind === "actes" ? unit.top_category === "Atelier Parole" :
       variant.kind === "conjugation" ? unit.top_category === "Atelier Verbes" :
       variant.kind === "grammar" ? unit.top_category === "Atelier Grammaire" :
@@ -491,12 +496,13 @@ function curatedVariantsForScope(exerciseKey, scopeOverride) {
   const scope = scopeOverride || state.selectedScope || {};
   if (!trajectory || !unit) return [];
   const wanted = exerciseKey.slice("curated-".length);
-  const all = curatedVariantsForUnit(trajectory, unit).filter(function (variant) { return variant.kind === wanted; });
+  const all = curatedVariantsForUnit(trajectory, unit).filter(function (variant) {
+    return variant.kind === wanted && (!variant.required_subsection || scope.subsection === variant.required_subsection);
+  });
   if (!scope.block && !scope.subsection && !scope.category && !scope.itemId) return all;
   const scopeIds = new Set(itemsForScope(trajectory, unit, scope).map(function (item) { return item.id; }));
   return all.filter(function (variant) {
-    const targets = variant.scoring === "multi_gap" ? variant.gaps.flatMap(function (gap) { return gap.targets; }) : variant.targets;
-    return targets.some(function (target) { return scopeIds.has(typeof target === "string" ? target : target.item_id); });
+    return window.MonParcoursExerciseVariants.matchesScope(variant, scopeIds, true);
   });
 }
 
@@ -539,9 +545,10 @@ function renderHome() {
         state.data.trajectories.map(function (entry, index) {
           const stats = trajectoryStats(index);
           const total = (entry.items || []).length;
+          const activeTotal = (entry.items || []).filter(isExerciseItem).length;
           return '<button class="trajectory-card" type="button" data-action="select-trajectory" data-index="' + index + '" aria-pressed="' + (index === state.trajectoryIndex) + '">' +
-            '<span class="trajectory-number"><strong>' + escapeHtml(entry.trajectory) + '</strong><span class="trajectory-total">' + uiText(total + " éléments", total + " onderdelen") + '</span></span>' +
-            '<small class="trajectory-progress">' + uiText(stats.practiced + " / " + total + " travaillés", stats.practiced + " / " + total + " geoefend") + '</small>' +
+            '<span class="trajectory-number"><strong>' + escapeHtml(entry.trajectory) + '</strong><span class="trajectory-total">' + uiText(total + " éléments du cours", total + " cursusitems") + '</span></span>' +
+            '<small class="trajectory-progress">' + uiText(stats.practiced + " / " + activeTotal + " objectifs actifs travaillés", stats.practiced + " / " + activeTotal + " actieve leerdoelen geoefend") + '</small>' +
           '</button>';
         }).join("") +
       '</div>' +
@@ -555,7 +562,7 @@ function renderHome() {
           return '<button class="unit-card' + (/^Action/i.test(unit.top_category) ? ' tone-revision' : '') + '" type="button" data-action="select-unit" data-order="' + unit.order + '">' +
             '<span class="unit-order">' + unit.order + '</span>' +
             '<span class="unit-copy"><strong>' + contentIcon(contentTypeKey(unit.top_category)) + escapeHtml(unit.top_category) + '</strong><small>' + escapeHtml(unit.title) + '</small></span>' +
-            '<span class="unit-meta">' + (count ? count + ' ' + uiText("éléments", "items") : curatedCount ? curatedCount + ' ' + uiText("exercices", "oefeningen") : uiText("Information", "Cursusinfo")) + '<span class="unit-arrow" aria-hidden="true">→</span></span>' +
+            '<span class="unit-meta">' + (count || curatedCount ? learningCountsHtml(count, curatedCount) : uiText("Information", "Cursusinfo")) + '<span class="unit-arrow" aria-hidden="true">→</span></span>' +
           '</button>';
         }).join("") +
       '</div>' +
@@ -923,7 +930,7 @@ function launchAssignment(id) {
     const pendingIds = round.selected_item_ids.filter(function (itemId) { return !round.items[itemId].completed_at && !round.items[itemId].reported_pending; });
     const selected = allItems.filter(function (item) { return pendingIds.includes(item.id); });
     const questions = taskQuestionsForItems(selected, "assignment-mixed", assignment.item_verb_exercise_key || "verb-nl-conj",
-      assignment.include_integrative_sentences ? round.number : null);
+      assignment.include_integrative_sentences ? round.number : null, assignment.use_exercise_variants === true, round.number);
     if (questions.length !== pendingIds.length) {
       app.innerHTML = '<section class="error-card"><h1>' + uiText("Ce devoir ne peut pas encore commencer.", "Deze taak kan nog niet starten.") +
         '</h1><p>' + uiText("Un élément du cours manque. Préviens ton professeur.", "Een cursusitem ontbreekt. Meld dit aan je leerkracht.") + '</p></section>';
@@ -1077,7 +1084,7 @@ function renderUnit() {
     breadcrumbHtml([{ label: trajectory.trajectory, action: "home" }]) +
     journeySteps(3) +
     '<section class="unit-hero"><div><p class="eyebrow unit-kind">' + contentIcon(contentTypeKey(unit.top_category)) + escapeHtml(unit.top_category) + '</p><h1>' + escapeHtml(unit.title) + '</h1>' +
-    '<p class="lede">' + (exerciseCount ? exerciseCount + ' ' + uiText("éléments d’exercice", "oefenitems") : curatedCount + ' ' + uiText("exercices", "oefeningen")) + '</p></div>' +
+    '<p class="lede">' + learningCountsHtml(exerciseCount, curatedCount) + '</p></div>' +
     (exerciseCount || curatedCount ? compactScopeButton(unit, "", "", unit.title, exerciseCount || curatedCount) : "") + '</section>' +
     '<section class="structure-stack" aria-label="Cursusstructuur">' + sectionsHtml + '</section>' +
     renderSoundNotes(soundItems);
@@ -1135,14 +1142,32 @@ function verbGoalCard(unit, block, subsection, title, dutch, count, category, it
 }
 
 function compactScopeButton(unit, block, subsection, title, count, category) {
+  const scope = { block: block, subsection: subsection, category: category || "" };
+  const goals = exerciseItemsForScope(currentTrajectory(), unit, scope).length;
+  const variants = curatedCountForScope(scope);
   return '<button class="scope-all-button' + (/^Action/i.test(unit.top_category) ? ' tone-revision' : '') + '" type="button"' + scopeAttributes(unit, block, subsection, title, category) +
-    '<span class="scope-all-icon">' + dashboardIcon("play") + '</span>' + uiText("Tout pratiquer →", "Alles oefenen →") + '<span class="scope-all-count">' + count + '</span></button>';
+    '<span class="scope-all-icon">' + dashboardIcon("play") + '</span>' + uiText("Tout pratiquer →", "Alles oefenen →") + '<span class="scope-all-count">' + (goals || variants) + '</span>' +
+    scopeCountLabelHtml(goals, variants) + '</button>';
 }
 
 function scopeChoiceCard(unit, block, subsection, title, count, category) {
+  const scope = { block: block, subsection: subsection, category: category || "" };
+  const goals = exerciseItemsForScope(currentTrajectory(), unit, scope).length;
+  const variants = curatedCountForScope(scope);
   const kind = contentTypeKey(subsection === "Actes de parole" ? subsection : title);
   return '<button class="scope-choice-card" type="button"' + scopeAttributes(unit, block, subsection, title, category) +
-    '<span class="content-icon-wrap">' + contentIcon(kind) + '</span><strong>' + escapeHtml(displayScopeTitle(title)) + '</strong><b class="scope-count">' + count + '</b><small lang="nl">' + escapeHtml(scopeLabelDutch(title)) + '</small><span class="scope-cta">' + uiText("Pratiquer →", "Oefenen →") + '</span></button>';
+    '<span class="content-icon-wrap">' + contentIcon(kind) + '</span><strong>' + escapeHtml(displayScopeTitle(title)) + '</strong><b class="scope-count">' + (goals || variants) + '</b>' + scopeCountLabelHtml(goals, variants) +
+    '<small lang="nl">' + escapeHtml(scopeLabelDutch(title)) + '</small><span class="scope-cta">' + uiText("Pratiquer →", "Oefenen →") + '</span></button>';
+}
+
+function scopeCountLabelHtml(goals, variants) {
+  return '<span class="scope-count-kind">' + (goals ? uiText("objectifs", "leerdoelen") : uiText("variantes", "oefenvarianten")) +
+    (goals && variants ? ' · ' + variants + ' ' + uiText("variantes", "oefenvarianten") : '') + '</span>';
+}
+
+function learningCountsHtml(goals, variants) {
+  return (goals ? goals + ' ' + uiText("objectifs", "leerdoelen") : '') +
+    (goals && variants ? ' · ' : '') + (variants ? variants + ' ' + uiText("variantes d’exercice", "oefenvarianten") : '');
 }
 
 function samePermanentItemSet(left, right) {
@@ -1213,9 +1238,9 @@ function renderSetup() {
   const itemCount = exerciseItemCount(exerciseItems);
   const variantCount = curatedKeys.reduce(function (total, key) { return total + curatedVariantsForScope(key).length; }, 0);
   const setupCount = itemCount && variantCount
-    ? itemCount + " + " + variantCount + " " + uiText("éléments et variantes", "items en varianten")
-    : itemCount ? itemCount + " " + uiText("éléments", "items")
-      : variantCount + " " + uiText("exercices", "oefeningen");
+    ? itemCount + " " + uiText("objectifs", "leerdoelen") + " · " + variantCount + " " + uiText("variantes d’exercice", "oefenvarianten")
+    : itemCount ? itemCount + " " + uiText("objectifs", "leerdoelen")
+      : variantCount + " " + uiText("variantes d’exercice", "oefenvarianten");
   const advancedKeys = new Set(["vocab-fr-nl", "verb-nl-inf", "verb-fr-nl", "verb-nl-conj", "verb-rule-recognition", "number-fr-nl"]);
   const mainChoices = assignment ? available : available.filter(function (key) { return !advancedKeys.has(key); });
   const extraChoices = assignment ? [] : available.filter(function (key) { return advancedKeys.has(key); });
@@ -1259,7 +1284,8 @@ function renderExerciseChoices(keys, items, assignment, scope, defaultKey) {
     const optionItems = option.type === "mixed" ? items : items.filter(function (item) { return item.type === option.type; });
     const count = key.startsWith("curated-") ? curatedVariantsForScope(key).length : assignment ? optionItems.length : questionCountForItems(optionItems, key);
     const isConjugation = key === "verb-nl-conj" || key === "verb-fr-conj";
-    const countLabel = isConjugation ? optionItems.length + " verbes" : count;
+    const countLabel = isConjugation ? optionItems.length + " verbes" : optionItems.some(isDynamicNumberItem) && !assignment
+      ? count + " nombres possibles" : key.startsWith("curated-") ? count + " variantes" : count;
     const group = key === "verb-nl-inf" || key === "verb-fr-nl" ? "Vocabulaire" : isConjugation ? "Conjugaison" : key === "verb-rule-recognition" ? "Règle" : "";
     const preceding = index ? keys[index - 1] : "";
     const precedingGroup = preceding === "verb-nl-inf" || preceding === "verb-fr-nl" ? "Vocabulaire" : preceding === "verb-nl-conj" || preceding === "verb-fr-conj" ? "Conjugaison" : preceding === "verb-rule-recognition" ? "Règle" : "";
@@ -1313,20 +1339,41 @@ function questionsForSetup(exerciseKey, requestedCount) {
   return buildQuestionsForItems(exerciseItemsForSetup(exerciseKey), exerciseKey, requestedCount);
 }
 
-function taskQuestionsForItems(items, exerciseKey, verbExerciseKey, integrativeRound) {
+function taskQuestionsForItems(items, exerciseKey, verbExerciseKey, integrativeRound, useVariants, roundNumber) {
   const selectedIds = new Set(items.map(function (item) { return item.id; }));
   return items.map(function (item) {
       if (integrativeRound && state.variantBank && window.MonParcoursExerciseVariants) {
         const sentences = state.variantBank.variants.filter(function (variant) {
+          const targets = window.MonParcoursExerciseVariants.targetsForVariant(variant);
           return variant.scoring === "integrative" && variant.kind === "revision" &&
-            variant.targets.length > 0 && variant.targets[0] === item.id &&
-            variant.targets.every(function (target) { return selectedIds.has(target); });
+            targets.length > 0 && targets[0] === item.id &&
+            targets.every(function (target) { return selectedIds.has(target); });
         });
         if (sentences.length) return window.MonParcoursExerciseVariants.compileVariant(
           sentences[(integrativeRound - 1) % sentences.length], state.data);
       }
+      if (useVariants && !isDynamicNumberItem(item) && window.MonParcoursExerciseVariants) {
+        const engine = window.MonParcoursExerciseVariants;
+        const candidates = state.variantBank.variants.filter(function (variant) {
+          const targets = engine.targetsForVariant(variant);
+          return variant.scoring !== "integrative" && variant.evidence_policy !== "practice_only" &&
+            (!variant.required_subsection || items.every(function (goal) { return goal.subsection === variant.required_subsection; })) &&
+            targets[0] === item.id && targets.every(function (id) { return selectedIds.has(id); }) &&
+            (variant.scope_kind !== "mixed" || new Set(items.filter(function (goal) { return goal.type === "grammar_rule"; })
+              .map(function (goal) { return goal.category; })).size > 1) &&
+            (item.type !== "verb" || verbExerciseKey !== "verb-nl-inf" || variant.kind === "context");
+        });
+        if (candidates.length) return engine.compileVariant(candidates[((roundNumber || 1) - 1) % candidates.length], state.data);
+      }
+      if (item.type === "sound_rule" && window.MonParcoursExerciseVariants) {
+        const variant = state.variantBank.variants.find(function (row) {
+          return row.kind === "spelling" && row.scoring === "single" && row.targets.length === 1 && row.targets[0] === item.id;
+        });
+        if (variant) return Object.assign(window.MonParcoursExerciseVariants.compileVariant(variant,state.data),
+          { variantId: null, exerciseKey: "grammar" });
+      }
       const key = exerciseKey === "assignment-mixed" ?
-        { vocabulary: "vocab-nl-fr", verb: verbExerciseKey || "verb-nl-inf", phrase: "phrase-nl-fr", grammar_rule: "grammar", number: "number-nl-fr" }[item.type] : exerciseKey;
+        { vocabulary: "vocab-nl-fr", verb: verbExerciseKey || "verb-nl-inf", phrase: "phrase-nl-fr", grammar_rule: "grammar", number: "number-nl-fr", sound_rule: "curated-spelling" }[item.type] : exerciseKey;
       if (!key) return null;
       const questions = buildQuestionsForItems([item], key, 1);
       return questions[Math.floor(Math.random() * questions.length)] || null;
@@ -1651,6 +1698,18 @@ function renderQuestion(message) {
   const session = state.session;
   const question = session.questions[session.index];
   if (!question) return finishSession();
+  if (question.variantScoring === "integrative" && session.last_shown_variant_id === question.variantId &&
+      Number(question.retry_after || 0) > Date.now()) {
+    state.view = "practice_wait";
+    app.innerHTML = '<section class="summary-card"><h1>' + uiText("Cette phrase reviendra dans quelques secondes.", "Deze zin komt over enkele seconden terug.") +
+      '</h1><p>' + uiText("Prends un moment pour réfléchir ou consulter ton cours.", "Neem even tijd om na te denken of in je cursus te kijken.") + '</p></section>';
+    const index = session.index;
+    setTimeout(function () {
+      if (state.session === session && session.index === index && state.view === "practice_wait") renderQuestion();
+    }, Math.max(1,Number(question.retry_after)-Date.now()));
+    return;
+  }
+  session.last_shown_variant_id = question.variantId || null;
   const roundState = session.assignment_round_number ? assignmentById(session.assignment_id) : null;
   const roundProgress = roundState ? window.MonParcoursTaskRounds.progress(roundState, roundsForAssignment(roundState)) : null;
   const progress = roundProgress ? Math.round((roundProgress.done / Math.max(1, roundProgress.selected)) * 100) : Math.round((session.index / session.questions.length) * 100);
@@ -1674,9 +1733,9 @@ function renderQuestion(message) {
         '<p class="prompt-label">' + uiText(instructionFrench(question.instruction), question.instruction) + '</p><h1 class="question-prompt' + (question.prompt.includes("\n") ? ' is-dialogue' : '') + '">' + escapeHtml(question.prompt) + '</h1>' +
         (question.context ? '<p class="question-context">' + escapeHtml(question.context) + '</p>' : "") +
         '<form id="answer-form" autocomplete="off">' + answerInputsHtml(question) +
-          '<div class="accent-row" aria-label="Franse accenten">' + ACCENTS.map(function (accent) {
+          (question.choices ? '' : '<div class="accent-row" aria-label="Franse accenten">' + ACCENTS.map(function (accent) {
             return '<button type="button" data-action="insert-accent" data-accent="' + accent + '">' + accent + '</button>';
-          }).join("") + '</div>' +
+          }).join("") + '</div>') +
           '<p id="answer-help" class="input-help">' + (isTest ? uiText("Tu verras ton résultat à la fin.", "Je krijgt je resultaat op het einde.") : uiText("Appuie sur Entrée pour vérifier.", "Druk op Enter om te controleren.")) + '</p>' +
           '<button class="button button-primary submit-button" type="submit">' + (isTest ? uiText("Enregistrer la réponse", "Antwoord bewaren") : uiText("Vérifier", "Controleren")) + '</button>' +
         '</form>' +
@@ -1687,6 +1746,10 @@ function renderQuestion(message) {
 }
 
 function answerInputsHtml(question) {
+  if (question.choices) return '<label for="answer-input">' + uiText("Choisis le type de réponse", "Kies het soort antwoord") + '</label><select id="answer-input" name="answer" aria-describedby="answer-help">' +
+    '<option value="">—</option>' + question.choices.map(function (choice) {
+      return '<option value="' + escapeHtml(choice) + '">' + escapeHtml(choice) + '</option>';
+    }).join('') + '</select>';
   if (question.variantScoring !== "multi_gap") return '<label for="answer-input" class="sr-only">Ta réponse / Jouw antwoord</label>' +
     '<input id="answer-input" name="answer" type="text" autocapitalize="none" spellcheck="false" placeholder="Écris ta réponse / Typ je antwoord" aria-describedby="answer-help" autofocus>';
   return '<div class="gap-answer-list">' + question.gaps.map(function (gap, index) {
@@ -1735,10 +1798,13 @@ function submitAnswer(rawAnswer) {
     session.answered_variant_ids = session.answered_variant_ids || [];
     if (!session.answered_variant_ids.includes(question.variantId)) session.answered_variant_ids.push(question.variantId);
     session.question_submissions = session.question_submissions || [];
+    const submissionId = createClientId();
+    session.current_submission_id = submissionId;
     session.question_submissions.push({
-      client_submission_id: createClientId(), variant_id: question.variantId,
+      client_submission_id: submissionId, variant_id: question.variantId,
       item_id: session.assignment_round_number ? question.stableItemId : null,
-      was_correct: correct, created_at: new Date().toISOString()
+      was_correct: correct, created_at: new Date().toISOString(),
+      target_results: submissionTargetResults(question, graded, correct)
     });
   }
   session.lastMasteryFeedback = recordSyncAttempt(question, correct, graded);
@@ -1751,9 +1817,13 @@ function submitAnswer(rawAnswer) {
     const at = new Date().toISOString();
     (correct && question.variantScoring === "integrative" ? question.stableItemIds : [itemId])
       .forEach(function (id) { window.MonParcoursTaskRounds.markAttempt(round, id, correct, at); });
+    if (graded && question.variantScoring === "multi_gap") submissionTargetResults(question,graded,correct).forEach(function (result) {
+      if (result.item_id !== itemId) window.MonParcoursTaskRounds.markAttempt(round,result.item_id,result.was_correct,at);
+    });
     const itemState = round.items[itemId];
     itemState.attempt_history = (itemState.attempt_history || []).concat({
-      answer: formatSubmittedAnswer(question, rawAnswer).trim(), at: at, was_correct: correct
+      answer: formatSubmittedAnswer(question, rawAnswer).trim(), at: at, was_correct: correct,
+      prompt: question.prompt, variant_id: question.variantId || null, accepted_answers: formatAnswers(question)
     });
     if (itemState.returned_for_retry && !correct)
       itemState.wrong_since_return = Number(itemState.wrong_since_return || 0) + 1;
@@ -1777,6 +1847,14 @@ function submitAnswer(rawAnswer) {
     session.index += 1;
     session.phase = "answer";
     renderQuestion();
+    return;
+  }
+
+  if (session.mode === "practice" && question.variantScoring === "integrative") {
+    recordAttempt(question, correct, graded);
+    if (!correct) requeueRoundQuestion(question);
+    showFeedback(correct, correct ? "Bonne réponse !" : "Pas encore. Cette phrase reviendra plus tard.",
+      correct ? "Juist antwoord!" : "Nog niet juist. Deze zin komt later terug.", true);
     return;
   }
 
@@ -1863,8 +1941,12 @@ function reportRoundItem() {
   const report = {
     client_report_id: createClientId(), assignment_id: session.assignment_id,
     round_number: session.assignment_round_number, item_id: current.itemId,
-    prompt: question.prompt, exercise_direction: question.exerciseKey || session.exerciseKey,
-    submitted_answers: answers, accepted_answers: question.answers.slice(),
+    prompt: question.prompt, exercise_direction: reportExerciseDirection(question, session),
+    submitted_answers: answers, accepted_answers: question.variantScoring === "multi_gap"
+      ? question.gaps.map(function (gap) { return gap.accepted_answers.join(" / "); }) : question.answers.slice(),
+    variant_id: question.variantId || null, model_answer: formatAnswers(question),
+    exercise_type: question.variantKind || question.item.type,
+    attempt_details: (current.item.attempt_history || []).filter(function (entry) { return !entry.was_correct; }),
     consulted: Boolean(current.item.consulted), app_version: APP_VERSION,
     created_at: new Date().toISOString()
   };
@@ -1878,6 +1960,26 @@ function reportRoundItem() {
     uiText("Tu peux continuer.", "Je kunt verder.") + '</p><button class="button button-primary" type="button" data-action="next-question">' +
     uiText("Suivant", "Volgende") + '</button></div>';
   feedback.querySelector("button").focus();
+}
+
+function reportExerciseDirection(question, session) {
+  if (!question.variantId) return question.exerciseKey || session.exerciseKey;
+  if (question.variantScoring === "integrative") return "full-sentence-nl-fr";
+  return question.variantKind === "context" ? "vocab-nl-fr" : question.variantKind === "actes" ? "phrase-nl-fr" :
+    question.variantKind === "conjugation" ? "verb-fr-conj" : question.variantKind === "number" ?
+      (/cijfer/.test(question.instruction) ? "number-fr-nl" : "number-nl-fr") : "grammar";
+}
+
+function submissionTargetResults(question, graded, correct) {
+  const results = new Map([[question.stableItemId,Boolean(correct)]]);
+  if (graded && question.variantScoring === "multi_gap") graded.gapResults.forEach(function (gap) {
+    gap.targets.forEach(function (target) {
+      const id = typeof target === "string" ? target : target.item_id;
+      if (id !== question.stableItemId) results.set(id,(results.has(id) ? results.get(id) : true) && gap.correct);
+    });
+  });
+  if (correct && question.variantScoring === "integrative") question.stableItemIds.forEach(function (id) { results.set(id,true); });
+  return Array.from(results,function (entry) { return {item_id:entry[0],was_correct:entry[1]}; });
 }
 
 function nextQuestion() {
@@ -1904,7 +2006,7 @@ function requeueRoundQuestion(question) {
   const queue = state.session.questions;
   const earliest = Math.min(queue.length, state.session.index + 2);
   const insertion = Math.min(queue.length, earliest + Math.floor(Math.random() * 3));
-  queue.splice(insertion, 0, Object.assign({}, question));
+  queue.splice(insertion, 0, Object.assign({}, question, question.variantScoring === "integrative" ? {retry_after:Date.now()+10000} : {}));
   persistActiveSession();
 }
 
@@ -2035,6 +2137,7 @@ function recordVariantEvidence(question, graded) {
     }).length + 1;
     const attempt = {
       client_attempt_id: createClientId(), item_id: ids[0], equivalent_item_ids: ids,
+      client_submission_id: session.current_submission_id,
       legacy_item_id: question.variantId, item_variant: variant, item_type: item.type,
       trajectory: path.trajectory, top_category: path.top_category, lesson: path.lesson,
       block: path.block, subsection: path.subsection, exercise_key: question.exerciseKey || "curated",
@@ -2267,7 +2370,7 @@ function dynamicNumberCount(item) {
 }
 
 function exerciseItemCount(items) {
-  return items.reduce(function (total, item) { return total + dynamicNumberCount(item); }, 0);
+  return items.length;
 }
 
 function questionCountForItems(items, exerciseKey) {
@@ -2294,23 +2397,32 @@ function buildQuestionsForItems(items, exerciseKey, requestedCount) {
 }
 
 function buildDynamicNumberQuestions(item, exerciseKey, count) {
-  return dynamicNumberValues(item, count).map(function (value) {
+  const assignment = assignmentById(state.activeAssignmentId);
+  const useEngine = Boolean(window.MonParcoursExerciseVariants && (!assignment || assignment.use_exercise_variants === true));
+  const trajet = (item._trajectoryIndex || 0) + 1;
+  const questions = dynamicNumberValues(item, count).map(function (value) {
     const displayValue = formatNumberValue(value);
     const french = belgianNumber(value);
-    const regional = item.accepted_regional_alternatives && item.accepted_regional_alternatives[String(value)];
+    const regional = frenchRegionalNumber(value);
     const answers = exerciseKey === "number-nl-fr"
       ? unique([french, regional])
       : unique([displayValue, String(value)]);
     const base = {
-      itemId: item._id + "::" + value,
-      itemIds: [item._id + "::" + value],
+      itemId: item._id,
+      itemIds: [item._id],
       stableItemId: item.id,
       stableItemIds: [item.id],
+      exerciseKey: exerciseKey,
       itemVariant: String(value),
       item: item,
       groupPath: [item._trajectoryIndex, item.top_category, item.lesson, item.block, item.subsection, item.type].join("::"),
       reviewCount: 0
     };
+    if (useEngine) Object.assign(base, {
+      variantId: "T" + trajet + "-NUM-GENERATED-" + String(value).padStart(3,"0"),
+      variantKind: "number", variantScoring: "single", variantTargets: [item.id],
+      variantEvidencePolicy: "mastery", numberValueFormattingTolerance: trajet >= 5
+    });
     return makeQuestion(
       base,
       exerciseKey === "number-nl-fr" ? displayValue : french,
@@ -2318,6 +2430,16 @@ function buildDynamicNumberQuestions(item, exerciseKey, count) {
       exerciseKey === "number-nl-fr" ? "Schrijf het getal in het Frans" : "Schrijf het cijfer"
     );
   });
+  if (item.year_rules && (questions.length >= 5 || useEngine && Math.random() < 0.2)) {
+    const value = 1600 + Math.floor(Math.random() * 426);
+    const answers = yearNumberAnswers(value);
+    const question = questions[questions.length - 1];
+    question.prompt = exerciseKey === "number-nl-fr" ? "Année / Jaartal " + value : answers[0];
+    question.answers = exerciseKey === "number-nl-fr" ? answers : [String(value),formatNumberValue(value)];
+    question.itemVariant = "year:" + value;
+    if (useEngine) question.variantId = "T" + trajet + "-NUM-YEAR-" + value;
+  }
+  return questions;
 }
 
 function dynamicNumberValues(item, requestedCount) {
@@ -2331,10 +2453,14 @@ function dynamicNumberValues(item, requestedCount) {
     const number = Number(String(value).replace(/\s/g, ""));
     if (Number.isInteger(number) && number >= minimum && number <= maximum && values.size < count) values.add(number);
   }
-  (item.source_examples || []).forEach(add);
-  add(minimum);
-  add(maximum);
-  Object.keys(item.accepted_regional_alternatives || {}).forEach(add);
+  const buckets = maximum === 100 ? [[0,20],[21,69],[70,79],[80,89],[90,100]] :
+    maximum === 1000 ? [[0,99],[100,199],[200,499],[500,799],[800,1000]] :
+      [[0,999],[1000,9999],[10000,49999],[50000,100000]];
+  const offset = Math.floor(Math.random() * buckets.length);
+  for (let index = 0; index < count && values.size < count; index++) {
+    const bucket = buckets[(index + offset) % buckets.length];
+    add(bucket[0] + Math.floor(Math.random() * (bucket[1] - bucket[0] + 1)));
+  }
   while (values.size < count) add(minimum + Math.floor(Math.random() * available));
   return Array.from(values);
 }
@@ -2368,6 +2494,32 @@ function belgianNumberBelowThousand(number) {
   const remainder = number % 100;
   const prefix = hundreds === 1 ? "cent" : small[hundreds] + "-cent" + (remainder ? "" : "s");
   return remainder ? prefix + "-" + belgianNumberBelowThousand(remainder) : prefix;
+}
+
+function frenchRegionalNumber(value) {
+  const number = Number(value);
+  if (number >= 1000) {
+    const thousands = Math.floor(number / 1000), remainder = number % 1000;
+    const prefix = thousands === 1 ? "mille" : frenchRegionalNumber(thousands).replace(/(?:cents|vingts)$/, function (word) { return word.slice(0,-1); }) + "-mille";
+    return remainder ? prefix + "-" + frenchRegionalNumber(remainder) : prefix;
+  }
+  if (number >= 100) {
+    const hundreds = Math.floor(number / 100), remainder = number % 100;
+    const prefix = hundreds === 1 ? "cent" : belgianNumber(hundreds) + "-cent" + (remainder ? "" : "s");
+    return remainder ? prefix + "-" + frenchRegionalNumber(remainder) : prefix;
+  }
+  if (number >= 70 && number < 80) return number === 71 ? "soixante-et-onze" : "soixante-" + belgianNumber(number - 60);
+  if (number >= 90) return "quatre-vingt-" + belgianNumber(number - 80);
+  return belgianNumber(number);
+}
+
+function yearNumberAnswers(value) {
+  if (value >= 2000) return unique([belgianNumber(value), frenchRegionalNumber(value)]);
+  const first = Math.floor(value / 100), last = value % 100;
+  const hundred = first > 1 && !last ? "-cents" : "-cent";
+  return unique([belgianNumber(first) + hundred + (last ? "-" + belgianNumber(last) : ""),
+    frenchRegionalNumber(first) + hundred + (last ? "-" + frenchRegionalNumber(last) : ""),
+    belgianNumber(value), frenchRegionalNumber(value)]);
 }
 
 function buildQuestions(items, exerciseKey) {
@@ -2404,7 +2556,7 @@ function buildQuestions(items, exerciseKey) {
     if (exerciseKey === "verb-nl-inf") questions.push(makeQuestion(base, item.nl, answerList(item.infinitive, item), "Geef de Franse infinitief"));
     if (exerciseKey === "verb-fr-nl") questions.push(makeQuestion(base, item.infinitive, dutchAnswers(item.nl, item), "Vertaal naar het Nederlands"));
     if (exerciseKey === "phrase-nl-fr") questions.push(makeQuestion(base, item.nl, answerList(item.fr, item), "Schrijf de volledige Franse zin"));
-    if (exerciseKey === "grammar") questions.push(makeQuestion(base, item.prompt, answerList(item.answer, item), "Vul de regel aan · " + item.category, item.example_fr || item.example_nl || ""));
+    if (exerciseKey === "grammar") questions.push(grammarRuleQuestion(base, item));
     if (exerciseKey === "number-nl-fr") questions.push(makeQuestion(base, item.nl, answerList(item.fr, item), "Schrijf het getal in het Frans"));
     if (exerciseKey === "number-fr-nl") questions.push(makeQuestion(base, item.fr, [item.nl], "Schrijf het cijfer"));
     if (exerciseKey === "verb-nl-conj" || exerciseKey === "verb-fr-conj") {
@@ -2438,6 +2590,25 @@ function concreteConjugations(conjugation) {
 
 function makeQuestion(base, prompt, answers, instruction, context) {
   return Object.assign({}, base, { prompt: prompt, answers: unique(answers), instruction: instruction, context: context || "" });
+}
+
+function grammarRuleQuestion(base, item) {
+  if (/^gebruik het bepaald lidwoord:/.test(item.answer || "")) return Object.assign(makeQuestion(base,
+    "aimer / adorer / détester + [ … ] + nom", ["le / la / l’ / les"],
+    "Welk lidwoord gebruik je?"), { choices: ["un / une / des", "le / la / l’ / les", "de / d’"] });
+  if (item.answer === "gebruik de infinitief") return Object.assign(makeQuestion(base,
+    "aimer / adorer / détester + [ … ]", ["infinitif"], "Welke werkwoordvorm gebruik je?"),
+    { choices: ["infinitif", "verbe conjugué"] });
+  if (/^articles (in)?définis$|^article contracté|^adjectifs possessifs$/.test(item.category || "")) {
+    const choices = unique(allCourseItems().filter(function (goal) {
+      return goal.type === "grammar_rule" && goal.category === item.category &&
+        (item.category !== "adjectifs possessifs" || goal.prompt.split("+")[0] === item.prompt.split("+")[0]);
+    }).map(function (goal) { return goal.answer; }));
+    if (choices.length > 1) return Object.assign(makeQuestion(base, item.prompt, answerList(item.answer,item),
+      "Kies de grammaticale vorm · " + item.category), { choices: choices });
+  }
+  return makeQuestion(base, item.prompt,
+    answerList(item.answer, item), "Vul de regel aan · " + item.category);
 }
 
 function mergeEquivalentQuestions(questions) {
@@ -2475,6 +2646,10 @@ function formatSubmittedAnswer(question, answer) {
 }
 
 function answerList(primary, item) {
+  // The master explicitly distinguishes these communicative reactions from
+  // direct reproduction. The curated Actes bank owns its wider answer sets.
+  if (item.type === "phrase" && ["uf1-item-000665", "uf1-item-000670", "uf1-item-000830"].includes(item.id))
+    return [primary];
   const explicit = Array.isArray(item.accepted_answers) ? item.accepted_answers : [];
   return unique(explicit.length ? explicit : [primary]);
 }
@@ -2540,6 +2715,9 @@ function oneSmallSpellingDifference(left, right) {
 }
 
 function nearCorrectHint(rawAnswer, question) {
+  if (question && question.variantKind === "number" && question.numberValueFormattingTolerance &&
+      window.MonParcoursExerciseVariants.grade(question, rawAnswer).valueCorrect)
+    return { fr: "La valeur est correcte. Vérifie les traits d’union.", nl: "De getalswaarde is juist. Controleer de koppeltekens." };
   if (!question || !question.item || question.item.type !== "vocabulary") return null;
   const french = question.exerciseKey === "vocab-nl-fr";
   const dutch = question.exerciseKey === "vocab-fr-nl";
@@ -2571,7 +2749,7 @@ function normalizeAnswer(value, strict) {
     .replace(/[\u200B-\u200F\u202A-\u202E\u2060\u2066-\u2069\uFEFF]/g, "")
     .replace(/\s+/g, " ")
     .replace(/\s+([?!.,;:])/g, "$1")
-    .replace(/[.!?]+$/g, "")
+    .trim().replace(/[.!?]+$/g, "")
     .trim();
   if (!strict) normalized = normalized.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
   return normalized;
@@ -2854,7 +3032,7 @@ async function refreshMasteryFromServer() {
 
 function trajectoryStats(index) {
   const trajectory = state.data.trajectories[index];
-  const ids = (trajectory.items || []).map(function (item) { return item._id; });
+  const ids = (trajectory.items || []).filter(isExerciseItem).map(function (item) { return item._id; });
   return statsForIds(ids, ids.length);
 }
 
@@ -2929,7 +3107,9 @@ function exerciseKeysForItems(items) {
 }
 
 function isExerciseItem(item) {
-  return Object.prototype.hasOwnProperty.call(TYPE_EXERCISES, item.type);
+  return !/Kiosque|alphabet/i.test((item.top_category || "") + " " + (item.lesson || "")) &&
+    (Object.prototype.hasOwnProperty.call(TYPE_EXERCISES, item.type) ||
+    item.type === "sound_rule" && item._trajectoryIndex === 5 && item.top_category === "Comment écrire ?");
 }
 
 function currentTrajectory() {
@@ -2957,6 +3137,8 @@ function modeLabelFr(mode) {
 function instructionFrench(instruction) {
   const value = String(instruction || "");
   const grammarInstructions = {
+    "Welk lidwoord gebruik je?": "Quel article utilise-t-on ?",
+    "Welke werkwoordvorm gebruik je?": "Quelle forme du verbe utilise-t-on ?",
     "Kies de infinitief na aimer, adorer of détester": "Choisis l'infinitif après aimer, adorer ou détester",
     "Vul het bepaald lidwoord na aimer, adorer of détester in": "Complète avec l'article défini après aimer, adorer ou détester",
     "Vul het onbepaald lidwoord in": "Complète avec l'article indéfini",
@@ -2976,6 +3158,7 @@ function instructionFrench(instruction) {
     "Schrijf de volledige vraag in de gevraagde vorm": "Écris la question complète dans la forme demandée"
   };
   if (grammarInstructions[value]) return grammarInstructions[value];
+  if (value.indexOf("Kies de grammaticale vorm") === 0) return value.replace("Kies de grammaticale vorm", "Choisis la forme grammaticale");
   if (value === "Vul de zin aan") return "Complète la phrase";
   if (value === "Vertaal naar het Frans") return "Traduis en français";
   if (value === "Vertaal naar het Nederlands") return "Traduis en néerlandais";
@@ -2992,7 +3175,7 @@ function instructionFrench(instruction) {
 function insertAccent(accent) {
   const input = activeAnswerInput && activeAnswerInput.isConnected && !activeAnswerInput.disabled
     ? activeAnswerInput : document.querySelector("#answer-input");
-  if (!input) return;
+  if (!input || typeof input.setSelectionRange !== "function") return;
   const start = input.selectionStart;
   const end = input.selectionEnd;
   input.value = input.value.slice(0, start) + accent + input.value.slice(end);

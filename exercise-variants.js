@@ -109,6 +109,22 @@
     };
   }
 
+  function targetsForVariant(variant) {
+    return Array.from(new Set((variant.scoring === "multi_gap"
+      ? variant.gaps.flatMap(function (gap) { return gap.targets; }) : variant.targets || [])
+      .map(function (target) { return typeof target === "string" ? target : target.item_id; })));
+  }
+
+  // A narrow grammar scope must test every requested answer, not just one
+  // incidental target in a mixed question. Broad unit/revision scopes allow mixes.
+  function matchesScope(variant, ids, narrow) {
+    const targets = targetsForVariant(variant);
+    return targets.some(function (id) { return ids.has(id); }) &&
+      (!narrow || variant.scope_kind !== "mixed") &&
+      (!narrow || !["grammar", "spelling"].includes(variant.kind) ||
+        targets.every(function (id) { return ids.has(id); }));
+  }
+
   function grade(question, response) {
     if (!question || !question.variantId) throw new Error("Not an exercise variant");
     if (question.variantScoring === "multi_gap") {
@@ -127,12 +143,17 @@
     const correct = (!question.requiresQuestionMark || /\?\s*$/.test(String(response))) && answers(question.answers).some(function (answer) {
       return normalizeAnswer(answer) === normalizeAnswer(response);
     });
-    return { correct: correct, gapResults: [], evidence: question.variantEvidencePolicy === "practice_only" ||
+    const valueCorrect = correct || question.variantKind === "number" && question.numberValueFormattingTolerance === true &&
+      answers(question.answers).some(function (answer) {
+        return normalizeAnswer(answer).replace(/[- ]/g, "") === normalizeAnswer(response).replace(/[- ]/g, "");
+      });
+    return { correct: correct, valueCorrect: Boolean(valueCorrect), gapResults: [], evidence: question.variantEvidencePolicy === "practice_only" ||
       question.variantScoring === "integrative" && !correct ? [] : [{
-      key: "", correct: correct, targets: question.variantTargets, accepted_answers: question.answers
+      key: "", correct: Boolean(valueCorrect), targets: question.variantTargets, accepted_answers: question.answers
     }] };
   }
 
   return { KINDS: KINDS, SCORING: SCORING, normalizeAnswer: normalizeAnswer,
-    itemIndex: itemIndex, validateBank: validateBank, compileVariant: compileVariant, grade: grade };
+    itemIndex: itemIndex, validateBank: validateBank, compileVariant: compileVariant, grade: grade,
+    targetsForVariant: targetsForVariant, matchesScope: matchesScope };
 });

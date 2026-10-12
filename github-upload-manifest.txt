@@ -1,0 +1,45 @@
+GitHub-uploadmanifest - herstel fasen 10-12 - 12 oktober 2026
+
+Batch: github-upload (16 bestanden).
+Upload de INHOUD van github-upload vanuit de repositoryroot; upload niet de omhullende map.
+Behoud data/, scripts/ en supabase/ op hun bestaande repositorypaden.
+
+Herkomst en zekerheid:
+Geen .git of oorspronkelijke codekopie beschikbaar. Dit is een onderbouwde selectie op basis
+van het herstelrapport, huidige referenties en wijzigingstijden op 12 oktober 2026.
+Nieuw/gewijzigd is afgeleid, niet bewezen door een diff met de remote repository.
+De selectie omvat ook de vorige herstelrun; niet uitsluitend de afronding van deze chat.
+
+Origineel relatief pad | Status | Uploadbatch
+app.js | gewijzigd | github-upload
+assignments.js | gewijzigd | github-upload
+exercise-variants.js | gewijzigd | github-upload
+index.html | gewijzigd | github-upload
+styles.css | gewijzigd | github-upload
+sync-manager.js | gewijzigd | github-upload
+teacher.html | gewijzigd | github-upload
+teacher.js | gewijzigd | github-upload
+data/exercise-variants.json | gewijzigd | github-upload
+scripts/import-master-variants.js | gewijzigd | github-upload
+scripts/build-state-aware-upgrade.js | nieuw | github-upload
+supabase/phase10-12-state-aware-upgrade.sql | nieuw | github-upload
+supabase/phase10-12-state-aware-verification.sql | nieuw | github-upload
+supabase/README.md | gewijzigd | github-upload
+README.md | gewijzigd | github-upload
+HERSTELRAPPORT-FASEN-10-12.md | nieuw | github-upload
+
+Weggelaten:
+- tmp/: logs, testresultaten, downloads, caches en runtimepogingen.
+- tests/ en scripts/test-state-aware-postgres.js: uitsluitend testmatig; geen releasebestanden.
+- Codex-handoff-Mon-parcours-T1-T6.md en Mon-parcours-master-content-spec-T1-T6.md:
+  aangeleverde broninstructies, geen vastgestelde herstelwijzigingen.
+- Overige frontend, course.json en historische SQL: geen herstelwijziging vastgesteld.
+- github-upload-manifest.txt: lokale uploadinstructie, niet in de repositorybundle.
+
+Verificatie:
+- Alle 16 kopieen zijn met SHA-256 identiek bevonden aan hun huidige bronbestand.
+- Exacte bestandenset gecontroleerd; geen tijdelijke, test- of runtimebestanden.
+- Originele bestanden zijn niet verwijderd, verplaatst of inhoudelijk aangepast.
+- Generators blijven beschikbaar voor onderhoud; hun reeds bestaande bronafhankelijkheden
+  hoeven niet opnieuw te worden geupload.
+- Uploaden voert geen SQL uit. De databaseherstelvolgorde staat in het herstelrapport.
