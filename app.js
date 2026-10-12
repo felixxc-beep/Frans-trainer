@@ -467,7 +467,7 @@ function curatedVariantsForUnit(trajectory, unit) {
     const goals = itemsForUnit(trajectory,unit).filter(isExerciseItem).map(function (item) {return item.id;});
     return window.MonParcoursExerciseVariants.eligibleVariants(state.variantBank, state.data,
       { trajectory: trajectory.trajectory, top_category: unit.top_category, lesson: unit.title },
-      /^Action/i.test(unit.top_category) || !goals.length ? undefined : goals);
+      undefined);
   }
   const unitItems = itemsForUnit(trajectory, unit);
   const unitIds = new Set(unitItems.map(function (item) { return item.id; }));
