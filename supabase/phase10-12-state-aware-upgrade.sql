@@ -74,6 +74,7 @@ end; $snapshot$;
 alter table public.assignment_round_items add column if not exists completion_kind text;
 alter table public.assignments add column if not exists include_integrative_sentences boolean not null default false;
 alter table public.assignments add column if not exists use_exercise_variants boolean not null default false;
+alter table public.assignments add column if not exists exercise_forms jsonb;
 alter table public.assignment_completions add column if not exists reopened_at timestamptz;
 alter table public.assignments alter column created_by_teacher_id drop not null;
 
@@ -162,6 +163,7 @@ do $columns$ declare r record; actual text; begin
 ('assignments','item_verb_exercise_key','text'),
 ('assignments','include_integrative_sentences','boolean'),
 ('assignments','use_exercise_variants','boolean'),
+('assignments','exercise_forms','jsonb'),
 ('assignment_classes','assignment_id','uuid'),
 ('assignment_classes','class_id','uuid'),
 ('assignment_items','assignment_id','uuid'),
@@ -1024,7 +1026,7 @@ declare v_old jsonb; v_rows jsonb;
 begin
   v_old:=private.get_student_assignments_pre_sentences_impl(p_identity_token);
   select coalesce(pg_catalog.jsonb_agg(x.value||pg_catalog.jsonb_build_object(
-    'use_exercise_variants',a.use_exercise_variants,'include_integrative_sentences',a.include_integrative_sentences) order by x.ord),'[]'::jsonb)
+    'use_exercise_variants',a.use_exercise_variants,'include_integrative_sentences',a.include_integrative_sentences,'exercise_forms',a.exercise_forms) order by x.ord),'[]'::jsonb)
     into v_rows from pg_catalog.jsonb_array_elements(v_old) with ordinality as x(value,ord)
     join public.assignments a on a.id=(x.value->>'id')::uuid;
   return v_rows;
@@ -1067,7 +1069,7 @@ $$;
 
 create or replace function private.save_assignment_impl(p_payload jsonb)
 returns jsonb language plpgsql security definer set search_path = '' as $$
-declare v_id uuid; v_old public.assignments%rowtype; v_enabled boolean; v_variants boolean; v_result jsonb;
+declare v_id uuid; v_old public.assignments%rowtype; v_enabled boolean; v_variants boolean; v_forms jsonb; v_result jsonb;
 begin
   v_id:=nullif(p_payload->>'id','')::uuid;
   if v_id is not null then select * into v_old from public.assignments where id=v_id; end if;
@@ -1083,8 +1085,27 @@ begin
     then raise exception 'variants require rounds'; end if;
   if v_id is not null and v_old.status<>'draft' and v_old.use_exercise_variants is distinct from v_variants
     then raise exception 'published variant mode is immutable'; end if;
+  v_forms:=coalesce(p_payload->'exercise_forms',v_old.exercise_forms);
+  if v_forms is not null then
+    if pg_catalog.jsonb_typeof(v_forms) is distinct from 'array'
+      then raise exception 'exercise_forms must be an array'; end if;
+    if pg_catalog.jsonb_array_length(v_forms) not between 1 and 13
+      then raise exception 'exercise_forms count is invalid'; end if;
+    if exists(select 1 from pg_catalog.jsonb_array_elements(v_forms) e(value)
+      where pg_catalog.jsonb_typeof(e.value) is distinct from 'string' or e.value #>> '{}' not in
+      ('vocab_direct','vocab_context','verb_conjugation','verb_context','grammar_rule','grammar_context',
+       'grammar_mixed','phrase_direct','actes_context','number_direct','number_dynamic','spelling_context','revision_integrative'))
+      then raise exception 'Unknown exercise form'; end if;
+    if (select count(*) from pg_catalog.jsonb_array_elements_text(v_forms)) is distinct from
+       (select count(distinct value) from pg_catalog.jsonb_array_elements_text(v_forms) e(value))
+      then raise exception 'Duplicate exercise form'; end if;
+    if coalesce(p_payload->>'completion_strategy',v_old.completion_strategy,'rounds')<>'rounds'
+      then raise exception 'exercise_forms require rounds'; end if;
+  end if;
+  if v_id is not null and v_old.status<>'draft' and v_old.exercise_forms is distinct from v_forms
+    then raise exception 'published exercise forms are immutable'; end if;
   v_result:=private.save_assignment_pre_sentences_impl(p_payload);
-  update public.assignments a set include_integrative_sentences=v_enabled,use_exercise_variants=v_variants
+  update public.assignments a set include_integrative_sentences=v_enabled,use_exercise_variants=v_variants,exercise_forms=v_forms
     where a.id=(v_result->>'id')::uuid;
   return v_result;
 end;
@@ -1174,7 +1195,7 @@ declare v_old jsonb; v_rows jsonb;
 begin
   v_old:=private.get_teacher_assignments_pre_sentences_impl();
   select coalesce(pg_catalog.jsonb_agg(x.value||pg_catalog.jsonb_build_object(
-    'use_exercise_variants',a.use_exercise_variants,'include_integrative_sentences',a.include_integrative_sentences) order by x.ord),'[]'::jsonb)
+    'use_exercise_variants',a.use_exercise_variants,'include_integrative_sentences',a.include_integrative_sentences,'exercise_forms',a.exercise_forms) order by x.ord),'[]'::jsonb)
     into v_rows from pg_catalog.jsonb_array_elements(v_old) with ordinality as x(value,ord)
     join public.assignments a on a.id=(x.value->>'id')::uuid;
   return v_rows;
@@ -1886,6 +1907,7 @@ begin
 ('assignments','item_verb_exercise_key','text'),
 ('assignments','include_integrative_sentences','boolean'),
 ('assignments','use_exercise_variants','boolean'),
+('assignments','exercise_forms','jsonb'),
 ('assignment_classes','assignment_id','uuid'),
 ('assignment_classes','class_id','uuid'),
 ('assignment_items','assignment_id','uuid'),
