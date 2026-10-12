@@ -1480,7 +1480,7 @@
         taskSelect("subsection", "Subsection", taskScopeChoices(draft, "subsection"), draft.subsection) +
         taskSelect("category", "Inhoudelijke categorie", taskScopeChoices(draft, "category"), draft.category) + '</div>') + '</fieldset>' +
       '<fieldset><legend>3 · Inhoud</legend><p><strong>' + scopeItems.length + ' leerdoelen beschikbaar.</strong> Je hoeft geen leerdoelen apart te kiezen: Mon parcours koppelt automatisch de leerdoelen die bij de gekozen oefeningen horen.</p>' +
-        (strategies.length > 1 ? '<div class="task-fields">' + strategySelect + '</div>' + verbSelector : '') + '</fieldset>' +
+        (draft.id && strategies.length > 1 ? '<div class="task-fields">' + strategySelect + '</div>' + verbSelector : '') + '</fieldset>' +
       (draft.mastery_strategy === "item_mastery" && draft.completion_strategy === "rounds" ?
         draft.exercise_forms !== null ? renderTaskExerciseForms(draft, selectedItems) :
         '<fieldset><legend>4 · Oefenvormen</legend><p>Bestaande taak: de oorspronkelijke oefenvormen blijven behouden.</p></fieldset>' : '') +
@@ -1907,7 +1907,7 @@
     updateTaskDraftFromForm(form);
     const draft = state.tasks.draft;
     const status = event.submitter && event.submitter.value || "draft";
-    const items = taskSelectedItems(draft);
+    let items = taskSelectedItems(draft);
     if (!taskStrategyChoices(items).includes(draft.mastery_strategy)) {
       state.tasks.message = "Deze beheersingswijze past niet bij de geselecteerde werkwoorden.";
       return renderCurrent();
@@ -1932,23 +1932,23 @@
       try {
         if (!window.MonParcoursExercisePolicy || !state.variantBank) throw Error("Herlaad eerst de oefenvarianten.");
         const policy = window.MonParcoursExercisePolicy;
-        const available = policy.available(items, state.variantBank, state.course, taskVariantScope(draft));
-        draft.exercise_forms = draft.exercise_forms.filter(function (key) { return available.includes(key); });
+        const available = policy.available(items, state.variantBank, state.course, taskVariantScope(draft))
+          .filter(function (key) { return key !== "grammar_rule"; });
+        draft.exercise_forms = available;
+        if (!draft.exercise_forms.length) throw Error("Voor dit onderdeel zijn nog geen geschikte oefeningen beschikbaar.");
         if (draft.exercise_count === 'all' && draft.exercise_forms.includes('numbers') && items.some(function (item) {
           return item.dynamic_range && item.range[1]-item.range[0]+1 > 101;
         })) throw Error('Kies 10, 20 of 30 dynamische getallenoefeningen. Alles is alleen beschikbaar voor een bereik van maximaal 101 getallen.');
-        const entries = draft.exercise_count !== null && typeof policy.pool === 'function' ?
+        const entries = typeof policy.pool === 'function' ?
           policy.pool(items,state.variantBank,state.course,draft.exercise_forms,taskVariantScope(draft)) : null;
-        if (draft.exercise_count !== null && !entries) throw Error('Herlaad de pagina om de gedeelde oefenpool te laden.');
-        if (items.some(function (item) { return entries ? !entries.some(function (entry) {return entry.targetIds.includes(item.id);}) :
-          !policy.plan(item, items, state.variantBank, state.course, draft.exercise_forms, 1); }))
-          throw Error("Kies voor elk geselecteerd leerdoel minstens één beschikbare oefenvorm.");
-        if (Number(draft.required_rounds) > 2 && items.some(function (item) {
-          return entries ? !policy.pool([item],state.variantBank,state.course,draft.exercise_forms,taskVariantScope(draft)).length :
-            !policy.plan(item, [item], state.variantBank, state.course, draft.exercise_forms, 3);
-        })) throw Error("Kies ook een oefenvorm die elk leerdoel afzonderlijk kan testen: vanaf ronde 3 kan de herhaalset kleiner zijn.");
-        instructions = policy.write(instructions, draft.exercise_forms, draft.exercise_count !== null ?
-          { size: draft.exercise_count, scope: taskVariantScope(draft) } : null);
+        if (!entries || !entries.length) throw Error('Voor dit onderdeel zijn nog geen geschikte oefeningen beschikbaar.');
+        const chosenEntries = typeof policy.selectEntries === 'function' ?
+          policy.selectEntries(entries,draft.exercise_count,items.map(function (item) { return item.id; })) : entries;
+        const chosenIds = new Set(chosenEntries.flatMap(function (entry) { return entry.targetIds || []; }));
+        if (chosenIds.size) items = items.filter(function (item) { return chosenIds.has(item.id); });
+        if (!items.length) throw Error('Voor deze keuze konden geen leerdoelen aan de oefeningen worden gekoppeld.');
+        instructions = policy.write(instructions, draft.exercise_forms,
+          { size: draft.exercise_count, scope: taskVariantScope(draft) });
         draft.include_integrative_sentences = draft.exercise_forms.includes("revision");
         draft.use_exercise_variants = draft.exercise_forms.some(function (key) { return !["vocabulary_direct","verb_conjugation","grammar_rule","phrase_direct","spelling"].includes(key); });
       } catch (error) { state.tasks.message = error.message; return renderCurrent(); }
