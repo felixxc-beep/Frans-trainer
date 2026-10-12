@@ -505,7 +505,8 @@ function curatedVariantsForScope(exerciseKey, scopeOverride) {
   if (window.MonParcoursExerciseVariants && window.MonParcoursExerciseVariants.eligibleVariants) {
     const path = Object.assign({}, scope, {trajectory:trajectory.trajectory,top_category:unit.top_category,lesson:unit.title});
     const items = itemsForScope(trajectory,unit,scope).filter(isExerciseItem);
-    const goals = /^Action/i.test(unit.top_category) || !items.length ? undefined : items.map(function (item) {return item.id;});
+    const broadUnit = !scope.block && !scope.subsection && !scope.category && !scope.itemId;
+    const goals = /^Action/i.test(unit.top_category) || !items.length || broadUnit ? undefined : items.map(function (item) {return item.id;});
     return window.MonParcoursExerciseVariants.eligibleVariants(state.variantBank,state.data,path,goals)
       .filter(function (variant) {return variant.kind === wanted;});
   }
