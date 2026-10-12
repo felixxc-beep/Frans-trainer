@@ -1,5 +1,5 @@
 const DATA_URL = "./data/course.json?v=20261011-1";
-const VARIANT_DATA_URL = "./data/exercise-variants.json?v=20261012-5";
+const VARIANT_DATA_URL = "./data/exercise-variants.json?v=20261012-6";
 const STORAGE_KEY = "monParcoursProgressV1";
 const ACTIVE_SESSION_KEY = "monParcoursActiveSessionV1";
 const MASTERY_ATTEMPTS_KEY = "monParcoursMasteryAttemptsV1";
