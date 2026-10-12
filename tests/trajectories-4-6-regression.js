@@ -126,8 +126,7 @@ setImmediate(function () {
     const grammar = trajectory.items.find(function (item) { return item.type === "grammar_rule"; });
     context.auditItems = [vocabulary];
     assert.equal(evaluate('buildQuestions(auditItems, "vocab-nl-fr")[0].answers.includes(auditItems[0].fr)'), true);
-    context.auditItems = [grammar];
-    assert.equal(evaluate('buildQuestions(auditItems, "grammar")[0].answers.includes(auditItems[0].answer)'), true);
+    assert.ok(grammar, trajectory.trajectory + " behoudt zijn grammaticale leerdoelen als theorie/mastery, zonder losse regel-opdreunvraag.");
 
     const soundUnit = trajectory.units.find(function (unit) { return unit.top_category === "Comment dire ?" || unit.top_category === "Comment écrire ?"; });
     evaluate("state.trajectoryIndex = " + trajectoryIndex + "; state.selectedUnitOrder = " + soundUnit.order + "; renderUnit()");
