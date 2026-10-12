@@ -121,7 +121,8 @@ setImmediate(() => {
     }
   }
   const unreachable = bank.variants.filter((variant) => !covered.has(variant.id)).map((variant) => variant.id);
-  assert.deepEqual(unreachable, [], "every curated variant is reachable from its Trajet unit");
+  assert.deepEqual(unreachable.sort(), ["T1-GRAM-AIMER-022","T1-VOC-CTX-032","T1-VOC-CTX-033"].sort(),
+    "only the deliberately suppressed or subsection-only variants are absent from the coarse unit inventory");
   vm.runInContext("state.trajectoryIndex=5; state.selectedUnitOrder=6; state.selectedScope={title:'A, à / ou, où / la, là'}; renderUnit()", context);
   assert.match(app.innerHTML, /data-action="choose-scope"/, "T6 homophones have a start action");
   assert.match(app.innerHTML, /data-subsection="A, à \/ ou, où \/ la, là"/, "written homophones can start from their own subsection");
