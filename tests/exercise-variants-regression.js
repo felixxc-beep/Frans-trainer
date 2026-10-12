@@ -12,10 +12,10 @@ assert.match(index, /exercise-variants\.js[^]*app\.js/, "variant engine loads be
 const allItems = course.trajectories.flatMap(function (trajectory) { return trajectory.items; });
 assert.equal(allItems.length, 1036);
 assert.equal(new Set(allItems.map(function (item) { return item.id; })).size, 1036);
-assert.deepEqual(engine.validateBank(bank, course), { variants: 1731, permanentItems: 1036 });
+assert.deepEqual(engine.validateBank(bank, course), { variants: 1735, permanentItems: 1036 });
 assert.deepEqual([1, 2, 3, 4, 5, 6].map(function (number) {
   return bank.variants.filter(function (variant) { return variant.trajectory === "Trajet " + number; }).length;
-}), [355, 222, 233, 295, 287, 339]);
+}), [355, 222, 234, 295, 289, 340]);
 
 const [first, second] = course.trajectories[0].items.filter(function (item) { return item.type === "vocabulary"; });
 const articleUn = course.trajectories[0].items.find(function (item) { return item.id === "uf1-item-000126"; });
