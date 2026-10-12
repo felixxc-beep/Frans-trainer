@@ -9,7 +9,7 @@ const studentCss = fs.readFileSync("styles.css", "utf8");
 const studentApp = fs.readFileSync("app.js", "utf8");
 const ids = new Set(course.trajectories.flatMap((trajectory) => trajectory.items.map((item) => item.id)));
 
-assert.deepEqual(engine.validateBank(bank, course), { variants: 1712, permanentItems: 1036 });
+assert.deepEqual(engine.validateBank(bank, course), { variants: 1731, permanentItems: 1036 });
 assert.equal(new Set(bank.variants.map((variant) => variant.id)).size, bank.variants.length);
 assert.ok(!bank.variants.some((variant) => variant.id === "T6-VOC-CTX-046" || variant.id === "T3-REV-033"));
 for (const variant of bank.variants) {
@@ -174,5 +174,5 @@ setImmediate(() => {
     assert.equal(app.innerHTML.includes('class="score-ring"'), mode === "test",
       "only Se tester receives a percentage score; guided and practice attempts are not reported as 100% correct");
   }
-  console.log("MASTER CONTENT FASEBLOK 2 GESLAAGD: 1.712 varianten, 6 Trajets, mappings, antwoorden, per-gat-evidence en navigatie.");
+  console.log("MASTER CONTENT FASEBLOK 2 GESLAAGD: 1.731 varianten, 6 Trajets, mappings, antwoorden, per-gat-evidence en navigatie.");
 });
