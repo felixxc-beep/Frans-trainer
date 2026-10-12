@@ -1130,7 +1130,7 @@
       title: source && source.title || "",
       instructions: metadata.text,
       exercise_forms: source ? metadata.forms : [],
-      exercise_count: source ? metadata.poolSettings ? metadata.poolSettings.size : null : 'all',
+      exercise_count: source ? metadata.poolSettings ? metadata.poolSettings.size : null : 20,
       due_at: source && source.due_at ? taskDeadlineLocal(source.due_at) : "",
       target_acquired_percentage: source && source.target_acquired_percentage || 80,
       mastery_strategy: source && source.mastery_strategy || "item_mastery",
@@ -1155,22 +1155,19 @@
 
   function renderTaskExerciseForms(draft, items) {
     const policy = window.MonParcoursExercisePolicy;
-    const heading = '<fieldset class="task-exercise-forms" data-exercise-forms><legend>4 · Oefenvormen</legend>';
+    const heading = '<fieldset class="task-exercise-forms" data-exercise-forms><legend>4 · Oefeningen</legend>';
     if (!policy || !state.variantBank || !window.MonParcoursExerciseVariants ||
-        policy.pool && typeof window.MonParcoursExerciseVariants.eligibleVariants !== 'function' ||
-        typeof policy.options !== 'function' && (typeof policy.candidates !== 'function' || typeof policy.variantForm !== 'function'))
-      return heading + '<p class="error" role="alert">Oefenvarianten konden niet worden geladen. Herlaad deze pagina vóór het opslaan.</p></fieldset>';
-    const available = taskExerciseFormOptions(policy, items);
-    return heading + (available.length ? available.map(function (option) {
-      const key = option.key;
-      const count = option.variantCount ? option.variantCount + ' oefenvarianten' :
-        key === 'numbers' ? option.courseCount + ' dynamisch getallendoel' : option.courseCount + ' cursusvragen';
-      return '<label class="task-sentence-option"><input type="checkbox" name="exercise_forms" value="' + key + '"' +
-        (draft.exercise_forms.includes(key) ? ' checked' : '') + (draft.status !== 'draft' ? ' disabled' : '') +
-        '><span>' + escapeHtml(policy.labels[key]) + ' — ' + count + '</span></label>';
-    }).join('') : '<p>Selecteer eerst oefenbare leerdoelen. Binnen deze selectie zijn geen oefenvormen beschikbaar.</p>') +
-      '<p>Vink één of meer oefenvormen aan. Alleen deze vormen verschijnen in de taak. Elk geselecteerd leerdoel moet oefenbaar blijven.</p>' +
-      (draft.exercise_count !== null ? renderTaskExerciseCount(draft, items) : '') + '</fieldset>';
+        typeof policy.options !== 'function' || typeof policy.pool !== 'function')
+      return heading + '<p class="error" role="alert">Oefeningen konden niet worden geladen. Herlaad deze pagina vóór het opslaan.</p></fieldset>';
+    const available = taskExerciseFormOptions(policy, items).filter(function (option) { return option.key !== "grammar_rule"; });
+    draft.exercise_forms = available.map(function (option) { return option.key; });
+    if (!available.length) return heading + '<p>Voor dit onderdeel zijn nog geen geschikte oefeningen beschikbaar.</p></fieldset>';
+    const total = available.reduce(function (sum, option) { return sum + option.variantCount + option.courseCount; }, 0);
+    return heading + '<p><strong>' + total + ' beschikbare oefeningen.</strong> Mon parcours mixt automatisch de passende oefentypes voor dit cursusonderdeel.</p>' +
+      '<details><summary>Welke oefentypes zitten erin?</summary><ul>' + available.map(function (option) {
+        const count = option.variantCount || option.courseCount;
+        return '<li>' + escapeHtml(policy.labels[option.key]) + ' — ' + count + '</li>';
+      }).join('') + '</ul></details>' + renderTaskExerciseCount(draft, items) + '</fieldset>';
   }
 
   function taskVariantScope(draft) {
@@ -1185,27 +1182,20 @@
       .filter(function (option) { return draft.exercise_forms.includes(option.key); });
     let count = options.reduce(function (total, option) { return total + option.variantCount + option.courseCount; }, 0);
     const dynamic = draft.exercise_forms.includes('numbers') && items.some(function (item) { return item.dynamic_range; });
-    if (dynamic) count = items.filter(function (item) { return item.dynamic_range; }).reduce(function (total,item) { return total+item.range[1]-item.range[0]+1; },0);
+    if (dynamic) count = items.filter(function (item) { return item.dynamic_range; })
+      .reduce(function (total,item) { return total + item.range[1] - item.range[0] + 1; }, 0);
     const allowAll = !dynamic || count <= 101;
-    let uncovered = new Set(items.map(function (item) {return item.id;}));
-    let minimum = items.length;
-    if (typeof policy.pool === 'function') {
-      minimum = 0;
-      policy.pool(items,state.variantBank,state.course,draft.exercise_forms,taskVariantScope(draft))
-        .sort(function (a,b) {return b.targetIds.length-a.targetIds.length;}).forEach(function (entry) {
-          if (!entry.targetIds.some(function (id) {return uncovered.has(id);})) return;
-          minimum += 1;uncovered = new Set(Array.from(uncovered).filter(function (id) {return !entry.targetIds.includes(id);}));
-        });
-    }
-    const choices = [10,20,30].filter(function (size) { return size <= count && size >= minimum; });
+    const choices = [10,20,30].filter(function (size) { return size <= count; });
     if (allowAll) choices.push('all');
-    const selected = choices.includes(draft.exercise_count === 'all' ? 'all' : Number(draft.exercise_count)) ? draft.exercise_count : choices[choices.length-1];
-    return '<label><span>Oefeningen per ronde</span><select name="exercise_count"' + (draft.status !== 'draft' || !count ? ' disabled' : '') + '>' +
+    if (!choices.length && count) choices.push('all');
+    const requested = draft.exercise_count === 'all' ? 'all' : Number(draft.exercise_count);
+    const selected = choices.includes(requested) ? requested :
+      choices.includes(20) ? 20 : choices.includes(10) ? 10 : choices[choices.length - 1];
+    draft.exercise_count = selected;
+    return '<label><span>Hoeveel oefeningen per ronde?</span><select name="exercise_count"' + (draft.status !== 'draft' || !count ? ' disabled' : '') + '>' +
       choices.map(function (size) { return '<option value="' + size + '"' + (String(size)===String(selected) ? ' selected' : '') + '>' +
         (size==='all' ? 'Alles ('+count+' oefeningen)' : size+' oefeningen') + '</option>'; }).join('') +
-      '</select></label><p>' + items.length + ' permanente leerdoelen · ' + (dynamic ? count+' mogelijke getallen; waarden worden gegenereerd.' : count+' beschikbare oefeningen in de gekozen vormen.') +
-      ' Oefenvarianten zijn geen extra leerdoelen.</p>' + (uncovered.size ? '<p class="form-message">' + uncovered.size +
-        ' geselecteerde leerdoelen hebben nog geen vraag in de aangevinkte vormen. Vink een aanvullende oefenvorm aan of pas de leerdoelselectie aan.</p>' : '');
+      '</select></label><p>' + count + ' oefeningen beschikbaar. De gekoppelde leerdoelen worden automatisch bepaald.</p>';
   }
 
   function taskExerciseFormOptions(policy, items) {
@@ -1262,24 +1252,23 @@
 
   function taskSuggestedTitle(draft) {
     const scope = draft.category || draft.subsection || draft.block || draft.lesson || draft.top_category || "Leerstof";
-    const items = taskScopeItems(draft);
-    const start = Math.max(1, Number(draft.range_start) || 1);
-    const end = Math.min(items.length, Number(draft.range_end) || items.length);
-    return draft.trajectory + " · " + scope + (items.length ? " " + start + "–" + end : "");
+    return draft.trajectory + " · " + scope;
   }
 
   function taskScopeItems(draft) {
     if (draft.fixed_item_ids) return draft.fixed_item_ids.map(function (id) { return state.courseIndex[id]; }).filter(Boolean);
+    if (/^Action/i.test(draft.top_category || "") && window.MonParcoursExerciseVariants && state.variantBank) {
+      const variants = window.MonParcoursExerciseVariants.eligibleVariants(state.variantBank, state.course, taskVariantScope(draft));
+      const ids = new Set(variants.flatMap(function (variant) { return window.MonParcoursExerciseVariants.targetsForVariant(variant); }));
+      return Array.from(ids).map(function (id) { return state.courseIndex[id]; }).filter(Boolean);
+    }
     return window.MonParcoursAssignments.scopeItems(state.course || { trajectories: [] }, draft).filter(function (item) {
       return item && item.id && ["vocabulary", "verb", "phrase", "grammar_rule", "number", "sound_rule"].includes(item.type);
     });
   }
 
   function taskSelectedItems(draft) {
-    const items = taskScopeItems(draft);
-    const start = Math.max(1, Number(draft.range_start) || 1);
-    const end = Math.min(items.length, Number(draft.range_end) || items.length);
-    const selected = items.slice(start - 1, end);
+    const selected = taskScopeItems(draft);
     if (draft.mastery_strategy === "irregular_verb_mastery" || draft.mastery_strategy === "mixed_verb_mastery") {
       const chosen = draft.verb_item_ids && new Set(draft.verb_item_ids);
       return selected.filter(function (item) {
@@ -1324,6 +1313,11 @@
       if (!item.id || !window.MonParcoursAssignments.isActiveItem(item, draft.trajectory)) return;
       if (order.slice(0, position).some(function (key) { return path[key] && item[key] !== path[key]; })) return;
       if (item[field]) values.add(item[field]);
+    });
+    asArray(trajectory && trajectory.units).forEach(function (unit) {
+      if (!/^Action/i.test(unit.top_category || "")) return;
+      if (field === "top_category") values.add(unit.top_category);
+      if (field === "lesson" && (!draft.top_category || draft.top_category === unit.top_category)) values.add(unit.title);
     });
     return Array.from(values);
   }
@@ -1455,10 +1449,8 @@
     if (!draft) return renderTasksPage();
     const scopeItems = taskScopeItems(draft);
     const selectedItems = taskSelectedItems(draft);
-    const rangeItems = scopeItems.slice(Math.max(0, (Number(draft.range_start) || 1) - 1),
-      Math.min(scopeItems.length, Number(draft.range_end) || scopeItems.length));
+    const rangeItems = scopeItems;
     const trajectories = asArray(state.course && state.course.trajectories).map(function (row) { return row.trajectory; });
-    const ranges = window.MonParcoursAssignments.numberedRanges(scopeItems.length);
     const strategies = taskStrategyChoices(rangeItems);
     const strategyNames = { item_mastery: "Permanente leerdoelen oefenen", verb_rule_mastery: "Regel en vervoeging beheersen", irregular_verb_mastery: "Onregelmatige werkwoorden beheersen", mixed_verb_mastery: "Gemengd werkwoordblok: alle doelen" };
     const strategySelect = '<label><span>Wat moet de leerling beheersen?</span><select name="mastery_strategy">' + strategies.map(function (strategy) {
@@ -1487,9 +1479,8 @@
         taskSelect("block", "Blok", taskScopeChoices(draft, "block"), draft.block) +
         taskSelect("subsection", "Subsection", taskScopeChoices(draft, "subsection"), draft.subsection) +
         taskSelect("category", "Inhoudelijke categorie", taskScopeChoices(draft, "category"), draft.category) + '</div>') + '</fieldset>' +
-      '<fieldset><legend>3 · Leerdoelselectie</legend><p>' + scopeItems.length + ' oefenbare leerdoelen in dit onderdeel.</p><div class="task-fields">' + strategySelect + '</div>' + verbSelector +
-        (draft.fixed_item_ids ? '' : '<div class="task-fields"><label><span>Van leerdoel</span><input name="range_start" type="number" min="1" max="' + scopeItems.length + '" value="' + draft.range_start + '"></label><label><span>Tot leerdoel</span><input name="range_end" type="number" min="1" max="' + scopeItems.length + '" value="' + (draft.range_end || scopeItems.length) + '"></label></div><div class="export-actions"><button class="small-button" type="button" data-action="task-range" data-start="1" data-end="' + scopeItems.length + '">Alle ' + scopeItems.length + '</button>' + ranges.map(function (range) { return '<button class="small-button" type="button" data-action="task-range" data-start="' + range.start + '" data-end="' + range.end + '">' + range.start + '–' + range.end + '</button>'; }).join("") + '</div>') +
-        '<p><strong>Voorbeeld: ' + selectedItems.length + ' geselecteerd.</strong></p><ol class="task-preview">' + selectedItems.slice(0, 20).map(function (item) { return '<li>' + escapeHtml(item.nl || item.prompt || item.infinitive || item.id) + ' — ' + escapeHtml(item.fr || item.answer || item.infinitive || '') + '</li>'; }).join("") + '</ol>' + (selectedItems.length > 20 ? '<p>… en ' + (selectedItems.length - 20) + ' meer.</p>' : '') + '</fieldset>' +
+      '<fieldset><legend>3 · Inhoud</legend><p><strong>' + scopeItems.length + ' leerdoelen beschikbaar.</strong> Je hoeft geen leerdoelen apart te kiezen: Mon parcours koppelt automatisch de leerdoelen die bij de gekozen oefeningen horen.</p>' +
+        (strategies.length > 1 ? '<div class="task-fields">' + strategySelect + '</div>' + verbSelector : '') + '</fieldset>' +
       (draft.mastery_strategy === "item_mastery" && draft.completion_strategy === "rounds" ?
         draft.exercise_forms !== null ? renderTaskExerciseForms(draft, selectedItems) :
         '<fieldset><legend>4 · Oefenvormen</legend><p>Bestaande taak: de oorspronkelijke oefenvormen blijven behouden.</p></fieldset>' : '') +
@@ -1502,7 +1493,7 @@
         (draft.mastery_strategy === "item_mastery" && draft.completion_strategy === "rounds" && draft.exercise_forms === null && selectedItems.some(function (item) { return item.type === "verb"; }) ?
           '<label><span>Werkwoordoefening</span><select name="item_verb_exercise_key"><option value="verb-nl-conj"' + (draft.item_verb_exercise_key === "verb-nl-conj" ? " selected" : "") + '>Nederlands → vervoeging</option><option value="verb-fr-conj"' + (draft.item_verb_exercise_key === "verb-fr-conj" ? " selected" : "") + '>Frans → vervoeging</option><option value="verb-nl-inf"' + (draft.item_verb_exercise_key === "verb-nl-inf" ? " selected" : "") + '>Nederlands → infinitief</option></select></label>' : '') +
         '<label><span>Instructies (optioneel)</span><textarea name="instructions" maxlength="1000">' + escapeHtml(draft.instructions) + '</textarea></label></fieldset>' +
-      '<fieldset><legend>6 · Controleren en publiceren</legend><p>' + selectedItems.length + ' permanente leerdoelen · ' + draft.class_ids.length + ' klassen · ' +
+      '<fieldset><legend>6 · Controleren en publiceren</legend><p>' + draft.exercise_count + ' oefeningen per ronde · ' + draft.class_ids.length + ' klassen · ' +
         (draft.mastery_strategy === "item_mastery" && draft.completion_strategy === "rounds" ? draft.required_rounds + ' rondes.' : 'doel ' + draft.target_acquired_percentage + '%.') +
         '</p><div class="export-actions">' + (draft.status === "draft" ? '<button class="button button-secondary" type="submit" name="task_status" value="draft">Concept opslaan</button>' : '') + '<button class="button button-primary" type="submit" name="task_status" value="published">' + (draft.status === "published" ? "Wijzigingen opslaan" : "Publiceren") + '</button></div></fieldset></form>';
   }
@@ -2492,6 +2483,8 @@
         state.tasks.draft.range_start = 1;
         state.tasks.draft.range_end = null;
         state.tasks.draft.mastery_strategy = "item_mastery";
+        state.tasks.draft.exercise_forms = [];
+        state.tasks.draft.exercise_count = 20;
         state.tasks.draft.verb_item_ids = null;
         state.tasks.draft.autoTitle = taskSuggestedTitle(state.tasks.draft);
         if (wasAuto) state.tasks.draft.title = state.tasks.draft.autoTitle;
