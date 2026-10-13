@@ -8,7 +8,7 @@ const ASSIGNMENTS_CACHE_KEY = "monParcoursAssignmentsCacheV1";
 const VERB_EVIDENCE_KEY = "monParcoursVerbEvidenceV1";
 const VERB_SERVER_CACHE_KEY = "monParcoursVerbServerCacheV1";
 const TASK_ROUNDS_KEY = "monParcoursTaskRoundsV1";
-const APP_VERSION = "20261013-7";
+const APP_VERSION = "20261013-10";
 const INACTIVITY_TIMEOUT_MS = 60000;
 const MAX_DYNAMIC_NUMBER_ALL = 101;
 const ACCENTS = ["é", "è", "ê", "ë", "à", "â", "ç", "ù", "û", "ô", "î", "ï"];
@@ -1875,6 +1875,7 @@ function submitAnswer(rawAnswer) {
   const graded = question.variantId && window.MonParcoursExerciseVariants
     ? window.MonParcoursExerciseVariants.grade(question, rawAnswer) : null;
   const correct = graded ? graded.correct : isCorrect(rawAnswer, question.answers);
+  session.visualAnswer = { question: question, answer: rawAnswer, graded: graded };
   if (question.taskPoolQuestion && correct) {
     session.task_pool_completed = session.task_pool_completed || [];
     if (!session.task_pool_completed.includes(question.taskPoolKey)) session.task_pool_completed.push(question.taskPoolKey);
@@ -1995,6 +1996,49 @@ function submitAnswer(rawAnswer) {
   }
 }
 
+function markedAnswerFeedback(question, raw, graded, mistakes) {
+  if (!question || !question.variantId || !["integrative","multi_gap"].includes(question.variantScoring)) return "";
+  const level = Math.max(1, Number(mistakes || 1));
+  if (question.variantScoring === "multi_gap") {
+    const incorrect = graded && graded.gapResults || [];
+    const positions = incorrect.map(function (gap, i) { return gap.correct ? null : i; }).filter(function (i) { return i !== null; });
+    if (!positions.length) return "";
+    const values = Array.isArray(raw) ? raw : [];
+    const parts = values.map(function (value, i) {
+      return '<span class="marked-answer-part' + (positions.includes(i) ? ' is-wrong' : '') + '">' +
+        escapeHtml((i+1)+": "+String(value || "—")) + '</span>';
+    }).join(' ');
+    const detail = level >= 3 ? positions.map(function (i) {
+      return (i+1) + ': ' + (question.gaps[i] && question.gaps[i].accepted_answers || []).join(' / ');
+    }).join(' · ') : '';
+    return '<div class="marked-answer"><small>' + uiText("Ta réponse — vérifie les cases surlignées", "Jouw antwoord — controleer de gemarkeerde vakken") +
+      '</small><p>' + parts + '</p>' + (detail ? '<small>' + uiText("Correction :", "Correctie:") + ' ' + escapeHtml(detail) + '</small>' : '') + '</div>';
+  }
+  if (typeof raw !== "string" || !raw.trim()) return "";
+  const words = raw.trim().split(/\s+/);
+  const normalize = function (s) { return String(s).toLocaleLowerCase("fr").replace(/[’‘]/g,"'").replace(/[.,!?;:]+$/,""); };
+  // Compare against the closest accepted formulation, never just the first model sentence.
+  const models = (question.answers || []).map(function (answer) { return String(answer).trim().split(/\s+/); });
+  if (!models.length) return "";
+  const candidates = models.map(function (model) {
+    let prefix=0, suffix=0;
+    while (prefix<words.length && prefix<model.length && normalize(words[prefix])===normalize(model[prefix])) prefix++;
+    while (suffix<words.length-prefix && suffix<model.length-prefix &&
+      normalize(words[words.length-1-suffix])===normalize(model[model.length-1-suffix])) suffix++;
+    return { model:model, prefix:prefix, suffix:suffix, difference:Math.max(words.length,model.length)-prefix-suffix };
+  }).sort(function (a,b) { return a.difference-b.difference; });
+  const best=candidates[0];
+  // Highlight only a small, well-localised mismatch; otherwise avoid false claims.
+  if (!best || best.difference>3 || best.prefix+best.suffix===0) return "";
+  const start=best.prefix, end=words.length-best.suffix;
+  const marked=words.map(function (word,i) { return i>=start && i<end ?
+    '<mark class="marked-answer-part is-wrong">'+escapeHtml(word)+'</mark>' : escapeHtml(word); }).join(' ');
+  const patch=best.model.slice(start,best.model.length-best.suffix).join(" ");
+  return '<div class="marked-answer"><small>'+uiText("Ta réponse — vérifie le passage surligné","Jouw antwoord — controleer het gemarkeerde stukje")+
+    '</small><p>'+marked+'</p>'+
+    (level>=3 && patch ? '<small>'+uiText("Correction du passage : ","Correct zinsdeel: ")+ '<strong>'+escapeHtml(patch)+'</strong></small>':'')+'</div>';
+}
+
 function showFeedback(correct, messageFr, messageNl, allowNext, clearInput) {
   const feedback = document.querySelector("#feedback");
   const input = document.querySelector("#answer-input");
@@ -2003,8 +2047,11 @@ function showFeedback(correct, messageFr, messageNl, allowNext, clearInput) {
   const canReport = itemState && !itemState.item.reported_pending && !itemState.item.completed_at &&
     Number(itemState.item.returned_for_retry ? itemState.item.wrong_since_return : itemState.item.wrong_count || 0) >= 2 &&
     (itemState.item.attempt_history || []).length > 0;
+  const visual = !correct && state.session && state.session.visualAnswer && state.session.visualAnswer.question === state.session.questions[state.session.index] ? state.session.visualAnswer : null;
+  const mistakes = itemState ? Number(itemState.item.wrong_count || 0) : Number(state.session && state.session.questionAttempts || 0) + 1;
+  const marking = visual ? markedAnswerFeedback(visual.question, visual.answer, visual.graded, mistakes) : "";
   feedback.className = "feedback visible " + (correct ? "correct" : "wrong");
-  feedback.innerHTML = '<span class="feedback-mark" aria-hidden="true">' + (correct ? "✓" : "!") + '</span><div><p>' + uiHtml(messageFr, messageNl) + '</p>' +
+  feedback.innerHTML = '<span class="feedback-mark" aria-hidden="true">' + (correct ? "✓" : "!") + '</span><div><p>' + uiHtml(messageFr, messageNl) + '</p>' + marking +
     (!correct && state.session && state.session.assignment_round_number === 1 ? '<button class="button button-primary consult-action" type="button" data-action="consult-round">' + contentIcon("vocabulary") + uiText("Consulter", "Opzoeken") + '</button>' : "") +
     (canReport ? '<p class="report-explanation">' + uiText("Si ta réponse semble correcte, si la question n’est pas claire ou s’il y a un problème technique. Ce n’est pas un bouton « je ne sais pas ».", "Alleen als je antwoord volgens jou juist is, de vraag onduidelijk lijkt of er een technisch probleem is. Niet voor ‘ik weet het niet’.") + '</p><button class="text-button report-action" type="button" data-action="report-round-item">' + uiText("Je pense que ma réponse est refusée à tort", "Mijn antwoord wordt volgens mij onterecht fout gerekend") + '</button>' : '') +
     (allowNext ? '<button class="button ' + (!correct && state.session && state.session.assignment_round_number === 1 ? 'button-secondary' : 'button-primary') + '" type="button" data-action="next-question">' + uiText("Suivant", "Volgende") + '</button>' : "") + '</div>';
