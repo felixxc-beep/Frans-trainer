@@ -775,7 +775,8 @@ function assignmentDisplayPriority(assignment) {
 function roundTrackerHtml(rounds, completed, notStarted) {
   let steps = '';
   for (let number = 1; number <= rounds.required; number += 1) {
-    const status = completed || !notStarted && number < rounds.round ? "complete" : !notStarted && number === rounds.round ? "current" : "future";
+    const status = completed || !notStarted && (rounds.waitingForRelease ? number <= rounds.round : number < rounds.round) ? "complete" :
+      !notStarted && !rounds.waitingForRelease && number === rounds.round ? "current" : "future";
     const symbol = status === "complete" ? "✓" : status === "current" ? "●" : "○";
     const description = status === "complete" ? "terminé / afgerond" : status === "current" ? "en cours / bezig" : "à venir / later";
     steps += '<span class="round-step is-' + status + '" role="listitem" aria-label="' + escapeAttr("Passage " + number + " / Ronde " + number + ": " + description) + '">' +
@@ -791,6 +792,8 @@ function roundStatusHtml(rounds, completed, compact, pendingCount, notStarted) {
         pendingCount + " probleem" + (pendingCount === 1 ? "" : "en") + " gemeld") + '</span>' +
       '<span class="round-awaiting">' + uiText("En attente du professeur", "Wacht op controle van de leerkracht") + '</span>' :
       completed ? '<strong class="round-complete-label">✓ ' + uiText("Devoir terminé", "Taak klaar") + '</strong>' :
+      rounds.waitingForRelease ? '<strong class="round-complete-label">✓ ' + uiText("Tour terminé", "Ronde klaar") + '</strong><span class="round-awaiting">' +
+        uiText("Attends le prochain tour du professeur.", "Wacht tot je leerkracht de volgende ronde vrijgeeft.") + '</span>' :
       '<strong class="task-round-label">' + uiText("Passage " + rounds.round + " sur " + rounds.required,
         "Ronde " + rounds.round + " van " + rounds.required) + '</strong>' +
       '<span class="task-round-score"><b>' + rounds.done + ' / ' + rounds.selected + '</b><small>' + uiText("traités", "afgewerkt") + '</small></span>' +
