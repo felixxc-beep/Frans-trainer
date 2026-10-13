@@ -9,7 +9,7 @@ const studentCss = fs.readFileSync("styles.css", "utf8");
 const studentApp = fs.readFileSync("app.js", "utf8");
 const ids = new Set(course.trajectories.flatMap((trajectory) => trajectory.items.map((item) => item.id)));
 
-assert.deepEqual(engine.validateBank(bank, course), { variants: 1735, permanentItems: 1036 });
+assert.deepEqual(engine.validateBank(bank, course), { variants: 1737, permanentItems: 1036 });
 assert.equal(new Set(bank.variants.map((variant) => variant.id)).size, bank.variants.length);
 assert.ok(!bank.variants.some((variant) => variant.id === "T6-VOC-CTX-046" || variant.id === "T3-REV-033"));
 for (const variant of bank.variants) {
