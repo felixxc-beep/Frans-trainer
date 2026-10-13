@@ -1165,7 +1165,7 @@ function compactScopeButton(unit, block, subsection, title, count, category) {
   const goals = exerciseItemsForScope(currentTrajectory(), unit, scope).length;
   const variants = curatedCountForScope(scope);
   return '<button class="scope-all-button' + (/^Action/i.test(unit.top_category) ? ' tone-revision' : '') + '" type="button"' + scopeAttributes(unit, block, subsection, title, category) +
-    '<span class="scope-all-icon">' + dashboardIcon("play") + '</span>' + uiText("Tout pratiquer →", "Alles oefenen →") + '<span class="scope-all-count">' + (variants || count || goals) + '</span>' +
+    '<span class="scope-all-icon">' + dashboardIcon("play") + '</span>' + uiText("Tout pratiquer →", "Alles oefenen →") + '<span class="scope-all-count">' + (goals || count || variants) + '</span>' +
     scopeCountLabelHtml(goals, variants, /^Action/i.test(unit.top_category)) + '</button>';
 }
 
@@ -1175,7 +1175,7 @@ function scopeChoiceCard(unit, block, subsection, title, count, category) {
   const variants = curatedCountForScope(scope);
   const kind = contentTypeKey(subsection === "Actes de parole" ? subsection : title);
   return '<button class="scope-choice-card" type="button"' + scopeAttributes(unit, block, subsection, title, category) +
-    '<span class="content-icon-wrap">' + contentIcon(kind) + '</span><strong>' + escapeHtml(displayScopeTitle(title)) + '</strong><b class="scope-count">' + (variants || count || goals) + '</b>' + scopeCountLabelHtml(goals, variants) +
+    '<span class="content-icon-wrap">' + contentIcon(kind) + '</span><strong>' + escapeHtml(displayScopeTitle(title)) + '</strong><b class="scope-count">' + (goals || count || variants) + '</b>' + scopeCountLabelHtml(goals, variants) +
     '<small lang="nl">' + escapeHtml(scopeLabelDutch(title)) + '</small><span class="scope-cta">' + uiText("Pratiquer →", "Oefenen →") + '</span></button>';
 }
 
