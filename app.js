@@ -713,7 +713,8 @@ function assignmentProgress(assignment) {
     progress.pendingReports = savedRounds.reduce(function (total, round) {
       return total + Object.values(round.items || {}).filter(function (item) { return item.reported_pending; }).length;
     }, 0);
-    progress.status = progress.pendingReports && progress.rounds.completed ? "pending_review" :
+    progress.status = progress.rounds.waitingForRelease ? "waiting_release" :
+      progress.pendingReports && progress.rounds.completed ? "pending_review" :
       progress.rounds.completed ? "completed" :
       assignment.due_at && new Date(assignment.due_at) < new Date() ? "late" : savedRounds.length ? "in_progress" : "not_started";
   }
@@ -729,6 +730,7 @@ function assignmentDue(assignment) {
 
 function assignmentStatus(progress) {
   const labels = {
+    waiting_release: ["Tour terminé — en attente du professeur", "Ronde klaar — wacht op volgende ronde"],
     completed: ["Terminée", "Afgerond"],
     pending_review: ["En attente du professeur", "Wacht op controle van de leerkracht"],
     late: ["En retard", "Te laat"],
@@ -741,7 +743,7 @@ function assignmentStatus(progress) {
 function assignmentCard(assignment) {
   const progress = assignmentProgress(assignment);
   const completed = progress.status === "completed";
-  const waiting = progress.status === "pending_review";
+  const waiting = progress.status === "pending_review" || progress.status === "waiting_release";
   const roundStatus = progress.rounds ? roundCardStatus(progress) : null;
   return '<button class="assignment-card' + (roundStatus ? ' is-' + roundStatus.className : completed ? ' is-complete' : '') + '" type="button" data-action="' + (completed || waiting ? "show-assignment-detail" : "launch-assignment") + '" data-id="' + escapeAttr(assignment.id) + '">' +
     '<span class="assignment-kind">' + uiText("Devoir", "Taak") + '</span>' +
@@ -756,6 +758,7 @@ function assignmentCard(assignment) {
 
 function roundCardStatus(progress) {
   const status = progress.status;
+  if (status === "waiting_release") return { className: "complete", fr: "✓ Tour terminé", nl: "✓ Ronde klaar" };
   if (status === "completed") return { className: "complete", fr: "✓ Terminé", nl: "Klaar" };
   if (status === "late") return { className: "late", fr: "En retard", nl: "Te laat — niet klaar" };
   if (status === "not_started") return { className: "todo", fr: "À faire", nl: "Niet gestart" };
@@ -947,7 +950,7 @@ function launchAssignment(id) {
       assignment.include_integrative_sentences ? round.number : null, assignment.use_exercise_variants === true, round.number,
       window.MonParcoursExercisePolicy ? window.MonParcoursExercisePolicy.read(assignment.instructions).forms : null,
       allItems.filter(function (item) { return round.selected_item_ids.includes(item.id); }),
-      window.MonParcoursExercisePolicy ? window.MonParcoursExercisePolicy.read(assignment.instructions).poolSettings : null);
+      window.MonParcoursExercisePolicy ? Object.assign({},window.MonParcoursExercisePolicy.read(assignment.instructions).poolSettings || {}, {size:round.pool_size || window.MonParcoursExercisePolicy.read(assignment.instructions).poolSettings && window.MonParcoursExercisePolicy.read(assignment.instructions).poolSettings.size || "all"}) : null);
     if (!questions.length || pendingIds.some(function (id) {return !questions.some(function (question) {return question.stableItemIds.includes(id);});})) {
       app.innerHTML = '<section class="error-card"><h1>' + uiText("Ce devoir ne peut pas encore commencer.", "Deze taak kan nog niet starten.") +
         '</h1><p>' + uiText("Un élément du cours manque. Préviens ton professeur.", "Een cursusitem ontbreekt. Meld dit aan je leerkracht.") + '</p></section>';
