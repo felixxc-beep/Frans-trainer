@@ -1,4 +1,4 @@
-const DATA_URL = "./data/course.json?v=20261011-1";
+const DATA_URL = "./data/course.json?v=20261013-2";
 const VARIANT_DATA_URL = "./data/exercise-variants.json?v=20261013-1";
 const STORAGE_KEY = "monParcoursProgressV1";
 const ACTIVE_SESSION_KEY = "monParcoursActiveSessionV1";
