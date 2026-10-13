@@ -2689,7 +2689,7 @@
       state.course = await response.json();
       state.courseIndex = buildCourseIndex(state.course);
       try {
-        const variantsResponse = await fetch("./data/exercise-variants.json?v=20261013-4");
+        const variantsResponse = await fetch("./data/exercise-variants.json?v=20261013-9");
         if (!variantsResponse.ok) throw Error("VARIANT_LOAD_FAILED");
         const bank = await variantsResponse.json();
         window.MonParcoursExerciseVariants.validateBank(bank, state.course);
