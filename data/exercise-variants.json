@@ -29410,7 +29410,7 @@
       "trajectory": "Trajet 1",
       "kind": "revision",
       "scoring": "multi_gap",
-      "prompt": "Il ___ un message, et elles ___ des messages.",
+      "prompt": "Il ___ un film et elles ___ des vidéos.",
       "instruction": "Vervoeg regarder",
       "gaps": [
         {
