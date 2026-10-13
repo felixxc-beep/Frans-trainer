@@ -483,22 +483,19 @@
     const sessionIds = new Set(sessions.map(function (session) { return session.id; }));
     const roundBySession = Object.create(null);
     sessions.forEach(function (session) { roundBySession[session.id] = Number(session.assignment_round_number || 0) || ""; });
+    const studentById = new Map(asArray(data && data.students).map(function (student) {
+      return [student.id, student.display_name || "Onbekende leerling"];
+    }));
     const groups = Object.create(null);
-
     asArray(data && data.attempts).filter(function (attempt) {
       return sessionIds.has(attempt.session_id);
     }).forEach(function (attempt) {
       const variant = attempt.item_variant == null ? "" : String(attempt.item_variant);
       const key = String(attempt.item_id || "") + "\u001f" + variant;
       if (!groups[key]) groups[key] = {
-        itemId: attempt.item_id,
-        itemVariant: variant,
-        attempts: 0,
-        wrong: 0,
-        students: new Set(),
-        wrongStudents: new Set(),
-        rounds: new Set(),
-        sample: attempt
+        itemId: attempt.item_id, itemVariant: variant, attempts: 0, wrong: 0,
+        students: new Set(), wrongStudents: new Set(), rounds: new Set(),
+        wrongCounts: new Map(), sample: attempt
       };
       const group = groups[key];
       group.attempts += 1;
@@ -507,37 +504,37 @@
       if (attempt.was_correct !== true) {
         group.wrong += 1;
         group.wrongStudents.add(attempt.student_id);
+        group.wrongCounts.set(attempt.student_id, (group.wrongCounts.get(attempt.student_id) || 0) + 1);
       }
       if (new Date(attempt.created_at || 0).getTime() > new Date(group.sample.created_at || 0).getTime()) group.sample = attempt;
     });
-
     return Object.keys(groups).map(function (key) {
       const group = groups[key];
       const info = describeItem(group.sample, courseIndex);
+      const affected = Array.from(group.wrongCounts.entries()).map(function (entry) {
+        return { name: studentById.get(entry[0]) || "Onbekende leerling", count: entry[1] };
+      }).sort(function (a, b) { return b.count - a.count || a.name.localeCompare(b.name, "nl"); });
       return {
-        itemId: group.itemId,
-        itemVariant: group.itemVariant,
-        prompt: info.title,
-        answer: info.answer,
-        path: info.path,
-        attempts: group.attempts,
-        wrong: group.wrong,
-        wrongPercentage: percentage(group.wrong, group.attempts),
-        students: group.students.size,
-        wrongStudents: group.wrongStudents.size,
-        rounds: Array.from(group.rounds).sort(function (a,b) { return a-b; }).join(", ")
+        itemId: group.itemId, itemVariant: group.itemVariant, prompt: info.title,
+        answer: info.answer, path: info.path, attempts: group.attempts,
+        wrong: group.wrong, wrongPercentage: percentage(group.wrong, group.attempts),
+        students: group.students.size, wrongStudents: group.wrongStudents.size,
+        rounds: Array.from(group.rounds).sort(function (a,b) { return a-b; }).join(", "),
+        affected: affected
       };
-    }).filter(function (row) {
-      return row.wrong > 0;
-    }).sort(function (left, right) {
-      return right.wrongStudents - left.wrongStudents ||
-        right.wrongPercentage - left.wrongPercentage ||
-        right.wrong - left.wrong ||
-        String(left.itemId).localeCompare(String(right.itemId));
-    }).map(function (row) {
-      return [task.title, row.path, row.prompt, row.answer, row.itemId, row.itemVariant,
-        row.attempts, row.wrong, row.wrongPercentage + "%", row.students, row.wrongStudents, row.rounds];
-    });
+    }).filter(function (row) { return row.wrong > 0; })
+      .sort(function (left, right) {
+        return right.wrongStudents - left.wrongStudents ||
+          right.wrongPercentage - left.wrongPercentage ||
+          right.wrong - left.wrong ||
+          String(left.itemId).localeCompare(String(right.itemId));
+      }).map(function (row) {
+        return [task.title, row.path, row.prompt, row.answer, row.itemId, row.itemVariant,
+          row.attempts, row.wrong, row.wrongPercentage + "%", row.students,
+          row.wrongStudents, row.rounds,
+          row.affected.map(function (entry) { return entry.name + " (" + entry.count + "×)"; }).join(", "),
+          row.affected.length ? row.affected[0].name + " (" + row.affected[0].count + "×)" : ""];
+      });
   }
 
   function difficultItems(attempts, courseIndex) {
@@ -2346,8 +2343,8 @@
         await ensureAnalyticsData();
         const rows = taskErrorAnalysisRows(task, state.raw, state.courseIndex);
         downloadCsv("foutenanalyse-" + safeFilename(task.title) + ".csv",
-          ["Taak", "Onderdeel", "Oefening / prompt", "Correct antwoord", "Leerdoel-ID", "Variant", "Pogingen", "Foute pogingen", "Foutpercentage", "Leerlingen geprobeerd", "Leerlingen met fout", "Ronde(s)"],
-          rows.length ? rows : [[task.title, "", "Nog geen foute pogingen geregistreerd", "", "", "", 0, 0, "0%", 0, 0, ""]]);
+          ["Taak", "Onderdeel", "Oefening / prompt", "Correct antwoord", "Leerdoel-ID", "Variant", "Pogingen", "Foute pogingen", "Foutpercentage", "Leerlingen geprobeerd", "Leerlingen met fout", "Ronde(s)", "Leerlingen met fouten (aantal)", "Meest getroffen leerling"],
+          rows.length ? rows : [[task.title, "", "Nog geen foute pogingen geregistreerd", "", "", "", 0, 0, "0%", 0, 0, "", "", ""]]);
       } catch (error) {
         state.tasks.message = "Foutenanalyse kon niet worden geladen. Probeer opnieuw.";
         renderCurrent();
