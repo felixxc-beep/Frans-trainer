@@ -2827,32 +2827,50 @@
             {
               "subject": "je",
               "form": "je traine",
-              "accepted_answers": ["je traine", "je traîne"]
+              "accepted_answers": [
+                "je traine",
+                "je traîne"
+              ]
             },
             {
               "subject": "tu",
               "form": "tu traines",
-              "accepted_answers": ["tu traines", "tu traînes"]
+              "accepted_answers": [
+                "tu traines",
+                "tu traînes"
+              ]
             },
             {
               "subject": "il/elle/on",
               "form": "il/elle/on traine",
-              "accepted_answers": ["il/elle/on traine", "il/elle/on traîne"]
+              "accepted_answers": [
+                "il/elle/on traine",
+                "il/elle/on traîne"
+              ]
             },
             {
               "subject": "nous",
               "form": "nous trainons",
-              "accepted_answers": ["nous trainons", "nous traînons"]
+              "accepted_answers": [
+                "nous trainons",
+                "nous traînons"
+              ]
             },
             {
               "subject": "vous",
               "form": "vous trainez",
-              "accepted_answers": ["vous trainez", "vous traînez"]
+              "accepted_answers": [
+                "vous trainez",
+                "vous traînez"
+              ]
             },
             {
               "subject": "ils/elles",
               "form": "ils/elles trainent",
-              "accepted_answers": ["ils/elles trainent", "ils/elles traînent"]
+              "accepted_answers": [
+                "ils/elles trainent",
+                "ils/elles traînent"
+              ]
             }
           ],
           "id": "uf1-item-000122"
@@ -3991,7 +4009,7 @@
           "category": "substantifs",
           "type": "vocabulary",
           "fr": "la jumelle",
-          "nl": "de tweelinge",
+          "nl": "de tweeling",
           "gender": "f",
           "id": "uf1-item-000192"
         },
