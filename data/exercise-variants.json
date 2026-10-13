@@ -28795,6 +28795,673 @@
       ],
       "scope_kind": "focused",
       "generated_for_application": true
+    },
+    {
+      "id": "T1-REV-ACTION-001",
+      "trajectory": "Trajet 1",
+      "kind": "revision",
+      "scoring": "multi_gap",
+      "prompt": "Je ___ douze ans et mon frère ___ quinze ans.",
+      "instruction": "Vul de juiste vorm van avoir in",
+      "gaps": [
+        {
+          "id": "gap-1",
+          "accepted_answers": [
+            "ai"
+          ],
+          "targets": [
+            "uf1-item-000125"
+          ]
+        },
+        {
+          "id": "gap-2",
+          "accepted_answers": [
+            "a"
+          ],
+          "targets": [
+            "uf1-item-000125"
+          ]
+        }
+      ],
+      "source": "Action ! Trajet 1 — digitaal geïnspireerde herhaling"
+    },
+    {
+      "id": "T1-REV-ACTION-002",
+      "trajectory": "Trajet 1",
+      "kind": "revision",
+      "scoring": "multi_gap",
+      "prompt": "Nous ___ en première année et notre professeur ___ sympa.",
+      "instruction": "Vul de juiste vorm van être in",
+      "gaps": [
+        {
+          "id": "gap-1",
+          "accepted_answers": [
+            "sommes"
+          ],
+          "targets": [
+            "uf1-item-000124"
+          ]
+        },
+        {
+          "id": "gap-2",
+          "accepted_answers": [
+            "est"
+          ],
+          "targets": [
+            "uf1-item-000124"
+          ]
+        }
+      ],
+      "source": "Action ! Trajet 1 — digitaal geïnspireerde herhaling"
+    },
+    {
+      "id": "T1-REV-ACTION-003",
+      "trajectory": "Trajet 1",
+      "kind": "revision",
+      "scoring": "multi_gap",
+      "prompt": "Tu ___ à Lille et tes amis ___ à Roubaix.",
+      "instruction": "Vervoeg habiter",
+      "gaps": [
+        {
+          "id": "gap-1",
+          "accepted_answers": [
+            "habites"
+          ],
+          "targets": [
+            "uf1-item-000114"
+          ]
+        },
+        {
+          "id": "gap-2",
+          "accepted_answers": [
+            "habitent"
+          ],
+          "targets": [
+            "uf1-item-000114"
+          ]
+        }
+      ],
+      "source": "Action ! Trajet 1 — digitaal geïnspireerde herhaling"
+    },
+    {
+      "id": "T1-REV-ACTION-004",
+      "trajectory": "Trajet 1",
+      "kind": "revision",
+      "scoring": "multi_gap",
+      "prompt": "Léa ___ au tennis et ses frères ___ au foot.",
+      "instruction": "Vervoeg jouer",
+      "gaps": [
+        {
+          "id": "gap-1",
+          "accepted_answers": [
+            "joue"
+          ],
+          "targets": [
+            "uf1-item-000115"
+          ]
+        },
+        {
+          "id": "gap-2",
+          "accepted_answers": [
+            "jouent"
+          ],
+          "targets": [
+            "uf1-item-000115"
+          ]
+        }
+      ],
+      "source": "Action ! Trajet 1 — digitaal geïnspireerde herhaling"
+    },
+    {
+      "id": "T1-REV-ACTION-005",
+      "trajectory": "Trajet 1",
+      "kind": "revision",
+      "scoring": "multi_gap",
+      "prompt": "Je ___ le sport, mais ma sœur ___ le football.",
+      "instruction": "Vervoeg de juiste werkwoorden",
+      "gaps": [
+        {
+          "id": "gap-1",
+          "accepted_answers": [
+            "aime"
+          ],
+          "targets": [
+            "uf1-item-000104"
+          ]
+        },
+        {
+          "id": "gap-2",
+          "accepted_answers": [
+            "déteste"
+          ],
+          "targets": [
+            "uf1-item-000111"
+          ]
+        }
+      ],
+      "source": "Action ! Trajet 1 — digitaal geïnspireerde herhaling"
+    },
+    {
+      "id": "T1-REV-ACTION-006",
+      "trajectory": "Trajet 1",
+      "kind": "revision",
+      "scoring": "multi_gap",
+      "prompt": "Nous ___ le professeur et vous ___ la leçon.",
+      "instruction": "Vervoeg écouter",
+      "gaps": [
+        {
+          "id": "gap-1",
+          "accepted_answers": [
+            "écoutons"
+          ],
+          "targets": [
+            "uf1-item-000113"
+          ]
+        },
+        {
+          "id": "gap-2",
+          "accepted_answers": [
+            "écoutez"
+          ],
+          "targets": [
+            "uf1-item-000113"
+          ]
+        }
+      ],
+      "source": "Action ! Trajet 1 — digitaal geïnspireerde herhaling"
+    },
+    {
+      "id": "T1-REV-ACTION-007",
+      "trajectory": "Trajet 1",
+      "kind": "revision",
+      "scoring": "multi_gap",
+      "prompt": "Mes copines ___ ensemble et je ___ seul.",
+      "instruction": "Vervoeg danser",
+      "gaps": [
+        {
+          "id": "gap-1",
+          "accepted_answers": [
+            "dansent"
+          ],
+          "targets": [
+            "uf1-item-000109"
+          ]
+        },
+        {
+          "id": "gap-2",
+          "accepted_answers": [
+            "danse"
+          ],
+          "targets": [
+            "uf1-item-000109"
+          ]
+        }
+      ],
+      "source": "Action ! Trajet 1 — digitaal geïnspireerde herhaling"
+    },
+    {
+      "id": "T1-REV-ACTION-008",
+      "trajectory": "Trajet 1",
+      "kind": "revision",
+      "scoring": "multi_gap",
+      "prompt": "Paul ___ un arbre et nous ___ une maison.",
+      "instruction": "Vervoeg dessiner",
+      "gaps": [
+        {
+          "id": "gap-1",
+          "accepted_answers": [
+            "dessine"
+          ],
+          "targets": [
+            "uf1-item-000110"
+          ]
+        },
+        {
+          "id": "gap-2",
+          "accepted_answers": [
+            "dessinons"
+          ],
+          "targets": [
+            "uf1-item-000110"
+          ]
+        }
+      ],
+      "source": "Action ! Trajet 1 — digitaal geïnspireerde herhaling"
+    },
+    {
+      "id": "T1-REV-ACTION-009",
+      "trajectory": "Trajet 1",
+      "kind": "revision",
+      "scoring": "multi_gap",
+      "prompt": "Je ___ un vélo et mes parents ___ une voiture.",
+      "instruction": "Vervoeg chercher",
+      "gaps": [
+        {
+          "id": "gap-1",
+          "accepted_answers": [
+            "cherche"
+          ],
+          "targets": [
+            "uf1-item-000106"
+          ]
+        },
+        {
+          "id": "gap-2",
+          "accepted_answers": [
+            "cherchent"
+          ],
+          "targets": [
+            "uf1-item-000106"
+          ]
+        }
+      ],
+      "source": "Action ! Trajet 1 — digitaal geïnspireerde herhaling"
+    },
+    {
+      "id": "T1-REV-ACTION-010",
+      "trajectory": "Trajet 1",
+      "kind": "revision",
+      "scoring": "multi_gap",
+      "prompt": "On ___ le cours à huit heures et nous ___ à neuf heures.",
+      "instruction": "Vervoeg commencer",
+      "gaps": [
+        {
+          "id": "gap-1",
+          "accepted_answers": [
+            "commence"
+          ],
+          "targets": [
+            "uf1-item-000107"
+          ]
+        },
+        {
+          "id": "gap-2",
+          "accepted_answers": [
+            "commençons"
+          ],
+          "targets": [
+            "uf1-item-000107"
+          ]
+        }
+      ],
+      "source": "Action ! Trajet 1 — digitaal geïnspireerde herhaling"
+    },
+    {
+      "id": "T1-REV-ACTION-011",
+      "trajectory": "Trajet 1",
+      "kind": "revision",
+      "scoring": "multi_gap",
+      "prompt": "Dans ma classe, il y a ___ fille. ___ fille s'appelle Alice.",
+      "instruction": "Vul het juiste lidwoord in",
+      "gaps": [
+        {
+          "id": "gap-1",
+          "accepted_answers": [
+            "une"
+          ],
+          "targets": [
+            "uf1-item-000127"
+          ]
+        },
+        {
+          "id": "gap-2",
+          "accepted_answers": [
+            "La"
+          ],
+          "targets": [
+            "uf1-item-000130"
+          ]
+        }
+      ],
+      "source": "Action ! Trajet 1 — digitaal geïnspireerde herhaling"
+    },
+    {
+      "id": "T1-REV-ACTION-013",
+      "trajectory": "Trajet 1",
+      "kind": "revision",
+      "scoring": "multi_gap",
+      "prompt": "Il y a ___ élèves dans la classe. ___ élèves parlent français.",
+      "instruction": "Vul het juiste lidwoord in",
+      "gaps": [
+        {
+          "id": "gap-1",
+          "accepted_answers": [
+            "des"
+          ],
+          "targets": [
+            "uf1-item-000128"
+          ]
+        },
+        {
+          "id": "gap-2",
+          "accepted_answers": [
+            "Les"
+          ],
+          "targets": [
+            "uf1-item-000132"
+          ]
+        }
+      ],
+      "source": "Action ! Trajet 1 — digitaal geïnspireerde herhaling"
+    },
+    {
+      "id": "T1-REV-ACTION-014",
+      "trajectory": "Trajet 1",
+      "kind": "revision",
+      "scoring": "multi_gap",
+      "prompt": "J'adore ___ musique et ma sœur aime ___ danse.",
+      "instruction": "Vul het bepaald lidwoord in",
+      "gaps": [
+        {
+          "id": "gap-1",
+          "accepted_answers": [
+            "la"
+          ],
+          "targets": [
+            "uf1-item-000130"
+          ]
+        },
+        {
+          "id": "gap-2",
+          "accepted_answers": [
+            "la"
+          ],
+          "targets": [
+            "uf1-item-000130"
+          ]
+        }
+      ],
+      "source": "Action ! Trajet 1 — digitaal geïnspireerde herhaling"
+    },
+    {
+      "id": "T1-REV-ACTION-015",
+      "trajectory": "Trajet 1",
+      "kind": "revision",
+      "scoring": "multi_gap",
+      "prompt": "Nous avons ___ chien. ___ chien adore jouer.",
+      "instruction": "Kies het passende lidwoord",
+      "gaps": [
+        {
+          "id": "gap-1",
+          "accepted_answers": [
+            "un"
+          ],
+          "targets": [
+            "uf1-item-000126"
+          ]
+        },
+        {
+          "id": "gap-2",
+          "accepted_answers": [
+            "Le"
+          ],
+          "targets": [
+            "uf1-item-000129"
+          ]
+        }
+      ],
+      "source": "Action ! Trajet 1 — digitaal geïnspireerde herhaling"
+    },
+    {
+      "id": "T1-REV-ACTION-016",
+      "trajectory": "Trajet 1",
+      "kind": "revision",
+      "scoring": "multi_gap",
+      "prompt": "Tu ___ un frère ? Non, je ___ deux sœurs.",
+      "instruction": "Vul avoir in",
+      "gaps": [
+        {
+          "id": "gap-1",
+          "accepted_answers": [
+            "as"
+          ],
+          "targets": [
+            "uf1-item-000125"
+          ]
+        },
+        {
+          "id": "gap-2",
+          "accepted_answers": [
+            "ai"
+          ],
+          "targets": [
+            "uf1-item-000125"
+          ]
+        }
+      ],
+      "source": "Action ! Trajet 1 — digitaal geïnspireerde herhaling"
+    },
+    {
+      "id": "T1-REV-ACTION-017",
+      "trajectory": "Trajet 1",
+      "kind": "revision",
+      "scoring": "multi_gap",
+      "prompt": "Il ___ un professeur, mais ils ___ des élèves.",
+      "instruction": "Vul être in",
+      "gaps": [
+        {
+          "id": "gap-1",
+          "accepted_answers": [
+            "est"
+          ],
+          "targets": [
+            "uf1-item-000124"
+          ]
+        },
+        {
+          "id": "gap-2",
+          "accepted_answers": [
+            "sont"
+          ],
+          "targets": [
+            "uf1-item-000124"
+          ]
+        }
+      ],
+      "source": "Action ! Trajet 1 — digitaal geïnspireerde herhaling"
+    },
+    {
+      "id": "T1-REV-ACTION-018",
+      "trajectory": "Trajet 1",
+      "kind": "revision",
+      "scoring": "multi_gap",
+      "prompt": "Vous ___ au basket et nous ___ au badminton.",
+      "instruction": "Vervoeg jouer",
+      "gaps": [
+        {
+          "id": "gap-1",
+          "accepted_answers": [
+            "jouez"
+          ],
+          "targets": [
+            "uf1-item-000115"
+          ]
+        },
+        {
+          "id": "gap-2",
+          "accepted_answers": [
+            "jouons"
+          ],
+          "targets": [
+            "uf1-item-000115"
+          ]
+        }
+      ],
+      "source": "Action ! Trajet 1 — digitaal geïnspireerde herhaling"
+    },
+    {
+      "id": "T1-REV-ACTION-019",
+      "trajectory": "Trajet 1",
+      "kind": "revision",
+      "scoring": "multi_gap",
+      "prompt": "Je ___ avec mes amis et elle ___ avec sa sœur.",
+      "instruction": "Vervoeg parler",
+      "gaps": [
+        {
+          "id": "gap-1",
+          "accepted_answers": [
+            "parle"
+          ],
+          "targets": [
+            "uf1-item-000118"
+          ]
+        },
+        {
+          "id": "gap-2",
+          "accepted_answers": [
+            "parle"
+          ],
+          "targets": [
+            "uf1-item-000118"
+          ]
+        }
+      ],
+      "source": "Action ! Trajet 1 — digitaal geïnspireerde herhaling"
+    },
+    {
+      "id": "T1-REV-ACTION-020",
+      "trajectory": "Trajet 1",
+      "kind": "revision",
+      "scoring": "multi_gap",
+      "prompt": "Ma mère ___ le dîner et nous ___ aussi.",
+      "instruction": "Vervoeg cuisiner",
+      "gaps": [
+        {
+          "id": "gap-1",
+          "accepted_answers": [
+            "cuisine"
+          ],
+          "targets": [
+            "uf1-item-000108"
+          ]
+        },
+        {
+          "id": "gap-2",
+          "accepted_answers": [
+            "cuisinons"
+          ],
+          "targets": [
+            "uf1-item-000108"
+          ]
+        }
+      ],
+      "source": "Action ! Trajet 1 — digitaal geïnspireerde herhaling"
+    },
+    {
+      "id": "T1-REV-ACTION-021",
+      "trajectory": "Trajet 1",
+      "kind": "revision",
+      "scoring": "multi_gap",
+      "prompt": "J'___ les films et tu ___ les vidéos.",
+      "instruction": "Vervoeg adorer",
+      "gaps": [
+        {
+          "id": "gap-1",
+          "accepted_answers": [
+            "adore"
+          ],
+          "targets": [
+            "uf1-item-000102"
+          ]
+        },
+        {
+          "id": "gap-2",
+          "accepted_answers": [
+            "adores"
+          ],
+          "targets": [
+            "uf1-item-000102"
+          ]
+        }
+      ],
+      "source": "Action ! Trajet 1 — digitaal geïnspireerde herhaling"
+    },
+    {
+      "id": "T1-REV-ACTION-022",
+      "trajectory": "Trajet 1",
+      "kind": "revision",
+      "scoring": "multi_gap",
+      "prompt": "Vous ___ le samedi et ils ___ le mercredi.",
+      "instruction": "Vervoeg nager",
+      "gaps": [
+        {
+          "id": "gap-1",
+          "accepted_answers": [
+            "nagez"
+          ],
+          "targets": [
+            "uf1-item-000117"
+          ]
+        },
+        {
+          "id": "gap-2",
+          "accepted_answers": [
+            "nagent"
+          ],
+          "targets": [
+            "uf1-item-000117"
+          ]
+        }
+      ],
+      "source": "Action ! Trajet 1 — digitaal geïnspireerde herhaling"
+    },
+    {
+      "id": "T1-REV-ACTION-023",
+      "trajectory": "Trajet 1",
+      "kind": "revision",
+      "scoring": "multi_gap",
+      "prompt": "Il ___ un message, et elles ___ des messages.",
+      "instruction": "Vervoeg regarder",
+      "gaps": [
+        {
+          "id": "gap-1",
+          "accepted_answers": [
+            "regarde"
+          ],
+          "targets": [
+            "uf1-item-000120"
+          ]
+        },
+        {
+          "id": "gap-2",
+          "accepted_answers": [
+            "regardent"
+          ],
+          "targets": [
+            "uf1-item-000120"
+          ]
+        }
+      ],
+      "source": "Action ! Trajet 1 — digitaal geïnspireerde herhaling"
+    },
+    {
+      "id": "T1-REV-ACTION-024",
+      "trajectory": "Trajet 1",
+      "kind": "revision",
+      "scoring": "multi_gap",
+      "prompt": "Ma sœur ___ du piano et nous ___ du tennis.",
+      "instruction": "Vervoeg jouer",
+      "gaps": [
+        {
+          "id": "gap-1",
+          "accepted_answers": [
+            "joue"
+          ],
+          "targets": [
+            "uf1-item-000115"
+          ]
+        },
+        {
+          "id": "gap-2",
+          "accepted_answers": [
+            "jouons"
+          ],
+          "targets": [
+            "uf1-item-000115"
+          ]
+        }
+      ],
+      "source": "Action ! Trajet 1 — digitaal geïnspireerde herhaling"
     }
   ]
 }
