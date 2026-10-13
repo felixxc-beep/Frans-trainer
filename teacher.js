@@ -1230,14 +1230,26 @@
     draft.exercise_forms_initialized = true;
     if (!available.length) return heading + '<p>Voor dit onderdeel zijn nog geen geschikte oefeningen beschikbaar.</p></fieldset>';
     const total = available.reduce(function (sum, option) { return sum + option.variantCount + option.courseCount; }, 0);
-    return heading + '<p><strong>' + total + ' beschikbare oefeningen.</strong> Kies welke oefenvormen de leerlingen krijgen.</p>' +
+    return heading + '<p><strong>' + total + ' beschikbare oefeningen.</strong> Vink de gewenste oefenvormen aan (één of meerdere). Alleen beschikbare vormen worden getoond.</p>' +
       '<div class="task-class-grid">' + available.map(function (option) {
         const count = option.variantCount + option.courseCount;
         return '<label class="task-class"><input type="checkbox" name="exercise_forms" value="' + escapeHtml(option.key) + '"' +
           (draft.exercise_forms.includes(option.key) ? ' checked' : '') +
           (draft.status !== "draft" ? ' disabled' : '') + '><span>' +
-          escapeHtml(option.key === "vocabulary_direct" ? "Losse woorden vertalen" :
-            option.key === "vocabulary_context" ? "Woordenschat in een zin" : policy.labels[option.key]) +
+          escapeHtml(({
+            vocabulary_direct: "Losse woorden vertalen",
+            vocabulary_context: "Woorden in een zin",
+            verb_conjugation: "Werkwoorden vervoegen",
+            verb_context: "Werkwoorden in een zin",
+            grammar_context: "Grammatica in een zin",
+            grammar_mixed: "Gemengde grammaticaoefeningen",
+            phrase_direct: "Zinnen vertalen",
+            phrase_context: "Zinnen in context",
+            revision: "Révision: volledige zinnen",
+            revision_other: "Révision: andere oefeningen",
+            numbers: "Getallen",
+            spelling: "Spelling"
+          })[option.key] || policy.labels[option.key]) +
           ' (' + count + ')</span></label>';
       }).join('') + '</div>' +
       (!draft.exercise_forms.length ? '<p class="form-message" role="alert">Vink minstens één oefenvorm aan.</p>' : '') +
@@ -2565,6 +2577,11 @@
     const taskForm = event.target.closest && event.target.closest('form[data-form="task-editor"]');
     if (taskForm) {
       updateTaskDraftFromForm(taskForm);
+      if (event.target.name === "exercise_forms" && !state.tasks.draft.exercise_forms.length) {
+        // A task always needs one valid form; retain the final selected checkbox.
+        event.target.checked = true;
+        updateTaskDraftFromForm(taskForm);
+      }
       if (["trajectory", "top_category", "lesson", "block", "subsection", "category"].includes(event.target.name)) {
         const wasAuto = state.tasks.draft.title === state.tasks.draft.autoTitle;
         const order = ["trajectory", "top_category", "lesson", "block", "subsection", "category"];
