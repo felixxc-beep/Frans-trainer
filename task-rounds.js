@@ -59,13 +59,25 @@
       random_sample_item_ids: selected.filter(function (id) { return reasons[id] === "random_sample"; }) };
   }
 
+  function configuredSize(assignment) {
+    const history = assignment.round_size_history || [];
+    const latest = history.length ? history[history.length - 1].size : null;
+    const value = latest == null ? null : latest;
+    if (value != null) return value;
+    const instructions = String(assignment.instructions || "");
+    const match = instructions.match(/"pool":2,"size":("all"|[0-9]+)/);
+    return match ? JSON.parse(match[1]) : "all";
+  }
+
   function createRound(assignment, rounds, random) {
     const number = (rounds || []).length + 1;
+    const size = configuredSize(assignment);
     const ids = uniqueIds(assignment.item_ids);
+    const limited = size === "all" ? ids : ids.slice(0, Math.max(1,Number(size)||ids.length));
     const chosen = number <= 2
-      ? { selected_item_ids: ids, selection_reasons: Object.fromEntries(ids.map(function (id) { return [id, "full_round"]; })), random_sample_item_ids: [] }
+      ? { selected_item_ids: limited, selection_reasons: Object.fromEntries(limited.map(function (id) { return [id, "full_round"]; })), random_sample_item_ids: [] }
       : selectReview(ids, rounds, random);
-    return { number: number, selected_item_ids: chosen.selected_item_ids,
+    return { number: number, pool_size: size, selected_item_ids: chosen.selected_item_ids,
       random_sample_item_ids: chosen.random_sample_item_ids, selection_reasons: chosen.selection_reasons,
       items: Object.fromEntries(chosen.selected_item_ids.map(function (id) {
         return [id, { wrong_count: 0, consulted: false, completed_at: null, reported_pending: false }];
@@ -76,7 +88,7 @@
     const required = Math.min(4, Math.max(1, Number(assignment.required_rounds || 1)));
     const existing = rounds || [];
     for (const round of existing) if (!roundComplete(round)) return round;
-    if (existing.length >= required) return null;
+    if (existing.length >= required || existing.length >= Math.min(required,Number(assignment.released_rounds || required))) return null;
     return createRound(assignment, existing);
   }
 
@@ -97,11 +109,12 @@
     const required = Math.min(4, Math.max(1, Number(assignment.required_rounds || 1)));
     const active = currentRound(assignment, rounds);
     const completed = !active && (rounds || []).length >= required;
+    const waitingForRelease = !active && !completed && (rounds || []).length >= Math.min(required,Number(assignment.released_rounds || required));
     const selected = active ? active.selected_item_ids : [];
     const done = selected.filter(function (id) { return active.items[id] &&
       (active.items[id].completed_at || active.items[id].reported_pending); }).length;
     return { required: required, round: active ? active.number : required, selected: selected.length,
-      done: done, remaining: selected.length - done, completed: completed };
+      done: done, remaining: selected.length - done, completed: completed, waitingForRelease: waitingForRelease };
   }
 
   return { MINIMUM_REVIEW_FRACTION: MINIMUM_REVIEW_FRACTION, selectReview: selectReview,
