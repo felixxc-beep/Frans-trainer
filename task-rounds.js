@@ -77,14 +77,27 @@
     const number = (rounds || []).length + 1;
     const size = configuredSize(assignment);
     const ids = uniqueIds(assignment.item_ids);
-    const limited = size === "all" ? ids : ids.slice(0, Math.max(1,Number(size)||ids.length));
-    const review = number > 2 ? selectReview(ids, rounds, random) : null;
-    const chosen = number <= 2
-      ? { selected_item_ids: limited, selection_reasons: Object.fromEntries(limited.map(function (id) { return [id, "full_round"]; })), random_sample_item_ids: [] }
-      : Object.assign({}, review, { selected_item_ids: size === "all" ? review.selected_item_ids : review.selected_item_ids.slice(0, Math.max(1, Number(size) || review.selected_item_ids.length)) });
-    return { number: number, started_at: new Date().toISOString(), pool_size: size, selected_item_ids: chosen.selected_item_ids,
-      random_sample_item_ids: chosen.random_sample_item_ids, selection_reasons: chosen.selection_reasons,
-      items: Object.fromEntries(chosen.selected_item_ids.map(function (id) {
+    const limit = size === "all" ? ids.length : Math.min(ids.length, Math.max(1, Number(size) || ids.length));
+    const previous = (rounds || [])[number - 2];
+    const previousWrong = ids.filter(function (id) {
+      return previous && previous.items[id] && Number(previous.items[id].wrong_count || 0) > 0;
+    });
+    const reviewed = number >= 3 ? selectReview(ids, rounds, random) : null;
+    const priority = number >= 3 ? reviewed.selected_item_ids :
+      number === 2 && size !== "all" ? previousWrong.concat(ids.filter(function (id) {
+        return !previousWrong.includes(id);
+      })) : ids;
+    const selected = uniqueIds(priority).slice(0, limit);
+    ids.forEach(function (id) { if (selected.length < limit && !selected.includes(id)) selected.push(id); });
+    const reasons = Object.fromEntries(selected.map(function (id) {
+      return [id, number === 1 || number === 2 && size === "all" ? "full_round" :
+        previousWrong.includes(id) ? "previous_round_error" :
+        reviewed && reviewed.selection_reasons[id] || "random_sample"];
+    }));
+    return { number: number, started_at: new Date().toISOString(), pool_size: size, selected_item_ids: selected,
+      random_sample_item_ids: selected.filter(function (id) { return reasons[id] === "random_sample"; }),
+      selection_reasons: reasons,
+      items: Object.fromEntries(selected.map(function (id) {
         return [id, { wrong_count: 0, consulted: false, completed_at: null, reported_pending: false }];
       })) };
   }
