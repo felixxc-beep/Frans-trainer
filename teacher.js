@@ -2362,6 +2362,7 @@
       if (action === "release-next-round") {
         if (!window.confirm("De volgende ronde voor de hele klas vrijgeven? Leerlingen die hun vorige ronde klaar hebben, kunnen dan beginnen.")) return;
         params.p_release = Number(task.released_rounds || task.required_rounds) + 1;
+        params.p_next_size = size;
       } else params.p_next_size = size;
       const result = await state.client.rpc("configure_assignment_rounds", params);
       if (result.error) {
