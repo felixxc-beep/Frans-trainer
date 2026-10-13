@@ -1,5 +1,5 @@
 const DATA_URL = "./data/course.json?v=20261013-2";
-const VARIANT_DATA_URL = "./data/exercise-variants.json?v=20261013-1";
+const VARIANT_DATA_URL = "./data/exercise-variants.json?v=20261013-4";
 const STORAGE_KEY = "monParcoursProgressV1";
 const ACTIVE_SESSION_KEY = "monParcoursActiveSessionV1";
 const MASTERY_ATTEMPTS_KEY = "monParcoursMasteryAttemptsV1";
@@ -8,7 +8,7 @@ const ASSIGNMENTS_CACHE_KEY = "monParcoursAssignmentsCacheV1";
 const VERB_EVIDENCE_KEY = "monParcoursVerbEvidenceV1";
 const VERB_SERVER_CACHE_KEY = "monParcoursVerbServerCacheV1";
 const TASK_ROUNDS_KEY = "monParcoursTaskRoundsV1";
-const APP_VERSION = "20261012-6";
+const APP_VERSION = "20261013-4";
 const INACTIVITY_TIMEOUT_MS = 60000;
 const MAX_DYNAMIC_NUMBER_ALL = 101;
 const ACCENTS = ["é", "è", "ê", "ë", "à", "â", "ç", "ù", "û", "ô", "î", "ï"];
@@ -1924,7 +1924,7 @@ function submitAnswer(rawAnswer) {
       showFeedback(true, "Bonne réponse !", "Juist antwoord!", true);
     } else {
       requeueRoundQuestion(question);
-      const hint = nearCorrectHint(rawAnswer, question);
+      const hint = sentenceCorrectionHint(rawAnswer, question) || nearCorrectHint(rawAnswer, question);
       showFeedback(false, hint ? hint.fr : session.assignment_round_number === 1 ? "Pas encore" : "Pas encore. Regarde dans ton cours.",
         hint ? hint.nl : session.assignment_round_number === 1 ? "Nog niet juist" : "Nog niet juist. Kijk in je boek.", true);
     }
@@ -1942,8 +1942,9 @@ function submitAnswer(rawAnswer) {
   if (session.mode === "practice" && question.variantScoring === "integrative") {
     recordAttempt(question, correct, graded);
     if (!correct) requeueRoundQuestion(question);
-    showFeedback(correct, correct ? "Bonne réponse !" : "Pas encore. Cette phrase reviendra plus tard.",
-      correct ? "Juist antwoord!" : "Nog niet juist. Deze zin komt later terug.", true);
+    const hint = correct ? null : sentenceCorrectionHint(rawAnswer, question);
+    showFeedback(correct, correct ? "Bonne réponse !" : hint ? hint.fr : "Pas encore. Cette phrase reviendra plus tard.",
+      correct ? "Juist antwoord!" : hint ? hint.nl : "Nog niet juist. Deze zin komt later terug.", true);
     return;
   }
 
@@ -2811,6 +2812,29 @@ function oneSmallSpellingDifference(left, right) {
     else { a += 1; b += 1; }
   }
   return differences + (a < left.length || b < right.length ? 1 : 0) === 1;
+}
+
+function sentenceCorrectionHint(rawAnswer, question) {
+  if (!question || question.variantScoring !== "integrative" || typeof rawAnswer !== "string") return null;
+  const entered = normalizeAnswer(rawAnswer, true);
+  if (question.variantId === "T1-REV-003") {
+    if (/\bj'aime\b/.test(entered))
+      return { fr: "Qui aime ? Lucas = il. N'utilise pas « j'aime ».", nl: "Wie houdt ervan? Lucas = hij. Gebruik dus niet « j'aime »." };
+    if (/\bau le (foot|football)\b/.test(entered))
+      return { fr: "Attention : on dit « aimer le foot », pas « aimer au le foot ».", nl: "Let op: het is « aimer le foot », niet « aimer au le foot »." };
+    if (/\bador(e|ent|es|ons|ez)\b/.test(entered))
+      return { fr: "« Adorer » est plus fort que « aimer ». Traduis précisément « houdt van ».", nl: "« Adorer » is sterker dan « aimer ». Vertaal « houdt van » zo precies mogelijk." };
+    if (/\bjeu vidéo\b/.test(entered) || !/\bles jeux vidéo\b/.test(entered))
+      return { fr: "Vérifie l'article et le pluriel dans « les jeux vidéo ».", nl: "Controleer het lidwoord en het meervoud bij « les jeux vidéo »." };
+  }
+  const expected = String((question.answers || [])[0] || "");
+  const modelWords = normalizeAnswer(expected, true).split(/\s+/);
+  const actualWords = entered.split(/\s+/);
+  if (modelWords.length !== actualWords.length)
+    return { fr: "Vérifie les petits mots (articles, prépositions) et les mots manquants ou en trop.", nl: "Controleer de kleine woorden (lidwoorden, voorzetsels) en of er woorden ontbreken of te veel staan." };
+  if (modelWords.some(function (word, index) { return word !== actualWords[index]; }))
+    return { fr: "Regarde les accords, les conjugaisons et l'orthographe de ta phrase.", nl: "Controleer de vervoegingen, overeenkomsten en spelling in je zin." };
+  return null;
 }
 
 function nearCorrectHint(rawAnswer, question) {
