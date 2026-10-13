@@ -1637,6 +1637,7 @@
         }).join('') + '</select></label> <button class="button button-secondary" type="button" data-action="save-future-round-size">Opslaan voor volgende rondes</button>' +
         (Number(task.released_rounds || task.required_rounds) < Number(task.required_rounds) ?
           ' <button class="button button-primary" type="button" data-action="release-next-round">Ronde ' + (Number(task.released_rounds || 0) + 1) + ' vrijgeven</button>' : '') +
+        (Number(task.required_rounds) < 4 ? ' <button class="button button-secondary" type="button" data-action="extend-task-rounds">Extra ronde toevoegen</button>' : '') +
         '</section>' : '') +
       (task.instructions ? '<p>' + escapeHtml(window.MonParcoursExercisePolicy ? window.MonParcoursExercisePolicy.read(task.instructions).text : task.instructions) + '</p>' : '') +
       '<div class="task-summary"><span><strong>' + completedCount + '/' + rows.length + '</strong> afgerond</span><span><strong>' + startedCount + '</strong> bezig</span><span><strong>' + (rows.length - completedCount - startedCount) + '</strong> niet gestart</span><span><strong>' + averageMastery + '%</strong> gemiddelde beheersing</span></div>' + reportSection +
@@ -2328,6 +2329,15 @@
         renderCurrent();
       }
       return;
+    }
+    if (action === "extend-task-rounds") {
+      const task = state.tasks.list.find(function (row) { return row.id === state.tasks.selectedId; });
+      if (!task || !(currentTeacherIsAdmin() || task.created_by_teacher_id === state.user.id)) return;
+      const result = await state.client.rpc("extend_assignment_rounds",
+        { p_assignment_id: task.id, p_required: Number(task.required_rounds) + 1 });
+      if (result.error) { state.tasks.message = result.error.message || "Ronde toevoegen mislukt."; return renderCurrent(); }
+      await openTasks(true);
+      return openTaskDetail(task.id);
     }
     if (action === "release-next-round" || action === "save-future-round-size") {
       const task = state.tasks.list.find(function (row) { return row.id === state.tasks.selectedId; });
