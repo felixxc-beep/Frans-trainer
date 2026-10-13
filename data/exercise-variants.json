@@ -28827,6 +28827,421 @@
       ],
       "scope_kind": "focused",
       "generated_for_application": true
+    },
+    {
+      "id": "T1-REV-031",
+      "trajectory": "Trajet 1",
+      "kind": "revision",
+      "scoring": "multi_gap",
+      "prompt": "Complète avec les mots qui conviennent.\nMon ___ s’appelle Noé. Il aime ___ des BD et il est très ___.",
+      "instruction": "Vul de tekst aan met passende woorden",
+      "gaps": [
+        {
+          "id": "gap-1",
+          "accepted_answers": [
+            "frère"
+          ],
+          "targets": [
+            "uf1-item-000022"
+          ]
+        },
+        {
+          "id": "gap-2",
+          "accepted_answers": [
+            "lire"
+          ],
+          "targets": [
+            "uf1-item-000085"
+          ]
+        },
+        {
+          "id": "gap-3",
+          "accepted_answers": [
+            "sociable"
+          ],
+          "targets": [
+            "uf1-item-000097"
+          ]
+        }
+      ],
+      "generated_for_application": true
+    },
+    {
+      "id": "T1-REV-032",
+      "trajectory": "Trajet 1",
+      "kind": "revision",
+      "scoring": "multi_gap",
+      "prompt": "Vertaal de woorden en vul de zinnen aan.\nMon frère adore le ___ (wielersport). Il ___ (kijkt naar) toutes les courses à la télé. Ma sœur aime ___ (praten) avec ses amies, mais elle n’est pas très ___ (sportief).",
+      "instruction": "Vertaal en vul aan",
+      "gaps": [
+        {
+          "id": "gap-1",
+          "accepted_answers": [
+            "cyclisme"
+          ],
+          "targets": [
+            "uf1-item-000064"
+          ]
+        },
+        {
+          "id": "gap-2",
+          "accepted_answers": [
+            "regarde"
+          ],
+          "targets": [
+            "uf1-item-000120"
+          ]
+        },
+        {
+          "id": "gap-3",
+          "accepted_answers": [
+            "parler"
+          ],
+          "targets": [
+            "uf1-item-000088"
+          ]
+        },
+        {
+          "id": "gap-4",
+          "accepted_answers": [
+            "sportive"
+          ],
+          "targets": [
+            "uf1-item-000098"
+          ]
+        }
+      ],
+      "generated_for_application": true
+    },
+    {
+      "id": "T1-REV-033",
+      "trajectory": "Trajet 1",
+      "kind": "revision",
+      "scoring": "single",
+      "prompt": "Remplace le mot souligné par le synonyme appris : « J’ai beaucoup de hobbys. »\nRemplace « hobbys ».",
+      "instruction": "Vervang door een synoniem",
+      "accepted_answers": [
+        "loisirs"
+      ],
+      "targets": [
+        "uf1-item-000072"
+      ],
+      "generated_for_application": true
+    },
+    {
+      "id": "T1-REV-034",
+      "trajectory": "Trajet 1",
+      "kind": "revision",
+      "scoring": "single",
+      "prompt": "Remplace le mot souligné par le synonyme appris : « J’ai des copains dans ma classe. »\nRemplace « copains ».",
+      "instruction": "Vervang door een synoniem",
+      "accepted_answers": [
+        "amis"
+      ],
+      "targets": [
+        "uf1-item-000002"
+      ],
+      "generated_for_application": true
+    },
+    {
+      "id": "T1-REV-035",
+      "trajectory": "Trajet 1",
+      "kind": "revision",
+      "scoring": "single",
+      "prompt": "Remplace le mot souligné par un synonyme : « Notre nouvelle prof est chouette. »\nRemplace « chouette ».",
+      "instruction": "Vervang door een synoniem",
+      "accepted_answers": [
+        "sympa"
+      ],
+      "targets": [
+        "uf1-item-000041"
+      ],
+      "generated_for_application": true
+    },
+    {
+      "id": "T1-REV-036",
+      "trajectory": "Trajet 1",
+      "kind": "revision",
+      "scoring": "single",
+      "prompt": "Dans « Mon coach est sévère », que veut dire « sévère » ?\na) ernstig   b) sportief   c) streng",
+      "instruction": "Duid de juiste betekenis aan",
+      "accepted_answers": [
+        "c",
+        "streng"
+      ],
+      "targets": [
+        "uf1-item-000096"
+      ],
+      "generated_for_application": true
+    },
+    {
+      "id": "T1-REV-037",
+      "trajectory": "Trajet 1",
+      "kind": "revision",
+      "scoring": "single",
+      "prompt": "Dans « Mon amie est très drôle », que veut dire « drôle » ?\na) grappig   b) vriendelijk   c) nieuw",
+      "instruction": "Duid de juiste betekenis aan",
+      "accepted_answers": [
+        "a",
+        "grappig"
+      ],
+      "targets": [
+        "uf1-item-000091"
+      ],
+      "generated_for_application": true
+    },
+    {
+      "id": "T1-REV-038",
+      "trajectory": "Trajet 1",
+      "kind": "revision",
+      "scoring": "multi_gap",
+      "prompt": "Complète par le bon pronom personnel sujet.\n— Lina et moi, ___ aidons le professeur.\n— Et vous, ___ avez beaucoup de travail ?\n— Non, après, ___ allons manger.",
+      "instruction": "Vul het juiste onderwerp in",
+      "gaps": [
+        {
+          "id": "gap-1",
+          "accepted_answers": [
+            "nous"
+          ],
+          "targets": [
+            "uf1-item-000103"
+          ]
+        },
+        {
+          "id": "gap-2",
+          "accepted_answers": [
+            "vous"
+          ],
+          "targets": [
+            "uf1-item-000125"
+          ]
+        },
+        {
+          "id": "gap-3",
+          "accepted_answers": [
+            "nous"
+          ],
+          "targets": [
+            "uf1-item-000115"
+          ]
+        }
+      ],
+      "evidence_policy": "practice_only",
+      "generated_for_application": true
+    },
+    {
+      "id": "T1-REV-039",
+      "trajectory": "Trajet 1",
+      "kind": "revision",
+      "scoring": "single",
+      "prompt": "Mets au pluriel : « Tu chantes beaucoup à l’école. »",
+      "instruction": "Zet de zin in het meervoud",
+      "accepted_answers": [
+        "Vous chantez beaucoup à l’école.",
+        "Vous chantez beaucoup à l'ecole.",
+        "Vous chantez beaucoup à l' école."
+      ],
+      "targets": [
+        "uf1-item-000105"
+      ],
+      "generated_for_application": true
+    },
+    {
+      "id": "T1-REV-040",
+      "trajectory": "Trajet 1",
+      "kind": "revision",
+      "scoring": "single",
+      "prompt": "Mets au pluriel : « Il dessine un ballon. »",
+      "instruction": "Zet de zin in het meervoud",
+      "accepted_answers": [
+        "Ils dessinent des ballons."
+      ],
+      "targets": [
+        "uf1-item-000110",
+        "uf1-item-000128"
+      ],
+      "generated_for_application": true
+    },
+    {
+      "id": "T1-REV-041",
+      "trajectory": "Trajet 1",
+      "kind": "revision",
+      "scoring": "multi_gap",
+      "prompt": "Être ou avoir ? Complète.\nDans ma classe, il y ___ quinze élèves. Amira ___ ma copine. Monsieur, vous ___ le directeur ?",
+      "instruction": "Vul de juiste vorm van être of avoir in",
+      "gaps": [
+        {
+          "id": "gap-1",
+          "accepted_answers": [
+            "a"
+          ],
+          "targets": [
+            "uf1-item-000125"
+          ]
+        },
+        {
+          "id": "gap-2",
+          "accepted_answers": [
+            "est"
+          ],
+          "targets": [
+            "uf1-item-000124"
+          ]
+        },
+        {
+          "id": "gap-3",
+          "accepted_answers": [
+            "êtes"
+          ],
+          "targets": [
+            "uf1-item-000124"
+          ]
+        }
+      ],
+      "generated_for_application": true
+    },
+    {
+      "id": "T1-REV-042",
+      "trajectory": "Trajet 1",
+      "kind": "revision",
+      "scoring": "multi_gap",
+      "prompt": "Conjugue les verbes.\nJe ___ (être) Léa et j’___ (habiter) à Turnhout. Ma mère ___ (aimer) cuisiner. Nous ___ (être) quatre à la maison.",
+      "instruction": "Vervoeg de werkwoorden",
+      "gaps": [
+        {
+          "id": "gap-1",
+          "accepted_answers": [
+            "suis"
+          ],
+          "targets": [
+            "uf1-item-000124"
+          ]
+        },
+        {
+          "id": "gap-2",
+          "accepted_answers": [
+            "habite"
+          ],
+          "targets": [
+            "uf1-item-000114"
+          ]
+        },
+        {
+          "id": "gap-3",
+          "accepted_answers": [
+            "aime"
+          ],
+          "targets": [
+            "uf1-item-000104"
+          ]
+        },
+        {
+          "id": "gap-4",
+          "accepted_answers": [
+            "sommes"
+          ],
+          "targets": [
+            "uf1-item-000124"
+          ]
+        }
+      ],
+      "generated_for_application": true
+    },
+    {
+      "id": "T1-REV-043",
+      "trajectory": "Trajet 1",
+      "kind": "revision",
+      "scoring": "multi_gap",
+      "prompt": "Traduis le verbe et mets-le au présent.\nNous ___ un grand arbre. (tekenen)\nPapa et maman ___ une maison à Turnhout. (zoeken)",
+      "instruction": "Vertaal en vervoeg",
+      "gaps": [
+        {
+          "id": "gap-1",
+          "accepted_answers": [
+            "dessinons"
+          ],
+          "targets": [
+            "uf1-item-000110"
+          ]
+        },
+        {
+          "id": "gap-2",
+          "accepted_answers": [
+            "cherchent"
+          ],
+          "targets": [
+            "uf1-item-000106"
+          ]
+        }
+      ],
+      "generated_for_application": true
+    },
+    {
+      "id": "T1-REV-044",
+      "trajectory": "Trajet 1",
+      "kind": "revision",
+      "scoring": "multi_gap",
+      "prompt": "Complète par un article défini ou indéfini.\n— Qu’est-ce que tu prends ?\n— ___ limonade. Et toi ?\n— ___ thé citron. J’adore ___ thé, mais je déteste ___ glace.",
+      "instruction": "Vul het juiste lidwoord in",
+      "gaps": [
+        {
+          "id": "gap-1",
+          "accepted_answers": [
+            "une"
+          ],
+          "targets": [
+            "uf1-item-000127"
+          ]
+        },
+        {
+          "id": "gap-2",
+          "accepted_answers": [
+            "un"
+          ],
+          "targets": [
+            "uf1-item-000126"
+          ]
+        },
+        {
+          "id": "gap-3",
+          "accepted_answers": [
+            "le"
+          ],
+          "targets": [
+            "uf1-item-000129",
+            "uf1-item-000134"
+          ]
+        },
+        {
+          "id": "gap-4",
+          "accepted_answers": [
+            "la"
+          ],
+          "targets": [
+            "uf1-item-000130",
+            "uf1-item-000134"
+          ]
+        }
+      ],
+      "generated_for_application": true
+    },
+    {
+      "id": "T1-REV-045",
+      "trajectory": "Trajet 1",
+      "kind": "revision",
+      "scoring": "integrative",
+      "prompt": "Fiche : Lina — 12 ans — Turnhout — aime la gym — a un chien.\nCorrige la phrase : « Lina habite à Bruxelles et elle déteste la gym. »",
+      "instruction": "Verbeter de zin op basis van de fiche",
+      "accepted_answers": [
+        "Lina habite à Turnhout et elle aime la gym."
+      ],
+      "targets": [
+        "uf1-item-000024",
+        "uf1-item-000551",
+        "uf1-item-000561"
+      ],
+      "evidence_policy": "practice_only",
+      "generated_for_application": true
     }
   ]
 }
