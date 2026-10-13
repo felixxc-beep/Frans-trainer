@@ -8,7 +8,7 @@ const ASSIGNMENTS_CACHE_KEY = "monParcoursAssignmentsCacheV1";
 const VERB_EVIDENCE_KEY = "monParcoursVerbEvidenceV1";
 const VERB_SERVER_CACHE_KEY = "monParcoursVerbServerCacheV1";
 const TASK_ROUNDS_KEY = "monParcoursTaskRoundsV1";
-const APP_VERSION = "20261013-4";
+const APP_VERSION = "20261013-5";
 const INACTIVITY_TIMEOUT_MS = 60000;
 const MAX_DYNAMIC_NUMBER_ALL = 101;
 const ACCENTS = ["é", "è", "ê", "ë", "à", "â", "ç", "ù", "û", "ô", "î", "ï"];
@@ -1924,7 +1924,7 @@ function submitAnswer(rawAnswer) {
       showFeedback(true, "Bonne réponse !", "Juist antwoord!", true);
     } else {
       requeueRoundQuestion(question);
-      const hint = sentenceCorrectionHint(rawAnswer, question) || nearCorrectHint(rawAnswer, question);
+      const hint = sentenceCorrectionHint(rawAnswer, question, Number(itemState && itemState.wrong_count || 0) >= 2) || nearCorrectHint(rawAnswer, question);
       showFeedback(false, hint ? hint.fr : session.assignment_round_number === 1 ? "Pas encore" : "Pas encore. Regarde dans ton cours.",
         hint ? hint.nl : session.assignment_round_number === 1 ? "Nog niet juist" : "Nog niet juist. Kijk in je boek.", true);
     }
@@ -1942,7 +1942,7 @@ function submitAnswer(rawAnswer) {
   if (session.mode === "practice" && question.variantScoring === "integrative") {
     recordAttempt(question, correct, graded);
     if (!correct) requeueRoundQuestion(question);
-    const hint = correct ? null : sentenceCorrectionHint(rawAnswer, question);
+    const hint = correct ? null : sentenceCorrectionHint(rawAnswer, question, Number(question.reviewCount || 0) > 0);
     showFeedback(correct, correct ? "Bonne réponse !" : hint ? hint.fr : "Pas encore. Cette phrase reviendra plus tard.",
       correct ? "Juist antwoord!" : hint ? hint.nl : "Nog niet juist. Deze zin komt later terug.", true);
     return;
@@ -2814,8 +2814,9 @@ function oneSmallSpellingDifference(left, right) {
   return differences + (a < left.length || b < right.length ? 1 : 0) === 1;
 }
 
-function sentenceCorrectionHint(rawAnswer, question) {
+function sentenceCorrectionHint(rawAnswer, question, detailed) {
   if (!question || question.variantScoring !== "integrative" || typeof rawAnswer !== "string") return null;
+  if (!detailed) return { fr: "Relis ta phrase. Vérifie les verbes, les articles et les petits mots.", nl: "Lees je zin nog eens na. Controleer werkwoorden, lidwoorden en kleine woorden." };
   const entered = normalizeAnswer(rawAnswer, true);
   if (question.variantId === "T1-REV-003") {
     if (/\bj'aime\b/.test(entered))
