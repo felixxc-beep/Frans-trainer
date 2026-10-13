@@ -28795,6 +28795,38 @@
       ],
       "scope_kind": "focused",
       "generated_for_application": true
+    },
+    {
+      "id": "T5-APPLY-PP-858",
+      "trajectory": "Trajet 5",
+      "kind": "grammar",
+      "scoring": "single",
+      "prompt": "Nous avons ___ les nouveaux mots. (retenir)",
+      "instruction": "Vul het participe passé in",
+      "accepted_answers": [
+        "retenu"
+      ],
+      "targets": [
+        "uf1-item-000858"
+      ],
+      "scope_kind": "focused",
+      "generated_for_application": true
+    },
+    {
+      "id": "T6-APPLY-AGREE-990",
+      "trajectory": "Trajet 6",
+      "kind": "grammar",
+      "scoring": "single",
+      "prompt": "Lucas et Emma sont ___ en ville. (sortir)",
+      "instruction": "Vul het participe passé correct aan",
+      "accepted_answers": [
+        "sortis"
+      ],
+      "targets": [
+        "uf1-item-000990"
+      ],
+      "scope_kind": "focused",
+      "generated_for_application": true
     }
   ]
 }
