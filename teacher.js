@@ -1628,6 +1628,16 @@
       }).join('') + '</div>' : '<p class="muted">Geen meldingen die op beoordeling wachten.</p>') + '</section>' : '';
     return '<div class="page-heading"><div><p class="eyebrow">Taak · ' + escapeHtml(taskLifecycle(task) === "recent" ? "Recent afgelopen" : taskLifecycle(task) === "archived" ? "Gearchiveerd" : taskLifecycle(task) === "draft" ? "Concept" : "Actief") + '</p><h2>' + escapeHtml(task.title) + '</h2><p class="muted">' + (verbTask ? asArray(task.requirements).length + ' werkwoorddoelen' : asArray(task.item_ids).length + ' leerdoelen') + ' · ' + (task.completion_strategy === "rounds" ? task.required_rounds + ' rondes' : 'doel ' + task.target_acquired_percentage + '%') + ' · ' + escapeHtml(task.due_at ? formatDate(task.due_at) : "Geen deadline") + '</p></div><div class="export-actions"><button class="button button-secondary" type="button" data-action="view-tasks">Terug</button><button class="button button-secondary" type="button" data-action="export-task">CSV</button><button class="button button-secondary" type="button" data-action="export-task-errors">Foutenanalyse CSV</button>' + (editable ? '<button class="button button-primary" type="button" data-action="edit-task">Bewerken</button>' + (task.status === "published" ? '<button class="button button-secondary" type="button" data-action="archive-task">Archiveren</button>' : '') : task.status === "archived" && canManage ? '<button class="button button-primary" type="button" data-action="restore-task">Herstellen</button>' : '') + '</div></div>' +
       (task.status === "archived" && canManage && taskLifecycle(Object.assign({}, task, { status: "published" }), Date.now()) === "archived" ? '<p class="muted">Na herstel blijft deze taak wegens de oorspronkelijke deadline in het archief. Pas de deadline daarna aan als je haar opnieuw actief wilt maken.</p>' : '') +
+      (editable && task.status === "published" && task.completion_strategy === "rounds" ?
+        '<section class="section-block"><h3>Rondes beheren</h3><p>' + Number(task.released_rounds || task.required_rounds) + ' van ' + task.required_rounds + ' rondes vrijgegeven. Een lopende ronde blijft ongewijzigd.</p>' +
+        '<label>Oefeningen in volgende rondes <select id="futureRoundSize">' + ['10','20','30','all'].map(function (size) {
+          const history = asArray(task.round_size_history);
+          const last = history.length ? String(history[history.length - 1].size) : String(window.MonParcoursExercisePolicy && window.MonParcoursExercisePolicy.read(task.instructions).poolSettings && window.MonParcoursExercisePolicy.read(task.instructions).poolSettings.size || 'all');
+          return '<option value="' + size + '"' + (last === size ? ' selected' : '') + '>' + (size === 'all' ? 'Alle beschikbare oefeningen' : size + ' oefeningen') + '</option>';
+        }).join('') + '</select></label> <button class="button button-secondary" type="button" data-action="save-future-round-size">Opslaan voor volgende rondes</button>' +
+        (Number(task.released_rounds || task.required_rounds) < Number(task.required_rounds) ?
+          ' <button class="button button-primary" type="button" data-action="release-next-round">Ronde ' + (Number(task.released_rounds || 0) + 1) + ' vrijgeven</button>' : '') +
+        '</section>' : '') +
       (task.instructions ? '<p>' + escapeHtml(window.MonParcoursExercisePolicy ? window.MonParcoursExercisePolicy.read(task.instructions).text : task.instructions) + '</p>' : '') +
       '<div class="task-summary"><span><strong>' + completedCount + '/' + rows.length + '</strong> afgerond</span><span><strong>' + startedCount + '</strong> bezig</span><span><strong>' + (rows.length - completedCount - startedCount) + '</strong> niet gestart</span><span><strong>' + averageMastery + '%</strong> gemiddelde beheersing</span></div>' + reportSection +
       '<label class="task-filter"><span>Status</span><select id="taskStatusFilter"><option value="all"' + (state.tasks.filter === "all" ? ' selected' : '') + '>Alle</option>' + Object.entries(statuses).map(function (entry) { return '<option value="' + entry[0] + '"' + (state.tasks.filter === entry[0] ? ' selected' : '') + '>' + entry[1] + '</option>'; }).join("") + '</select></label>' +
@@ -2317,6 +2327,26 @@
         state.tasks.message = "Beoordeling niet opgeslagen. Controleer je verbinding en probeer opnieuw.";
         renderCurrent();
       }
+      return;
+    }
+    if (action === "release-next-round" || action === "save-future-round-size") {
+      const task = state.tasks.list.find(function (row) { return row.id === state.tasks.selectedId; });
+      if (!task || task.status !== "published" || task.completion_strategy !== "rounds" ||
+        !(currentTeacherIsAdmin() || task.created_by_teacher_id === state.user.id)) return;
+      const sizeElement = document.querySelector("#futureRoundSize");
+      const size = sizeElement ? sizeElement.value : "all";
+      const params = { p_assignment_id: task.id };
+      if (action === "release-next-round") {
+        if (!window.confirm("De volgende ronde voor de hele klas vrijgeven? Leerlingen die hun vorige ronde klaar hebben, kunnen dan beginnen.")) return;
+        params.p_release = Number(task.released_rounds || task.required_rounds) + 1;
+      } else params.p_next_size = size;
+      const result = await state.client.rpc("configure_assignment_rounds", params);
+      if (result.error) {
+        state.tasks.message = "Rondebeheer mislukt: " + (result.error.message || "Controleer de verbinding.");
+        return renderCurrent();
+      }
+      await openTasks(true);
+      await openTaskDetail(task.id);
       return;
     }
     if (action === "edit-task") {
