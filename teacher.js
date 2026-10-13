@@ -6,7 +6,7 @@
   const TABLE_COLUMNS = Object.freeze({
     classes: "id,name,is_active,created_at",
     students: "id,class_id,display_name,is_active,created_at",
-    practice_sessions: "id,student_id,client_session_id,trajectory,top_category,lesson,block,subsection,exercise_key,mode,question_count,attempt_count,correct_count,incorrect_count,active_duration_seconds,started_at,finished_at",
+    practice_sessions: "id,student_id,client_session_id,assignment_id,assignment_round_number,trajectory,top_category,lesson,block,subsection,exercise_key,mode,question_count,attempt_count,correct_count,incorrect_count,active_duration_seconds,started_at,finished_at",
     practice_attempts: "id,session_id,student_id,item_id,equivalent_item_ids,item_variant,item_type,trajectory,top_category,lesson,block,subsection,exercise_key,mode,correct_answers,was_correct,attempt_number,created_at"
   });
   const MANAGEMENT_COLUMNS = Object.freeze({
@@ -473,6 +473,71 @@
     const sessions = data.sessions.filter(function (session) { return session.student_id === student.id; });
     const attempts = data.attempts.filter(function (attempt) { return attempt.student_id === student.id; });
     return Object.assign({ student: student, sessionRows: sessions, attemptRows: attempts }, summarize(sessions, attempts));
+  }
+
+  function taskErrorAnalysisRows(task, data, courseIndex) {
+    if (!task) return [];
+    const sessions = asArray(data && data.sessions).filter(function (session) {
+      return String(session.assignment_id || "") === String(task.id || "");
+    });
+    const sessionIds = new Set(sessions.map(function (session) { return session.id; }));
+    const roundBySession = Object.create(null);
+    sessions.forEach(function (session) { roundBySession[session.id] = Number(session.assignment_round_number || 0) || ""; });
+    const groups = Object.create(null);
+
+    asArray(data && data.attempts).filter(function (attempt) {
+      return sessionIds.has(attempt.session_id);
+    }).forEach(function (attempt) {
+      const variant = attempt.item_variant == null ? "" : String(attempt.item_variant);
+      const key = String(attempt.item_id || "") + "\u001f" + variant;
+      if (!groups[key]) groups[key] = {
+        itemId: attempt.item_id,
+        itemVariant: variant,
+        attempts: 0,
+        wrong: 0,
+        students: new Set(),
+        wrongStudents: new Set(),
+        rounds: new Set(),
+        sample: attempt
+      };
+      const group = groups[key];
+      group.attempts += 1;
+      group.students.add(attempt.student_id);
+      if (roundBySession[attempt.session_id]) group.rounds.add(roundBySession[attempt.session_id]);
+      if (attempt.was_correct !== true) {
+        group.wrong += 1;
+        group.wrongStudents.add(attempt.student_id);
+      }
+      if (new Date(attempt.created_at || 0).getTime() > new Date(group.sample.created_at || 0).getTime()) group.sample = attempt;
+    });
+
+    return Object.keys(groups).map(function (key) {
+      const group = groups[key];
+      const info = describeItem(group.sample, courseIndex);
+      return {
+        itemId: group.itemId,
+        itemVariant: group.itemVariant,
+        prompt: info.title,
+        answer: info.answer,
+        path: info.path,
+        attempts: group.attempts,
+        wrong: group.wrong,
+        wrongPercentage: percentage(group.wrong, group.attempts),
+        students: group.students.size,
+        wrongStudents: group.wrongStudents.size,
+        rounds: Array.from(group.rounds).sort(function (a,b) { return a-b; }).join(", ")
+      };
+    }).filter(function (row) {
+      return row.wrong > 0;
+    }).sort(function (left, right) {
+      return right.wrongStudents - left.wrongStudents ||
+        right.wrongPercentage - left.wrongPercentage ||
+        right.wrong - left.wrong ||
+        String(left.itemId).localeCompare(String(right.itemId));
+    }).map(function (row) {
+      return [task.title, row.path, row.prompt, row.answer, row.itemId, row.itemVariant,
+        row.attempts, row.wrong, row.wrongPercentage + "%", row.students, row.wrongStudents, row.rounds];
+    });
   }
 
   function difficultItems(attempts, courseIndex) {
@@ -1540,7 +1605,7 @@
             ' · ' + escapeHtml(formatDate(report.resolved_at || report.created_at)) + '</p>' :
             '<div class="export-actions"><button class="button button-primary" type="button" data-action="resolve-item-report" data-id="' + escapeHtml(report.id) + '" data-decision="approved">Goedkeuren</button><button class="button button-secondary" type="button" data-action="resolve-item-report" data-id="' + escapeHtml(report.id) + '" data-decision="rejected">Terugsturen</button></div>') + '</article>';
       }).join('') + '</div>' : '<p class="muted">Geen meldingen die op beoordeling wachten.</p>') + '</section>' : '';
-    return '<div class="page-heading"><div><p class="eyebrow">Taak · ' + escapeHtml(taskLifecycle(task) === "recent" ? "Recent afgelopen" : taskLifecycle(task) === "archived" ? "Gearchiveerd" : taskLifecycle(task) === "draft" ? "Concept" : "Actief") + '</p><h2>' + escapeHtml(task.title) + '</h2><p class="muted">' + (verbTask ? asArray(task.requirements).length + ' werkwoorddoelen' : asArray(task.item_ids).length + ' leerdoelen') + ' · ' + (task.completion_strategy === "rounds" ? task.required_rounds + ' rondes' : 'doel ' + task.target_acquired_percentage + '%') + ' · ' + escapeHtml(task.due_at ? formatDate(task.due_at) : "Geen deadline") + '</p></div><div class="export-actions"><button class="button button-secondary" type="button" data-action="view-tasks">Terug</button><button class="button button-secondary" type="button" data-action="export-task">CSV</button>' + (editable ? '<button class="button button-primary" type="button" data-action="edit-task">Bewerken</button>' + (task.status === "published" ? '<button class="button button-secondary" type="button" data-action="archive-task">Archiveren</button>' : '') : task.status === "archived" && canManage ? '<button class="button button-primary" type="button" data-action="restore-task">Herstellen</button>' : '') + '</div></div>' +
+    return '<div class="page-heading"><div><p class="eyebrow">Taak · ' + escapeHtml(taskLifecycle(task) === "recent" ? "Recent afgelopen" : taskLifecycle(task) === "archived" ? "Gearchiveerd" : taskLifecycle(task) === "draft" ? "Concept" : "Actief") + '</p><h2>' + escapeHtml(task.title) + '</h2><p class="muted">' + (verbTask ? asArray(task.requirements).length + ' werkwoorddoelen' : asArray(task.item_ids).length + ' leerdoelen') + ' · ' + (task.completion_strategy === "rounds" ? task.required_rounds + ' rondes' : 'doel ' + task.target_acquired_percentage + '%') + ' · ' + escapeHtml(task.due_at ? formatDate(task.due_at) : "Geen deadline") + '</p></div><div class="export-actions"><button class="button button-secondary" type="button" data-action="view-tasks">Terug</button><button class="button button-secondary" type="button" data-action="export-task">CSV</button><button class="button button-secondary" type="button" data-action="export-task-errors">Foutenanalyse CSV</button>' + (editable ? '<button class="button button-primary" type="button" data-action="edit-task">Bewerken</button>' + (task.status === "published" ? '<button class="button button-secondary" type="button" data-action="archive-task">Archiveren</button>' : '') : task.status === "archived" && canManage ? '<button class="button button-primary" type="button" data-action="restore-task">Herstellen</button>' : '') + '</div></div>' +
       (task.status === "archived" && canManage && taskLifecycle(Object.assign({}, task, { status: "published" }), Date.now()) === "archived" ? '<p class="muted">Na herstel blijft deze taak wegens de oorspronkelijke deadline in het archief. Pas de deadline daarna aan als je haar opnieuw actief wilt maken.</p>' : '') +
       (task.instructions ? '<p>' + escapeHtml(window.MonParcoursExercisePolicy ? window.MonParcoursExercisePolicy.read(task.instructions).text : task.instructions) + '</p>' : '') +
       '<div class="task-summary"><span><strong>' + completedCount + '/' + rows.length + '</strong> afgerond</span><span><strong>' + startedCount + '</strong> bezig</span><span><strong>' + (rows.length - completedCount - startedCount) + '</strong> niet gestart</span><span><strong>' + averageMastery + '%</strong> gemiddelde beheersing</span></div>' + reportSection +
@@ -2272,6 +2337,21 @@
       if (!task) return;
       downloadCsv("taak-" + safeFilename(task.title) + ".csv", ["Taak", "Klas", "Leerling", "Status", "Leerdoelen geoefend", "Leerdoelen totaal", "Beheersing %", "Gekend", "Gekend %", "Doel %", "Voltooid op", "Laatste activiteit", "Actieve taaktijd (s)", "Completion strategy", "Ronde", "Rondes vereist", "Rondeleerdoelen juist", "Rondeleerdoelen totaal"],
         asArray(state.tasks.detail).map(function (row) { const p = row.progress || {}; const r = row.round_progress || {}; const status = row.completed_at ? "Afgerond" : task.due_at && new Date(task.due_at) < new Date() ? "Te laat" : task.completion_strategy === "rounds" ? r.round_number ? "Bezig" : "Niet gestart" : Number(p.practiced || 0) ? "Bezig" : "Niet gestart"; return [task.title, row.class_name, row.student_name, status, p.practiced, p.total, p.mastery_level, p.acquired, Number(p.total || 0) ? Math.round(Number(p.acquired || 0) * 100 / Number(p.total)) : 0, task.completion_strategy === "rounds" ? "" : task.target_acquired_percentage, row.completed_at || "", p.last_activity || "", row.active_task_time || 0, task.completion_strategy || "legacy_mastery", r.round_number || "", r.required_rounds || (task.completion_strategy === "rounds" ? task.required_rounds : ""), r.completed || 0, r.total || 0]; }));
+      return;
+    }
+    if (action === "export-task-errors") {
+      const task = state.tasks.list.find(function (row) { return row.id === state.tasks.selectedId; });
+      if (!task) return;
+      try {
+        await ensureAnalyticsData();
+        const rows = taskErrorAnalysisRows(task, state.raw, state.courseIndex);
+        downloadCsv("foutenanalyse-" + safeFilename(task.title) + ".csv",
+          ["Taak", "Onderdeel", "Oefening / prompt", "Correct antwoord", "Leerdoel-ID", "Variant", "Pogingen", "Foute pogingen", "Foutpercentage", "Leerlingen geprobeerd", "Leerlingen met fout", "Ronde(s)"],
+          rows.length ? rows : [[task.title, "", "Nog geen foute pogingen geregistreerd", "", "", "", 0, 0, "0%", 0, 0, ""]]);
+      } catch (error) {
+        state.tasks.message = "Foutenanalyse kon niet worden geladen. Probeer opnieuw.";
+        renderCurrent();
+      }
       return;
     }
     if (action === "view-teachers") {
