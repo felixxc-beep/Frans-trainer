@@ -2403,7 +2403,8 @@
       "source_line": 868,
       "instruction": "Schrijf de volledige Franse zin",
       "accepted_answers": [
-        "J’aime dessiner."
+        "J’aime dessiner.",
+        "J'adore dessiner."
       ],
       "targets": [
         "uf1-item-000080",
@@ -2464,7 +2465,8 @@
       "source_line": 872,
       "instruction": "Schrijf de volledige Franse zin",
       "accepted_answers": [
-        "J’ai un vélo. Le vélo est nouveau."
+        "J’ai un vélo. Le vélo est nouveau.",
+        "J'ai un vélo. Le vélo est neuf."
       ],
       "targets": [
         "uf1-item-000035"
@@ -2479,7 +2481,8 @@
       "source_line": 873,
       "instruction": "Schrijf de volledige Franse zin",
       "accepted_answers": [
-        "Emma a une casquette. La casquette est nouvelle."
+        "Emma a une casquette. La casquette est nouvelle.",
+        "Emma a une casquette. La casquette est neuve."
       ],
       "targets": [
         "uf1-item-000061"
@@ -2700,7 +2703,7 @@
       "trajectory": "Trajet 1",
       "kind": "revision",
       "scoring": "multi_gap",
-      "prompt": "Lucas ___ le foot et il aime ___ au basket. (adorer)",
+      "prompt": "Lucas ___ le foot et il aime ___ au basket. (adorer / jouer)",
       "source_line": 887,
       "gaps": [
         {
@@ -2721,7 +2724,8 @@
             "uf1-item-000115"
           ]
         }
-      ]
+      ],
+      "instruction": "Vul de juiste vorm van adorer en jouer in."
     },
     {
       "id": "T1-REV-025",
@@ -2887,7 +2891,8 @@
           ]
         }
       ],
-      "source_line": 910
+      "source_line": 910,
+      "instruction": "Kies un/une wanneer iets voor het eerst genoemd wordt; le/la bij herhaling."
     },
     {
       "id": "T1-REV-029",
