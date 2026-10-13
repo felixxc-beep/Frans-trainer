@@ -953,7 +953,7 @@ function launchAssignment(id) {
       assignment.include_integrative_sentences ? round.number : null, assignment.use_exercise_variants === true, round.number,
       window.MonParcoursExercisePolicy ? window.MonParcoursExercisePolicy.read(assignment.instructions).forms : null,
       allItems.filter(function (item) { return round.selected_item_ids.includes(item.id); }),
-      window.MonParcoursExercisePolicy ? Object.assign({},window.MonParcoursExercisePolicy.read(assignment.instructions).poolSettings || {}, {size:round.pool_size || window.MonParcoursExercisePolicy.read(assignment.instructions).poolSettings && window.MonParcoursExercisePolicy.read(assignment.instructions).poolSettings.size || "all"}) : null);
+      window.MonParcoursExercisePolicy ? Object.assign({},window.MonParcoursExercisePolicy.read(assignment.instructions).poolSettings || {}, {size:round.pool_size || window.MonParcoursTaskRounds.configuredSize(assignment, round.started_at || assignment.published_at || "1970-01-01T00:00:00Z")}) : null);
     if (!questions.length || pendingIds.some(function (id) {return !questions.some(function (question) {return question.stableItemIds.includes(id);});})) {
       app.innerHTML = '<section class="error-card"><h1>' + uiText("Ce devoir ne peut pas encore commencer.", "Deze taak kan nog niet starten.") +
         '</h1><p>' + uiText("Un élément du cours manque. Préviens ton professeur.", "Een cursusitem ontbreekt. Meld dit aan je leerkracht.") + '</p></section>';
