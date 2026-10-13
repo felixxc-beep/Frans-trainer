@@ -2296,7 +2296,8 @@
       "source_line": 861,
       "instruction": "Schrijf de volledige Franse zin",
       "accepted_answers": [
-        "Lucas aime le foot et les jeux vidéo."
+        "Lucas aime le foot et les jeux vidéo.",
+        "Lucas aime le football et les jeux vidéo."
       ],
       "targets": [
         "uf1-item-000021"
