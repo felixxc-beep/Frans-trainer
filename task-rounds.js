@@ -59,14 +59,18 @@
       random_sample_item_ids: selected.filter(function (id) { return reasons[id] === "random_sample"; }) };
   }
 
-  function configuredSize(assignment) {
-    const history = assignment.round_size_history || [];
-    const latest = history.length ? history[history.length - 1].size : null;
-    const value = latest == null ? null : latest;
-    if (value != null) return value;
+  function configuredSize(assignment, startedAt) {
     const instructions = String(assignment.instructions || "");
     const match = instructions.match(/"pool":2,"size":("all"|[0-9]+)/);
-    return match ? JSON.parse(match[1]) : "all";
+    const initial = match ? JSON.parse(match[1]) : "all";
+    const history = assignment.round_size_history || [];
+    const cutoff = startedAt ? Date.parse(startedAt) : Infinity;
+    let size = initial;
+    history.forEach(function (entry) {
+      if (entry && Number.isFinite(Date.parse(entry.effective_at)) && Date.parse(entry.effective_at) <= cutoff)
+        size = entry.size;
+    });
+    return size;
   }
 
   function createRound(assignment, rounds, random) {
@@ -74,10 +78,11 @@
     const size = configuredSize(assignment);
     const ids = uniqueIds(assignment.item_ids);
     const limited = size === "all" ? ids : ids.slice(0, Math.max(1,Number(size)||ids.length));
+    const review = number > 2 ? selectReview(ids, rounds, random) : null;
     const chosen = number <= 2
       ? { selected_item_ids: limited, selection_reasons: Object.fromEntries(limited.map(function (id) { return [id, "full_round"]; })), random_sample_item_ids: [] }
-      : selectReview(ids, rounds, random);
-    return { number: number, pool_size: size, selected_item_ids: chosen.selected_item_ids,
+      : Object.assign({}, review, { selected_item_ids: size === "all" ? review.selected_item_ids : review.selected_item_ids.slice(0, Math.max(1, Number(size) || review.selected_item_ids.length)) });
+    return { number: number, started_at: new Date().toISOString(), pool_size: size, selected_item_ids: chosen.selected_item_ids,
       random_sample_item_ids: chosen.random_sample_item_ids, selection_reasons: chosen.selection_reasons,
       items: Object.fromEntries(chosen.selected_item_ids.map(function (id) {
         return [id, { wrong_count: 0, consulted: false, completed_at: null, reported_pending: false }];
@@ -113,11 +118,11 @@
     const selected = active ? active.selected_item_ids : [];
     const done = selected.filter(function (id) { return active.items[id] &&
       (active.items[id].completed_at || active.items[id].reported_pending); }).length;
-    return { required: required, round: active ? active.number : required, selected: selected.length,
+    return { required: required, round: active ? active.number : waitingForRelease ? (rounds || []).length : required, selected: selected.length,
       done: done, remaining: selected.length - done, completed: completed, waitingForRelease: waitingForRelease };
   }
 
-  return { MINIMUM_REVIEW_FRACTION: MINIMUM_REVIEW_FRACTION, selectReview: selectReview,
+  return { MINIMUM_REVIEW_FRACTION: MINIMUM_REVIEW_FRACTION, configuredSize: configuredSize, selectReview: selectReview,
     createRound: createRound, currentRound: currentRound, roundComplete: roundComplete,
     markAttempt: markAttempt, markConsulted: markConsulted, progress: progress };
 });
