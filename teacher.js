@@ -1222,14 +1222,26 @@
         typeof policy.options !== 'function' || typeof policy.pool !== 'function')
       return heading + '<p class="error" role="alert">Oefeningen konden niet worden geladen. Herlaad deze pagina vóór het opslaan.</p></fieldset>';
     const available = taskExerciseFormOptions(policy, items).filter(function (option) { return option.key !== "grammar_rule"; });
-    draft.exercise_forms = available.map(function (option) { return option.key; });
+    const keys = available.map(function (option) { return option.key; });
+    // Initialize only once per scope; never overwrite the teacher's checkbox choices on rerender.
+    if (!Array.isArray(draft.exercise_forms)) draft.exercise_forms = keys.slice();
+    else if (draft.exercise_forms.length === 0 && draft.exercise_forms_initialized !== true) draft.exercise_forms = keys.slice();
+    else draft.exercise_forms = draft.exercise_forms.filter(function (key) { return keys.includes(key); });
+    draft.exercise_forms_initialized = true;
     if (!available.length) return heading + '<p>Voor dit onderdeel zijn nog geen geschikte oefeningen beschikbaar.</p></fieldset>';
     const total = available.reduce(function (sum, option) { return sum + option.variantCount + option.courseCount; }, 0);
-    return heading + '<p><strong>' + total + ' beschikbare oefeningen.</strong> Mon parcours mixt automatisch de passende oefentypes voor dit cursusonderdeel.</p>' +
-      '<details><summary>Welke oefentypes zitten erin?</summary><ul>' + available.map(function (option) {
-        const count = option.variantCount || option.courseCount;
-        return '<li>' + escapeHtml(policy.labels[option.key]) + ' — ' + count + '</li>';
-      }).join('') + '</ul></details>' + renderTaskExerciseCount(draft, items) + '</fieldset>';
+    return heading + '<p><strong>' + total + ' beschikbare oefeningen.</strong> Kies welke oefenvormen de leerlingen krijgen.</p>' +
+      '<div class="task-class-grid">' + available.map(function (option) {
+        const count = option.variantCount + option.courseCount;
+        return '<label class="task-class"><input type="checkbox" name="exercise_forms" value="' + escapeHtml(option.key) + '"' +
+          (draft.exercise_forms.includes(option.key) ? ' checked' : '') +
+          (draft.status !== "draft" ? ' disabled' : '') + '><span>' +
+          escapeHtml(option.key === "vocabulary_direct" ? "Losse woorden vertalen" :
+            option.key === "vocabulary_context" ? "Woordenschat in een zin" : policy.labels[option.key]) +
+          ' (' + count + ')</span></label>';
+      }).join('') + '</div>' +
+      (!draft.exercise_forms.length ? '<p class="form-message" role="alert">Vink minstens één oefenvorm aan.</p>' : '') +
+      renderTaskExerciseCount(draft, items) + '</fieldset>';
   }
 
   function taskVariantScope(draft) {
@@ -1996,7 +2008,7 @@
         const policy = window.MonParcoursExercisePolicy;
         const available = policy.available(items, state.variantBank, state.course, taskVariantScope(draft))
           .filter(function (key) { return key !== "grammar_rule"; });
-        draft.exercise_forms = available;
+        draft.exercise_forms = draft.exercise_forms.filter(function (key) { return available.includes(key); });
         if (!draft.exercise_forms.length) throw Error("Voor dit onderdeel zijn nog geen geschikte oefeningen beschikbaar.");
         if (draft.exercise_count === 'all' && draft.exercise_forms.includes('numbers') && items.some(function (item) {
           return item.dynamic_range && item.range[1]-item.range[0]+1 > 101;
@@ -2561,6 +2573,7 @@
         state.tasks.draft.range_end = null;
         state.tasks.draft.mastery_strategy = "item_mastery";
         state.tasks.draft.exercise_forms = [];
+        state.tasks.draft.exercise_forms_initialized = false;
         state.tasks.draft.exercise_count = 20;
         state.tasks.draft.verb_item_ids = null;
         state.tasks.draft.autoTitle = taskSuggestedTitle(state.tasks.draft);
