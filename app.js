@@ -2050,8 +2050,12 @@ function showFeedback(correct, messageFr, messageNl, allowNext, clearInput) {
   const visual = !correct && state.session && state.session.visualAnswer && state.session.visualAnswer.question === state.session.questions[state.session.index] ? state.session.visualAnswer : null;
   const mistakes = itemState ? Number(itemState.item.wrong_count || 0) : Number(state.session && state.session.questionAttempts || 0) + 1;
   const marking = visual ? markedAnswerFeedback(visual.question, visual.answer, visual.graded, mistakes) : "";
+  const ligatureNote = correct && state.session && state.session.visualAnswer &&
+    /\\bsoeur\\b/i.test(String(state.session.visualAnswer.answer || "")) &&
+    (state.session.visualAnswer.question.answers || []).some(function (answer) { return /sœur/i.test(answer); }) ?
+    '<p class="orthography-note">' + uiText("C’est juste ! En français, on écrit « sœur » avec œ.", "Juist! De correcte Franse schrijfwijze is « sœur » met œ.") + '</p>' : "";
   feedback.className = "feedback visible " + (correct ? "correct" : "wrong");
-  feedback.innerHTML = '<span class="feedback-mark" aria-hidden="true">' + (correct ? "✓" : "!") + '</span><div><p>' + uiHtml(messageFr, messageNl) + '</p>' + marking +
+  feedback.innerHTML = '<span class="feedback-mark" aria-hidden="true">' + (correct ? "✓" : "!") + '</span><div><p>' + uiHtml(messageFr, messageNl) + '</p>' + ligatureNote + marking +
     (!correct && state.session && state.session.assignment_round_number === 1 ? '<button class="button button-primary consult-action" type="button" data-action="consult-round">' + contentIcon("vocabulary") + uiText("Consulter", "Opzoeken") + '</button>' : "") +
     (canReport ? '<p class="report-explanation">' + uiText("Si ta réponse semble correcte, si la question n’est pas claire ou s’il y a un problème technique. Ce n’est pas un bouton « je ne sais pas ».", "Alleen als je antwoord volgens jou juist is, de vraag onduidelijk lijkt of er een technisch probleem is. Niet voor ‘ik weet het niet’.") + '</p><button class="text-button report-action" type="button" data-action="report-round-item">' + uiText("Je pense que ma réponse est refusée à tort", "Mijn antwoord wordt volgens mij onterecht fout gerekend") + '</button>' : '') +
     (allowNext ? '<button class="button ' + (!correct && state.session && state.session.assignment_round_number === 1 ? 'button-secondary' : 'button-primary') + '" type="button" data-action="next-question">' + uiText("Suivant", "Volgende") + '</button>' : "") + '</div>';
@@ -2842,7 +2846,10 @@ function requeueQuestion(question) {
 
 function isCorrect(answer, accepted) {
   const candidate = normalizeAnswer(answer, true);
-  return accepted.some(function (value) { return normalizeAnswer(value, true) === candidate; });
+  return accepted.some(function (value) {
+    const expected = normalizeAnswer(value, true);
+    return expected === candidate || expected.replace(/œ/g, "oe") === candidate;
+  });
 }
 
 function splitAnswerArticle(value, french) {
