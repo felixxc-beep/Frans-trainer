@@ -1604,7 +1604,7 @@
     const verbTask = task.mastery_strategy && task.mastery_strategy !== "item_mastery";
     const reports = asArray(state.tasks.reports);
     const reportSection = task.completion_strategy === "rounds" ?
-      '<details class="task-report-section"><summary class="section-heading"><span><strong>Probleemmeldingen</strong><small> Klik om meldingen te bekijken</small></span><span class="task-report-badge">' + reports.filter(function (report) { return !report.status || report.status === "pending"; }).length + ' wachtend</span></div>' +
+      '<details class="task-report-section"><summary class="section-heading"><span><strong>Probleemmeldingen</strong><small> Klik om meldingen te bekijken</small></span><span class="task-report-badge">' + reports.filter(function (report) { return !report.status || report.status === "pending"; }).length + ' wachtend</span></summary>' +
       (state.tasks.message ? '<p class="task-report-message" role="status">' + escapeHtml(state.tasks.message) + '</p>' : '') +
       (reports.length ? '<div class="task-report-list">' + reports.map(function (report) {
         const courseItem = state.courseIndex[report.item_id];
