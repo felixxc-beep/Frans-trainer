@@ -2878,14 +2878,14 @@ function revisionGrammarHint(rawAnswer, question) {
   if (!question || typeof rawAnswer !== "string") return null;
   const value = normalizeAnswer(rawAnswer, true);
   const hints = {
-    "T1-REV-004": /\\bnous allons\\b/.test(value) ? ["Tu utilises aller. Pour « nous avons », conjugue avoir.", "Je gebruikt aller. Voor ‘wij hebben’ gebruik je avoir: nous avons."] : null,
-    "T1-REV-005": /\\bemma est\\b/.test(value) ? ["Pour exprimer « avoir quelque chose », utilise avoir : Emma a.", "Bij ‘iets hebben’ gebruik je avoir: Emma a, niet Emma est."] : null,
-    "T1-REV-006": /\\bjouent le basket\\b/.test(value) ? ["Avec jouer et un sport : jouer au basket.", "Bij een sport gebruik je jouer au: jouer au basket."] : null,
-    "T1-REV-008": /\\bmon frère et (je|j')\\b/.test(value) ? ["Après « et », dis « moi », pas « je ». Le sujet vaut « nous ».", "Na ‘et’ gebruik je moi, niet je. ‘Mon frère et moi’ wordt vervoegd als nous."] :
-      /\\bhabitent\\b/.test(value) ? ["« Mon frère et moi » = nous. Choisis la terminaison -ons.", "‘Mon frère et moi’ = nous: gebruik de uitgang -ons (habitons)."] :
-      /\\bdans turnhout\\b/.test(value) ? ["Pour une ville, utilise « à Turnhout ».", "Bij een stad gebruik je à Turnhout, niet dans Turnhout."] : null,
-    "T1-REV-009": /\\bles filles danser\\b/.test(value) ? ["« Danser » est l'infinitif. Conjugue avec elles : dansent.", "Danser is de infinitief. Bij elles hoort dansent."] : null,
-    "T1-REV-010": /\\bj'aime le dessiner\\b/.test(value) ? ["Après aimer, utilise directement l'infinitif sans article.", "Na aimer komt rechtstreeks een infinitief, zonder lidwoord: aimer dessiner."] : null
+    "T1-REV-004": /\bnous allons\b/.test(value) ? ["Tu utilises aller. Pour « nous avons », conjugue avoir.", "Je gebruikt aller. Voor ‘wij hebben’ gebruik je avoir: nous avons."] : null,
+    "T1-REV-005": /\bemma est\b/.test(value) ? ["Pour exprimer « avoir quelque chose », utilise avoir : Emma a.", "Bij ‘iets hebben’ gebruik je avoir: Emma a, niet Emma est."] : null,
+    "T1-REV-006": /\bjouent le basket\b/.test(value) ? ["Avec jouer et un sport : jouer au basket.", "Bij een sport gebruik je jouer au: jouer au basket."] : null,
+    "T1-REV-008": /\bmon frère et (je|j')\b/.test(value) ? ["Après « et », dis « moi », pas « je ». Le sujet vaut « nous ».", "Na ‘et’ gebruik je moi, niet je. ‘Mon frère et moi’ wordt vervoegd als nous."] :
+      /\bhabitent\b/.test(value) ? ["« Mon frère et moi » = nous. Choisis la terminaison -ons.", "‘Mon frère et moi’ = nous: gebruik de uitgang -ons (habitons)."] :
+      /\bdans turnhout\b/.test(value) ? ["Pour une ville, utilise « à Turnhout ».", "Bij een stad gebruik je à Turnhout, niet dans Turnhout."] : null,
+    "T1-REV-009": /\bles filles danser\b/.test(value) ? ["« Danser » est l'infinitif. Conjugue avec elles : dansent.", "Danser is de infinitief. Bij elles hoort dansent."] : null,
+    "T1-REV-010": /\bj'aime le dessiner\b/.test(value) ? ["Après aimer, utilise directement l'infinitif sans article.", "Na aimer komt rechtstreeks een infinitief, zonder lidwoord: aimer dessiner."] : null
   };
   const pair = Object.prototype.hasOwnProperty.call(hints, question.variantId) ? hints[question.variantId] : null;
   return pair ? {fr:pair[0],nl:pair[1]} : null;
