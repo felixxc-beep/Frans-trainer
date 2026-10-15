@@ -1603,8 +1603,10 @@
     const averageMastery = rows.length ? Math.round(rows.reduce(function (total, row) { return total + Number(row.progress && row.progress.mastery_level || 0); }, 0) / rows.length) : 0;
     const verbTask = task.mastery_strategy && task.mastery_strategy !== "item_mastery";
     const reports = asArray(state.tasks.reports);
+    const pendingReports = reports.filter(function (report) { return !report.status || report.status === 'pending'; });
     const reportSection = task.completion_strategy === "rounds" ?
-      '<details class="task-report-section"><summary class="section-heading"><span><strong>Probleemmeldingen</strong><small> Klik om meldingen te bekijken</small></span><span class="task-report-badge">' + reports.filter(function (report) { return !report.status || report.status === "pending"; }).length + ' wachtend</span></summary>' +
+      '<details class="task-report-section"><summary class="section-heading"><span><strong>Probleemmeldingen</strong><small> Klik om meldingen te bekijken</small></span><span class="task-report-badge">' + pendingReports.length + ' wachtend</span></summary>' +
+      (pendingReports.length && canManage ? '<div class="export-actions task-report-bulk"><button class="button button-secondary" type="button" data-action="approve-all-reports">Alles goedkeuren (' + pendingReports.length + ')</button></div>' : '') +
       (state.tasks.message ? '<p class="task-report-message" role="status">' + escapeHtml(state.tasks.message) + '</p>' : '') +
       (reports.length ? '<div class="task-report-list">' + reports.map(function (report) {
         const courseItem = state.courseIndex[report.item_id];
@@ -1626,7 +1628,7 @@
             ' · ' + escapeHtml(formatDate(report.resolved_at || report.created_at)) + '</p>' :
             '<div class="export-actions"><button class="button button-primary" type="button" data-action="resolve-item-report" data-id="' + escapeHtml(report.id) + '" data-decision="approved">Goedkeuren</button><button class="button button-secondary" type="button" data-action="resolve-item-report" data-id="' + escapeHtml(report.id) + '" data-decision="rejected">Terugsturen</button></div>') + '</article>';
       }).join('') + '</div>' : '<p class="muted">Geen probleemmeldingen.</p>') + '</details>' : '';
-    return '<div class="page-heading"><div><p class="eyebrow">Taak · ' + escapeHtml(taskLifecycle(task) === "recent" ? "Recent afgelopen" : taskLifecycle(task) === "archived" ? "Gearchiveerd" : taskLifecycle(task) === "draft" ? "Concept" : "Actief") + '</p><h2>' + escapeHtml(task.title) + '</h2><p class="muted">' + (verbTask ? asArray(task.requirements).length + ' werkwoorddoelen' : asArray(task.item_ids).length + ' leerdoelen') + ' · ' + (task.completion_strategy === "rounds" ? task.required_rounds + ' rondes' : 'doel ' + task.target_acquired_percentage + '%') + ' · ' + escapeHtml(task.due_at ? formatDate(task.due_at) : "Geen deadline") + '</p></div><div class="export-actions"><button class="button button-secondary" type="button" data-action="view-tasks">Terug</button><button class="button button-secondary" type="button" data-action="export-task">CSV</button><button class="button button-secondary" type="button" data-action="export-task-errors">Foutenanalyse CSV</button>' + (editable ? '<button class="button button-primary" type="button" data-action="edit-task">Bewerken</button>' + (task.status === "published" ? '<button class="button button-secondary" type="button" data-action="archive-task">Archiveren</button>' : '') : task.status === "archived" && canManage ? '<button class="button button-primary" type="button" data-action="restore-task">Herstellen</button>' : '') + '</div></div>' +
+    return '<div class="page-heading"><div><p class="eyebrow">Taak · ' + escapeHtml(taskLifecycle(task) === "recent" ? "Recent afgelopen" : taskLifecycle(task) === "archived" ? "Gearchiveerd" : taskLifecycle(task) === "draft" ? "Concept" : "Actief") + '</p><h2>' + escapeHtml(task.title) + '</h2><p class="muted">' + (verbTask ? asArray(task.requirements).length + ' werkwoorddoelen' : asArray(task.item_ids).length + ' leerdoelen') + ' · ' + (task.completion_strategy === "rounds" ? task.required_rounds + ' rondes' : 'doel ' + task.target_acquired_percentage + '%') + ' · ' + escapeHtml(task.due_at ? formatDate(task.due_at) : "Geen deadline") + '</p></div><div class="export-actions"><button class="button button-secondary" type="button" data-action="view-tasks">Terug</button><button class="button button-secondary" type="button" data-action="export-task">CSV</button><button class="button button-secondary" type="button" data-action="export-task-errors">Foutenanalyse CSV</button>' + (editable ? '<button class="button button-primary" type="button" data-action="edit-task">Bewerken</button>' + (task.status === "published" ? '<button class="button button-secondary" type="button" data-action="archive-task">Archiveren</button>' : '') : task.status === "archived" && canManage ? '<button class="button button-primary" type="button" data-action="restore-task">Herstellen</button>' + (task.completion_strategy === "rounds" && Number(task.required_rounds) < 4 ? '<button class="button button-secondary" type="button" data-action="restore-add-round">Extra ronde toevoegen</button>' : '') : '') + '</div></div>' +
       (task.status === "archived" && canManage && taskLifecycle(Object.assign({}, task, { status: "published" }), Date.now()) === "archived" ? '<p class="muted">Na herstel blijft deze taak wegens de oorspronkelijke deadline in het archief. Pas de deadline daarna aan als je haar opnieuw actief wilt maken.</p>' : '') +
       (editable && task.status === "published" && task.completion_strategy === "rounds" ?
         '<section class="section-block"><h3>Rondes beheren</h3><p>' + Number(task.released_rounds || task.required_rounds) + ' van ' + task.required_rounds + ' rondes vrijgegeven. Een lopende ronde blijft ongewijzigd.</p>' +
@@ -1642,6 +1644,8 @@
           ' <button class="button button-secondary" type="button" data-action="pause-future-rounds">Nog niet gestarte rondes pauzeren</button>' : '') +
         '</section>' : '') +
       (task.instructions ? '<p>' + escapeHtml(window.MonParcoursExercisePolicy ? window.MonParcoursExercisePolicy.read(task.instructions).text : task.instructions) + '</p>' : '') +
+      (task.status === "archived" && canManage && task.completion_strategy === "rounds" && Number(task.required_rounds)<4 ?
+        '<div class="section-block"><label>Nieuwe deadline bij toevoegen van ronde <input id="archivedRoundDeadline" type="datetime-local" required></label><p class="muted">De oude rondes en resultaten blijven bewaard. Na herstel geef je de nieuwe ronde zelf vrij.</p></div>' : '') +
       '<div class="task-summary"><span><strong>' + completedCount + '/' + rows.length + '</strong> afgerond</span><span><strong>' + startedCount + '</strong> bezig</span><span><strong>' + (rows.length - completedCount - startedCount) + '</strong> niet gestart</span><span><strong>' + averageMastery + '%</strong> gemiddelde beheersing</span></div>' + reportSection +
       '<label class="task-filter"><span>Status</span><select id="taskStatusFilter"><option value="all"' + (state.tasks.filter === "all" ? ' selected' : '') + '>Alle</option>' + Object.entries(statuses).map(function (entry) { return '<option value="' + entry[0] + '"' + (state.tasks.filter === entry[0] ? ' selected' : '') + '>' + entry[1] + '</option>'; }).join("") + '</select></label>' +
       '<div class="table-wrap"><table><thead><tr><th>Klas / leerling</th><th>Status</th><th>Geoefend</th><th>Beheersing</th><th>Gekend</th><th>Doel / rondes</th><th>Laatste activiteit</th><th>Actieve taaktijd</th></tr></thead><tbody>' + filteredRows.map(function (row) {
@@ -2310,6 +2314,45 @@
       return renderCurrent();
     }
     if (action === "open-task") return openTaskDetail(id);
+    if (action === "approve-all-reports") {
+      const task = state.tasks.list.find(function (row) { return row.id === state.tasks.selectedId; });
+      if (!task || !(currentTeacherIsAdmin() || task.created_by_teacher_id === state.user.id)) return;
+      const pending = asArray(state.tasks.reports).filter(function (report) { return !report.status || report.status === "pending"; });
+      if (!pending.length) return;
+      if (!window.confirm("Alle " + pending.length + " openstaande meldingen goedkeuren? Ook echte fouten worden dan als afgewerkt beschouwd. Dit kan niet als groep ongedaan worden gemaakt.")) return;
+      target.disabled = true;
+      let approved = 0, failed = 0;
+      for (const report of pending) {
+        const result = await state.client.rpc("resolve_assignment_item_report", {
+          p_report_id: report.id, p_decision: "approved"
+        });
+        if (result.error) failed += 1;
+        else approved += 1;
+      }
+      const taskId = task.id;
+      await openTasks(true);
+      await openTaskDetail(taskId);
+      state.tasks.message = approved + " meldingen goedgekeurd." + (failed ? " " + failed + " niet gelukt; probeer die apart." : "");
+      renderCurrent();
+      return;
+    }
+    if (action === "restore-add-round") {
+      const task = state.tasks.list.find(function (row) { return row.id === state.tasks.selectedId; });
+      if (!task || task.status !== "archived" || task.completion_strategy !== "rounds" ||
+        !(currentTeacherIsAdmin() || task.created_by_teacher_id === state.user.id)) return;
+      const input = document.querySelector("#archivedRoundDeadline");
+      const date = input && input.value ? new Date(input.value) : null;
+      if (!date || !Number.isFinite(date.getTime()) || date.getTime() <= Date.now()) {
+        state.tasks.message = "Kies eerst een nieuwe deadline in de toekomst."; return renderCurrent();
+      }
+      if (!window.confirm("Taak herstellen, een extra ronde toevoegen en een nieuwe deadline instellen? Bestaande resultaten blijven behouden.")) return;
+      const result = await state.client.rpc("restore_and_extend_assignment_rounds", {
+        p_assignment_id: task.id, p_due_at: date.toISOString()
+      });
+      if (result.error) { state.tasks.message = result.error.message || "Ronde toevoegen mislukt."; return renderCurrent(); }
+      await openTasks(true);
+      return openTaskDetail(task.id);
+    }
     if (action === "resolve-item-report") {
       const decision = target.dataset.decision;
       if (!state.tasks.reports.some(function (report) { return report.id === id; }) ||
