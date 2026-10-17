@@ -1629,6 +1629,17 @@
             '<div class="export-actions"><button class="button button-primary" type="button" data-action="resolve-item-report" data-id="' + escapeHtml(report.id) + '" data-decision="approved">Goedkeuren</button><button class="button button-secondary" type="button" data-action="resolve-item-report" data-id="' + escapeHtml(report.id) + '" data-decision="rejected">Terugsturen</button></div>') + '</article>';
       }).join('') + '</div>' : '<p class="muted">Geen probleemmeldingen.</p>') + '</details>' : '';
     return '<div class="page-heading"><div><p class="eyebrow">Taak · ' + escapeHtml(taskLifecycle(task) === "recent" ? "Recent afgelopen" : taskLifecycle(task) === "archived" ? "Gearchiveerd" : taskLifecycle(task) === "draft" ? "Concept" : "Actief") + '</p><h2>' + escapeHtml(task.title) + '</h2><p class="muted">' + (verbTask ? asArray(task.requirements).length + ' werkwoorddoelen' : asArray(task.item_ids).length + ' leerdoelen') + ' · ' + (task.completion_strategy === "rounds" ? task.required_rounds + ' rondes' : 'doel ' + task.target_acquired_percentage + '%') + ' · ' + escapeHtml(task.due_at ? formatDate(task.due_at) : "Geen deadline") + '</p></div><div class="export-actions"><button class="button button-secondary" type="button" data-action="view-tasks">Terug</button><button class="button button-secondary" type="button" data-action="export-task">CSV</button><button class="button button-secondary" type="button" data-action="export-task-errors">Foutenanalyse CSV</button>' + (editable ? '<button class="button button-primary" type="button" data-action="edit-task">Bewerken</button>' + (task.status === "published" ? '<button class="button button-secondary" type="button" data-action="archive-task">Archiveren</button>' : '') : task.status === "archived" && canManage ? '<button class="button button-primary" type="button" data-action="restore-task">Herstellen</button>' + (task.completion_strategy === "rounds" && Number(task.required_rounds) < 4 ? '<button class="button button-secondary" type="button" data-action="restore-add-round">Extra ronde toevoegen</button>' : '') : '') + '</div></div>' +
+
+      (state.tasks.message ? '<p class="form-message" role="status">' + escapeHtml(state.tasks.message) + '</p>' : '') +
+      (canManage && (task.status === "published" || task.status === "archived") ?
+        '<section class="section-block task-deadline-control"><h3>Deadline verlengen</h3><p class="muted">Huidige deadline: ' +
+        escapeHtml(task.due_at ? formatDate(task.due_at) : "Geen deadline") +
+        '. De oefeningen, rondes en resultaten blijven behouden.</p>' +
+        '<div class="task-fields"><label><span>Nieuwe deadline (datum en uur)</span><input id="extendedTaskDeadline" type="datetime-local" required value="' +
+        escapeHtml(task.due_at && new Date(task.due_at).getTime() > Date.now() ? taskDeadlineLocal(task.due_at) : "") +
+        '"></label><button class="button button-primary" type="button" data-action="extend-task-deadline">Deadline verlengen</button></div>' +
+        (task.status === "archived" ? '<p class="muted">Deze taak blijft handmatig gearchiveerd. Klik daarna op Herstellen om haar weer beschikbaar te maken.</p>' : '') +
+        '</section>' : '') +
       (task.status === "archived" && canManage && taskLifecycle(Object.assign({}, task, { status: "published" }), Date.now()) === "archived" ? '<p class="muted">Na herstel blijft deze taak wegens de oorspronkelijke deadline in het archief. Pas de deadline daarna aan als je haar opnieuw actief wilt maken.</p>' : '') +
       (editable && task.status === "published" && task.completion_strategy === "rounds" ?
         '<section class="section-block"><h3>Rondes beheren</h3><p>' + Number(task.released_rounds || task.required_rounds) + ' van ' + task.required_rounds + ' rondes vrijgegeven. Een lopende ronde blijft ongewijzigd.</p>' +
@@ -2438,6 +2449,40 @@
       const result = await state.client.rpc("save_assignment", { p_payload: payload });
       if (result.error) { state.tasks.message = "Archiveren mislukt."; return renderCurrent(); }
       return openTasks(true);
+    }
+    if (action === "extend-task-deadline") {
+      const task = state.tasks.list.find(function (row) { return row.id === state.tasks.selectedId; });
+      if (!task || !["published","archived"].includes(task.status) ||
+        !(currentTeacherIsAdmin() || task.created_by_teacher_id === state.user.id)) return;
+      const field = document.querySelector("#extendedTaskDeadline");
+      if (!field || !field.value) {
+        state.tasks.message = "Kies eerst de nieuwe datum en het uur van de deadline.";
+        return renderCurrent();
+      }
+      let newDeadline;
+      try { newDeadline = taskDeadlineUtc(field.value); }
+      catch (error) { state.tasks.message = error.message; return renderCurrent(); }
+      if (new Date(newDeadline).getTime() <= Date.now() ||
+          task.due_at && new Date(newDeadline).getTime() <= new Date(task.due_at).getTime()) {
+        state.tasks.message = "Kies een toekomstige deadline die later valt dan de huidige deadline.";
+        return renderCurrent();
+      }
+      target.disabled = true;
+      try {
+        const result = await state.client.rpc("extend_assignment_deadline", {
+          p_assignment_id: task.id, p_new_due_at: newDeadline
+        });
+        if (result.error) throw result.error;
+        await openTasks(true);
+        await openTaskDetail(task.id);
+        state.tasks.message = "Deadline verlengd tot " + formatDate(newDeadline) +
+          (task.status === "archived" ? ". Herstel de taak om ze opnieuw voor leerlingen zichtbaar te maken." : ".");
+        renderCurrent();
+      } catch (error) {
+        state.tasks.message = "Deadline verlengen mislukt: " + (error && error.message || "Probeer opnieuw.");
+        renderCurrent();
+      }
+      return;
     }
     if (action === "restore-task") {
       const task = state.tasks.list.find(function (row) { return row.id === state.tasks.selectedId; });
