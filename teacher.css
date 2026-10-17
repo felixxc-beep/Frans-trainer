@@ -295,3 +295,26 @@ tr:last-child td { border-bottom: 0; }
 .task-report-section > summary strong { font-size: 1.12rem; }
 .task-report-section > summary small { color: var(--muted); font-size: .82rem; margin-left: .45rem; }
 .task-report-section[open] > summary { margin-bottom: .8rem; }
+
+/* More explicit task identity: course, atelier, exercise types, and round schedule. */
+.task-overview-row { grid-template-columns: minmax(240px, 1.8fr) minmax(130px, .8fr) minmax(135px, .8fr) auto; align-items: center; }
+.task-overview-row.has-owner { grid-template-columns: minmax(240px, 1.65fr) minmax(120px, .7fr) minmax(130px, .7fr) minmax(100px, .6fr) auto; }
+.task-overview-name { gap: .26rem; }
+.task-overview-name > strong { font-size: 1rem; line-height: 1.35; }
+.task-overview-path { color: var(--forest); font-size: .83rem; font-weight: 700; overflow-wrap: anywhere; line-height: 1.45; }
+.task-overview-exercises { color: #3e594c !important; font-size: .79rem !important; line-height: 1.5; }
+.task-detail-scope { color: var(--forest); font-weight: 750; margin: .4rem 0; }
+.task-detail-exercises { color: var(--muted); margin: .2rem 0 .6rem; }
+.task-delete-button { color: #982f2f !important; border-color: #ddb3b0 !important; }
+.task-delete-button:hover { background: #fff1f0 !important; }
+.task-deadline-control { margin-top: 1.1rem; padding: 1rem; background: #fafbf9; border: 1px solid var(--line); border-radius: 12px; }
+.task-deadline-control h3 { margin: 0 0 .4rem; }
+.task-deadline-control .task-fields { align-items: end; }
+.task-deadline-control label { display: grid; gap: .3rem; }
+.task-deadline-control .button { align-self: end; }
+@media (max-width: 960px) {
+  .task-overview-row, .task-overview-row.has-owner { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+}
+@media (max-width: 560px) {
+  .task-overview-row, .task-overview-row.has-owner { grid-template-columns: 1fr; }
+}
