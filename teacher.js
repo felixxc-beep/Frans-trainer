@@ -1676,7 +1676,7 @@
       }).join('') + '</div>' : '<p class="muted">Geen probleemmeldingen.</p>') + '</details>' : '';
     return '<div class="page-heading"><div><p class="eyebrow">Taak · ' + escapeHtml(taskLifecycle(task) === "recent" ? "Recent afgelopen" : taskLifecycle(task) === "archived" ? "Gearchiveerd" : taskLifecycle(task) === "draft" ? "Concept" : "Actief") + '</p><h2>' + escapeHtml(task.title) + '</h2><p class="task-detail-scope">' + escapeHtml(overviewContent.path) +
       '</p><p class="task-detail-exercises">' + escapeHtml(overviewContent.types) + ' · ' + escapeHtml(overviewContent.summary) +
-      '</p><p class="muted">' + (verbTask ? asArray(task.requirements).length + ' werkwoorddoelen' : asArray(task.item_ids).length + ' leerdoelen') + ' · ' + (task.completion_strategy === "rounds" ? task.required_rounds + ' rondes' : 'doel ' + task.target_acquired_percentage + '%') + ' · ' + escapeHtml(task.due_at ? formatDate(task.due_at) : "Geen deadline") + '</p></div><div class="export-actions"><button class="button button-secondary" type="button" data-action="view-tasks">Terug</button><button class="button button-secondary" type="button" data-action="export-task">CSV</button><button class="button button-secondary" type="button" data-action="export-task-errors">Foutenanalyse CSV</button>' + (editable ? '<button class="button button-primary" type="button" data-action="edit-task">Bewerken</button>' + (task.status === "published" ? '<button class="button button-secondary" type="button" data-action="archive-task">Archiveren</button>' : '') : task.status === "archived" && canManage ? '<button class="button button-primary" type="button" data-action="restore-task">Herstellen</button>' + (task.completion_strategy === "rounds" && Number(task.required_rounds) < 4 ? '<button class="button button-secondary" type="button" data-action="restore-add-round">Extra ronde toevoegen</button>' : '') : '') + '</div></div>' +
+      '</p><p class="muted">' + (verbTask ? asArray(task.requirements).length + ' werkwoorddoelen' : asArray(task.item_ids).length + ' leerdoelen') + ' · ' + (task.completion_strategy === "rounds" ? task.required_rounds + ' rondes' : 'doel ' + task.target_acquired_percentage + '%') + ' · ' + escapeHtml(task.due_at ? formatDate(task.due_at) : "Geen deadline") + '</p></div><div class="export-actions"><button class="button button-secondary" type="button" data-action="view-tasks">Terug</button><button class="button button-secondary" type="button" data-action="export-task">CSV</button><button class="button button-secondary" type="button" data-action="export-task-errors">Foutenanalyse CSV</button>' + (editable ? '<button class="button button-primary" type="button" data-action="edit-task">Bewerken</button>' + (task.status === "published" ? '<button class="button button-secondary" type="button" data-action="archive-task">Archiveren</button>' : '') : task.status === "archived" && canManage ? '<button class="button button-primary" type="button" data-action="restore-task">Herstellen</button>' + (task.completion_strategy === "rounds" && Number(task.required_rounds) < 4 ? '<button class="button button-secondary" type="button" data-action="restore-add-round">Extra ronde toevoegen</button>' : '') : '') + (canManage ? '<button class="button button-secondary task-delete-button" type="button" data-action="delete-task">Verwijderen</button>' : '') + '</div></div>' +
 
       (state.tasks.message ? '<p class="form-message" role="status">' + escapeHtml(state.tasks.message) + '</p>' : '') +
       (canManage && (task.status === "published" || task.status === "archived") ?
@@ -2482,6 +2482,26 @@
       state.tasks.message = "";
       state.route = { view: "task-editor", classId: null, studentId: null };
       return renderCurrent();
+    }
+    if (action === "delete-task") {
+      const task = state.tasks.list.find(function (row) { return row.id === state.tasks.selectedId; });
+      if (!task || !(currentTeacherIsAdmin() || task.created_by_teacher_id === state.user.id)) return;
+      if (!window.confirm("Taak verwijderen: «" + task.title + "»? Ze verdwijnt uit de takenlijsten van leerlingen en leerkrachten. Historische leerlinggegevens blijven veilig bewaard.")) return;
+      const typed = window.prompt("Typ VERWIJDER om te bevestigen. Dit kun je niet ongedaan maken vanuit het dashboard.");
+      if (typed !== "VERWIJDER") return;
+      target.disabled = true;
+      try {
+        const result = await state.client.rpc("remove_assignment_from_app", { p_assignment_id: task.id });
+        if (result.error) throw result.error;
+        await openTasks(true);
+        state.tasks.message = "Taak «" + task.title + "» verwijderd uit de app. Historische gegevens blijven bewaard.";
+        renderCurrent();
+      } catch (error) {
+        target.disabled = false;
+        state.tasks.message = "Verwijderen mislukt: " + (error && error.message || "Probeer opnieuw.");
+        renderCurrent();
+      }
+      return;
     }
     if (action === "archive-task") {
       const task = state.tasks.list.find(function (row) { return row.id === state.tasks.selectedId; });
