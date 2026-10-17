@@ -1338,7 +1338,7 @@
 
   function taskSuggestedTitle(draft) {
     const scope = draft.category || draft.subsection || draft.block || draft.lesson || draft.top_category || "Leerstof";
-    return draft.trajectory + " · " + scope;
+    return Array.from(new Set([draft.trajectory, draft.top_category, scope].filter(Boolean))).join(" · ");
   }
 
   function taskScopeItems(draft) {
