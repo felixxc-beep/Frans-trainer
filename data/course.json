@@ -1005,7 +1005,11 @@
             "de hobby",
             "de vrije tijd"
           ],
-          "id": "uf1-item-000072"
+          "id": "uf1-item-000072",
+          "accepted_answers": [
+            "le loisir",
+            "le hobby"
+          ]
         },
         {
           "top_category": "Atelier Parole",
@@ -1267,7 +1271,10 @@
           "nl": "vriendelijk",
           "accepted_answers": [
             "gentil",
-            "gentille"
+            "gentille",
+            "sympa",
+            "amical",
+            "amicale"
           ],
           "id": "uf1-item-000093"
         },
@@ -1282,7 +1289,9 @@
           "nl": "slim",
           "accepted_answers": [
             "malin",
-            "maligne"
+            "maligne",
+            "intelligent",
+            "intelligente"
           ],
           "id": "uf1-item-000094"
         },
@@ -1320,8 +1329,12 @@
           "category": "adjectifs",
           "type": "vocabulary",
           "fr": "sociable",
-          "nl": "sociaal",
-          "id": "uf1-item-000097"
+          "nl": "sociaal (graag met mensen)",
+          "id": "uf1-item-000097",
+          "accepted_answers_nl": [
+            "sociaal",
+            "sociaal (graag met mensen)"
+          ]
         },
         {
           "top_category": "Atelier Parole",
