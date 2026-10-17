@@ -1459,16 +1459,61 @@
     });
   }
 
+  function taskOverviewContent(task) {
+    const source = asArray(task.item_ids).map(function (id) { return state.courseIndex[id]; }).filter(Boolean);
+    const policy = window.MonParcoursExercisePolicy;
+    const metadata = policy && typeof policy.read === "function" ? policy.read(task.instructions) : {};
+    const scope = metadata.poolSettings && metadata.poolSettings.scope || {};
+    const unique = function (field) { return Array.from(new Set(source.map(function (item) { return item[field]; }).filter(Boolean))); };
+    const trajectories = unique("trajectory");
+    const categories = unique("top_category");
+    const lessons = unique("lesson");
+    const section = scope.subsection || (unique("subsection").length === 1 ? unique("subsection")[0] : "");
+    const trajectory = scope.trajectory || (trajectories.length === 1 ? trajectories[0] : trajectories.join(" + "));
+    const category = scope.top_category || (categories.length === 1 ? categories[0] : categories.join(" + "));
+    const lesson = scope.lesson || (lessons.length === 1 ? lessons[0] : "");
+    const path = [trajectory, category, lesson, section].filter(function (text, index, arr) {
+      return Boolean(text) && arr.indexOf(text) === index;
+    }).join(" · ");
+    const names = {
+      vocabulary_direct: "losse woorden", vocabulary_context: "woorden in zinnen",
+      verb_conjugation: "vervoegen", verb_context: "werkwoorden in zinnen",
+      grammar_rule: "grammatica", grammar_context: "grammatica in zinnen",
+      grammar_mixed: "gemengde grammatica", revision: "zinnen vertalen",
+      revision_other: "andere Révision-oefeningen", numbers: "getallen",
+      phrase_direct: "zinnen vertalen", phrase_context: "taalhandelingen in context",
+      spelling: "spelling"
+    };
+    const forms = asArray(metadata.forms).map(function (key) { return names[key] || key; });
+    const types = Array.from(new Set(source.map(function (item) { return item.type; }).filter(Boolean))).map(function (type) {
+      return { vocabulary: "woordenschat", verb: "werkwoorden", phrase: "zinnen / taalhandelingen",
+        grammar_rule: "grammatica", number: "getallen", sound_rule: "uitspraak" }[type] || type;
+    });
+    const exerciseTypes = forms.length ? forms.join(" + ") : types.join(" + ");
+    const settings = metadata.poolSettings;
+    const count = settings && settings.size != null ?
+      (settings.size === "all" ? "alle beschikbare oefeningen" : settings.size + " oefeningen/ronde") :
+      source.length + " leerdoelen";
+    const rounds = task.completion_strategy === "rounds" ?
+      Number(task.released_rounds || task.required_rounds) + "/" + Number(task.required_rounds) + " rondes vrij" :
+      "beheersingstaak";
+    return { path: path || "Cursusonderdeel onbekend", types: exerciseTypes || "Oefenvormen onbekend",
+      summary: count + " · " + rounds, goals: source.length };
+  }
+
   function renderTaskOverviewRow(task, lifecycle, showOwner) {
     const completed = Number(task.completed_count || 0);
     const total = Number(task.student_count || 0);
     const own = Boolean(state.user && task.created_by_teacher_id === state.user.id);
     const classes = asArray(task.classes).map(function (row) { return row.name; }).join(", ") || "Geen toegankelijke klassen";
     const reports = Number(task.open_report_count || 0);
+    const content = taskOverviewContent(task);
     return '<article class="task-overview-row' + (own ? ' is-own' : '') + (showOwner ? ' has-owner' : '') + '">' +
       '<div class="task-overview-name"><strong>' + escapeHtml(task.title) + '</strong>' +
         (showOwner && own ? '<small class="task-own-mark">Mijn taak</small>' : '') +
-        '<small>' + escapeHtml(classes) + '</small></div>' +
+        '<span class="task-overview-path">' + escapeHtml(content.path) + '</span>' +
+        '<small class="task-overview-exercises">' + escapeHtml(content.types) + ' · ' + escapeHtml(content.summary) + '</small>' +
+        '<small>Klassen: ' + escapeHtml(classes) + '</small></div>' +
       '<div class="task-overview-progress"><strong>' + completed + ' / ' + total + ' klaar</strong>' +
         '<span class="task-overview-bar" role="progressbar" aria-label="Leerlingen klaar" aria-valuemin="0" aria-valuemax="' + total + '" aria-valuenow="' + completed + '"><i style="width:' + percentage(completed, total) + '%"></i></span>' +
         '<small>' + (total - completed) + ' niet klaar</small></div>' +
@@ -1604,6 +1649,7 @@
     const verbTask = task.mastery_strategy && task.mastery_strategy !== "item_mastery";
     const reports = asArray(state.tasks.reports);
     const pendingReports = reports.filter(function (report) { return !report.status || report.status === 'pending'; });
+    const overviewContent = taskOverviewContent(task);
     const reportSection = task.completion_strategy === "rounds" ?
       '<details class="task-report-section"><summary class="section-heading"><span><strong>Probleemmeldingen</strong><small> Klik om meldingen te bekijken</small></span><span class="task-report-badge">' + pendingReports.length + ' wachtend</span></summary>' +
       (pendingReports.length && canManage ? '<div class="export-actions task-report-bulk"><button class="button button-secondary" type="button" data-action="approve-all-reports">Alles goedkeuren (' + pendingReports.length + ')</button></div>' : '') +
@@ -1628,7 +1674,9 @@
             ' · ' + escapeHtml(formatDate(report.resolved_at || report.created_at)) + '</p>' :
             '<div class="export-actions"><button class="button button-primary" type="button" data-action="resolve-item-report" data-id="' + escapeHtml(report.id) + '" data-decision="approved">Goedkeuren</button><button class="button button-secondary" type="button" data-action="resolve-item-report" data-id="' + escapeHtml(report.id) + '" data-decision="rejected">Terugsturen</button></div>') + '</article>';
       }).join('') + '</div>' : '<p class="muted">Geen probleemmeldingen.</p>') + '</details>' : '';
-    return '<div class="page-heading"><div><p class="eyebrow">Taak · ' + escapeHtml(taskLifecycle(task) === "recent" ? "Recent afgelopen" : taskLifecycle(task) === "archived" ? "Gearchiveerd" : taskLifecycle(task) === "draft" ? "Concept" : "Actief") + '</p><h2>' + escapeHtml(task.title) + '</h2><p class="muted">' + (verbTask ? asArray(task.requirements).length + ' werkwoorddoelen' : asArray(task.item_ids).length + ' leerdoelen') + ' · ' + (task.completion_strategy === "rounds" ? task.required_rounds + ' rondes' : 'doel ' + task.target_acquired_percentage + '%') + ' · ' + escapeHtml(task.due_at ? formatDate(task.due_at) : "Geen deadline") + '</p></div><div class="export-actions"><button class="button button-secondary" type="button" data-action="view-tasks">Terug</button><button class="button button-secondary" type="button" data-action="export-task">CSV</button><button class="button button-secondary" type="button" data-action="export-task-errors">Foutenanalyse CSV</button>' + (editable ? '<button class="button button-primary" type="button" data-action="edit-task">Bewerken</button>' + (task.status === "published" ? '<button class="button button-secondary" type="button" data-action="archive-task">Archiveren</button>' : '') : task.status === "archived" && canManage ? '<button class="button button-primary" type="button" data-action="restore-task">Herstellen</button>' + (task.completion_strategy === "rounds" && Number(task.required_rounds) < 4 ? '<button class="button button-secondary" type="button" data-action="restore-add-round">Extra ronde toevoegen</button>' : '') : '') + '</div></div>' +
+    return '<div class="page-heading"><div><p class="eyebrow">Taak · ' + escapeHtml(taskLifecycle(task) === "recent" ? "Recent afgelopen" : taskLifecycle(task) === "archived" ? "Gearchiveerd" : taskLifecycle(task) === "draft" ? "Concept" : "Actief") + '</p><h2>' + escapeHtml(task.title) + '</h2><p class="task-detail-scope">' + escapeHtml(overviewContent.path) +
+      '</p><p class="task-detail-exercises">' + escapeHtml(overviewContent.types) + ' · ' + escapeHtml(overviewContent.summary) +
+      '</p><p class="muted">' + (verbTask ? asArray(task.requirements).length + ' werkwoorddoelen' : asArray(task.item_ids).length + ' leerdoelen') + ' · ' + (task.completion_strategy === "rounds" ? task.required_rounds + ' rondes' : 'doel ' + task.target_acquired_percentage + '%') + ' · ' + escapeHtml(task.due_at ? formatDate(task.due_at) : "Geen deadline") + '</p></div><div class="export-actions"><button class="button button-secondary" type="button" data-action="view-tasks">Terug</button><button class="button button-secondary" type="button" data-action="export-task">CSV</button><button class="button button-secondary" type="button" data-action="export-task-errors">Foutenanalyse CSV</button>' + (editable ? '<button class="button button-primary" type="button" data-action="edit-task">Bewerken</button>' + (task.status === "published" ? '<button class="button button-secondary" type="button" data-action="archive-task">Archiveren</button>' : '') : task.status === "archived" && canManage ? '<button class="button button-primary" type="button" data-action="restore-task">Herstellen</button>' + (task.completion_strategy === "rounds" && Number(task.required_rounds) < 4 ? '<button class="button button-secondary" type="button" data-action="restore-add-round">Extra ronde toevoegen</button>' : '') : '') + '</div></div>' +
 
       (state.tasks.message ? '<p class="form-message" role="status">' + escapeHtml(state.tasks.message) + '</p>' : '') +
       (canManage && (task.status === "published" || task.status === "archived") ?
