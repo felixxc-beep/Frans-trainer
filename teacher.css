@@ -318,3 +318,19 @@ tr:last-child td { border-bottom: 0; }
 @media (max-width: 560px) {
   .task-overview-row, .task-overview-row.has-owner { grid-template-columns: 1fr; }
 }
+
+/* Deadline overview: long-term accountability without mixing up errors and missing work. */
+.task-deadline-followup { margin: .7rem 0 1rem; background:#fbfcfa; }
+.task-deadline-followup > summary { cursor:pointer; font-weight:850; }
+.task-deadline-followup > .muted { margin:.7rem 0; font-size:.84rem; }
+.deadline-followup-list { display:grid; gap:.45rem; }
+.deadline-student { border:1px solid var(--line); border-radius:9px; padding:.65rem .85rem; background:#fff; }
+.deadline-student > summary { display:flex; gap:.5rem; align-items:center; flex-wrap:wrap; cursor:pointer; }
+.deadline-student > summary small { color:var(--muted); font-size:.79rem; }
+.deadline-student > summary > span { margin-left:auto; font-size:.8rem; color:#4f6257; }
+.deadline-student-tasks { margin-top:.6rem; border-top:1px solid var(--line); }
+.deadline-task-record { display:flex; justify-content:space-between; gap:.65rem; align-items:center; padding:.62rem .15rem; border-bottom:1px solid var(--line); }
+.deadline-task-record > div { display:grid; gap:.15rem; }
+.deadline-task-record small { color:var(--muted); font-size:.76rem; }
+.deadline-task-record .small-button { flex-shrink:0; }
+@media(max-width:600px) { .deadline-task-record { align-items:flex-start; flex-direction:column; } .deadline-student > summary > span { margin-left:0; width:100%; } }
