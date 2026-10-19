@@ -1523,6 +1523,64 @@
       '<button class="small-button" type="button" data-action="open-task" data-id="' + escapeHtml(task.id) + '">Bekijken →</button></article>';
   }
 
+  function renderDeadlineFollowup() {
+    const records = asArray(state.tasks.deadlineFollowup).filter(function (row) {
+      return state.tasks.ownerFilter === "all" ||
+        state.tasks.list.some(function (task) {
+          return task.id === row.assignment_id && task.created_by_teacher_id === (state.user && state.user.id);
+        });
+    });
+    const labels = {
+      not_started:"Niet begonnen", partial:"Gedeeltelijk gemaakt", almost:"Bijna klaar",
+      review:"Wacht op controle", completed:"Op tijd klaar", accepted:"Telt als gemaakt"
+    };
+    const people = new Map();
+    records.forEach(function (row) {
+      const key = row.class_id + ":" + row.student_id;
+      if (!people.has(key)) people.set(key,{name:row.student_name,studentId:row.student_id,
+        className:row.class_name,rows:[],notStarted:0,partial:0,almost:0,done:0});
+      const p = people.get(key);
+      p.rows.push(row);
+      if (row.outcome === "not_started") p.notStarted++;
+      else if (row.outcome === "partial") p.partial++;
+      else if (row.outcome === "almost") p.almost++;
+      else p.done++;
+    });
+    const peopleRows = Array.from(people.values()).sort(function (a,b) {
+      return (b.notStarted+b.partial)-(a.notStarted+a.partial) || b.almost-a.almost ||
+        a.className.localeCompare(b.className,"nl") || a.name.localeCompare(b.name,"nl");
+    });
+    const needsAttention=peopleRows.filter(function (p) { return p.notStarted+p.partial>0; }).length;
+    const riskCount=peopleRows.filter(function (p) { return p.notStarted+p.partial>=3; }).length;
+    const recordsHtml = peopleRows.map(function (person) {
+      const history = person.rows.slice().sort(function (a,b) { return new Date(b.due_at)-new Date(a.due_at); });
+      return '<details class="deadline-student"><summary><strong>' + escapeHtml(person.name) +
+        '</strong> <small>' + escapeHtml(person.className) + '</small>' +
+        '<span>' + (person.notStarted ? person.notStarted+' niet begonnen · ' : '') +
+        (person.partial ? person.partial+' gedeeltelijk · ' : '') +
+        (person.almost ? person.almost+' bijna klaar · ' : '') +
+        person.done + ' afgewerkt</span></summary>' +
+        '<div class="deadline-student-tasks">' + history.map(function (row) {
+          const detail = row.items_expected > 0 ? ' · ' + row.items_done + '/' + row.items_expected + ' items' : '';
+          const options = row.can_override && ["not_started","partial","almost","accepted"].includes(row.outcome) ?
+            '<button type="button" class="small-button" data-action="deadline-exception" data-assignment-id="' +
+              escapeHtml(row.assignment_id) + '" data-student-id="' + escapeHtml(row.student_id) +
+              '" data-accept="' + (row.outcome==="accepted" ? "false" : "true") + '">' +
+              (row.outcome==="accepted" ? "Goedkeuring terugdraaien" : "Toch als gemaakt tellen") + '</button>' : '';
+          return '<div class="deadline-task-record"><div><b>' + escapeHtml(row.title) + '</b>' +
+            '<small>' + escapeHtml(formatDate(row.due_at)) + ' · ' +
+            escapeHtml(labels[row.outcome] || row.outcome) + detail + '</small></div>' + options + '</div>';
+        }).join("") + '</div></details>';
+    }).join("");
+    return '<details class="section-block task-deadline-followup"' + (state.tasks.deadlineFollowupOpen ? ' open' : '') +
+      '><summary>Deadline-opvolging · ' + needsAttention + ' leerlingen met onvolledig werk' +
+      (riskCount ? ' · ' + riskCount + ' herhaaldelijk' : '') + '</summary>' +
+      '<p class="muted">Dit is een historiek van verlopen taken, niet van afzonderlijke fouten. Niet begonnen en gedeeltelijk gemaakt tellen mee; bijna klaar staat apart. Je kunt een uitzondering goedkeuren zonder scores of pogingen te wijzigen.</p>' +
+      (state.tasks.deadlineFollowupError ? '<p class="form-message">' + escapeHtml(state.tasks.deadlineFollowupError) + '</p>' : '') +
+      (peopleRows.length ? '<div class="deadline-followup-list">' + recordsHtml + '</div>' :
+        '<p class="muted">Nog geen afgelopen taken om te tellen.</p>') + '</details>';
+  }
+
   function renderTasksPage() {
     const all = state.tasks.list.filter(function (task) {
       return state.tasks.ownerFilter === "all" || task.created_by_teacher_id === (state.user && state.user.id);
@@ -1563,7 +1621,8 @@
       '<nav class="task-owner-tabs" aria-label="Welke taken"><button type="button" data-action="task-owner-filter" data-value="mine" aria-pressed="' + (state.tasks.ownerFilter === "mine") + '">Mijn taken</button>' +
         '<button type="button" data-action="task-owner-filter" data-value="all" aria-pressed="' + showOwner + '">Alle taken</button></nav>' +
       (!all.length && !showOwner ? '<p class="muted">Je hebt nog geen eigen taken. Via Alle taken kun je taken van collega’s raadplegen.</p>' : '') +
-      group("ACTIEF", active, "active") + group("RECENT AFGELOPEN", recent, "recent") + group("CONCEPTEN", drafts, "draft") +
+      group("ACTIEF", active, "active") + renderDeadlineFollowup() +
+      group("RECENT AFGELOPEN", recent, "recent") + group("CONCEPTEN", drafts, "draft") +
       '<details class="section-block task-archive"' + (state.tasks.archiveOpen ? ' open' : '') + '><summary>GEARCHIVEERD (' + archived.length + ')</summary>' +
         '<form class="task-archive-filters" data-form="task-archive-filters"><label>Klas<select name="class_id"><option value="all">Alle klassen</option>' +
           Array.from(classChoices).map(function (entry) { return '<option value="' + escapeHtml(entry[0]) + '"' + (archiveFilters.classId === entry[0] ? ' selected' : '') + '>' + escapeHtml(entry[1]) + '</option>'; }).join("") + '</select></label>' +
@@ -1823,7 +1882,8 @@
     state.studentVerbGoalsError = false;
     state.management = { loaded: false, classes: [], students: [], selectedClassId: null, studentStatus: "active", generatedCode: "", createdStudents: [], message: "", messageIsError: false };
     state.teacherAdmin = { loaded: false, teachers: [], assignments: [], classes: [], editingTeacherId: null, message: "", messageIsError: false };
-    state.tasks = { loaded: false, list: [], detail: [], reports: [], selectedId: null, draft: null, filter: "all",
+    state.tasks = { loaded: false, list: [], detail: [], reports: [], deadlineFollowup: [], deadlineFollowupOpen: false,
+      deadlineFollowupError: "", selectedId: null, draft: null, filter: "all",
       ownerFilter: "mine", archiveOpen: false, archiveFilters: { classId: "all", creatorId: "all", period: "all", query: "" },
       message: "", error: false };
     state.route = { view: "dashboard", classId: null, studentId: null };
@@ -2009,9 +2069,14 @@
     document.querySelector("#dashboardContent").innerHTML = '<section class="loading-state"><span class="loader" aria-hidden="true"></span><p>Taken worden veilig geladen…</p></section>';
     updateNavigation();
     try {
-      const result = await state.client.rpc("get_teacher_assignments");
+      const [result, followup] = await Promise.all([
+        state.client.rpc("get_teacher_assignments"),
+        state.client.rpc("get_teacher_deadline_followup")
+      ]);
       if (result.error) throw result.error;
       state.tasks.list = asArray(result.data);
+      state.tasks.deadlineFollowup = followup.error ? [] : asArray(followup.data);
+      state.tasks.deadlineFollowupError = followup.error ? "Deadline-opvolging kon niet geladen worden. Herlaad het dashboard." : "";
       state.tasks.loaded = true;
       state.tasks.message = "";
       renderCurrent();
@@ -2373,6 +2438,32 @@
       return renderCurrent();
     }
     if (action === "open-task") return openTaskDetail(id);
+    if (action === "deadline-exception") {
+      const assignmentId = target.dataset.assignmentId;
+      const studentId = target.dataset.studentId;
+      const accept = target.dataset.accept === "true";
+      const row = asArray(state.tasks.deadlineFollowup).find(function (item) {
+        return item.assignment_id === assignmentId && item.student_id === studentId;
+      });
+      if (!row || !row.can_override) return;
+      if (!window.confirm(accept ?
+        "Voor " + row.student_name + " de taak «" + row.title + "» als gemaakt tellen? Dit wijzigt geen oefenresultaten." :
+        "De eerdere uitzondering voor " + row.student_name + " terugdraaien?")) return;
+      target.disabled = true;
+      const result = await state.client.rpc("set_assignment_deadline_exception", {
+        p_assignment_id:assignmentId, p_student_id:studentId, p_accept:accept
+      });
+      if (result.error) {
+        state.tasks.message = "Aanpassen mislukt: " + (result.error.message || "Probeer opnieuw.");
+        target.disabled = false;
+        return renderCurrent();
+      }
+      state.tasks.deadlineFollowupOpen = true;
+      await openTasks(true);
+      state.tasks.message = accept ? "Taak telt voor deze leerling als gemaakt." : "Uitzondering teruggedraaid.";
+      renderCurrent();
+      return;
+    }
     if (action === "approve-all-reports") {
       const task = state.tasks.list.find(function (row) { return row.id === state.tasks.selectedId; });
       if (!task || !(currentTeacherIsAdmin() || task.created_by_teacher_id === state.user.id)) return;
