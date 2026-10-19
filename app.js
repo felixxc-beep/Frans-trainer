@@ -8,7 +8,7 @@ const ASSIGNMENTS_CACHE_KEY = "monParcoursAssignmentsCacheV1";
 const VERB_EVIDENCE_KEY = "monParcoursVerbEvidenceV1";
 const VERB_SERVER_CACHE_KEY = "monParcoursVerbServerCacheV1";
 const TASK_ROUNDS_KEY = "monParcoursTaskRoundsV1";
-const APP_VERSION = "20261019-2";
+const APP_VERSION = "20261019-3";
 const INACTIVITY_TIMEOUT_MS = 60000;
 const MAX_DYNAMIC_NUMBER_ALL = 101;
 const ACCENTS = ["é", "è", "ê", "ë", "à", "â", "ç", "ù", "û", "ô", "î", "ï"];
@@ -707,6 +707,11 @@ function mergeAssignmentRounds(assignment) {
 
 function assignmentProgress(assignment) {
   const progress = window.MonParcoursAssignments.progress(assignment, currentMasteryRecords(), undefined, currentVerbEvidence());
+  if (assignment.manually_accepted) {
+    progress.status = "completed";
+    progress.teacherAccepted = true;
+    return progress;
+  }
   if (assignment.completion_strategy === "rounds") {
     const savedRounds = roundsForAssignment(assignment);
     progress.rounds = window.MonParcoursTaskRounds.progress(assignment, savedRounds);
@@ -813,7 +818,7 @@ function roundCardStatus(progress) {
   if (status === "completed") return { className: "complete", fr: "✓ Terminé", nl: "Klaar" };
   if (status === "late") return { className: "late", fr: "En retard", nl: "Te laat — niet klaar" };
   if (status === "not_started") return { className: "todo", fr: "À faire", nl: "Niet gestart" };
-  if (status === "pending_review") return { className: "pending-review", fr: "En attente du professeur", nl: "Wacht op controle" };
+  if (status === "pending_review") return { className: "complete", fr: "✓ Terminé pour toi", nl: "✓ Voor jou klaar" };
   return { className: "in-progress", fr: "En cours", nl: "Bezig — niet klaar" };
 }
 
@@ -949,24 +954,12 @@ function renderAssignments() {
   app.innerHTML = breadcrumbHtml([{ label: "Mon parcours", action: "home" }]) +
     '<section class="setup-header"><h1>' + uiText("Mes devoirs", "Mijn taken") + '</h1>' +
       '<p class="muted">' + uiText("Les devoirs à faire sont affichés en premier. Les devoirs expirés restent consultables.", 
-        "Alle taken die je nog moet maken staan bovenaan. Verlopen taken kun je nog bekijken.") + '</p></section>' +
+        "Alle opdrachten die je nog moet maken staan hier overzichtelijk bovenaan.") + '</p></section>' +
     '<section class="student-task-group"><h2>' + uiText("À faire (" + active.length + ")", "Nog te maken (" + active.length + ")") + '</h2>' +
       (active.length ? '<div class="assignment-list">' + active.map(assignmentCard).join("") + '</div>' :
         '<p class="muted">' + uiText("Aucun devoir ouvert.", "Geen openstaande taken.") + '</p>') + '</section>' +
     (done.length ? '<section class="student-task-group"><h2>' + uiText("Terminés ou en attente (" + done.length + ")", "Afgewerkt of wachten (" + done.length + ")") +
       '</h2><div class="assignment-list">' + done.map(assignmentCard).join("") + '</div></section>' : '') +
-    (expired.length ? '<details class="student-expired-tasks"><summary>' +
-        uiText("Devoirs expirés (" + expired.length + ")", "Verlopen taken (" + expired.length + ")") + '</summary>' +
-        '<p class="muted">' + uiText("La date limite est passée. Ces devoirs sont uniquement consultables.",
-          "De deadline is voorbij. Deze taken kun je nog bekijken, maar niet meer maken.") + '</p>' +
-        '<div class="assignment-list">' + expired.map(function (assignment) {
-          return '<button class="assignment-card is-expired" type="button" data-action="show-assignment-detail" data-id="' + escapeAttr(assignment.id) + '">' +
-            '<small>' + uiText("Expiré", "Verlopen") + '</small><strong class="assignment-card-title">' +
-            escapeHtml(assignment.title) + '</strong>' +
-            (assignmentCourseLabel(assignment) ? '<small class="assignment-course-label">' + escapeHtml(assignmentCourseLabel(assignment)) + '</small>' : '') +
-            '<span class="assignment-home-due">' + assignmentDue(assignment) + '</span><span class="assignment-card-cta">' +
-            uiText("Voir →", "Bekijken →") + '</span></button>';
-        }).join("") + '</div></details>' : '') +
     (!state.assignments.loaded && !active.length && !done.length && !expired.length ?
       '<p class="muted">' + uiText("Connecte-toi à Internet pour charger tes devoirs.", "Maak verbinding met internet om je taken op te halen.") + '</p>' : '');
   focusApp();
@@ -991,7 +984,7 @@ function renderAssignmentDetail(id) {
     '<p>' + assignmentDue(assignment) + '</p>' +
     (expired ? '<p class="assignment-expired-warning">' +
       uiText("La date limite est passée. Tu peux consulter tes résultats, mais tu ne peux plus commencer ou continuer ce devoir.",
-        "De deadline is voorbij. Je kunt je resultaten nog bekijken, maar deze taak niet meer starten of verder afwerken.") +
+        "De deadline is voorbij. Deze taak is afgesloten.") +
       '</p>' : '') +
     (assignment.instructions ? '<p class="assignment-instructions">' + escapeHtml(window.MonParcoursExercisePolicy ? window.MonParcoursExercisePolicy.read(assignment.instructions).text : assignment.instructions) + '</p>' : '') +
     (progress.rounds ? roundStatusHtml(progress.rounds, progress.status === "completed", false, progress.pendingReports) :
