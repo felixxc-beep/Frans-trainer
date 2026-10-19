@@ -921,24 +921,54 @@ function assignmentHomeRow(assignment) {
 
 function assignmentHomeSection() {
   const identity = currentStudentIdentity();
-  const published = state.assignments.items.filter(function (item) { return item.status === "published"; });
-  const items = published.slice().sort(function (left, right) { return assignmentDisplayPriority(left) - assignmentDisplayPriority(right); });
-  return '<section class="assignments-home" aria-labelledby="assignments-heading"><div class="section-heading"><h2 id="assignments-heading">' + uiText("Mes devoirs", "Mijn taken") + '</h2>' +
-    (items.length > 2 ? '<button class="text-button" type="button" data-action="view-assignments">' + uiText("Voir tout →", "Alles bekijken →") + '</button>' : '') + '</div>' +
-    (items.length ? '<div class="assignment-home-list">' + items.slice(0, 2).map(assignmentHomeRow).join("") + '</div>' :
-      '<p class="muted">' + (identity.verified && !state.assignments.loaded ? uiText("Connecte-toi à Internet pour charger tes devoirs.", "Maak verbinding met internet om je taken op te halen.") : identity.verified ? uiText("Aucun devoir à faire pour le moment.", "Momenteel geen openstaande taken.") :
-        uiText("Connecte-toi pour voir tes devoirs.", "Meld je aan om je taken te zien.")) + '</p>') + '</section>';
+  const groups = assignmentBuckets();
+  const active = groups.active;
+  const done = groups.done;
+  const doneLabel = uiText("Terminés ou en attente (" + done.length + ")", "Afgewerkt of wachten (" + done.length + ")");
+  return '<section class="assignments-home" aria-labelledby="assignments-heading"><div class="section-heading">' +
+    '<h2 id="assignments-heading">' + uiText("Mes devoirs", "Mijn taken") + '</h2>' +
+    '<button class="text-button" type="button" data-action="view-assignments">' + uiText("Historique →", "Alle taken en archief →") + '</button></div>' +
+    '<p class="assignment-home-heading">' + uiText("À faire maintenant (" + active.length + ")", "Nog te maken (" + active.length + ")") + '</p>' +
+    (active.length ? '<div class="assignment-home-list">' + active.map(assignmentHomeRow).join("") + '</div>' :
+      '<p class="muted">' + (identity.verified && !state.assignments.loaded ?
+        uiText("Connecte-toi à Internet pour charger tes devoirs.", "Maak verbinding met internet om je taken op te halen.") :
+        identity.verified ? uiText("Tous tes devoirs disponibles sont terminés. Bravo !", "Geen openstaande taken. Goed gewerkt!") :
+        uiText("Connecte-toi pour voir tes devoirs.", "Meld je aan om je taken te zien.")) + '</p>') +
+    (done.length ? '<details class="student-assignment-done"><summary>✓ ' + doneLabel + '</summary>' +
+      '<div class="assignment-home-list">' + done.map(assignmentHomeRow).join("") + '</div></details>' : '') +
+    '</section>';
 }
 
 function renderAssignments() {
   if (!hasRequiredStudentIdentity()) return requestRequiredIdentity({ kind: "assignment", id: null });
   state.view = "assignments";
-  const items = state.assignments.items.filter(function (item) { return item.status === "published"; })
-    .sort(function (left, right) { return assignmentDisplayPriority(left) - assignmentDisplayPriority(right); });
+  const groups = assignmentBuckets();
+  const active = groups.active;
+  const done = groups.done;
+  const expired = groups.expired;
   app.innerHTML = breadcrumbHtml([{ label: "Mon parcours", action: "home" }]) +
-    '<section class="setup-header"><h1>' + uiText("Mes devoirs", "Mijn taken") + '</h1></section>' +
-    (items.length ? '<div class="assignment-list">' + items.map(assignmentCard).join("") + '</div>' :
-      '<p class="muted">' + (state.assignments.loaded ? uiText("Aucun devoir disponible.", "Geen taken beschikbaar.") : uiText("Connecte-toi à Internet pour charger tes devoirs.", "Maak verbinding met internet om je taken op te halen.")) + '</p>');
+    '<section class="setup-header"><h1>' + uiText("Mes devoirs", "Mijn taken") + '</h1>' +
+      '<p class="muted">' + uiText("Les devoirs à faire sont affichés en premier. Les devoirs expirés restent consultables.", 
+        "Alle taken die je nog moet maken staan bovenaan. Verlopen taken kun je nog bekijken.") + '</p></section>' +
+    '<section class="student-task-group"><h2>' + uiText("À faire (" + active.length + ")", "Nog te maken (" + active.length + ")") + '</h2>' +
+      (active.length ? '<div class="assignment-list">' + active.map(assignmentCard).join("") + '</div>' :
+        '<p class="muted">' + uiText("Aucun devoir ouvert.", "Geen openstaande taken.") + '</p>') + '</section>' +
+    (done.length ? '<section class="student-task-group"><h2>' + uiText("Terminés ou en attente (" + done.length + ")", "Afgewerkt of wachten (" + done.length + ")") +
+      '</h2><div class="assignment-list">' + done.map(assignmentCard).join("") + '</div></section>' : '') +
+    (expired.length ? '<details class="student-expired-tasks"><summary>' +
+        uiText("Devoirs expirés (" + expired.length + ")", "Verlopen taken (" + expired.length + ")") + '</summary>' +
+        '<p class="muted">' + uiText("La date limite est passée. Ces devoirs sont uniquement consultables.",
+          "De deadline is voorbij. Deze taken kun je nog bekijken, maar niet meer maken.") + '</p>' +
+        '<div class="assignment-list">' + expired.map(function (assignment) {
+          return '<button class="assignment-card is-expired" type="button" data-action="show-assignment-detail" data-id="' + escapeAttr(assignment.id) + '">' +
+            '<small>' + uiText("Expiré", "Verlopen") + '</small><strong class="assignment-card-title">' +
+            escapeHtml(assignment.title) + '</strong>' +
+            (assignmentCourseLabel(assignment) ? '<small class="assignment-course-label">' + escapeHtml(assignmentCourseLabel(assignment)) + '</small>' : '') +
+            '<span class="assignment-home-due">' + assignmentDue(assignment) + '</span><span class="assignment-card-cta">' +
+            uiText("Voir →", "Bekijken →") + '</span></button>';
+        }).join("") + '</div></details>' : '') +
+    (!state.assignments.loaded && !active.length && !done.length && !expired.length ?
+      '<p class="muted">' + uiText("Connecte-toi à Internet pour charger tes devoirs.", "Maak verbinding met internet om je taken op te halen.") + '</p>' : '');
   focusApp();
 }
 
