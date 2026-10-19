@@ -569,3 +569,21 @@ dialog::backdrop { background: rgba(10,29,23,.45); backdrop-filter: blur(4px); }
 .marked-answer p { margin: .35rem 0; line-height: 1.9; overflow-wrap: anywhere; }
 .marked-answer-part { display: inline-block; padding: 0 .2rem; border-radius: .2rem; }
 .marked-answer-part.is-wrong { background: #ffcfca; color: #70221b; font-weight: 700; text-decoration: underline; text-decoration-style: wavy; text-underline-offset: .16rem; }
+
+/* School tasks: every actionable assignment visible before the student navigates away. */
+.assignment-home-heading { margin: .15rem 0 .2rem; font-size: .91rem; font-weight: 850; color: var(--forest); }
+.assignment-course-label { display:block; font-size: .76rem !important; font-weight: 650; line-height: 1.4; color: #526a5f !important; overflow-wrap:anywhere; }
+.assignment-home-copy .assignment-course-label { margin: .18rem 0; }
+.assignment-card .assignment-course-label { margin: .05rem 0 .35rem; }
+.student-assignment-done { margin-top: .55rem; border-top: 1px solid #bfdbc9; padding-top: .45rem; }
+.student-assignment-done > summary { cursor: pointer; font-size: .85rem; font-weight: 800; color: #2c6744; padding: .25rem; }
+.student-assignment-done[open] > summary { margin-bottom: .45rem; }
+.student-task-group { display: grid; gap: .6rem; margin: .7rem 0 1.2rem; }
+.student-task-group h2 { font-size: 1.15rem; margin: 0; }
+.student-expired-tasks { margin: 1.25rem 0; padding: .85rem; border: 1px solid var(--line); border-radius: 12px; background: #f7f9f7; }
+.student-expired-tasks > summary { cursor:pointer; font-weight:800; color:#526a5f; }
+.student-expired-tasks > .muted { font-size:.84rem; margin: .6rem 0; }
+.assignment-card.is-expired { background: #f3f4f2; border-color: #dce2dc; color: #56665c; }
+.assignment-card.is-expired .assignment-card-cta { background: #dfe7e0; color: #294d3a; }
+.assignment-expired-warning { padding: .8rem 1rem; border-left: 3px solid #bd886b; background: #fff3e9; border-radius: .5rem; font-weight:700; }
+@media (max-width: 720px) { .assignment-home-list { grid-template-columns: 1fr; } }
