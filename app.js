@@ -8,7 +8,7 @@ const ASSIGNMENTS_CACHE_KEY = "monParcoursAssignmentsCacheV1";
 const VERB_EVIDENCE_KEY = "monParcoursVerbEvidenceV1";
 const VERB_SERVER_CACHE_KEY = "monParcoursVerbServerCacheV1";
 const TASK_ROUNDS_KEY = "monParcoursTaskRoundsV1";
-const APP_VERSION = "20261017-3";
+const APP_VERSION = "20261019-1";
 const INACTIVITY_TIMEOUT_MS = 60000;
 const MAX_DYNAMIC_NUMBER_ALL = 101;
 const ACCENTS = ["é", "è", "ê", "ë", "à", "â", "ç", "ù", "û", "ô", "î", "ï"];
@@ -980,6 +980,7 @@ function renderAssignmentDetail(id) {
   state.activeAssignmentId = id;
   state.view = "assignment-detail";
   const progress = assignmentProgress(assignment);
+  const expired = assignmentIsExpired(assignment);
   const goalDetails = progress.goals ? '<div class="verb-task-goals">' + progress.goals.map(function (goal) {
     const item = assignmentCourseItems(assignment).find(function (row) { return row.id === goal.goalId; });
     const name = item ? displayScopeTitle(item.infinitive) : goal.goalId === "present_er" ? "Verbes en -ER" : goal.goalId;
@@ -988,6 +989,10 @@ function renderAssignmentDetail(id) {
   app.innerHTML = breadcrumbHtml([{ label: "Mon parcours", action: "home" }, { label: "Mes devoirs", action: "view-assignments" }]) +
     '<section class="assignment-detail"><p class="eyebrow">' + assignmentStatus(progress) + '</p><h1>' + assignmentContentIcon(assignment) + escapeHtml(assignment.title) + '</h1>' +
     '<p>' + assignmentDue(assignment) + '</p>' +
+    (expired ? '<p class="assignment-expired-warning">' +
+      uiText("La date limite est passée. Tu peux consulter tes résultats, mais tu ne peux plus commencer ou continuer ce devoir.",
+        "De deadline is voorbij. Je kunt je resultaten nog bekijken, maar deze taak niet meer starten of verder afwerken.") +
+      '</p>' : '') +
     (assignment.instructions ? '<p class="assignment-instructions">' + escapeHtml(window.MonParcoursExercisePolicy ? window.MonParcoursExercisePolicy.read(assignment.instructions).text : assignment.instructions) + '</p>' : '') +
     (progress.rounds ? roundStatusHtml(progress.rounds, progress.status === "completed", false, progress.pendingReports) :
       progress.goals ? '<div class="assignment-stats"><strong>' + assignmentShortProgress(progress) + '</strong></div>' :
@@ -1002,7 +1007,7 @@ function renderAssignmentDetail(id) {
       progress.reachedLocally ? '<p class="sync-note">' + uiText("Objectif atteint sur cet appareil. Confirmation après synchronisation.", "Doel op dit toestel behaald. Bevestiging volgt na synchronisatie.") + '</p>' :
       (progress.goals ? '<p>' + uiText("Travaille les personnes et les verbes indiqués pour atteindre l’objectif.", "Oefen de persoonsgroepen en werkwoorden om het doel te bereiken.") + '</p>' :
       '<p>' + uiText("La tâche est terminée quand tous les objectifs ont été travaillés et que le pourcentage acquis atteint l’objectif.", "De taak is klaar als alle leerdoelen geoefend zijn en het gekend-percentage het doel bereikt.") + '</p>')) +
-    (progress.rounds && (progress.status === "completed" || progress.status === "pending_review") ? '' : '<button class="button button-primary" type="button" data-action="launch-assignment" data-id="' + escapeAttr(id) + '">' + uiText(progress.rounds ? progress.status === "not_started" ? "Commencer" : "Continuer" : progress.practiced ? "Continuer" : "Commencer",
+    (expired || ["completed","pending_review","waiting_release"].includes(progress.status) ? '' : '<button class="button button-primary" type="button" data-action="launch-assignment" data-id="' + escapeAttr(id) + '">' + uiText(progress.rounds ? progress.status === "not_started" ? "Commencer" : "Continuer" : progress.practiced ? "Continuer" : "Commencer",
       progress.rounds ? progress.status === "not_started" ? "Starten" : "Verder oefenen" : progress.practiced ? "Verder oefenen" : "Starten") + '</button>') + '</section>';
   focusApp();
 }
@@ -1010,6 +1015,9 @@ function renderAssignmentDetail(id) {
 function launchAssignment(id) {
   if (!hasRequiredStudentIdentity()) return requestRequiredIdentity({ kind: "assignment_launch", id: id });
   const assignment = assignmentById(id);
+  if (assignment && (assignmentIsExpired(assignment) ||
+      ["completed","pending_review","waiting_release"].includes(assignmentProgress(assignment).status)))
+    return renderAssignmentDetail(id);
   const allItems = assignmentCourseItems(assignment);
   const first = allItems[0];
   if (!assignment || !first) return renderAssignments();
