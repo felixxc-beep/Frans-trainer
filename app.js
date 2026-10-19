@@ -725,7 +725,57 @@ function assignmentDue(assignment) {
   if (!assignment.due_at) return uiText("Sans échéance", "Geen deadline");
   const date = new Date(assignment.due_at);
   const format = { weekday: "long", day: "numeric", month: "long", timeZone: "Europe/Brussels" };
-  return uiText("À faire pour " + date.toLocaleDateString("fr-BE", format), "Te maken tegen " + date.toLocaleDateString("nl-BE", format));
+  const clock = { hour:"2-digit", minute:"2-digit", hourCycle:"h23", timeZone:"Europe/Brussels" };
+  return uiText("Pour " + date.toLocaleDateString("fr-BE",format) + " à " + date.toLocaleTimeString("fr-BE",clock),
+    "Tegen " + date.toLocaleDateString("nl-BE",format) + " om " + date.toLocaleTimeString("nl-BE",clock));
+}
+
+function assignmentIsExpired(assignment, now) {
+  if (!assignment || !assignment.due_at) return false;
+  const timestamp = Date.parse(assignment.due_at);
+  return Number.isFinite(timestamp) && timestamp < (now == null ? Date.now() : now);
+}
+
+function assignmentBuckets(now) {
+  const entries = state.assignments.items.filter(function (item) { return item.status === "published"; });
+  const active = [], done = [], expired = [];
+  entries.forEach(function (item) {
+    if (assignmentIsExpired(item, now)) { expired.push(item); return; }
+    const status = assignmentProgress(item).status;
+    if (["completed","waiting_release","pending_review"].includes(status)) done.push(item);
+    else active.push(item);
+  });
+  const due = function (item) {
+    const value = item.due_at ? Date.parse(item.due_at) : Infinity;
+    return Number.isFinite(value) ? value : Infinity;
+  };
+  active.sort(function (a,b) {
+    const statusA = assignmentProgress(a).status === "in_progress" ? 0 : 1;
+    const statusB = assignmentProgress(b).status === "in_progress" ? 0 : 1;
+    return statusA-statusB || due(a)-due(b) || String(a.title).localeCompare(String(b.title),"nl");
+  });
+  done.sort(function (a,b) { return due(a)-due(b); });
+  expired.sort(function (a,b) { return due(b)-due(a); });
+  return { active:active, done:done, expired:expired };
+}
+
+function assignmentCourseLabel(assignment) {
+  const policy = window.MonParcoursExercisePolicy;
+  const config = policy && typeof policy.read === "function" ? policy.read(assignment.instructions) : null;
+  const scope = config && config.poolSettings && config.poolSettings.scope || {};
+  const first = assignmentCourseItems(assignment)[0];
+  const atelier = scope.top_category || first && first.top_category || "";
+  const forms = config && Array.isArray(config.forms) ? config.forms : [];
+  const names = {
+    vocabulary_direct:"losse woordjes", vocabulary_context:"woorden in zinnen",
+    verb_conjugation:"werkwoorden vervoegen", verb_context:"werkwoorden in zinnen",
+    revision:"zinnen vertalen", revision_other:"Révision-oefeningen",
+    grammar_rule:"grammatica", grammar_context:"grammatica in zinnen",
+    grammar_mixed:"gemengde grammatica", phrase_direct:"zinnen vertalen",
+    phrase_context:"zinnen in context", numbers:"getallen", spelling:"spelling"
+  };
+  const description = forms.map(function (key) { return names[key] || key; }).join(" + ");
+  return [atelier,description].filter(Boolean).join(" · ");
 }
 
 function assignmentStatus(progress) {
@@ -749,6 +799,7 @@ function assignmentCard(assignment) {
     '<span class="assignment-kind">' + uiText("Devoir", "Taak") + '</span>' +
     (roundStatus ? '<span class="assignment-status-tag">' + uiText(roundStatus.fr, roundStatus.nl) + '</span>' : '') +
     '<strong class="assignment-card-title">' + assignmentContentIcon(assignment) + escapeHtml(assignment.title) + '</strong>' +
+    (assignmentCourseLabel(assignment) ? '<small class="assignment-course-label">' + escapeHtml(assignmentCourseLabel(assignment)) + '</small>' : '') +
     (progress.rounds ? roundStatusHtml(progress.rounds, completed, true, progress.pendingReports,
       progress.status === "not_started" || progress.status === "late" && !roundsForAssignment(assignment).length) : '<span class="assignment-simple-progress">' + assignmentStatus(progress) + '</span>') +
     '<span class="assignment-home-due">' + assignmentDue(assignment) + '</span>' +
@@ -851,17 +902,16 @@ function assignmentContentIcon(assignment) {
 function assignmentHomeRow(assignment) {
   const progress = assignmentProgress(assignment);
   const completed = progress.status === "completed";
-  const waiting = progress.status === "pending_review";
+  const waiting = progress.status === "pending_review" || progress.status === "waiting_release";
   const roundStatus = progress.rounds ? roundCardStatus(progress) : null;
   const due = assignment.due_at ? new Date(assignment.due_at) : null;
-  const dueText = due && !Number.isNaN(due.getTime())
-    ? uiText("Pour le " + due.toLocaleDateString("fr-BE", { day: "numeric", month: "short", timeZone: "Europe/Brussels" }), "Tegen " + due.toLocaleDateString("nl-BE", { day: "numeric", month: "short", timeZone: "Europe/Brussels" }))
-    : uiText("Sans échéance", "Geen deadline");
+  const dueText = assignmentDue(assignment);
   return '<button class="assignment-home-row' + (roundStatus ? ' is-' + roundStatus.className : completed ? ' is-complete' : '') + '" type="button" data-action="' + (completed || waiting ? 'show-assignment-detail' : 'launch-assignment') + '" data-id="' + escapeAttr(assignment.id) + '">' +
     '<span class="content-icon-wrap">' + assignmentContentIcon(assignment) + '</span>' +
     '<span class="assignment-home-copy"><small class="assignment-kind">' + uiText("Devoir", "Taak") + '</small>' +
       (roundStatus ? '<span class="assignment-status-tag">' + uiText(roundStatus.fr, roundStatus.nl) + '</span>' : '') +
       '<strong>' + escapeHtml(assignment.title) + '</strong>' +
+      (assignmentCourseLabel(assignment) ? '<small class="assignment-course-label">' + escapeHtml(assignmentCourseLabel(assignment)) + '</small>' : '') +
       (progress.rounds ? roundStatusHtml(progress.rounds, completed, true, progress.pendingReports,
         progress.status === "not_started" || progress.status === "late" && !roundsForAssignment(assignment).length) : '<small>' + assignmentStatus(progress) + '</small>') + '</span>' +
     '<span class="assignment-home-due">' + dueText + '</span>' +
