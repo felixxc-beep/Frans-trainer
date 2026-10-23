@@ -1974,7 +1974,7 @@ function submitAnswer(rawAnswer) {
       target_results: submissionTargetResults(question, graded, correct)
     });
   }
-  session.lastMasteryFeedback = recordSyncAttempt(question, correct, graded);
+  session.lastMasteryFeedback = recordSyncAttempt(question, correct, graded, rawAnswer);
 
   if (session.assignment_round_number) {
     const assignment = assignmentById(session.assignment_id);
@@ -2301,10 +2301,10 @@ function finishSession() {
   renderSummary();
 }
 
-function recordSyncAttempt(question, correct, graded) {
+function recordSyncAttempt(question, correct, graded, submittedAnswer) {
   const session = state.session;
   if (!session || !session.identity_verified) return null;
-  if (question.variantId) return recordVariantEvidence(question, graded);
+  if (question.variantId) return recordVariantEvidence(question, graded, submittedAnswer);
   const stableIds = question.stableItemIds || (question.stableItemId ? [question.stableItemId] : []);
   if (!stableIds.length) return null;
   const item = question.item || {};
@@ -2330,6 +2330,7 @@ function recordSyncAttempt(question, correct, graded) {
     mode: session.mode,
     prompt: question.prompt,
     correct_answers: question.answers.slice(),
+    submitted_answer: formatSubmittedAnswer(question, submittedAnswer).slice(0, 1000),
     was_correct: correct,
     attempt_number: attemptNumber,
     created_at: new Date().toISOString(),
@@ -2345,7 +2346,7 @@ function recordSyncAttempt(question, correct, graded) {
   return { before: before, after: after, beforeLevel: beforeLevel, afterLevel: afterLevel };
 }
 
-function recordVariantEvidence(question, graded) {
+function recordVariantEvidence(question, graded, submittedAnswer) {
   const session = state.session;
   if (!graded) return null;
   if (!graded.evidence.length) {
@@ -2371,6 +2372,7 @@ function recordVariantEvidence(question, graded) {
       trajectory: path.trajectory, top_category: path.top_category, lesson: path.lesson,
       block: path.block, subsection: path.subsection, exercise_key: question.exerciseKey || "curated",
       mode: session.mode, prompt: question.prompt, correct_answers: entry.accepted_answers.slice(),
+      submitted_answer: formatSubmittedAnswer(question, submittedAnswer).slice(0, 1000),
       was_correct: entry.correct, attempt_number: attemptNumber, created_at: new Date().toISOString(),
       client_session_id: session.client_session_id, identity_subject: session.identity_subject
     };
