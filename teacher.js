@@ -7,7 +7,7 @@
     classes: "id,name,is_active,created_at",
     students: "id,class_id,display_name,is_active,created_at",
     practice_sessions: "id,student_id,client_session_id,assignment_id,assignment_round_number,trajectory,top_category,lesson,block,subsection,exercise_key,mode,question_count,attempt_count,correct_count,incorrect_count,active_duration_seconds,started_at,finished_at",
-    practice_attempts: "id,session_id,student_id,item_id,equivalent_item_ids,item_variant,item_type,trajectory,top_category,lesson,block,subsection,exercise_key,mode,correct_answers,was_correct,attempt_number,created_at"
+    practice_attempts: "id,session_id,student_id,item_id,equivalent_item_ids,item_variant,item_type,trajectory,top_category,lesson,block,subsection,exercise_key,mode,correct_answers,submitted_answer,was_correct,attempt_number,created_at"
   });
   const MANAGEMENT_COLUMNS = Object.freeze({
     classes: "id,name,class_code,is_active,created_at,updated_at",
@@ -495,7 +495,7 @@
       if (!groups[key]) groups[key] = {
         itemId: attempt.item_id, itemVariant: variant, attempts: 0, wrong: 0,
         students: new Set(), wrongStudents: new Set(), rounds: new Set(),
-        wrongCounts: new Map(), sample: attempt
+        wrongCounts: new Map(), wrongAnswers: new Map(), sample: attempt
       };
       const group = groups[key];
       group.attempts += 1;
@@ -505,6 +505,14 @@
         group.wrong += 1;
         group.wrongStudents.add(attempt.student_id);
         group.wrongCounts.set(attempt.student_id, (group.wrongCounts.get(attempt.student_id) || 0) + 1);
+        const entered = String(attempt.submitted_answer || "").trim();
+        if (entered) {
+          const normalized = entered.normalize("NFC").replace(/\s+/g, " ").toLocaleLowerCase("fr");
+          const existing = group.wrongAnswers.get(normalized) || { answer: entered, count: 0, students: new Set() };
+          existing.count += 1;
+          existing.students.add(attempt.student_id);
+          group.wrongAnswers.set(normalized, existing);
+        }
       }
       if (new Date(attempt.created_at || 0).getTime() > new Date(group.sample.created_at || 0).getTime()) group.sample = attempt;
     });
@@ -520,7 +528,10 @@
         wrong: group.wrong, wrongPercentage: percentage(group.wrong, group.attempts),
         students: group.students.size, wrongStudents: group.wrongStudents.size,
         rounds: Array.from(group.rounds).sort(function (a,b) { return a-b; }).join(", "),
-        affected: affected
+        affected: affected,
+        wrongAnswers: Array.from(group.wrongAnswers.values()).sort(function (a,b) {
+          return b.students.size - a.students.size || b.count - a.count || a.answer.localeCompare(b.answer,"fr");
+        })
       };
     }).filter(function (row) { return row.wrong > 0; })
       .sort(function (left, right) {
@@ -533,7 +544,9 @@
           row.attempts, row.wrong, row.wrongPercentage + "%", row.students,
           row.wrongStudents, row.rounds,
           row.affected.map(function (entry) { return entry.name + " (" + entry.count + "×)"; }).join(", "),
-          row.affected.length ? row.affected[0].name + " (" + row.affected[0].count + "×)" : ""];
+          row.affected.length ? row.affected[0].name + " (" + row.affected[0].count + "×)" : "",
+          row.wrongAnswers.length ? row.wrongAnswers[0].answer + " (" + row.wrongAnswers[0].students.size + " leerlingen; " + row.wrongAnswers[0].count + "×)" : "",
+          row.wrongAnswers.map(function (entry) { return entry.answer + " (" + entry.students.size + " leerlingen; " + entry.count + "×)"; }).join(" | ")];
       });
   }
 
@@ -2668,8 +2681,8 @@
         await ensureAnalyticsData();
         const rows = taskErrorAnalysisRows(task, state.raw, state.courseIndex);
         downloadCsv("foutenanalyse-" + safeFilename(task.title) + ".csv",
-          ["Taak", "Onderdeel", "Oefening / prompt", "Correct antwoord", "Leerdoel-ID", "Variant", "Pogingen", "Foute pogingen", "Foutpercentage", "Leerlingen geprobeerd", "Leerlingen met fout", "Ronde(s)", "Leerlingen met fouten (aantal)", "Meest getroffen leerling"],
-          rows.length ? rows : [[task.title, "", "Nog geen foute pogingen geregistreerd", "", "", "", 0, 0, "0%", 0, 0, "", "", ""]]);
+          ["Taak", "Onderdeel", "Oefening / prompt", "Correct antwoord", "Leerdoel-ID", "Variant", "Pogingen", "Foute pogingen", "Foutpercentage", "Leerlingen geprobeerd", "Leerlingen met fout", "Ronde(s)", "Leerlingen met fouten (aantal)", "Meest getroffen leerling", "Meest voorkomende fout antwoord", "Concrete foute antwoorden (aantal leerlingen en pogingen)"],
+          rows.length ? rows : [[task.title, "", "Nog geen foute pogingen geregistreerd", "", "", "", 0, 0, "0%", 0, 0, "", "", "", "", ""]]);
       } catch (error) {
         state.tasks.message = "Foutenanalyse kon niet worden geladen. Probeer opnieuw.";
         renderCurrent();
