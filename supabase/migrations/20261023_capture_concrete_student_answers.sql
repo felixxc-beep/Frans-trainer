@@ -56,8 +56,8 @@ begin
 end;
 $body$;
 
-revoke all on function private.capture_submitted_answers(text,jsonb,jsonb)
-  from public, anon, authenticated;
+revoke all on function private.capture_submitted_answers(text,jsonb,jsonb) from public;
+grant execute on function private.capture_submitted_answers(text,jsonb,jsonb) to anon, authenticated;
 
 -- Keep existing validation, round tracking and ingest semantics intact.
 -- Only append literal-answer capture after an accepted bundle was ingested.
