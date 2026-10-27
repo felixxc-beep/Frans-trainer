@@ -226,6 +226,8 @@ setImmediate(function () {
     ["uf1-item-000522", "Je m'appelles Yana.", false],
     ["uf1-item-000522", "Je m'appelle", false],
     ["uf1-item-000522", "Je m'appelle (nom)", false],
+    ["uf1-item-000522", "Je m'appelle [nom].", false],
+    ["uf1-item-000526", "J'ai [âge] ans.", false],
     ["uf1-item-000522", "je suis nom", false],
     ["uf1-item-000524", "Mon nom de famille est Hakki", true],
     ["uf1-item-000524", "mon nom de famille est de roost", true],
