@@ -2935,8 +2935,10 @@ function isCorrect(answer, accepted) {
   const candidate = normalizeAnswer(answer, true);
   return accepted.some(function (value) {
     const expected = normalizeAnswer(value, true);
-    return expected === candidate || expected.replace(/œ/g, "oe") === candidate ||
-      matchesPhraseSlot(candidate, expected);
+    // A model slot must be replaced by a real value, never copied literally.
+    if (/\[(nom|âge|classe|groupe|lieu)\]/.test(expected))
+      return matchesPhraseSlot(candidate, expected);
+    return expected === candidate || expected.replace(/œ/g, "oe") === candidate;
   });
 }
 
