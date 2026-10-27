@@ -257,7 +257,7 @@ setImmediate(function () {
     assert.equal(evaluate("isCorrect(reportedCandidate, reportedAnswers)"), expected,
       itemId + " / " + answer);
   });
-  console.log("26 meldingen en placeholdergevallen gecontroleerd.");
+  console.log("28 meldingen en placeholdergevallen gecontroleerd.");
 
   console.log("ACTES-DE-PAROLE-REGRESSIE GESLAAGD");
   console.log("Trajet 1–6: 45 · 19 · 53 · 49 · 40 · 42 phrase-items");
