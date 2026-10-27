@@ -217,6 +217,48 @@ setImmediate(function () {
   assert.equal(synced.attempts[0].was_correct, true);
   assert.equal(Object.prototype.hasOwnProperty.call(synced.attempts[0], "submitted_answer"), false);
 
+  // Reports from 1AB, 26 October 2026: real values must match the slot,
+  // but typos, placeholder words and missing values still fail.
+  const reportedCases = [
+    ["uf1-item-000522", "Je m'appelle Anouar.", true],
+    ["uf1-item-000522", "Je m'appelle Yana.", true],
+    ["uf1-item-000522", "Je m'appele Anouar.", false],
+    ["uf1-item-000522", "Je m'appelles Yana.", false],
+    ["uf1-item-000522", "Je m'appelle", false],
+    ["uf1-item-000522", "Je m'appelle (nom)", false],
+    ["uf1-item-000522", "Je m'appelle [nom].", false],
+    ["uf1-item-000526", "J'ai [âge] ans.", false],
+    ["uf1-item-000522", "je suis nom", false],
+    ["uf1-item-000524", "Mon nom de famille est Hakki", true],
+    ["uf1-item-000524", "mon nom de famille est de roost", true],
+    ["uf1-item-000524", "Mon nom de famillie est Heylen", false],
+    ["uf1-item-000523", "Quel est ton nom de famille ?", true],
+    ["uf1-item-000523", "Quel est votre nom de famille ?", true],
+    ["uf1-item-000525", "Tu as quelle âge ?", false],
+    ["uf1-item-000526", "J'ai douze ans.", true],
+    ["uf1-item-000526", "J'ai 12 ans.", true],
+    ["uf1-item-000526", "J'ai (l'âge) ans", false],
+    ["uf1-item-000529", "Quels sont vos loisirs ?", true],
+    ["uf1-item-000529", "Quels sont te hobbys ?", false],
+    ["uf1-item-000538", "Je suis en 2A", true],
+    ["uf1-item-000538", "Je suis en classe", false],
+    ["uf1-item-000540", "Je suis dans le groupe A", true],
+    ["uf1-item-000545", "Elle s'appelle Yana.", true],
+    ["uf1-item-000547", "Son nom de famille, c'est Jacobs.", true],
+    ["uf1-item-000549", "Il a treize ans.", true],
+    ["uf1-item-000551", "Elle habite à Turnhout.", true],
+    ["uf1-item-000565", "Il est en 1AB.", true]
+  ];
+  reportedCases.forEach(function ([itemId, answer, expected]) {
+    const item = trajectoryOnePhrases.find(function (entry) { return entry.id === itemId; });
+    assert.ok(item, itemId);
+    context.reportedAnswers = evaluate('answerList("' + item.fr.replace(/"/g, '\\"') + '", state.data.trajectories[0].items.find(i => i.id === "' + itemId + '"))');
+    context.reportedCandidate = answer;
+    assert.equal(evaluate("isCorrect(reportedCandidate, reportedAnswers)"), expected,
+      itemId + " / " + answer);
+  });
+  console.log("28 meldingen en placeholdergevallen gecontroleerd.");
+
   console.log("ACTES-DE-PAROLE-REGRESSIE GESLAAGD");
   console.log("Trajet 1–6: 45 · 19 · 53 · 49 · 40 · 42 phrase-items");
   console.log("146-itemtotalen, beide subgroepen, bronpatronen, sessiegroottes, accepted_answers, sync en alle drie modi gecontroleerd.");

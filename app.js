@@ -2889,7 +2889,13 @@ function answerList(primary, item) {
   if (item.type === "phrase" && ["uf1-item-000665", "uf1-item-000670", "uf1-item-000830"].includes(item.id))
     return [primary];
   const explicit = Array.isArray(item.accepted_answers) ? item.accepted_answers : [];
-  return unique(explicit.length ? explicit : [primary]);
+  // Natural alternatives reported in Actes de parole, with strict spelling.
+  const alternatives = {
+    "uf1-item-000523": ["Quel est ton nom de famille ?", "Quel est votre nom de famille ?"],
+    "uf1-item-000529": ["Quels sont vos loisirs ?"]
+  };
+  const extra = item.type === "phrase" ? alternatives[item.id] || [] : [];
+  return unique((explicit.length ? explicit : [primary]).concat(extra));
 }
 
 function dutchAnswers(value, item) {
@@ -2929,8 +2935,41 @@ function isCorrect(answer, accepted) {
   const candidate = normalizeAnswer(answer, true);
   return accepted.some(function (value) {
     const expected = normalizeAnswer(value, true);
+    // A model slot must be replaced by a real value, never copied literally.
+    if (/\[(nom|âge|classe|groupe|lieu)\]/.test(expected))
+      return matchesPhraseSlot(candidate, expected);
     return expected === candidate || expected.replace(/œ/g, "oe") === candidate;
   });
+}
+
+// A bracketed value in Actes de parole is a model slot, not a literal answer.
+// Require an actual name, age, class, group or place, while preserving
+// strict spelling and grammar for the surrounding French sentence.
+function matchesPhraseSlot(candidate, template) {
+  const slot = /\[(nom|âge|classe|groupe|lieu)\]/.exec(template);
+  if (!slot) return false;
+  const before = template.slice(0, slot.index);
+  const after = template.slice(slot.index + slot[0].length);
+  if (!candidate.startsWith(before) || !candidate.endsWith(after) ||
+      candidate.length <= before.length + after.length) return false;
+  const answer = candidate.slice(before.length, candidate.length - after.length).trim();
+  if (!answer || ["nom", "prénom", "prenom", "naam", "âge", "age", "leeftijd",
+    "classe", "klas", "groupe", "groep", "lieu", "plaats"].includes(answer) ||
+    /[[\](){}]/.test(answer)) return false;
+  if (slot[1] === "âge") {
+    if (/^(?:[1-9]\d?|1[01]\d|120)$/.test(answer)) return true;
+    const ageWords = ["zéro", "zero", "un", "une", "deux", "trois", "quatre",
+      "cinq", "six", "sept", "huit", "neuf", "dix", "onze", "douze",
+      "treize", "quatorze", "quinze", "seize", "vingt", "trente",
+      "quarante", "cinquante", "soixante", "septante", "huitante",
+      "octante", "nonante", "cent", "et"];
+    const words = answer.split(/[\s-]+/);
+    return words.some(function (word) { return word !== "et"; }) &&
+      words.every(function (word) { return ageWords.includes(word); });
+  }
+  if (slot[1] === "nom" || slot[1] === "lieu")
+    return /^[\p{L}][\p{L}' -]{0,69}$/u.test(answer);
+  return /^[\p{L}\d][\p{L}\d' -]{0,29}$/u.test(answer);
 }
 
 function splitAnswerArticle(value, french) {
