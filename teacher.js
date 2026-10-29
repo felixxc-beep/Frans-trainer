@@ -46,7 +46,7 @@
     teacherAdmin: { loaded: false, teachers: [], assignments: [], classes: [], editingTeacherId: null, message: "", messageIsError: false },
     tasks: { loaded: false, list: [], detail: [], reports: [], selectedId: null, draft: null, filter: "all",
       ownerFilter: "mine", archiveOpen: false, archiveFilters: { classId: "all", creatorId: "all", period: "all", query: "" },
-      message: "", error: false },
+      message: "", error: false, reportDecisions: Object.create(null), reportOpen: true, reviewSaving: false },
     loading: false,
     loadSequence: 0
   };
@@ -1709,16 +1709,29 @@
     const reports = asArray(state.tasks.reports);
     const pendingReports = reports.filter(function (report) { return !report.status || report.status === 'pending'; });
     const overviewContent = taskOverviewContent(task);
+    const pendingDecisionIds = new Set(pendingReports.map(function (report) { return report.id; }));
+    const reportDecisions = state.tasks.reportDecisions || Object.create(null);
+    const chosen = Object.keys(reportDecisions).filter(function (id) { return pendingDecisionIds.has(id); });
+    const selectedApproved = chosen.filter(function (id) { return reportDecisions[id] === "approved"; }).length;
+    const selectedRejected = chosen.filter(function (id) { return reportDecisions[id] === "rejected"; }).length;
     const reportSection = task.completion_strategy === "rounds" ?
-      '<details class="task-report-section"><summary class="section-heading"><span><strong>Probleemmeldingen</strong><small> Klik om meldingen te bekijken</small></span><span class="task-report-badge">' + pendingReports.length + ' wachtend</span></summary>' +
-      (pendingReports.length && canManage ? '<div class="export-actions task-report-bulk"><button class="button button-secondary" type="button" data-action="approve-all-reports">Alles goedkeuren (' + pendingReports.length + ')</button></div>' : '') +
+      '<details class="task-report-section"' + (state.tasks.reportOpen !== false ? ' open' : '') + '><summary class="section-heading"><span><strong>Probleemmeldingen</strong><small> Beoordeel meerdere meldingen en bevestig alles samen</small></span><span class="task-report-badge">' + pendingReports.length + ' wachtend</span></summary>' +
+      (pendingReports.length && canManage ? '<div class="task-report-bulk" data-report-toolbar>' +
+        '<div class="task-report-selection-summary" role="status" aria-live="polite"><strong data-report-selected-count>' + chosen.length + ' geselecteerd</strong><span data-report-selection-types>' + selectedApproved + ' goedkeuren · ' + selectedRejected + ' terugsturen</span></div>' +
+        '<div class="export-actions"><button class="button button-secondary" type="button" data-action="queue-all-reports-approved">Alle openstaande kiezen als goedkeuren</button>' +
+        '<button class="button button-secondary" type="button" data-action="clear-report-selections">Keuzes wissen</button>' +
+        '<button class="button button-primary" type="button" data-action="commit-report-selections"' + (!chosen.length || state.tasks.reviewSaving ? ' disabled' : '') + '>Bevestig ' + chosen.length + ' keuzes</button></div>' +
+        '<p class="muted task-report-bulk-hint">Je keuzes worden pas opgeslagen na bevestiging. Je kunt ze voordien nog veranderen.</p>' +
+        '</div>' : '') +
       (state.tasks.message ? '<p class="task-report-message" role="status">' + escapeHtml(state.tasks.message) + '</p>' : '') +
       (reports.length ? '<div class="task-report-list">' + reports.map(function (report) {
         const courseItem = state.courseIndex[report.item_id];
         const model = report.model_answer || (report.exercise_direction === "full-sentence-nl-fr"
           ? asArray(report.accepted_answers)[0] || ''
           : courseItem && (courseItem.fr || courseItem.infinitive || courseItem.answer) || '');
-        return '<article class="task-report-card"><div><strong>' + escapeHtml(report.student_name) + '</strong> · ' + escapeHtml(report.class_name) +
+        const pending = !report.status || report.status === "pending";
+        const decision = pending ? reportDecisions[report.id] : null;
+        return '<article class="task-report-card' + (decision ? ' is-selected is-' + decision : '') + '" data-report-id="' + escapeHtml(report.id) + '"><div><strong>' + escapeHtml(report.student_name) + '</strong> · ' + escapeHtml(report.class_name) +
           ' · ronde ' + Number(report.round_number) + '<p class="muted">' + escapeHtml(task.title) + ' · ' + escapeHtml(formatDate(report.created_at)) + ' · ' + escapeHtml(report.item_id) + '</p></div>' +
           '<p><b>Prompt:</b> ' + escapeHtml(report.prompt) + '</p><div><b>Als fout beoordeelde invoeren (oudste → nieuwste):</b><ol>' +
           asArray(report.submitted_answers).map(function (answer, index) {
@@ -1729,9 +1742,12 @@
           }).join('') + '</ol></div>' +
           '<p><b>Verwacht:</b> ' + asArray(report.accepted_answers).map(escapeHtml).join(' / ') + (model ? ' · model: ' + escapeHtml(model) : '') + '</p>' +
           '<p class="muted">' + escapeHtml(report.exercise_type || report.exercise_direction) + ' · ' + escapeHtml(report.variant_id || 'cursusitem') + ' · opgezocht: ' + (report.consulted ? 'ja' : 'nee') + ' · app ' + escapeHtml(report.app_version || 'onbekend') + '</p>' +
-          (report.status === "approved" || report.status === "rejected" ? '<p class="muted">' + (report.status === "approved" ? "Goedgekeurd" : "Teruggestuurd") +
-            ' · ' + escapeHtml(formatDate(report.resolved_at || report.created_at)) + '</p>' :
-            '<div class="export-actions"><button class="button button-primary" type="button" data-action="resolve-item-report" data-id="' + escapeHtml(report.id) + '" data-decision="approved">Goedkeuren</button><button class="button button-secondary" type="button" data-action="resolve-item-report" data-id="' + escapeHtml(report.id) + '" data-decision="rejected">Terugsturen</button></div>') + '</article>';
+          (pending ? (canManage ?
+            '<div class="export-actions task-report-choices"><button class="button button-secondary task-report-choice" type="button" data-action="queue-item-report" data-id="' + escapeHtml(report.id) + '" data-decision="approved" aria-pressed="' + (decision === "approved") + '"' + (state.tasks.reviewSaving ? ' disabled' : '') + '>Goedkeuren' + (decision === "approved" ? ' ✓' : '') + '</button>' +
+            '<button class="button button-secondary task-report-choice" type="button" data-action="queue-item-report" data-id="' + escapeHtml(report.id) + '" data-decision="rejected" aria-pressed="' + (decision === "rejected") + '"' + (state.tasks.reviewSaving ? ' disabled' : '') + '>Terugsturen' + (decision === "rejected" ? ' ✓' : '') + '</button></div>' :
+            '<p class="muted">Wacht op beoordeling door de taakbeheerder.</p>') :
+            '<p class="muted">' + (report.status === "approved" ? "Goedgekeurd" : "Teruggestuurd") +
+            ' · ' + escapeHtml(formatDate(report.resolved_at || report.created_at)) + '</p>') + '</article>';
       }).join('') + '</div>' : '<p class="muted">Geen probleemmeldingen.</p>') + '</details>' : '';
     return '<div class="page-heading"><div><p class="eyebrow">Taak · ' + escapeHtml(taskLifecycle(task) === "recent" ? "Recent afgelopen" : taskLifecycle(task) === "archived" ? "Gearchiveerd" : taskLifecycle(task) === "draft" ? "Concept" : "Actief") + '</p><h2>' + escapeHtml(task.title) + '</h2><p class="task-detail-scope">' + escapeHtml(overviewContent.path) +
       '</p><p class="task-detail-exercises">' + escapeHtml(overviewContent.types) + ' · ' + escapeHtml(overviewContent.summary) +
@@ -1885,7 +1901,7 @@
     state.tasks = { loaded: false, list: [], detail: [], reports: [], deadlineFollowup: [], deadlineFollowupOpen: false,
       deadlineFollowupError: "", selectedId: null, draft: null, filter: "all",
       ownerFilter: "mine", archiveOpen: false, archiveFilters: { classId: "all", creatorId: "all", period: "all", query: "" },
-      message: "", error: false };
+      message: "", error: false, reportDecisions: Object.create(null), reportOpen: true, reviewSaving: false };
     state.route = { view: "dashboard", classId: null, studentId: null };
     document.querySelector("#authView").hidden = false;
     document.querySelector("#dashboardView").hidden = true;
@@ -1932,7 +1948,7 @@
       state.studentVerbGoalsError = false;
       state.tasks = { loaded: false, list: [], detail: [], reports: [], selectedId: null, draft: null, filter: "all",
         ownerFilter: "mine", archiveOpen: false, archiveFilters: { classId: "all", creatorId: "all", period: "all", query: "" },
-        message: "", error: false };
+        message: "", error: false, reportDecisions: Object.create(null), reportOpen: true, reviewSaving: false };
       state.management = { loaded: false, classes: [], students: [], selectedClassId: null, studentStatus: "active", generatedCode: "", createdStudents: [], message: "", messageIsError: false };
       state.teacherAdmin = { loaded: false, teachers: [], assignments: [], classes: [], editingTeacherId: null, message: "", messageIsError: false };
       state.filters.classId = "all";
