@@ -1911,6 +1911,10 @@
     const content = document.querySelector("#dashboardContent");
     if (!content || !state.user) return;
     const data = currentFilteredData();
+    if (state.route.view === "task-detail") {
+      const existingReportSection = content.querySelector(".task-report-section");
+      if (existingReportSection) state.tasks.reportOpen = existingReportSection.open;
+    }
     document.querySelector("#filterBar").hidden = state.route.view === "management" || state.route.view === "teachers" || state.route.view.indexOf("task") === 0;
     if (state.route.view === "management") content.innerHTML = renderManagement();
     else if (state.route.view === "teachers") content.innerHTML = renderTeachersPage();
@@ -2216,6 +2220,13 @@
   async function openTaskDetail(id) {
     const task = state.tasks.list.find(function (row) { return row.id === id; });
     if (!task) return openTasks(true);
+    if (state.tasks.selectedId !== id) {
+      state.tasks.reportDecisions = Object.create(null);
+      state.tasks.reportOpen = true;
+    } else {
+      const existing = document.querySelector(".task-report-section");
+      if (existing) state.tasks.reportOpen = existing.open;
+    }
     state.tasks.selectedId = id;
     state.route = { view: "task-detail", classId: null, studentId: null };
     document.querySelector("#dashboardContent").innerHTML = '<section class="loading-state"><span class="loader" aria-hidden="true"></span><p>Leerlingvoortgang wordt geladen…</p></section>';
@@ -2592,27 +2603,25 @@
       renderCurrent();
       return;
     }
-    if (action === "approve-all-reports") {
-      const task = state.tasks.list.find(function (row) { return row.id === state.tasks.selectedId; });
-      if (!task || !(currentTeacherIsAdmin() || task.created_by_teacher_id === state.user.id)) return;
-      const pending = asArray(state.tasks.reports).filter(function (report) { return !report.status || report.status === "pending"; });
-      if (!pending.length) return;
-      if (!window.confirm("Alle " + pending.length + " openstaande meldingen goedkeuren? Ook echte fouten worden dan als afgewerkt beschouwd. Dit kan niet als groep ongedaan worden gemaakt.")) return;
-      target.disabled = true;
-      let approved = 0, failed = 0;
-      for (const report of pending) {
-        const result = await state.client.rpc("resolve_assignment_item_report", {
-          p_report_id: report.id, p_decision: "approved"
-        });
-        if (result.error) failed += 1;
-        else approved += 1;
+    if (action === "queue-item-report" || action === "queue-all-reports-approved" || action === "clear-report-selections") {
+      if (!reviewableTask() || state.tasks.reviewSaving) return;
+      const selections = state.tasks.reportDecisions || (state.tasks.reportDecisions = Object.create(null));
+      if (action === "queue-item-report") {
+        const report = state.tasks.reports.find(function (row) { return row.id === id && pendingReport(row); });
+        const decision = target.dataset.decision;
+        if (!report || !["approved", "rejected"].includes(decision)) return;
+        if (selections[id] === decision) delete selections[id];
+        else selections[id] = decision;
+      } else if (action === "queue-all-reports-approved") {
+        state.tasks.reports.filter(pendingReport).forEach(function (report) { selections[report.id] = "approved"; });
+      } else {
+        state.tasks.reportDecisions = Object.create(null);
       }
-      const taskId = task.id;
-      await openTasks(true);
-      await openTaskDetail(taskId);
-      state.tasks.message = approved + " meldingen goedgekeurd." + (failed ? " " + failed + " niet gelukt; probeer die apart." : "");
-      renderCurrent();
+      updateReportSelectionUi(); // No reload, no collapse, no scroll jump.
       return;
+    }
+    if (action === "commit-report-selections") {
+      return commitQueuedReportDecisions();
     }
     if (action === "restore-add-round") {
       const task = state.tasks.list.find(function (row) { return row.id === state.tasks.selectedId; });
@@ -2630,28 +2639,6 @@
       if (result.error) { state.tasks.message = result.error.message || "Ronde toevoegen mislukt."; return renderCurrent(); }
       await openTasks(true);
       return openTaskDetail(task.id);
-    }
-    if (action === "resolve-item-report") {
-      const decision = target.dataset.decision;
-      if (!state.tasks.reports.some(function (report) { return report.id === id; }) ||
-        !["approved", "rejected"].includes(decision)) return;
-      target.disabled = true;
-      try {
-        const result = await state.client.rpc("resolve_assignment_item_report", {
-          p_report_id: id, p_decision: decision
-        });
-        if (result.error) throw result.error;
-        const taskId = state.tasks.selectedId;
-        await openTasks(true);
-        await openTaskDetail(taskId);
-        state.tasks.message = decision === "approved" ? "Melding goedgekeurd. Het item is afgerond zonder extra beheersingspunten." :
-          "Melding afgewezen. Het item staat opnieuw klaar voor de leerling.";
-        renderCurrent();
-      } catch (error) {
-        state.tasks.message = "Beoordeling niet opgeslagen. Controleer je verbinding en probeer opnieuw.";
-        renderCurrent();
-      }
-      return;
     }
     if (action === "pause-future-rounds") {
       const task = state.tasks.list.find(function (row) { return row.id === state.tasks.selectedId; });
@@ -3059,7 +3046,7 @@
 
   async function loadCourse() {
     try {
-      const response = await fetch("./data/course.json?v=20261017-3");
+      const response = await fetch("./data/course.json?v=20261029-1");
       if (!response.ok) throw new Error("COURSE_LOAD_FAILED");
       state.course = await response.json();
       state.courseIndex = buildCourseIndex(state.course);
