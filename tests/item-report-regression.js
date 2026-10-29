@@ -31,7 +31,7 @@ assert.doesNotMatch(sql, /service_role\s+to/i);
 assert.match(teacher, /get_teacher_assignment_reports", \{ p_assignment_id: id \}/);
 assert.match(teacher, /state\.tasks\.reports = reportResult\.error \? \[\] : asArray\(reportResult\.data\)/,
   "ontbrekende migratie mag bestaande taakdetails niet blokkeren");
-assert.match(teacher, /resolve_assignment_item_report", \{[\s\S]*p_report_id: id, p_decision: decision/);
+assert.match(teacher, /resolve_assignment_item_report", \{[\s\S]*p_report_id: entry\.id, p_decision: entry\.decision/);
 assert.match(teacher, /Probleemmeldingen/);
 assert.match(teacher, /data-action="queue-item-report"/);
 assert.match(teacher, /data-action="commit-report-selections"/);
