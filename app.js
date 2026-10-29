@@ -1,4 +1,4 @@
-const DATA_URL = "./data/course.json?v=20261017-3";
+const DATA_URL = "./data/course.json?v=20261029-1";
 const VARIANT_DATA_URL = "./data/exercise-variants.json?v=20261013-9";
 const STORAGE_KEY = "monParcoursProgressV1";
 const ACTIVE_SESSION_KEY = "monParcoursActiveSessionV1";
@@ -8,7 +8,7 @@ const ASSIGNMENTS_CACHE_KEY = "monParcoursAssignmentsCacheV1";
 const VERB_EVIDENCE_KEY = "monParcoursVerbEvidenceV1";
 const VERB_SERVER_CACHE_KEY = "monParcoursVerbServerCacheV1";
 const TASK_ROUNDS_KEY = "monParcoursTaskRoundsV1";
-const APP_VERSION = "20261019-3";
+const APP_VERSION = "20261029-1";
 const INACTIVITY_TIMEOUT_MS = 60000;
 const MAX_DYNAMIC_NUMBER_ALL = 101;
 const ACCENTS = ["é", "è", "ê", "ë", "à", "â", "ç", "ù", "û", "ô", "î", "ï"];
@@ -1894,6 +1894,7 @@ function renderQuestion(message) {
         }) ? '<p class="retry-note">' + uiText("À refaire", "Opnieuw proberen") + '</p>' : '') +
         '<p class="prompt-label">' + uiText(instructionFrench(question.instruction), question.instruction) + '</p><h1 class="question-prompt' + (question.prompt.includes("\n") ? ' is-dialogue' : '') + '">' + escapeHtml(question.prompt) + '</h1>' +
         (question.context ? '<p class="question-context">' + escapeHtml(question.context) + '</p>' : "") +
+        (question.item && question.item.type === "phrase" && /\[(?:naam|leeftijd|klas|groep|plaats)\]/i.test(question.prompt) ? '<p class="input-help variable-slot-help">' + uiText("Remplace les crochets par un vrai nom, âge, classe, groupe ou lieu.", "Vul een echte naam, leeftijd, klas, groep of plaats in; typ geen [haakjes] over.") + '</p>' : '') +
         '<form id="answer-form" autocomplete="off">' + answerInputsHtml(question) +
           (question.choices ? '' : '<div class="accent-row" aria-label="Franse accenten">' + ACCENTS.map(function (accent) {
             return '<button type="button" data-action="insert-accent" data-accent="' + accent + '">' + accent + '</button>';
@@ -1955,7 +1956,7 @@ function submitAnswer(rawAnswer) {
   session.attempt_count += 1;
   const graded = question.variantId && window.MonParcoursExerciseVariants
     ? window.MonParcoursExerciseVariants.grade(question, rawAnswer) : null;
-  const correct = graded ? graded.correct : isCorrect(rawAnswer, question.answers);
+  const correct = graded ? graded.correct : isCorrect(rawAnswer, question.answers, Boolean(question.item && question.item.type === "phrase" || question.exerciseKey === "phrase-nl-fr"));
   session.visualAnswer = { question: question, answer: rawAnswer, graded: graded };
   if (question.taskPoolQuestion && correct) {
     session.task_pool_completed = session.task_pool_completed || [];
@@ -2931,14 +2932,24 @@ function requeueQuestion(question) {
   queue.splice(insertion, 0, copy);
 }
 
-function isCorrect(answer, accepted) {
+function normalizedPhrasePunctuation(text) {
+  // Commas, semicolons and colons do not determine whether a phrase is understood.
+  // Accents, spelling, conjugations and word order remain strictly checked.
+  return text.replace(/[,;:]/g, " ").replace(/\s+/g, " ").trim();
+}
+
+function isCorrect(answer, accepted, isPhrase) {
   const candidate = normalizeAnswer(answer, true);
+  const phraseCandidate = isPhrase ? normalizedPhrasePunctuation(candidate) : candidate;
   return accepted.some(function (value) {
     const expected = normalizeAnswer(value, true);
+    const phraseExpected = isPhrase ? normalizedPhrasePunctuation(expected) : expected;
     // A model slot must be replaced by a real value, never copied literally.
     if (/\[(nom|âge|classe|groupe|lieu)\]/.test(expected))
-      return matchesPhraseSlot(candidate, expected);
-    return expected === candidate || expected.replace(/œ/g, "oe") === candidate;
+      return matchesPhraseSlot(phraseCandidate, phraseExpected);
+    return expected === candidate || expected.replace(/œ/g, "oe") === candidate ||
+      Boolean(isPhrase && (phraseExpected === phraseCandidate ||
+        phraseExpected.replace(/œ/g, "oe") === phraseCandidate));
   });
 }
 
