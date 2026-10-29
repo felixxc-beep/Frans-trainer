@@ -1743,6 +1743,8 @@
     if (!task || state.tasks.reviewSaving) return;
     const queued = queuedReportDecisions();
     if (!queued.length) return;
+    const sourceReports = state.tasks.reports;
+    const decisionStore = state.tasks.reportDecisions;
     const approvals = queued.filter(function (row) { return row.decision === "approved"; }).length;
     const rejections = queued.length - approvals;
     if (!window.confirm(queued.length + " meldingen definitief beoordelen?\n" +
@@ -1765,9 +1767,9 @@
           });
           if (result.error) throw result.error;
           success += 1;
-          const report = state.tasks.reports.find(function (row) { return row.id === entry.id; });
+          const report = sourceReports.find(function (row) { return row.id === entry.id; });
           if (report) { report.status = entry.decision; report.resolved_at = new Date().toISOString(); }
-          delete state.tasks.reportDecisions[entry.id];
+          delete decisionStore[entry.id];
         } catch (_) {
           failures.push(entry);
         }
@@ -1777,6 +1779,8 @@
     // A small number of concurrent independent RPCs avoids dozens of slow page reloads.
     await Promise.all(Array.from({ length: Math.min(3, queued.length) }, saveNext));
     state.tasks.reviewSaving = false;
+    // Navigating to another task while a batch saves must never replace its data.
+    if (state.tasks.selectedId !== task.id) return;
 
     let refreshProblem = false;
     try {
