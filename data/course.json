@@ -1432,7 +1432,9 @@
           "nl": "Wat is je familienaam?",
           "fr": "C’est quoi, ton nom de famille ?",
           "accepted_answers": [
-            "C’est quoi, ton nom de famille ?"
+            "C’est quoi, ton nom de famille ?",
+            "Quel est ton nom de famille ?",
+            "Quel est votre nom de famille ?"
           ],
           "id": "uf1-item-000523"
         },
@@ -1461,7 +1463,10 @@
           "nl": "Hoe oud ben je?",
           "fr": "Tu as quel âge ?",
           "accepted_answers": [
-            "Tu as quel âge ?"
+            "Tu as quel âge ?",
+            "Quel âge as-tu ?",
+            "Quel âge avez-vous ?",
+            "Vous avez quel âge ?"
           ],
           "id": "uf1-item-000525"
         },
@@ -1503,7 +1508,8 @@
           "nl": "Ik woon in Dinant, in België.",
           "fr": "J’habite à Dinant, en Belgique.",
           "accepted_answers": [
-            "J’habite à Dinant, en Belgique."
+            "J’habite à Dinant, en Belgique.",
+            "Je vis à Dinant, en Belgique."
           ],
           "id": "uf1-item-000528"
         },
@@ -1546,7 +1552,8 @@
           "nl": "Ik speel heel graag padel.",
           "fr": "J’adore jouer au padel.",
           "accepted_answers": [
-            "J’adore jouer au padel."
+            "J’adore jouer au padel.",
+            "J’aime beaucoup jouer au padel."
           ],
           "id": "uf1-item-000531"
         },
@@ -1560,7 +1567,8 @@
           "nl": "Ik speel videogames.",
           "fr": "Je joue à des jeux vidéo.",
           "accepted_answers": [
-            "Je joue à des jeux vidéo."
+            "Je joue à des jeux vidéo.",
+            "Je joue aux jeux vidéo."
           ],
           "id": "uf1-item-000532"
         },
@@ -1574,7 +1582,11 @@
           "nl": "Hou je van sport?",
           "fr": "Tu aimes le sport ?",
           "accepted_answers": [
-            "Tu aimes le sport ?"
+            "Tu aimes le sport ?",
+            "Aimez-vous le sport ?",
+            "Vous aimez le sport ?",
+            "Est-ce que tu aimes le sport ?",
+            "Est-ce que vous aimez le sport ?"
           ],
           "id": "uf1-item-000533"
         },
@@ -1588,7 +1600,8 @@
           "nl": "Ja, ik hou van klassieke dans.",
           "fr": "Oui, j’aime la danse classique.",
           "accepted_answers": [
-            "Oui, j’aime la danse classique."
+            "Oui, j’aime la danse classique.",
+            "Oui, j’adore la danse classique."
           ],
           "id": "uf1-item-000534"
         },
@@ -1602,7 +1615,10 @@
           "nl": "Nee, ik haat voetballen.",
           "fr": "Non, je déteste jouer au foot.",
           "accepted_answers": [
-            "Non, je déteste jouer au foot."
+            "Non, je déteste jouer au foot.",
+            "Non, je déteste jouer au football.",
+            "Non, je déteste le foot.",
+            "Non, je déteste le football."
           ],
           "id": "uf1-item-000535"
         },
@@ -1631,7 +1647,11 @@
           "nl": "In welke klas zit je?",
           "fr": "Tu es dans quelle classe ?",
           "accepted_answers": [
-            "Tu es dans quelle classe ?"
+            "Tu es dans quelle classe ?",
+            "En quelle classe es-tu ?",
+            "Dans quelle classe es-tu ?",
+            "Vous êtes dans quelle classe ?",
+            "Dans quelle classe êtes-vous ?"
           ],
           "id": "uf1-item-000537"
         },
@@ -1660,7 +1680,9 @@
           "nl": "In welke groep zit je?",
           "fr": "Tu es dans quel groupe ?",
           "accepted_answers": [
-            "Tu es dans quel groupe ?"
+            "Tu es dans quel groupe ?",
+            "Dans quel groupe es-tu ?",
+            "Vous êtes dans quel groupe ?"
           ],
           "id": "uf1-item-000539"
         },
@@ -1689,7 +1711,11 @@
           "fr": "Tu es nouveau / nouvelle ?",
           "accepted_answers": [
             "Tu es nouveau ?",
-            "Tu es nouvelle ?"
+            "Tu es nouvelle ?",
+            "Êtes-vous nouveau ?",
+            "Êtes-vous nouvelle ?",
+            "Es-tu nouveau ?",
+            "Es-tu nouvelle ?"
           ],
           "id": "uf1-item-000541"
         },
@@ -1703,7 +1729,8 @@
           "nl": "Ja, het is mijn eerste les.",
           "fr": "Oui, c’est mon premier cours.",
           "accepted_answers": [
-            "Oui, c’est mon premier cours."
+            "Oui, c’est mon premier cours.",
+            "Oui, c’est ma première leçon."
           ],
           "id": "uf1-item-000542"
         },
@@ -1854,7 +1881,8 @@
           "fr": "Quels sont ses hobbys ?",
           "accepted_answers": [
             "Quels sont ses hobbys ?",
-            "Quels sont ses loisirs ?"
+            "Quels sont ses loisirs ?",
+            "Quels sont ses passe-temps ?"
           ],
           "id": "uf1-item-000552"
         },
@@ -1931,7 +1959,9 @@
             "Il aime envoyer des messages à ses amis.",
             "Il aime envoyer des messages à ses amies.",
             "Elle aime envoyer des messages à ses amis.",
-            "Elle aime envoyer des messages à ses amies."
+            "Elle aime envoyer des messages à ses amies.",
+            "Il aime envoyer des messages à ses ami(e)s.",
+            "Elle aime envoyer des messages à ses ami(e)s."
           ],
           "id": "uf1-item-000557"
         },
@@ -1961,7 +1991,9 @@
           "fr": "Il / Elle est drôle.",
           "accepted_answers": [
             "Il est drôle.",
-            "Elle est drôle."
+            "Elle est drôle.",
+            "Il est amusant.",
+            "Elle est amusante."
           ],
           "id": "uf1-item-000559"
         },

@@ -31,10 +31,14 @@ assert.doesNotMatch(sql, /service_role\s+to/i);
 assert.match(teacher, /get_teacher_assignment_reports", \{ p_assignment_id: id \}/);
 assert.match(teacher, /state\.tasks\.reports = reportResult\.error \? \[\] : asArray\(reportResult\.data\)/,
   "ontbrekende migratie mag bestaande taakdetails niet blokkeren");
-assert.match(teacher, /resolve_assignment_item_report", \{[\s\S]*p_report_id: id, p_decision: decision/);
+assert.match(teacher, /resolve_assignment_item_report", \{[\s\S]*p_report_id: entry\.id, p_decision: entry\.decision/);
 assert.match(teacher, /Probleemmeldingen/);
-assert.match(teacher, /data-action="resolve-item-report"/);
-assert.match(html, /teacher\.js\?v=20261013-1/);
+assert.match(teacher, /data-action="queue-item-report"/);
+assert.match(teacher, /data-action="commit-report-selections"/);
+assert.match(teacher, /queuedReportDecisions/);
+assert.match(teacher, /resolve_assignment_item_report/);
+assert.doesNotMatch(teacher, /data-action="resolve-item-report"/);
+assert.match(html, /teacher\.js\?v=20261029-2/);
 assert.match(app, /Je pense que ma réponse est refusée à tort/);
 assert.match(app, /Mijn antwoord wordt volgens mij onterecht fout gerekend/);
 assert.match(teacher, /Als fout beoordeelde invoeren \(oudste → nieuwste\)/);

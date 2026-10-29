@@ -46,7 +46,7 @@
     teacherAdmin: { loaded: false, teachers: [], assignments: [], classes: [], editingTeacherId: null, message: "", messageIsError: false },
     tasks: { loaded: false, list: [], detail: [], reports: [], selectedId: null, draft: null, filter: "all",
       ownerFilter: "mine", archiveOpen: false, archiveFilters: { classId: "all", creatorId: "all", period: "all", query: "" },
-      message: "", error: false },
+      message: "", error: false, reportDecisions: Object.create(null), reportOpen: true, reviewSaving: false },
     loading: false,
     loadSequence: 0
   };
@@ -1688,6 +1688,122 @@
         '</p><div class="export-actions">' + (draft.status === "draft" ? '<button class="button button-secondary" type="submit" name="task_status" value="draft">Concept opslaan</button>' : '') + '<button class="button button-primary" type="submit" name="task_status" value="published">' + (draft.status === "published" ? "Wijzigingen opslaan" : "Publiceren") + '</button></div></fieldset></form>';
   }
 
+  function pendingReport(review) {
+    return !review.status || review.status === "pending";
+  }
+
+  function reviewableTask() {
+    const task = state.tasks.list.find(function (row) { return row.id === state.tasks.selectedId; });
+    return task && state.user && (currentTeacherIsAdmin() || task.created_by_teacher_id === state.user.id) ? task : null;
+  }
+
+  function queuedReportDecisions() {
+    const selections = state.tasks.reportDecisions || Object.create(null);
+    return asArray(state.tasks.reports).filter(function (report) {
+      return pendingReport(report) && ["approved", "rejected"].includes(selections[report.id]);
+    }).map(function (report) { return { id: report.id, decision: selections[report.id] }; });
+  }
+
+  function updateReportSelectionUi(message) {
+    const section = document.querySelector(".task-report-section");
+    if (!section) return;
+    state.tasks.reportOpen = section.open;
+    const decisions = state.tasks.reportDecisions || Object.create(null);
+    const queued = queuedReportDecisions();
+    const approved = queued.filter(function (choice) { return choice.decision === "approved"; }).length;
+    const rejected = queued.length - approved;
+    const countNode = section.querySelector("[data-report-selected-count]");
+    const typesNode = section.querySelector("[data-report-selection-types]");
+    if (countNode) countNode.textContent = message || queued.length + " geselecteerd";
+    if (typesNode) typesNode.textContent = approved + " goedkeuren · " + rejected + " terugsturen";
+    const commit = section.querySelector('[data-action="commit-report-selections"]');
+    if (commit) {
+      commit.disabled = !queued.length || Boolean(state.tasks.reviewSaving);
+      commit.textContent = state.tasks.reviewSaving ? "Beoordelingen opslaan…" : "Bevestig " + queued.length + " keuzes";
+    }
+    section.querySelectorAll('[data-action="queue-item-report"]').forEach(function (button) {
+      const chosen = decisions[button.dataset.id] === button.dataset.decision;
+      button.disabled = Boolean(state.tasks.reviewSaving);
+      button.setAttribute("aria-pressed", chosen ? "true" : "false");
+      button.textContent = (button.dataset.decision === "approved" ? "Goedkeuren" : "Terugsturen") + (chosen ? " ✓" : "");
+      const card = button.closest(".task-report-card");
+      if (card) {
+        card.classList.toggle("is-selected", Boolean(decisions[button.dataset.id]));
+        card.classList.toggle("is-approved", decisions[button.dataset.id] === "approved");
+        card.classList.toggle("is-rejected", decisions[button.dataset.id] === "rejected");
+      }
+    });
+    section.querySelectorAll('[data-action="queue-all-reports-approved"], [data-action="clear-report-selections"]').forEach(function (button) {
+      button.disabled = Boolean(state.tasks.reviewSaving);
+    });
+  }
+
+  async function commitQueuedReportDecisions() {
+    const task = reviewableTask();
+    if (!task || state.tasks.reviewSaving) return;
+    const queued = queuedReportDecisions();
+    if (!queued.length) return;
+    const sourceReports = state.tasks.reports;
+    const decisionStore = state.tasks.reportDecisions;
+    const approvals = queued.filter(function (row) { return row.decision === "approved"; }).length;
+    const rejections = queued.length - approvals;
+    if (!window.confirm(queued.length + " meldingen definitief beoordelen?\n" +
+      approvals + " goedkeuren (telt als afgewerkt)\n" +
+      rejections + " terugsturen (leerling moet opnieuw oefenen)\n\n" +
+      "Dit wordt per melding opgeslagen. Controleer je keuzes voordat je doorgaat.")) return;
+
+    const section = document.querySelector(".task-report-section");
+    state.tasks.reportOpen = section ? section.open : true;
+    state.tasks.reviewSaving = true;
+    updateReportSelectionUi("0 / " + queued.length + " opgeslagen");
+    let cursor = 0, success = 0;
+    const failures = [];
+    async function saveNext() {
+      while (cursor < queued.length) {
+        const entry = queued[cursor++];
+        try {
+          const result = await state.client.rpc("resolve_assignment_item_report", {
+            p_report_id: entry.id, p_decision: entry.decision
+          });
+          if (result.error) throw result.error;
+          success += 1;
+          const report = sourceReports.find(function (row) { return row.id === entry.id; });
+          if (report) { report.status = entry.decision; report.resolved_at = new Date().toISOString(); }
+          delete decisionStore[entry.id];
+        } catch (_) {
+          failures.push(entry);
+        }
+        updateReportSelectionUi((success + failures.length) + " / " + queued.length + " verwerkt");
+      }
+    }
+    // A small number of concurrent independent RPCs avoids dozens of slow page reloads.
+    await Promise.all(Array.from({ length: Math.min(3, queued.length) }, saveNext));
+    state.tasks.reviewSaving = false;
+    // Navigating to another task while a batch saves must never replace its data.
+    if (state.tasks.selectedId !== task.id) return;
+
+    let refreshProblem = false;
+    try {
+      const [detail, reports] = await Promise.all([
+        state.client.rpc("get_teacher_assignment_detail", { p_assignment_id: task.id }),
+        state.client.rpc("get_teacher_assignment_reports", { p_assignment_id: task.id })
+      ]);
+      if (detail.error || reports.error) throw (detail.error || reports.error);
+      state.tasks.detail = asArray(detail.data);
+      state.tasks.reports = asArray(reports.data);
+      const found = state.tasks.list.find(function (row) { return row.id === task.id; });
+      if (found) found.open_report_count = state.tasks.reports.filter(pendingReport).length;
+    } catch (_) { refreshProblem = true; }
+
+    state.tasks.message = success + " beoordelingen opgeslagen." +
+      (failures.length ? " " + failures.length + " niet gelukt: de keuzes blijven klaarstaan om opnieuw te proberen." : "") +
+      (refreshProblem ? " De leerlingvoortgang kon niet vernieuwd worden; vernieuw de pagina om de laatste stand te zien." : "");
+    if (state.tasks.selectedId !== task.id || state.route.view !== "task-detail") return;
+    const scrollPosition = window.scrollY || 0;
+    renderCurrent(); // One refresh after the batch, never after each individual choice.
+    window.scrollTo(0, scrollPosition);
+  }
+
   function renderTaskDetail() {
     const task = state.tasks.list.find(function (row) { return row.id === state.tasks.selectedId; });
     if (!task) return renderTasksPage();
@@ -1709,16 +1825,29 @@
     const reports = asArray(state.tasks.reports);
     const pendingReports = reports.filter(function (report) { return !report.status || report.status === 'pending'; });
     const overviewContent = taskOverviewContent(task);
+    const pendingDecisionIds = new Set(pendingReports.map(function (report) { return report.id; }));
+    const reportDecisions = state.tasks.reportDecisions || Object.create(null);
+    const chosen = Object.keys(reportDecisions).filter(function (id) { return pendingDecisionIds.has(id); });
+    const selectedApproved = chosen.filter(function (id) { return reportDecisions[id] === "approved"; }).length;
+    const selectedRejected = chosen.filter(function (id) { return reportDecisions[id] === "rejected"; }).length;
     const reportSection = task.completion_strategy === "rounds" ?
-      '<details class="task-report-section"><summary class="section-heading"><span><strong>Probleemmeldingen</strong><small> Klik om meldingen te bekijken</small></span><span class="task-report-badge">' + pendingReports.length + ' wachtend</span></summary>' +
-      (pendingReports.length && canManage ? '<div class="export-actions task-report-bulk"><button class="button button-secondary" type="button" data-action="approve-all-reports">Alles goedkeuren (' + pendingReports.length + ')</button></div>' : '') +
+      '<details class="task-report-section"' + (state.tasks.reportOpen !== false ? ' open' : '') + '><summary class="section-heading"><span><strong>Probleemmeldingen</strong><small> Beoordeel meerdere meldingen en bevestig alles samen</small></span><span class="task-report-badge">' + pendingReports.length + ' wachtend</span></summary>' +
+      (pendingReports.length && canManage ? '<div class="task-report-bulk" data-report-toolbar>' +
+        '<div class="task-report-selection-summary" role="status" aria-live="polite"><strong data-report-selected-count>' + chosen.length + ' geselecteerd</strong><span data-report-selection-types>' + selectedApproved + ' goedkeuren · ' + selectedRejected + ' terugsturen</span></div>' +
+        '<div class="export-actions"><button class="button button-secondary" type="button" data-action="queue-all-reports-approved">Alle openstaande kiezen als goedkeuren</button>' +
+        '<button class="button button-secondary" type="button" data-action="clear-report-selections">Keuzes wissen</button>' +
+        '<button class="button button-primary" type="button" data-action="commit-report-selections"' + (!chosen.length || state.tasks.reviewSaving ? ' disabled' : '') + '>Bevestig ' + chosen.length + ' keuzes</button></div>' +
+        '<p class="muted task-report-bulk-hint">Je keuzes worden pas opgeslagen na bevestiging. Je kunt ze voordien nog veranderen.</p>' +
+        '</div>' : '') +
       (state.tasks.message ? '<p class="task-report-message" role="status">' + escapeHtml(state.tasks.message) + '</p>' : '') +
       (reports.length ? '<div class="task-report-list">' + reports.map(function (report) {
         const courseItem = state.courseIndex[report.item_id];
         const model = report.model_answer || (report.exercise_direction === "full-sentence-nl-fr"
           ? asArray(report.accepted_answers)[0] || ''
           : courseItem && (courseItem.fr || courseItem.infinitive || courseItem.answer) || '');
-        return '<article class="task-report-card"><div><strong>' + escapeHtml(report.student_name) + '</strong> · ' + escapeHtml(report.class_name) +
+        const pending = !report.status || report.status === "pending";
+        const decision = pending ? reportDecisions[report.id] : null;
+        return '<article class="task-report-card' + (decision ? ' is-selected is-' + decision : '') + '" data-report-id="' + escapeHtml(report.id) + '"><div><strong>' + escapeHtml(report.student_name) + '</strong> · ' + escapeHtml(report.class_name) +
           ' · ronde ' + Number(report.round_number) + '<p class="muted">' + escapeHtml(task.title) + ' · ' + escapeHtml(formatDate(report.created_at)) + ' · ' + escapeHtml(report.item_id) + '</p></div>' +
           '<p><b>Prompt:</b> ' + escapeHtml(report.prompt) + '</p><div><b>Als fout beoordeelde invoeren (oudste → nieuwste):</b><ol>' +
           asArray(report.submitted_answers).map(function (answer, index) {
@@ -1729,9 +1858,12 @@
           }).join('') + '</ol></div>' +
           '<p><b>Verwacht:</b> ' + asArray(report.accepted_answers).map(escapeHtml).join(' / ') + (model ? ' · model: ' + escapeHtml(model) : '') + '</p>' +
           '<p class="muted">' + escapeHtml(report.exercise_type || report.exercise_direction) + ' · ' + escapeHtml(report.variant_id || 'cursusitem') + ' · opgezocht: ' + (report.consulted ? 'ja' : 'nee') + ' · app ' + escapeHtml(report.app_version || 'onbekend') + '</p>' +
-          (report.status === "approved" || report.status === "rejected" ? '<p class="muted">' + (report.status === "approved" ? "Goedgekeurd" : "Teruggestuurd") +
-            ' · ' + escapeHtml(formatDate(report.resolved_at || report.created_at)) + '</p>' :
-            '<div class="export-actions"><button class="button button-primary" type="button" data-action="resolve-item-report" data-id="' + escapeHtml(report.id) + '" data-decision="approved">Goedkeuren</button><button class="button button-secondary" type="button" data-action="resolve-item-report" data-id="' + escapeHtml(report.id) + '" data-decision="rejected">Terugsturen</button></div>') + '</article>';
+          (pending ? (canManage ?
+            '<div class="export-actions task-report-choices"><button class="button button-secondary task-report-choice" type="button" data-action="queue-item-report" data-id="' + escapeHtml(report.id) + '" data-decision="approved" aria-pressed="' + (decision === "approved") + '"' + (state.tasks.reviewSaving ? ' disabled' : '') + '>Goedkeuren' + (decision === "approved" ? ' ✓' : '') + '</button>' +
+            '<button class="button button-secondary task-report-choice" type="button" data-action="queue-item-report" data-id="' + escapeHtml(report.id) + '" data-decision="rejected" aria-pressed="' + (decision === "rejected") + '"' + (state.tasks.reviewSaving ? ' disabled' : '') + '>Terugsturen' + (decision === "rejected" ? ' ✓' : '') + '</button></div>' :
+            '<p class="muted">Wacht op beoordeling door de taakbeheerder.</p>') :
+            '<p class="muted">' + (report.status === "approved" ? "Goedgekeurd" : "Teruggestuurd") +
+            ' · ' + escapeHtml(formatDate(report.resolved_at || report.created_at)) + '</p>') + '</article>';
       }).join('') + '</div>' : '<p class="muted">Geen probleemmeldingen.</p>') + '</details>' : '';
     return '<div class="page-heading"><div><p class="eyebrow">Taak · ' + escapeHtml(taskLifecycle(task) === "recent" ? "Recent afgelopen" : taskLifecycle(task) === "archived" ? "Gearchiveerd" : taskLifecycle(task) === "draft" ? "Concept" : "Actief") + '</p><h2>' + escapeHtml(task.title) + '</h2><p class="task-detail-scope">' + escapeHtml(overviewContent.path) +
       '</p><p class="task-detail-exercises">' + escapeHtml(overviewContent.types) + ' · ' + escapeHtml(overviewContent.summary) +
@@ -1783,6 +1915,10 @@
     const content = document.querySelector("#dashboardContent");
     if (!content || !state.user) return;
     const data = currentFilteredData();
+    if (state.route.view === "task-detail") {
+      const existingReportSection = content.querySelector(".task-report-section");
+      if (existingReportSection) state.tasks.reportOpen = existingReportSection.open;
+    }
     document.querySelector("#filterBar").hidden = state.route.view === "management" || state.route.view === "teachers" || state.route.view.indexOf("task") === 0;
     if (state.route.view === "management") content.innerHTML = renderManagement();
     else if (state.route.view === "teachers") content.innerHTML = renderTeachersPage();
@@ -1885,7 +2021,7 @@
     state.tasks = { loaded: false, list: [], detail: [], reports: [], deadlineFollowup: [], deadlineFollowupOpen: false,
       deadlineFollowupError: "", selectedId: null, draft: null, filter: "all",
       ownerFilter: "mine", archiveOpen: false, archiveFilters: { classId: "all", creatorId: "all", period: "all", query: "" },
-      message: "", error: false };
+      message: "", error: false, reportDecisions: Object.create(null), reportOpen: true, reviewSaving: false };
     state.route = { view: "dashboard", classId: null, studentId: null };
     document.querySelector("#authView").hidden = false;
     document.querySelector("#dashboardView").hidden = true;
@@ -1932,7 +2068,7 @@
       state.studentVerbGoalsError = false;
       state.tasks = { loaded: false, list: [], detail: [], reports: [], selectedId: null, draft: null, filter: "all",
         ownerFilter: "mine", archiveOpen: false, archiveFilters: { classId: "all", creatorId: "all", period: "all", query: "" },
-        message: "", error: false };
+        message: "", error: false, reportDecisions: Object.create(null), reportOpen: true, reviewSaving: false };
       state.management = { loaded: false, classes: [], students: [], selectedClassId: null, studentStatus: "active", generatedCode: "", createdStudents: [], message: "", messageIsError: false };
       state.teacherAdmin = { loaded: false, teachers: [], assignments: [], classes: [], editingTeacherId: null, message: "", messageIsError: false };
       state.filters.classId = "all";
@@ -2088,6 +2224,13 @@
   async function openTaskDetail(id) {
     const task = state.tasks.list.find(function (row) { return row.id === id; });
     if (!task) return openTasks(true);
+    if (state.tasks.selectedId !== id) {
+      state.tasks.reportDecisions = Object.create(null);
+      state.tasks.reportOpen = true;
+    } else {
+      const existing = document.querySelector(".task-report-section");
+      if (existing) state.tasks.reportOpen = existing.open;
+    }
     state.tasks.selectedId = id;
     state.route = { view: "task-detail", classId: null, studentId: null };
     document.querySelector("#dashboardContent").innerHTML = '<section class="loading-state"><span class="loader" aria-hidden="true"></span><p>Leerlingvoortgang wordt geladen…</p></section>';
@@ -2464,27 +2607,25 @@
       renderCurrent();
       return;
     }
-    if (action === "approve-all-reports") {
-      const task = state.tasks.list.find(function (row) { return row.id === state.tasks.selectedId; });
-      if (!task || !(currentTeacherIsAdmin() || task.created_by_teacher_id === state.user.id)) return;
-      const pending = asArray(state.tasks.reports).filter(function (report) { return !report.status || report.status === "pending"; });
-      if (!pending.length) return;
-      if (!window.confirm("Alle " + pending.length + " openstaande meldingen goedkeuren? Ook echte fouten worden dan als afgewerkt beschouwd. Dit kan niet als groep ongedaan worden gemaakt.")) return;
-      target.disabled = true;
-      let approved = 0, failed = 0;
-      for (const report of pending) {
-        const result = await state.client.rpc("resolve_assignment_item_report", {
-          p_report_id: report.id, p_decision: "approved"
-        });
-        if (result.error) failed += 1;
-        else approved += 1;
+    if (action === "queue-item-report" || action === "queue-all-reports-approved" || action === "clear-report-selections") {
+      if (!reviewableTask() || state.tasks.reviewSaving) return;
+      const selections = state.tasks.reportDecisions || (state.tasks.reportDecisions = Object.create(null));
+      if (action === "queue-item-report") {
+        const report = state.tasks.reports.find(function (row) { return row.id === id && pendingReport(row); });
+        const decision = target.dataset.decision;
+        if (!report || !["approved", "rejected"].includes(decision)) return;
+        if (selections[id] === decision) delete selections[id];
+        else selections[id] = decision;
+      } else if (action === "queue-all-reports-approved") {
+        state.tasks.reports.filter(pendingReport).forEach(function (report) { selections[report.id] = "approved"; });
+      } else {
+        state.tasks.reportDecisions = Object.create(null);
       }
-      const taskId = task.id;
-      await openTasks(true);
-      await openTaskDetail(taskId);
-      state.tasks.message = approved + " meldingen goedgekeurd." + (failed ? " " + failed + " niet gelukt; probeer die apart." : "");
-      renderCurrent();
+      updateReportSelectionUi(); // No reload, no collapse, no scroll jump.
       return;
+    }
+    if (action === "commit-report-selections") {
+      return commitQueuedReportDecisions();
     }
     if (action === "restore-add-round") {
       const task = state.tasks.list.find(function (row) { return row.id === state.tasks.selectedId; });
@@ -2502,28 +2643,6 @@
       if (result.error) { state.tasks.message = result.error.message || "Ronde toevoegen mislukt."; return renderCurrent(); }
       await openTasks(true);
       return openTaskDetail(task.id);
-    }
-    if (action === "resolve-item-report") {
-      const decision = target.dataset.decision;
-      if (!state.tasks.reports.some(function (report) { return report.id === id; }) ||
-        !["approved", "rejected"].includes(decision)) return;
-      target.disabled = true;
-      try {
-        const result = await state.client.rpc("resolve_assignment_item_report", {
-          p_report_id: id, p_decision: decision
-        });
-        if (result.error) throw result.error;
-        const taskId = state.tasks.selectedId;
-        await openTasks(true);
-        await openTaskDetail(taskId);
-        state.tasks.message = decision === "approved" ? "Melding goedgekeurd. Het item is afgerond zonder extra beheersingspunten." :
-          "Melding afgewezen. Het item staat opnieuw klaar voor de leerling.";
-        renderCurrent();
-      } catch (error) {
-        state.tasks.message = "Beoordeling niet opgeslagen. Controleer je verbinding en probeer opnieuw.";
-        renderCurrent();
-      }
-      return;
     }
     if (action === "pause-future-rounds") {
       const task = state.tasks.list.find(function (row) { return row.id === state.tasks.selectedId; });
@@ -2931,7 +3050,7 @@
 
   async function loadCourse() {
     try {
-      const response = await fetch("./data/course.json?v=20261017-3");
+      const response = await fetch("./data/course.json?v=20261029-1");
       if (!response.ok) throw new Error("COURSE_LOAD_FAILED");
       state.course = await response.json();
       state.courseIndex = buildCourseIndex(state.course);
@@ -3060,7 +3179,9 @@
       renderTasksPage: renderTasksPage, renderTaskDetail: renderTaskDetail,
       taskDraftDefaults: taskDraftDefaults, renderTaskExerciseForms: renderTaskExerciseForms, renderTaskEditor: renderTaskEditor,
       updateTaskDraftFromForm: updateTaskDraftFromForm, saveTask: saveTask, loadCourse: loadCourse, init: init,
-      taskSelectedItems: taskSelectedItems, handleContentChange: handleContentChange });
+      taskSelectedItems: taskSelectedItems, handleContentChange: handleContentChange,
+       handleContentClick: handleContentClick, queuedReportDecisions: queuedReportDecisions,
+       commitQueuedReportDecisions: commitQueuedReportDecisions });
   }
 
   if (!window.MON_PARCOURS_TEACHER_TEST) {
