@@ -1688,6 +1688,118 @@
         '</p><div class="export-actions">' + (draft.status === "draft" ? '<button class="button button-secondary" type="submit" name="task_status" value="draft">Concept opslaan</button>' : '') + '<button class="button button-primary" type="submit" name="task_status" value="published">' + (draft.status === "published" ? "Wijzigingen opslaan" : "Publiceren") + '</button></div></fieldset></form>';
   }
 
+  function pendingReport(review) {
+    return !review.status || review.status === "pending";
+  }
+
+  function reviewableTask() {
+    const task = state.tasks.list.find(function (row) { return row.id === state.tasks.selectedId; });
+    return task && state.user && (currentTeacherIsAdmin() || task.created_by_teacher_id === state.user.id) ? task : null;
+  }
+
+  function queuedReportDecisions() {
+    const selections = state.tasks.reportDecisions || Object.create(null);
+    return asArray(state.tasks.reports).filter(function (report) {
+      return pendingReport(report) && ["approved", "rejected"].includes(selections[report.id]);
+    }).map(function (report) { return { id: report.id, decision: selections[report.id] }; });
+  }
+
+  function updateReportSelectionUi(message) {
+    const section = document.querySelector(".task-report-section");
+    if (!section) return;
+    state.tasks.reportOpen = section.open;
+    const decisions = state.tasks.reportDecisions || Object.create(null);
+    const queued = queuedReportDecisions();
+    const approved = queued.filter(function (choice) { return choice.decision === "approved"; }).length;
+    const rejected = queued.length - approved;
+    const countNode = section.querySelector("[data-report-selected-count]");
+    const typesNode = section.querySelector("[data-report-selection-types]");
+    if (countNode) countNode.textContent = message || queued.length + " geselecteerd";
+    if (typesNode) typesNode.textContent = approved + " goedkeuren · " + rejected + " terugsturen";
+    const commit = section.querySelector('[data-action="commit-report-selections"]');
+    if (commit) {
+      commit.disabled = !queued.length || Boolean(state.tasks.reviewSaving);
+      commit.textContent = state.tasks.reviewSaving ? "Beoordelingen opslaan…" : "Bevestig " + queued.length + " keuzes";
+    }
+    section.querySelectorAll('[data-action="queue-item-report"]').forEach(function (button) {
+      const chosen = decisions[button.dataset.id] === button.dataset.decision;
+      button.disabled = Boolean(state.tasks.reviewSaving);
+      button.setAttribute("aria-pressed", chosen ? "true" : "false");
+      button.textContent = (button.dataset.decision === "approved" ? "Goedkeuren" : "Terugsturen") + (chosen ? " ✓" : "");
+      const card = button.closest(".task-report-card");
+      if (card) {
+        card.classList.toggle("is-selected", Boolean(decisions[button.dataset.id]));
+        card.classList.toggle("is-approved", decisions[button.dataset.id] === "approved");
+        card.classList.toggle("is-rejected", decisions[button.dataset.id] === "rejected");
+      }
+    });
+    section.querySelectorAll('[data-action="queue-all-reports-approved"], [data-action="clear-report-selections"]').forEach(function (button) {
+      button.disabled = Boolean(state.tasks.reviewSaving);
+    });
+  }
+
+  async function commitQueuedReportDecisions() {
+    const task = reviewableTask();
+    if (!task || state.tasks.reviewSaving) return;
+    const queued = queuedReportDecisions();
+    if (!queued.length) return;
+    const approvals = queued.filter(function (row) { return row.decision === "approved"; }).length;
+    const rejections = queued.length - approvals;
+    if (!window.confirm(queued.length + " meldingen definitief beoordelen?\n" +
+      approvals + " goedkeuren (telt als afgewerkt)\n" +
+      rejections + " terugsturen (leerling moet opnieuw oefenen)\n\n" +
+      "Dit wordt per melding opgeslagen. Controleer je keuzes voordat je doorgaat.")) return;
+
+    const section = document.querySelector(".task-report-section");
+    state.tasks.reportOpen = section ? section.open : true;
+    state.tasks.reviewSaving = true;
+    updateReportSelectionUi("0 / " + queued.length + " opgeslagen");
+    let cursor = 0, success = 0;
+    const failures = [];
+    async function saveNext() {
+      while (cursor < queued.length) {
+        const entry = queued[cursor++];
+        try {
+          const result = await state.client.rpc("resolve_assignment_item_report", {
+            p_report_id: entry.id, p_decision: entry.decision
+          });
+          if (result.error) throw result.error;
+          success += 1;
+          const report = state.tasks.reports.find(function (row) { return row.id === entry.id; });
+          if (report) { report.status = entry.decision; report.resolved_at = new Date().toISOString(); }
+          delete state.tasks.reportDecisions[entry.id];
+        } catch (_) {
+          failures.push(entry);
+        }
+        updateReportSelectionUi((success + failures.length) + " / " + queued.length + " verwerkt");
+      }
+    }
+    // A small number of concurrent independent RPCs avoids dozens of slow page reloads.
+    await Promise.all(Array.from({ length: Math.min(3, queued.length) }, saveNext));
+    state.tasks.reviewSaving = false;
+
+    let refreshProblem = false;
+    try {
+      const [detail, reports] = await Promise.all([
+        state.client.rpc("get_teacher_assignment_detail", { p_assignment_id: task.id }),
+        state.client.rpc("get_teacher_assignment_reports", { p_assignment_id: task.id })
+      ]);
+      if (detail.error || reports.error) throw (detail.error || reports.error);
+      state.tasks.detail = asArray(detail.data);
+      state.tasks.reports = asArray(reports.data);
+      const found = state.tasks.list.find(function (row) { return row.id === task.id; });
+      if (found) found.open_report_count = state.tasks.reports.filter(pendingReport).length;
+    } catch (_) { refreshProblem = true; }
+
+    state.tasks.message = success + " beoordelingen opgeslagen." +
+      (failures.length ? " " + failures.length + " niet gelukt: de keuzes blijven klaarstaan om opnieuw te proberen." : "") +
+      (refreshProblem ? " De leerlingvoortgang kon niet vernieuwd worden; vernieuw de pagina om de laatste stand te zien." : "");
+    if (state.tasks.selectedId !== task.id || state.route.view !== "task-detail") return;
+    const scrollPosition = window.scrollY || 0;
+    renderCurrent(); // One refresh after the batch, never after each individual choice.
+    window.scrollTo(0, scrollPosition);
+  }
+
   function renderTaskDetail() {
     const task = state.tasks.list.find(function (row) { return row.id === state.tasks.selectedId; });
     if (!task) return renderTasksPage();
