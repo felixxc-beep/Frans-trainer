@@ -3175,7 +3175,9 @@
       renderTasksPage: renderTasksPage, renderTaskDetail: renderTaskDetail,
       taskDraftDefaults: taskDraftDefaults, renderTaskExerciseForms: renderTaskExerciseForms, renderTaskEditor: renderTaskEditor,
       updateTaskDraftFromForm: updateTaskDraftFromForm, saveTask: saveTask, loadCourse: loadCourse, init: init,
-      taskSelectedItems: taskSelectedItems, handleContentChange: handleContentChange });
+      taskSelectedItems: taskSelectedItems, handleContentChange: handleContentChange,
+       handleContentClick: handleContentClick, queuedReportDecisions: queuedReportDecisions,
+       commitQueuedReportDecisions: commitQueuedReportDecisions });
   }
 
   if (!window.MON_PARCOURS_TEACHER_TEST) {
