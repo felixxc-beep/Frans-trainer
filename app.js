@@ -1,4 +1,4 @@
-const DATA_URL = "./data/course.json?v=20261029-1";
+const DATA_URL = "./data/course.json?v=20261030-2";
 const VARIANT_DATA_URL = "./data/exercise-variants.json?v=20261013-9";
 const STORAGE_KEY = "monParcoursProgressV1";
 const ACTIVE_SESSION_KEY = "monParcoursActiveSessionV1";
@@ -8,7 +8,7 @@ const ASSIGNMENTS_CACHE_KEY = "monParcoursAssignmentsCacheV1";
 const VERB_EVIDENCE_KEY = "monParcoursVerbEvidenceV1";
 const VERB_SERVER_CACHE_KEY = "monParcoursVerbServerCacheV1";
 const TASK_ROUNDS_KEY = "monParcoursTaskRoundsV1";
-const APP_VERSION = "20261029-1";
+const APP_VERSION = "20261030-phrase-hints";
 const INACTIVITY_TIMEOUT_MS = 60000;
 const MAX_DYNAMIC_NUMBER_ALL = 101;
 const ACCENTS = ["é", "è", "ê", "ë", "à", "â", "ç", "ù", "û", "ô", "î", "ï"];
@@ -1914,11 +1914,11 @@ function answerInputsHtml(question) {
       return '<option value="' + escapeHtml(choice) + '">' + escapeHtml(choice) + '</option>';
     }).join('') + '</select>';
   if (question.variantScoring !== "multi_gap") return '<label for="answer-input" class="sr-only">Ta réponse / Jouw antwoord</label>' +
-    '<input id="answer-input" name="answer" type="text" autocapitalize="none" spellcheck="false" placeholder="Écris ta réponse / Typ je antwoord" aria-describedby="answer-help" autofocus>';
+    '<input id="answer-input" name="answer" type="text" dir="ltr" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" placeholder="Écris ta réponse / Typ je antwoord" aria-describedby="answer-help" autofocus>';
   return '<div class="gap-answer-list">' + question.gaps.map(function (gap, index) {
     const inputId = index === 0 ? "answer-input" : "gap-input-" + index;
     return '<label class="gap-answer"><span>' + uiText("Trou " + (index + 1), "Gat " + (index + 1)) + '</span>' +
-      '<input id="' + inputId + '" name="gap-' + index + '" type="text" autocapitalize="none" spellcheck="false" aria-describedby="answer-help"' +
+      '<input id="' + inputId + '" name="gap-' + index + '" type="text" dir="ltr" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" aria-describedby="answer-help"' +
       (index === 0 ? " autofocus" : "") + '></label>';
   }).join("") + '</div>';
 }
@@ -2013,7 +2013,11 @@ function submitAnswer(rawAnswer) {
       showFeedback(true, "Bonne réponse !", "Juist antwoord!", true);
     } else {
       requeueRoundQuestion(question);
-      const hint = sentenceCorrectionHint(rawAnswer, question, Number(itemState && itemState.wrong_count || 0) >= 2) || nearCorrectHint(rawAnswer, question);
+      const hint = (window.MonParcoursPhraseFeedback && window.MonParcoursPhraseFeedback.hint(
+        question, rawAnswer, Number(itemState && itemState.wrong_count || 1),
+        session.assignment_round_number, session.mode)) ||
+        sentenceCorrectionHint(rawAnswer, question, Number(itemState && itemState.wrong_count || 0) >= 2) ||
+        nearCorrectHint(rawAnswer, question);
       showFeedback(false, hint ? hint.fr : session.assignment_round_number === 1 ? "Pas encore" : "Pas encore. Regarde dans ton cours.",
         hint ? hint.nl : session.assignment_round_number === 1 ? "Nog niet juist" : "Nog niet juist. Kijk in je boek.", true);
     }
@@ -2066,7 +2070,8 @@ function submitAnswer(rawAnswer) {
     recordAttempt(question, false, graded);
     session.questionAttempts += 1;
     if (session.questionAttempts === 1) {
-      const hint = nearCorrectHint(rawAnswer, question);
+      const hint = (window.MonParcoursPhraseFeedback && window.MonParcoursPhraseFeedback.hint(
+        question, rawAnswer, session.questionAttempts, null, session.mode)) || nearCorrectHint(rawAnswer, question);
       const wrongGaps = graded && graded.gapResults.filter(function (gap) { return !gap.correct; })
         .map(function (gap, index) { return question.gaps.findIndex(function (candidate) { return candidate.id === gap.gapId; }) + 1; });
       showFeedback(false, wrongGaps && wrongGaps.length ? "Vérifie les trous " + wrongGaps.join(", ") + "." : hint ? hint.fr : "Pas encore. Regarde bien et réessaie.",
