@@ -17,6 +17,71 @@
     });
   }
 
+  const PLACEHOLDER_INFO = Object.freeze({
+    nom: { nl: "naam", fr: "un vrai nom", example: "Emma" },
+    "âge": { nl: "leeftijd", fr: "un âge concret", example: "12" },
+    classe: { nl: "klas", fr: "une classe concrète", example: "1A" },
+    groupe: { nl: "groep", fr: "un groupe concret", example: "A" },
+    lieu: { nl: "plaats", fr: "un lieu concret", example: "Turnhout" }
+  });
+
+  function placeholderInfo(token) {
+    const key = normal(token).replace(/^\[|\]$/g, "");
+    return Object.assign({ key: key, nl: "informatie", fr: "une information concrète", example: "..." },
+      PLACEHOLDER_INFO[key] || {});
+  }
+
+  function readableFrench(token) {
+    return String(token || "").replace(/'/g, "’");
+  }
+
+  // Detect the precise case where the learner wrote the complete sentence frame,
+  // but left out the required concrete value represented by one [placeholder].
+  function missingPlaceholder(question, rawAnswer) {
+    const actual = normal(rawAnswer);
+    let issue = null;
+    (question.answers || []).some(function (variant) {
+      if (typeof variant !== "string") return false;
+      const tokens = normal(variant).match(/\S+/gu) || [];
+      const slotIndexes = [];
+      tokens.forEach(function (token, index) {
+        if (/^\[[^\]]+\]$/.test(token)) slotIndexes.push(index);
+      });
+      if (slotIndexes.length !== 1) return false;
+      const slotIndex = slotIndexes[0];
+      const fixed = tokens.filter(function (_, index) { return index !== slotIndex; });
+      if (actual !== fixed.join(" ")) return false;
+      const before = tokens.slice(0, slotIndex);
+      const after = tokens.slice(slotIndex + 1);
+      const info = placeholderInfo(tokens[slotIndex]);
+      let nl;
+      if (info.key === "nom" && !after.length && /m'appelle$/.test(before.join(" "))) {
+        nl = "Er ontbreekt een echte naam aan het einde: schrijf bijvoorbeeld je eigen voornaam achter je m’appelle.";
+      } else if (!after.length) {
+        nl = "Er ontbreekt een echte " + info.nl + " aan het einde. Schrijf bijvoorbeeld " +
+          info.example + " achter " + readableFrench(before[before.length - 1]) + ".";
+      } else if (!before.length) {
+        nl = "Er ontbreekt een echte " + info.nl + " aan het begin. Schrijf bijvoorbeeld " +
+          info.example + " voor " + readableFrench(after[0]) + ".";
+      } else {
+        nl = "Er ontbreekt een echte " + info.nl + " tussen " +
+          readableFrench(before[before.length - 1]) + " en " + readableFrench(after[0]) +
+          ". Vul daar bijvoorbeeld " + info.example + " in.";
+      }
+      const fr = "Il manque " + info.fr + (after.length ?
+        " à l’endroit indiqué. Ajoute par exemple « " + info.example + " »." :
+        " à la fin. Ajoute par exemple « " + info.example + " ».");
+      issue = {
+        index: before.length,
+        label: info.nl,
+        nl: nl,
+        fr: fr
+      };
+      return true;
+    });
+    return issue;
+  }
+
   function wordDistance(left, right) {
     const a = left.split(/\s+/), b = right.split(/\s+/);
     const row = b.map(function (_, i) { return i + 1; });
@@ -47,10 +112,17 @@
     }, 0);
     const expected = patterns[closest];
     const prompt = String(question.prompt || "").toLocaleLowerCase("nl");
+    const missingSlot = missingPlaceholder(question, rawAnswer);
     let fr, nl;
-    if (/\[[^\]]+\]/.test(value) || /(?:m'appelle|nom de famille est|prénom c'est)\s+(?:nom|naam)$/.test(value)) {
-      fr = "Remplace le texte entre crochets par une vraie information.";
-      nl = "Vul een echte naam, leeftijd, klas, groep of plaats in. Neem [nom], [âge] of andere haakjes niet letterlijk over.";
+    if (missingSlot) {
+      fr = missingSlot.fr;
+      nl = missingSlot.nl;
+    } else if (/\[[^\]]+\]/.test(value) || /(?:m'appelle|nom de famille est|prénom c'est)\s+(?:nom|naam)$/.test(value)) {
+      const literalSlot = value.match(/\[[^\]]+\]/);
+      const literalInfo = placeholderInfo(literalSlot ? literalSlot[0] : "[nom]");
+      fr = "Remplace le texte entre crochets par " + literalInfo.fr + ", par exemple « " + literalInfo.example + " ».";
+      nl = "Vervang de tekst tussen haakjes door een echte " + literalInfo.nl +
+        ", bijvoorbeeld " + literalInfo.example + ". Neem de haakjes niet over.";
     } else if (/\[(?:klas|groep)\]/i.test(prompt) && /(?:en classe|dans le groupe|en groupe|dans la classe)$/.test(value)) {
       fr = "Il manque la classe ou le groupe concret. Ta phrase doit être complète.";
       nl = "Je mist nog een echte klas of groep. Schrijf de volledige zin.";
@@ -93,14 +165,14 @@
     }
 
     const mistakes = Math.max(1, Number(wrongCount || 1));
-    if (mistakes >= 2) {
+    if (mistakes >= 2 && !missingSlot) {
       const prefix = answers[closest].trim().split(/\s+/).slice(0, 2).join(" ");
       if (prefix && !prefix.includes("[")) {
         fr += " Début possible : <strong>" + html(prefix) + " …</strong>";
         nl += " Mogelijk begin: <strong>" + html(prefix) + " …</strong>";
       }
     }
-    if (mistakes >= 3 && Number(roundNumber) === 1 && mode !== "test") {
+    if (mistakes >= 3 && !missingSlot && Number(roundNumber) === 1 && mode !== "test") {
       const example = answers[closest].replace(/\[nom\]/g, "Emma").replace(/\[âge\]/g, "12")
         .replace(/\[classe\]/g, "1AB").replace(/\[groupe\]/g, "A").replace(/\[lieu\]/g, "Turnhout");
       fr += " Exemple à étudier : <strong>" + html(example) + "</strong> Recommence avec tes propres informations.";
@@ -123,6 +195,17 @@
     const cleaned = function (token) {
       return normal(token).replace(/^[.!?,;:]+|[.!?,;:]+$/g, "");
     };
+    const slotIssue = missingPlaceholder(question, rawAnswer);
+    if (slotIssue) {
+      const annotated = entered.map(html);
+      annotated.splice(slotIssue.index, 0,
+        '<span class="phrase-missing phrase-missing-slot" aria-label="' +
+        html(slotIssue.label + ' ontbreekt hier') + '">[' + html(slotIssue.label) + ' ontbreekt]</span>');
+      return '<div class="phrase-answer-review"><strong>Jouw antwoord:</strong>' +
+        '<p class="phrase-answer-words" dir="ltr" lang="fr">' + annotated.join(" ") + '</p>' +
+        '<p class="phrase-slot-instruction"><strong>Wat moet je doen?</strong> ' +
+        html(slotIssue.nl) + '</p></div>';
+    }
     const actual = entered.map(cleaned);
     function same(actualWord, expectedWord) {
       // A concrete value for a model [slot] is not a misspelled word.
@@ -146,13 +229,15 @@
       const wrong = new Set(), missing = [];
       let matched = 0, i = m, j = n;
       while (i || j) {
-        if (i && j && dp[i][j] === dp[i - 1][j - 1] +
-            (same(actual[i - 1], expected[j - 1]) ? 0 : 1)) {
-          if (same(actual[i - 1], expected[j - 1])) matched++;
-          else wrong.add(i - 1);
-          i--; j--;
+        const exact = i && j && same(actual[i - 1], expected[j - 1]) &&
+          dp[i][j] === dp[i - 1][j - 1];
+        if (exact) {
+          matched++; i--; j--;
         } else if (j && dp[i][j] === dp[i][j - 1] + 1) {
+          // Prefer a real missing position over a substitution when both paths tie.
           missing.push(i); j--;
+        } else if (i && j && dp[i][j] === dp[i - 1][j - 1] + 1) {
+          wrong.add(i - 1); i--; j--;
         } else if (i) {
           wrong.add(i - 1); i--;
         } else break;
