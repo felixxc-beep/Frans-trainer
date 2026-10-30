@@ -1494,7 +1494,10 @@
           "nl": "Waar woon je?",
           "fr": "Tu habites où ?",
           "accepted_answers": [
-            "Tu habites où ?"
+            "Tu habites où ?",
+            "Où habites-tu ?",
+            "Où habitez-vous ?",
+            "Vous habitez où ?"
           ],
           "id": "uf1-item-000527"
         },
@@ -1761,7 +1764,11 @@
             "Il s’appelle comment ?",
             "Elle s’appelle comment ?",
             "C’est quoi, son nom ?",
-            "C’est quoi, son prénom ?"
+            "C’est quoi, son prénom ?",
+            "Quel est son nom ?",
+            "Quel est son prénom ?",
+            "Comment s’appelle-t-il ?",
+            "Comment s’appelle-t-elle ?"
           ],
           "id": "uf1-item-000544"
         },
@@ -1806,7 +1813,8 @@
           "nl": "Zijn/haar familienaam is [naam].",
           "fr": "Son nom de famille, c’est [nom].",
           "accepted_answers": [
-            "Son nom de famille, c’est [nom]."
+            "Son nom de famille, c’est [nom].",
+            "Son nom de famille est [nom]."
           ],
           "id": "uf1-item-000547"
         },
@@ -1821,7 +1829,9 @@
           "fr": "Il / Elle a quel âge ?",
           "accepted_answers": [
             "Il a quel âge ?",
-            "Elle a quel âge ?"
+            "Elle a quel âge ?",
+            "Quel âge a-t-il ?",
+            "Quel âge a-t-elle ?"
           ],
           "id": "uf1-item-000548"
         },
@@ -1851,7 +1861,9 @@
           "fr": "Il / Elle habite où ?",
           "accepted_answers": [
             "Il habite où ?",
-            "Elle habite où ?"
+            "Elle habite où ?",
+            "Où habite-t-il ?",
+            "Où habite-t-elle ?"
           ],
           "id": "uf1-item-000550"
         },
@@ -1897,7 +1909,9 @@
           "fr": "Il / Elle aime danser.",
           "accepted_answers": [
             "Il aime danser.",
-            "Elle aime danser."
+            "Elle aime danser.",
+            "Il adore danser.",
+            "Elle adore danser."
           ],
           "id": "uf1-item-000553"
         },
@@ -1912,7 +1926,13 @@
           "fr": "Il / Elle aime jouer au foot.",
           "accepted_answers": [
             "Il aime jouer au foot.",
-            "Elle aime jouer au foot."
+            "Elle aime jouer au foot.",
+            "Il aime le foot.",
+            "Elle aime le foot.",
+            "Il aime le football.",
+            "Elle aime le football.",
+            "Il aime jouer au football.",
+            "Elle aime jouer au football."
           ],
           "id": "uf1-item-000554"
         },
@@ -2008,7 +2028,9 @@
           "fr": "Il / Elle est sympa.",
           "accepted_answers": [
             "Il est sympa.",
-            "Elle est sympa."
+            "Elle est sympa.",
+            "Il est gentil.",
+            "Elle est gentille."
           ],
           "id": "uf1-item-000560"
         },
@@ -2068,7 +2090,11 @@
           "fr": "Il / Elle est dans quelle classe ?",
           "accepted_answers": [
             "Il est dans quelle classe ?",
-            "Elle est dans quelle classe ?"
+            "Elle est dans quelle classe ?",
+            "En quelle classe est-il ?",
+            "En quelle classe est-elle ?",
+            "Dans quelle classe est-il ?",
+            "Dans quelle classe est-elle ?"
           ],
           "id": "uf1-item-000564"
         },
