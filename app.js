@@ -2169,7 +2169,17 @@ function showFeedback(correct, messageFr, messageNl, allowNext, clearInput) {
     '</span><div class="feedback-body">' + tipHeading + annotation +
     '<p class="feedback-main-message">' + uiHtml(messageFr, messageNl) + '</p>' + ligatureNote + marking +
     (!correct && state.session && state.session.assignment_round_number === 1 ? '<button class="button button-primary consult-action" type="button" data-action="consult-round">' + contentIcon("vocabulary") + uiText("Consulter", "Opzoeken") + '</button>' : "") +
-    (canReport ? '<p class="report-explanation">' + uiText("Si ta réponse semble correcte, si la question n’est pas claire ou s’il y a un problème technique. Ce n’est pas un bouton « je ne sais pas ».", "Alleen als je antwoord volgens jou juist is, de vraag onduidelijk lijkt of er een technisch probleem is. Niet voor ‘ik weet het niet’.") + '</p><button class="text-button report-action" type="button" data-action="report-round-item">' + uiText("Je pense que ma réponse est refusée à tort", "Mijn antwoord wordt volgens mij onterecht fout gerekend") + '</button>' : '') +
+    (canReport ? '<details class="report-gate"><summary>' + uiText("Je pense qu’il y a un problème dans l’exercice", "Ik denk dat er een probleem is met de oefening") + '</summary>' +
+      '<p class="report-explanation">' + uiText("Compare d’abord avec le cours. Une faute d’orthographe, d’accent ou d’article n’est pas un problème technique.", "Vergelijk eerst met je cursus. Een eigen spelling-, accent- of lidwoordfout is geen probleem met de oefening.") + '</p>' +
+      '<label for="report-reason">' + uiText("Pourquoi veux-tu signaler cet exercice ?", "Waarom wil je dit melden?") + '</label>' +
+      '<select id="report-reason"><option value="">' + uiText("Choisis une raison", "Kies een reden") + '</option>' +
+        '<option value="correct_alternative">' + uiText("Ma réponse est correcte", "Mijn antwoord is ook correct") + '</option>' +
+        '<option value="ambiguous_question">' + uiText("La question est ambiguë", "De vraag is onduidelijk of dubbelzinnig") + '</option>' +
+        '<option value="technical_problem">' + uiText("Il y a un problème technique", "Er is een technisch probleem") + '</option></select>' +
+      '<label for="report-explanation">' + uiText("Explique en quelques mots ce qui ne va pas", "Leg kort uit waarom dit volgens jou een probleem is") + '</label>' +
+      '<textarea id="report-explanation" maxlength="250" rows="2" placeholder="' + uiText("Explique ton raisonnement…", "Bijvoorbeeld: in mijn boek staat…") + '"></textarea>' +
+      '<p id="report-validation" class="report-validation" role="status" aria-live="polite"></p>' +
+      '<button class="text-button report-action" type="button" data-action="report-round-item">' + uiText("Envoyer ce problème", "Probleem melden") + '</button></details>' : '') +
     (allowNext ? '<button class="button ' + (!correct && state.session && state.session.assignment_round_number === 1 ? 'button-secondary' : 'button-primary') + '" type="button" data-action="next-question">' + uiText("Suivant", "Volgende") + '</button>' : "") + '</div>';
   if (allowNext) {
     input.disabled = true;
@@ -2200,13 +2210,20 @@ function reportRoundItem() {
   if (!current || current.item.completed_at || current.item.reported_pending ||
       Number(current.item.returned_for_retry ? current.item.wrong_since_return : current.item.wrong_count || 0) < 2 ||
       !window.MonParcoursSync || typeof window.MonParcoursSync.enqueueIssueReport !== "function") return;
-  // The report button is for ambiguous questions, valid alternatives or technical errors.
-  // Requiring an explicit confirmation reduces accidental reports of ordinary mistakes;
-  // it does not take away a pupil's ability to report a genuine false negative.
-  if (typeof window.confirm === "function" && !window.confirm(
-    "Meld alleen een probleem als je antwoord echt correct is, de vraag dubbelzinnig is of er een technische fout is. " +
-    "Een fout lidwoord, ontbrekend accent of spelfout blijft fout. Heb je je antwoord met de cursus vergeleken?"
-  )) return;
+  // Ask pupils to identify a genuine ambiguity, correct alternative or technical issue.
+  // Never silently discard a report: a pupil may have found a real textbook discrepancy.
+  const reasonField = document.querySelector("#report-reason");
+  const explanationField = document.querySelector("#report-explanation");
+  const validation = document.querySelector("#report-validation");
+  const reason = reasonField ? reasonField.value : "";
+  const explanation = explanationField ? explanationField.value.trim() : "";
+  if (!["correct_alternative", "ambiguous_question", "technical_problem"].includes(reason) ||
+      explanation.length < 12 || !/[a-zA-ZÀ-ÿ]{4}/.test(explanation)) {
+    if (validation) validation.textContent = "Kies een reden en leg in minstens 12 tekens uit wat er verkeerd is. Vergelijk eerst met je boek.";
+    if (!reason && reasonField && typeof reasonField.focus === "function") reasonField.focus();
+    else if (explanationField && typeof explanationField.focus === "function") explanationField.focus();
+    return;
+  }
   const answers = (current.item.attempt_history || []).filter(function (entry) { return !entry.was_correct; })
     .map(function (entry) { return entry.answer; });
   if (!answers.length) return;
@@ -2218,7 +2235,10 @@ function reportRoundItem() {
       ? question.gaps.map(function (gap) { return gap.accepted_answers.join(" / "); }) : question.answers.slice(),
     variant_id: question.variantId || null, model_answer: formatAnswers(question),
     exercise_type: question.variantKind || question.item.type,
-    attempt_details: (current.item.attempt_history || []).filter(function (entry) { return !entry.was_correct; }),
+    // The existing JSONB attempt_details stores report context without a schema migration.
+    attempt_details: (current.item.attempt_history || []).filter(function (entry) { return !entry.was_correct; })
+      .map(function (entry, index) { return index === 0 ?
+        Object.assign({}, entry, { report_reason: reason, report_explanation: explanation }) : entry; }),
     consulted: Boolean(current.item.consulted), app_version: APP_VERSION,
     created_at: new Date().toISOString()
   };
