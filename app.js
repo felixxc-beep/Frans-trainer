@@ -3162,20 +3162,54 @@ function nearCorrectHint(rawAnswer, question) {
   const french = question.exerciseKey === "vocab-nl-fr";
   const dutch = question.exerciseKey === "vocab-fr-nl";
   if (!french && !dutch) return null;
+  const session = state.session;
+  const roundState = session && session.assignment_round_number ? currentRoundItemState(session, question) : null;
+  const attempts = Math.max(1, Number(roundState ? roundState.item.wrong_count || 1 :
+    session && session.questionAttempts || 1));
   const candidate = normalizeAnswer(rawAnswer, true);
+
+  // These are valid French words but do not practise the specific textbook word
+  // explicitly requested in this exercise.
+  if (french && question.item.id === "uf1-item-000151" && candidate === "la mère")
+    return attempts >= 2 ?
+      { fr: "Tu as écrit « mère » (moeder). Le cours demande le mot pour « mama » : maman.",
+        nl: "« La mère » betekent moeder. Hier wordt het cursuswoord voor mama gevraagd: « la maman »." } :
+      { fr: "« Mère » et « maman » ne sont pas le même mot dans cette liste.",
+        nl: "De vraag zegt mama, niet moeder. Zoek het juiste woord uit de cursus." };
+  if (french && question.item.id === "uf1-item-000156" && candidate === "le père")
+    return attempts >= 2 ?
+      { fr: "« Père » signifie vader. Ici on demande « papa » : le papa.",
+        nl: "« Le père » betekent vader. Hier wordt het cursuswoord voor papa gevraagd: « le papa »." } :
+      { fr: "Vérifie la différence entre « père » et « papa » dans ton cours.",
+        nl: "Controleer het verschil tussen vader en papa in je cursus." };
+  if (french && question.item.id === "uf1-item-000170" &&
+      /\bjeu\s+vid[ée]o\b/i.test(candidate))
+    return { fr: "Tu parles de plusieurs jeux : ajoute la marque du pluriel à « jeu ».",
+      nl: "Het gaat over meerdere spelletjes: bij « jeu » ontbreekt de meervouds-s." };
+
   for (const answer of question.answers || []) {
     const expected = normalizeAnswer(answer, true);
     if (candidate === expected) return null;
     const source = splitAnswerArticle(expected, french);
     const typed = splitAnswerArticle(candidate, french);
     if (source.article && source.stem === typed.stem && source.article !== typed.article) {
-      return { fr: "Presque ! Vérifie l’article.", nl: "Bijna! Controleer het lidwoord." };
+      const model = attempts >= 2 ? " Het juiste lidwoord is « " + source.article + " »." : "";
+      return { fr: "Presque ! Vérifie l’article." + (attempts >= 2 ? " L’article correct est « " + source.article + " »." : ""),
+        nl: "Bijna! Het woord klopt, maar het lidwoord niet." + model };
     }
     if (french && normalizeAnswer(candidate, false) === normalizeAnswer(expected, false)) {
-      return { fr: "Presque ! Vérifie les accents.", nl: "Bijna! Controleer de accenten." };
+      return attempts >= 2 ?
+        { fr: "Ce sont les accents. Écriture exacte : « " + answer + " ».",
+          nl: "Alle letters kloppen; alleen de accenten verschillen. Correct gespeld: « " + answer + " »." } :
+        { fr: "Presque ! Vérifie précisément les accents (é, è, ê, î…).",
+          nl: "Bijna! Controleer de accenten nauwkeurig: bijvoorbeeld é en è zijn verschillend." };
     }
     if (source.article === typed.article && oneSmallSpellingDifference(typed.stem, source.stem)) {
-      return { fr: "Presque ! Vérifie l’orthographe.", nl: "Bijna! Controleer de spelling." };
+      return attempts >= 2 ?
+        { fr: "Il y a une petite faute de lettres. Compare avec « " + answer + " ».",
+          nl: "Er zit een kleine letterfout in. Vergelijk jouw antwoord met « " + answer + " »." } :
+        { fr: "Presque ! Vérifie une lettre dans l’orthographe.",
+          nl: "Bijna! Controleer één letter in de spelling." };
     }
   }
   return null;
