@@ -3050,12 +3050,12 @@
 
   async function loadCourse() {
     try {
-      const response = await fetch("./data/course.json?v=20261030-2");
+      const response = await fetch("./data/course.json?v=20261030-t2-1");
       if (!response.ok) throw new Error("COURSE_LOAD_FAILED");
       state.course = await response.json();
       state.courseIndex = buildCourseIndex(state.course);
       try {
-        const variantsResponse = await fetch("./data/exercise-variants.json?v=20261013-9");
+        const variantsResponse = await fetch("./data/exercise-variants.json?v=20261030-t2-1");
         if (!variantsResponse.ok) throw Error("VARIANT_LOAD_FAILED");
         const bank = await variantsResponse.json();
         window.MonParcoursExerciseVariants.validateBank(bank, state.course);
