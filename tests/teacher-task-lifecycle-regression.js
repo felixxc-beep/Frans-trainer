@@ -29,7 +29,7 @@ assert.doesNotMatch(sql, /update public\.assignments set[^;]*due_at/i,
   "herstellen wijzigt de deadline niet");
 assert.doesNotMatch(sql, /update public\.assignments set status='archived'/i,
   "automatisch archiveren is uitsluitend afgeleid, zonder database-mutatie");
-assert.match(html, /teacher\.js\?v=20261030-2/);
+assert.match(html, /teacher\.js\?v=20261030-t2-1/);
 assert.match(css, /\.task-owner-tabs/);
 assert.match(css, /@media \(max-width: 560px\)[\s\S]*\.task-overview-row/);
 assert.match(teacherSource, /action === "task-owner-filter"[\s\S]*state\.tasks\.ownerFilter = target\.dataset\.value/);
