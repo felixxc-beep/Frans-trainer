@@ -87,6 +87,17 @@
     return { variants: seen.size, permanentItems: index.size };
   }
 
+  // Two spellings are valid for ainé/ainée (rectifications de 1990).
+  // The spelling without the circumflex is used in the pupils' textbook.
+  function acceptedTrajet2Orthography(variant) {
+    const answers = (variant.accepted_answers || []).slice();
+    const spellings = {
+      "T2-VOC-CTX-016": ["ainé", "aîné"],
+      "T2-VOC-CTX-017": ["ainée", "aînée"]
+    };
+    return Array.from(new Set((spellings[variant.id] || []).concat(answers)));
+  }
+
   function compileVariant(variant, course) {
     const index = itemIndex(course);
     const mapped = variant.scoring === "multi_gap"
@@ -104,7 +115,7 @@
       exerciseKey: variant.exercise_key || (variant.scoring === "integrative" ? "full-sentence-nl-fr" : "curated"),
       requiresQuestionMark: variant.requires_question_mark === true,
       groupPath: [variant.trajectory, variant.kind, variant.id].join("::"),
-      prompt: variant.prompt, answers: variant.accepted_answers || [],
+      prompt: variant.prompt, answers: acceptedTrajet2Orthography(variant),
       instruction: variant.instruction || "Vul de zin aan", context: variant.context || "", reviewCount: 0
     };
   }
