@@ -4085,7 +4085,7 @@
           "category": "substantifs",
           "type": "vocabulary",
           "fr": "le jumeau",
-          "nl": "de tweeling",
+          "nl": "de tweeling (mannelijk)",
           "gender": "m",
           "id": "uf1-item-000191"
         },
@@ -4097,7 +4097,7 @@
           "category": "substantifs",
           "type": "vocabulary",
           "fr": "la jumelle",
-          "nl": "de tweeling",
+          "nl": "de tweeling (vrouwelijk)",
           "gender": "f",
           "id": "uf1-item-000192"
         },
