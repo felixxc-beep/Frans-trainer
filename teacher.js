@@ -3050,7 +3050,7 @@
 
   async function loadCourse() {
     try {
-      const response = await fetch("./data/course.json?v=20261029-1");
+      const response = await fetch("./data/course.json?v=20261030-2");
       if (!response.ok) throw new Error("COURSE_LOAD_FAILED");
       state.course = await response.json();
       state.courseIndex = buildCourseIndex(state.course);
