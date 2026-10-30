@@ -24,7 +24,8 @@ const EXERCISES = {
   "phrase-nl-fr": { type: "phrase", label: "Nederlandse zin → Franse zin", labelFr: "Phrase néerlandaise → phrase française", short: "Zinnen", shortFr: "Phrases" },
   "grammar": { type: "grammar_rule", label: "Grammatica toepassen", labelFr: "Appliquer la grammaire", short: "Grammatica", shortFr: "Grammaire" },
   "number-nl-fr": { type: "number", label: "Cijfer → Frans", labelFr: "Nombre → français", short: "Getallen", shortFr: "Nombres" },
-  "number-fr-nl": { type: "number", label: "Frans → cijfer", labelFr: "Français → nombre", short: "Getallen", shortFr: "Nombres" }
+  "number-fr-nl": { type: "number", label: "Frans → cijfer", labelFr: "Français → nombre", short: "Getallen", shortFr: "Nombres" },
+  "number-recognition": { type: "number", label: "Frans herkennen → kies cijfer", labelFr: "Reconnaître un nombre → choisir le chiffre", short: "Herkennen", shortFr: "Reconnaître" }
 };
 Object.assign(EXERCISES, {
   "curated-context": { type: "curated", label: "In een zin", labelFr: "En contexte", short: "Context", shortFr: "Contexte" },
@@ -40,7 +41,7 @@ const TYPE_EXERCISES = {
   verb: ["verb-nl-inf", "verb-fr-nl", "verb-nl-conj", "verb-fr-conj", "verb-rule-recognition"],
   phrase: ["phrase-nl-fr"],
   grammar_rule: [],
-  number: ["number-nl-fr", "number-fr-nl"]
+  number: ["number-recognition", "number-fr-nl", "number-nl-fr"]
 };
 
 const state = {
@@ -1458,7 +1459,8 @@ function taskQuestionsForItems(items, exerciseKey, verbExerciseKey, integrativeR
         if (plan.variant) return Object.assign(window.MonParcoursExerciseVariants.compileVariant(plan.variant, state.data),
           { item: item, itemId: item._id || item.id, stableItemId: item.id });
         const directKey = { vocabulary_direct: "vocab-nl-fr", verb_conjugation: "verb-nl-conj", grammar_rule: "grammar",
-          numbers: "number-nl-fr", phrase_direct: "phrase-nl-fr", spelling: "curated-spelling" }[plan.direct];
+          numbers: item.type === "number" && item._trajectoryIndex === 1 ? "number-recognition" : "number-nl-fr",
+          phrase_direct: "phrase-nl-fr", spelling: "curated-spelling" }[plan.direct];
         if (plan.direct !== "spelling") {
           const direct = buildQuestionsForItems([item], directKey, 1);
           return direct[Math.floor(Math.random() * direct.length)] || null;
@@ -1513,7 +1515,9 @@ function taskPoolQuestions(pendingItems, goalItems, forms, settings, roundNumber
     if (!entry.targetIds.some(function (id) {return pending.has(id);})) return;
     if (entry.variant) questions.push(window.MonParcoursExerciseVariants.compileVariant(entry.variant,state.data));
     else {
-      const key = {vocabulary_direct:'vocab-nl-fr',verb_conjugation:'verb-nl-conj',grammar_rule:'grammar',numbers:'number-nl-fr',phrase_direct:'phrase-nl-fr',spelling:'curated-spelling'}[entry.direct];
+      const key = {vocabulary_direct:'vocab-nl-fr',verb_conjugation:'verb-nl-conj',grammar_rule:'grammar',
+        numbers:entry.item.type === 'number' && entry.item._trajectoryIndex === 1 ? 'number-recognition' : 'number-nl-fr',
+        phrase_direct:'phrase-nl-fr',spelling:'curated-spelling'}[entry.direct];
       if (entry.direct === 'spelling') {
         const variant = state.variantBank.variants.find(function (row) {return row.kind==='spelling' && window.MonParcoursExerciseVariants.targetsForVariant(row).includes(entry.item.id);});
         if (variant) questions.push(window.MonParcoursExerciseVariants.compileVariant(variant,state.data));
@@ -2775,6 +2779,55 @@ function yearNumberAnswers(value) {
     belgianNumber(value), frenchRegionalNumber(value)]);
 }
 
+// The À retenir master uses ellipses to illustrate a relationship pattern.
+// Those ellipses are not answers a pupil can supply. Use concrete examples
+// in direct practice while keeping the original course/mastery IDs unchanged.
+function trajet2FamilyQuestions(base, item) {
+  const scenarios = {
+    "uf1-item-000221": [
+      ["Lucas is de broer van Emma.", "Lucas est le frère d’Emma."],
+      ["Hugo is de halfbroer van Emma.", "Hugo est le demi-frère d’Emma."]
+    ],
+    "uf1-item-000222": [
+      ["Emma is de zus van Lucas.", "Emma est la sœur de Lucas."],
+      ["Lola is de halfzus van Hugo.", "Lola est la demi-sœur de Hugo."]
+    ],
+    "uf1-item-000223": [
+      ["Julie is de mama van Lucas.", "Julie est la maman de Lucas."],
+      ["Marie is de schoonmoeder van Lucas.", "Marie est la belle-mère de Lucas."]
+    ],
+    "uf1-item-000224": [
+      ["Marc is de papa van Emma.", "Marc est le papa d’Emma."],
+      ["Pierre is de schoonvader van Lucas.", "Pierre est le beau-père de Lucas."]
+    ],
+    "uf1-item-000225": [
+      ["Paul is de oom van Lucas.", "Paul est l’oncle de Lucas."],
+      ["Marie is de tante van Emma.", "Marie est la tante d’Emma."]
+    ],
+    "uf1-item-000226": [
+      ["Hugo is de neef van Emma.", "Hugo est le cousin d’Emma."],
+      ["Lola is de nicht van Lucas.", "Lola est la cousine de Lucas."]
+    ],
+    "uf1-item-000227": [
+      ["Pierre is de opa van Emma.", "Pierre est le papi d’Emma."],
+      ["Anne is de oma van Lucas.", "Anne est la mamie de Lucas."]
+    ],
+    "uf1-item-000228": [
+      ["Marc en Julie zijn de ouders van Emma.", "Marc et Julie sont les parents d’Emma."],
+      ["Paul en Marie zijn de ouders van Lucas.", "Paul et Marie sont les parents de Lucas."]
+    ],
+    "uf1-item-000229": [
+      ["Pierre en Anne zijn de grootouders van Emma.", "Pierre et Anne sont les grands-parents d’Emma."],
+      ["Paul en Julie zijn de grootouders van Lucas.", "Paul et Julie sont les grands-parents de Lucas."]
+    ]
+  };
+  const examples = scenarios[item.id] || [];
+  return examples.map(function (pair, index) {
+    return makeQuestion(Object.assign({}, base, { itemVariant: "family:" + (index + 1) }),
+      pair[0], [pair[1]], "Schrijf de volledige Franse zin");
+  });
+}
+
 function buildQuestions(items, exerciseKey) {
   if (exerciseKey === "verb-rule-recognition") {
     const model = window.MonParcoursVerbMastery;
@@ -2808,7 +2861,11 @@ function buildQuestions(items, exerciseKey) {
     if (exerciseKey === "vocab-fr-nl") questions.push(makeQuestion(base, item.fr, dutchAnswers(item.nl, item), "Vertaal naar het Nederlands"));
     if (exerciseKey === "verb-nl-inf") questions.push(makeQuestion(base, item.nl, answerList(item.infinitive, item), "Geef de Franse infinitief"));
     if (exerciseKey === "verb-fr-nl") questions.push(makeQuestion(base, item.infinitive, dutchAnswers(item.nl, item), "Vertaal naar het Nederlands"));
-    if (exerciseKey === "phrase-nl-fr") questions.push(makeQuestion(base, item.nl, answerList(item.fr, item), "Schrijf de volledige Franse zin"));
+    if (exerciseKey === "phrase-nl-fr") {
+      const familyExamples = trajet2FamilyQuestions(base, item);
+      if (familyExamples.length) questions.push.apply(questions, familyExamples);
+      else questions.push(makeQuestion(base, item.nl, answerList(item.fr, item), "Schrijf de volledige Franse zin"));
+    }
     if (exerciseKey === "grammar") {
       const candidate = (state.variantBank && state.variantBank.variants || []).find(function (variant) {
         if (variant.evidence_policy === "practice_only" || variant.scoring === "integrative") return false;
@@ -2821,6 +2878,16 @@ function buildQuestions(items, exerciseKey) {
     }
     if (exerciseKey === "number-nl-fr") questions.push(makeQuestion(base, item.nl, answerList(item.fr, item), "Schrijf het getal in het Frans"));
     if (exerciseKey === "number-fr-nl") questions.push(makeQuestion(base, item.fr, [item.nl], "Schrijf het cijfer"));
+    if (exerciseKey === "number-recognition" && item._trajectoryIndex === 1 && !item.dynamic_range) {
+      const n = Number(item.nl);
+      const choices = [n, (n + 5) % 21, (n + 11) % 21, (n + 17) % 21]
+        .map(String).sort(function (left, right) {
+          return (Number(left) * 7 + n * 13) % 23 - (Number(right) * 7 + n * 13) % 23;
+        });
+      questions.push(Object.assign(makeQuestion(base, item.fr, [item.nl], "Kies het juiste cijfer"), {
+        choices: choices
+      }));
+    }
     if (exerciseKey === "verb-nl-conj" || exerciseKey === "verb-fr-conj") {
       (item.conjugations || []).forEach(function (conjugation) {
         concreteConjugations(conjugation).forEach(function (variant) {
@@ -3453,6 +3520,10 @@ function exerciseKeysForItems(items) {
   Object.keys(TYPE_EXERCISES).forEach(function (type) {
     if (!items.some(function (item) { return item.type === type; })) return;
     TYPE_EXERCISES[type].forEach(function (key) {
+      // Trajet 2 evaluates reading and understanding 0–20; spelling is only extra practice.
+      if (key === "number-recognition" && !items.some(function (item) {
+        return item.type === "number" && item._trajectoryIndex === 1 && !item.dynamic_range;
+      })) return;
       if (key === "verb-rule-recognition" && !items.some(function (item) {
         const classification = window.MonParcoursVerbMastery && window.MonParcoursVerbMastery.classification(item.id);
         return classification && classification.ruleId === "present_er";
@@ -3466,7 +3537,10 @@ function exerciseKeysForItems(items) {
 function isExerciseItem(item) {
   return !/Kiosque|alphabet/i.test((item.top_category || "") + " " + (item.lesson || "")) &&
     (Object.prototype.hasOwnProperty.call(TYPE_EXERCISES, item.type) ||
-    item.type === "sound_rule" && item._trajectoryIndex === 5 && item.top_category === "Comment écrire ?");
+    item.type === "sound_rule" && (
+      item._trajectoryIndex === 5 && item.top_category === "Comment écrire ?" ||
+      item._trajectoryIndex === 1 && item.category === "graphie du son [e]"
+    ));
 }
 
 function currentTrajectory() {
