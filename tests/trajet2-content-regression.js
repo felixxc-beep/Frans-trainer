@@ -114,11 +114,11 @@ const soundOptions = policy.options(items.filter(function (item) { return item.t
 assert.ok(soundOptions.some(function (row) { return row.key === "spelling" && row.variantCount >= 15; }),
   "Teacher must be able to assign the written sound exercises");
 
-assert.match(home,/app\.js\?v=20261030-t2-1/);
+assert.match(home,/app\.js\?v=20261030-trajet2-reports-1/);
 assert.match(home,/exercise-policy\.js\?v=20261030-t2-1/);
-assert.match(teacherHtml,/teacher\.js\?v=20261030-t2-1/);
+assert.match(teacherHtml,/teacher\.js\?v=20261030-trajet2-reports-1/);
 assert.match(teacherHtml,/exercise-policy\.js\?v=20261030-t2-1/);
-assert.match(source,/const DATA_URL = ".+20261030-t2-1"/);
+assert.match(source,/const DATA_URL = ".+20261030-trajet2-reports-1"/);
 assert.match(source,/const VARIANT_DATA_URL = ".+20261030-t2-1"/);
 assert.match(teacher,/exercise-variants\.json\?v=20261030-t2-1/);
 assert.match(source,/number-goal-note/);
