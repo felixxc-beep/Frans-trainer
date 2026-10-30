@@ -324,6 +324,22 @@ dialog::backdrop { background: rgba(10,29,23,.45); backdrop-filter: blur(4px); }
 .feedback.correct { background: #e4f5e9; color: #145b2b; }
 .feedback.wrong { background: #fff0ec; color: #8d2c1e; }
 .feedback.reported { background: #e9f4ec; color: var(--forest); }
+.feedback-inline { margin: .65rem 0 .85rem; border: 2px solid #db8f57; background: #fff8eb !important; color: #493222 !important; scroll-margin: .85rem; box-shadow: 0 3px 10px rgba(99, 54, 10, .10); }
+.feedback-inline .feedback-body { min-width: 0; width: 100%; }
+.feedback-inline .phrase-feedback-title { font-size: 1rem; line-height: 1.3; margin: 0 0 .55rem; font-weight: 850; }
+.feedback-inline .phrase-answer-review { margin: .6rem 0; border: 1px solid #e2b37d; border-radius: 10px; background: #fff; padding: .7rem .85rem; }
+.feedback-inline .phrase-answer-review strong { font-size: .9rem; }
+.feedback-inline .phrase-answer-words { margin: .35rem 0 !important; line-height: 1.8; font-size: 1.2rem; font-weight: 600; color: #272a26; overflow-wrap: anywhere; }
+.feedback-inline .phrase-answer-review small { font-size: .8rem; color: #70482c; }
+.feedback-inline .phrase-word-check { background: #ffe4cf; color: #7a250d; padding: 0 .07rem; text-decoration: underline wavy #ba3c20 2px; text-underline-offset: .24rem; font-weight: 800; }
+.feedback-inline .phrase-missing { display: inline-block; color: #8a3218; padding: 0 .22rem; border: 2px dashed #c57850; border-radius: 4px; font-weight: 850; }
+.feedback-inline .feedback-main-message { font-weight: 650; line-height: 1.45; }
+.feedback-inline .feedback-main-message .ui-nl { font-weight: 800; }
+@media (max-width: 620px) {
+  .feedback-inline { padding: .65rem; }
+  .feedback-inline .phrase-answer-words { font-size: 1.05rem; }
+}
+
 .feedback .report-action { display: inline-flex; min-height: 42px; margin: .35rem .55rem .35rem 0; }
 .feedback .report-explanation { max-width: 38rem; margin: .6rem 0 .2rem; font-size: .9rem; line-height: 1.45; }
 .retry-note { margin: 0 0 .45rem; color: #8d5a1e; font-weight: 850; }
