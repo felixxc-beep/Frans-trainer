@@ -64,5 +64,5 @@ Object.entries(alternatives).forEach(function ([id, answer]) {
   assert.ok(phrase(id).answers.includes(answer), "Missing valid variant " + id);
 });
 assert.ok(!phrase("000537").answers.includes("Tu es dans quel classe ?"));
-assert.ok(!phrase("000522").answers.includes("Je m'appelle [nom]") || true);
+assert.ok(phrase("000556").answers.includes("Il aime les jeux vidéo."));
 console.log("ZINSFEEDBACK-REGRESSIE OK: " + checks.length + " diagnoses, 4 stages, 9 accepted alternatives.");
