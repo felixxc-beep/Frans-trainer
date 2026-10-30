@@ -15,10 +15,10 @@
     grammar_mixed: "Grammatica · Application mixte / Gemengde toepassing",
     revision: "Révision · Phrases NL → FR / Integratieve zinnen",
     revision_other: "Révision · Autres exercices / Andere revisievragen",
-    numbers: "Getallen · Nombres dynamiques / Dynamische getallen",
+    numbers: "Getallen · Reconnaître et pratiquer / Herkennen en oefenen",
     phrase_direct: "Zinnen · Traduire / Direct vertalen",
     phrase_context: "Zinnen · En contexte / In een zin",
-    spelling: "Spelling · Homophones / Schriftelijke homofonen"
+    spelling: "Spelling · Sons et homophones / Klanken en homofonen"
   };
   function read(instructions) {
     const text = String(instructions || "");
