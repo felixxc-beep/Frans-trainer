@@ -7077,11 +7077,11 @@
       "trajectory": "Trajet 2",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Il est un enfant unique.",
+      "prompt": "C’est un enfant unique.",
       "source_line": 1694,
       "instruction": "Maak de zin ontkennend met ne ... pas",
       "accepted_answers": [
-        "Il n’est pas un enfant unique."
+        "Ce n’est pas un enfant unique."
       ],
       "targets": [
         "uf1-item-000280"
@@ -7093,11 +7093,11 @@
       "trajectory": "Trajet 2",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Elle est une Française.",
+      "prompt": "C’est une Française.",
       "source_line": 1695,
       "instruction": "Maak de zin ontkennend met ne ... pas",
       "accepted_answers": [
-        "Elle n’est pas une Française."
+        "Ce n’est pas une Française."
       ],
       "targets": [
         "uf1-item-000280"
@@ -29468,6 +29468,606 @@
         }
       ],
       "source": "Action ! Trajet 1 — digitaal geïnspireerde herhaling"
+    },
+    {
+      "id": "T2-PRES-R-001",
+      "trajectory": "Trajet 2",
+      "kind": "actes",
+      "scoring": "single",
+      "prompt": "Zeg: Hij heet Hugo.",
+      "instruction": "Schrijf de volledige Franse zin",
+      "accepted_answers": [
+        "Il s’appelle Hugo."
+      ],
+      "targets": [
+        "uf1-item-000230"
+      ],
+      "source": "Digiboek Trajet 2 – Présenter quelqu’un (2), dialoogkader en oefeningen p. 84–90",
+      "scope_kind": "focused"
+    },
+    {
+      "id": "T2-PRES-R-002",
+      "trajectory": "Trajet 2",
+      "kind": "actes",
+      "scoring": "single",
+      "prompt": "Zeg: Zij heet Emma.",
+      "instruction": "Schrijf de volledige Franse zin",
+      "accepted_answers": [
+        "Elle s’appelle Emma."
+      ],
+      "targets": [
+        "uf1-item-000230"
+      ],
+      "source": "Digiboek Trajet 2 – Présenter quelqu’un (2), dialoogkader en oefeningen p. 84–90",
+      "scope_kind": "focused"
+    },
+    {
+      "id": "T2-PRES-R-003",
+      "trajectory": "Trajet 2",
+      "kind": "actes",
+      "scoring": "single",
+      "prompt": "Zeg: Zijn familienaam is Dupont.",
+      "instruction": "Schrijf de volledige Franse zin",
+      "accepted_answers": [
+        "Son nom de famille, c’est Dupont.",
+        "Son nom de famille est Dupont."
+      ],
+      "targets": [
+        "uf1-item-000231"
+      ],
+      "source": "Digiboek Trajet 2 – Présenter quelqu’un (2), dialoogkader en oefeningen p. 84–90",
+      "scope_kind": "focused"
+    },
+    {
+      "id": "T2-PRES-R-004",
+      "trajectory": "Trajet 2",
+      "kind": "actes",
+      "scoring": "single",
+      "prompt": "Zeg: Haar familienaam is Martin.",
+      "instruction": "Schrijf de volledige Franse zin",
+      "accepted_answers": [
+        "Son nom de famille, c’est Martin.",
+        "Son nom de famille est Martin."
+      ],
+      "targets": [
+        "uf1-item-000231"
+      ],
+      "source": "Digiboek Trajet 2 – Présenter quelqu’un (2), dialoogkader en oefeningen p. 84–90",
+      "scope_kind": "focused"
+    },
+    {
+      "id": "T2-PRES-R-005",
+      "trajectory": "Trajet 2",
+      "kind": "actes",
+      "scoring": "single",
+      "prompt": "Zeg: Hij is geboren op 5 december.",
+      "instruction": "Schrijf de volledige Franse zin",
+      "accepted_answers": [
+        "Il est né le 5 décembre."
+      ],
+      "targets": [
+        "uf1-item-000232"
+      ],
+      "source": "Digiboek Trajet 2 – Présenter quelqu’un (2), dialoogkader en oefeningen p. 84–90",
+      "scope_kind": "focused"
+    },
+    {
+      "id": "T2-PRES-R-006",
+      "trajectory": "Trajet 2",
+      "kind": "actes",
+      "scoring": "single",
+      "prompt": "Zeg: Zij is geboren op 12 maart.",
+      "instruction": "Schrijf de volledige Franse zin",
+      "accepted_answers": [
+        "Elle est née le 12 mars."
+      ],
+      "targets": [
+        "uf1-item-000232"
+      ],
+      "source": "Digiboek Trajet 2 – Présenter quelqu’un (2), dialoogkader en oefeningen p. 84–90",
+      "scope_kind": "focused"
+    },
+    {
+      "id": "T2-PRES-R-007",
+      "trajectory": "Trajet 2",
+      "kind": "actes",
+      "scoring": "single",
+      "prompt": "Zeg: Hij is geboren in België.",
+      "instruction": "Schrijf de volledige Franse zin",
+      "accepted_answers": [
+        "Il est né en Belgique."
+      ],
+      "targets": [
+        "uf1-item-000233"
+      ],
+      "source": "Digiboek Trajet 2 – Présenter quelqu’un (2), dialoogkader en oefeningen p. 84–90",
+      "scope_kind": "focused"
+    },
+    {
+      "id": "T2-PRES-R-008",
+      "trajectory": "Trajet 2",
+      "kind": "actes",
+      "scoring": "single",
+      "prompt": "Zeg: Zij is geboren in Frankrijk.",
+      "instruction": "Schrijf de volledige Franse zin",
+      "accepted_answers": [
+        "Elle est née en France."
+      ],
+      "targets": [
+        "uf1-item-000233"
+      ],
+      "source": "Digiboek Trajet 2 – Présenter quelqu’un (2), dialoogkader en oefeningen p. 84–90",
+      "scope_kind": "focused"
+    },
+    {
+      "id": "T2-PRES-R-009",
+      "trajectory": "Trajet 2",
+      "kind": "actes",
+      "scoring": "single",
+      "prompt": "Zeg: Hij is twaalf jaar.",
+      "instruction": "Schrijf de volledige Franse zin",
+      "accepted_answers": [
+        "Il a douze ans.",
+        "Il a 12 ans."
+      ],
+      "targets": [
+        "uf1-item-000234"
+      ],
+      "source": "Digiboek Trajet 2 – Présenter quelqu’un (2), dialoogkader en oefeningen p. 84–90",
+      "scope_kind": "focused"
+    },
+    {
+      "id": "T2-PRES-R-010",
+      "trajectory": "Trajet 2",
+      "kind": "actes",
+      "scoring": "single",
+      "prompt": "Zeg: Zij is dertien jaar.",
+      "instruction": "Schrijf de volledige Franse zin",
+      "accepted_answers": [
+        "Elle a treize ans.",
+        "Elle a 13 ans."
+      ],
+      "targets": [
+        "uf1-item-000234"
+      ],
+      "source": "Digiboek Trajet 2 – Présenter quelqu’un (2), dialoogkader en oefeningen p. 84–90",
+      "scope_kind": "focused"
+    },
+    {
+      "id": "T2-PRES-R-011",
+      "trajectory": "Trajet 2",
+      "kind": "actes",
+      "scoring": "single",
+      "prompt": "Zeg: Hij heeft een broer en een zus.",
+      "instruction": "Schrijf de volledige Franse zin",
+      "accepted_answers": [
+        "Il a un frère et une sœur."
+      ],
+      "targets": [
+        "uf1-item-000235"
+      ],
+      "source": "Digiboek Trajet 2 – Présenter quelqu’un (2), dialoogkader en oefeningen p. 84–90",
+      "scope_kind": "focused"
+    },
+    {
+      "id": "T2-PRES-R-012",
+      "trajectory": "Trajet 2",
+      "kind": "actes",
+      "scoring": "single",
+      "prompt": "Zeg: Zij heeft twee zussen.",
+      "instruction": "Schrijf de volledige Franse zin",
+      "accepted_answers": [
+        "Elle a deux sœurs."
+      ],
+      "targets": [
+        "uf1-item-000235"
+      ],
+      "source": "Digiboek Trajet 2 – Présenter quelqu’un (2), dialoogkader en oefeningen p. 84–90",
+      "scope_kind": "focused"
+    },
+    {
+      "id": "T2-PRES-R-013",
+      "trajectory": "Trajet 2",
+      "kind": "actes",
+      "scoring": "single",
+      "prompt": "Zeg: Hij is enig kind.",
+      "instruction": "Schrijf de volledige Franse zin",
+      "accepted_answers": [
+        "Il est enfant unique.",
+        "C’est un enfant unique."
+      ],
+      "targets": [
+        "uf1-item-000235"
+      ],
+      "source": "Digiboek Trajet 2 – Présenter quelqu’un (2), dialoogkader en oefeningen p. 84–90",
+      "scope_kind": "focused"
+    },
+    {
+      "id": "T2-PRES-R-014",
+      "trajectory": "Trajet 2",
+      "kind": "actes",
+      "scoring": "single",
+      "prompt": "Zeg: Hij spreekt Nederlands en een beetje Frans.",
+      "instruction": "Schrijf de volledige Franse zin",
+      "accepted_answers": [
+        "Il parle le néerlandais et un peu le français."
+      ],
+      "targets": [
+        "uf1-item-000236"
+      ],
+      "source": "Digiboek Trajet 2 – Présenter quelqu’un (2), dialoogkader en oefeningen p. 84–90",
+      "scope_kind": "focused"
+    },
+    {
+      "id": "T2-PRES-R-015",
+      "trajectory": "Trajet 2",
+      "kind": "actes",
+      "scoring": "single",
+      "prompt": "Zeg: Zij spreekt Frans en Engels.",
+      "instruction": "Schrijf de volledige Franse zin",
+      "accepted_answers": [
+        "Elle parle le français et l’anglais."
+      ],
+      "targets": [
+        "uf1-item-000236"
+      ],
+      "source": "Digiboek Trajet 2 – Présenter quelqu’un (2), dialoogkader en oefeningen p. 84–90",
+      "scope_kind": "focused"
+    },
+    {
+      "id": "T2-PRES-R-016",
+      "trajectory": "Trajet 2",
+      "kind": "actes",
+      "scoring": "single",
+      "prompt": "Zeg: Hij zit in het eerste jaar.",
+      "instruction": "Schrijf de volledige Franse zin",
+      "accepted_answers": [
+        "Il est en première année."
+      ],
+      "targets": [
+        "uf1-item-000237"
+      ],
+      "source": "Digiboek Trajet 2 – Présenter quelqu’un (2), dialoogkader en oefeningen p. 84–90",
+      "scope_kind": "focused"
+    },
+    {
+      "id": "T2-PRES-R-017",
+      "trajectory": "Trajet 2",
+      "kind": "actes",
+      "scoring": "single",
+      "prompt": "Zeg: Zij zit in het tweede jaar.",
+      "instruction": "Schrijf de volledige Franse zin",
+      "accepted_answers": [
+        "Elle est en deuxième année."
+      ],
+      "targets": [
+        "uf1-item-000237"
+      ],
+      "source": "Digiboek Trajet 2 – Présenter quelqu’un (2), dialoogkader en oefeningen p. 84–90",
+      "scope_kind": "focused"
+    },
+    {
+      "id": "T2-PRES-R-018",
+      "trajectory": "Trajet 2",
+      "kind": "actes",
+      "scoring": "single",
+      "prompt": "Zeg: Zijn vader heet Pierre.",
+      "instruction": "Schrijf de volledige Franse zin",
+      "accepted_answers": [
+        "Son père s’appelle Pierre.",
+        "Le père s’appelle Pierre."
+      ],
+      "targets": [
+        "uf1-item-000238"
+      ],
+      "source": "Digiboek Trajet 2 – Présenter quelqu’un (2), dialoogkader en oefeningen p. 84–90",
+      "scope_kind": "focused"
+    },
+    {
+      "id": "T2-PRES-R-019",
+      "trajectory": "Trajet 2",
+      "kind": "actes",
+      "scoring": "single",
+      "prompt": "Zeg: Haar moeder heet Marie.",
+      "instruction": "Schrijf de volledige Franse zin",
+      "accepted_answers": [
+        "Sa mère s’appelle Marie.",
+        "La mère s’appelle Marie."
+      ],
+      "targets": [
+        "uf1-item-000238"
+      ],
+      "source": "Digiboek Trajet 2 – Présenter quelqu’un (2), dialoogkader en oefeningen p. 84–90",
+      "scope_kind": "focused"
+    },
+    {
+      "id": "T2-PRES-R-020",
+      "trajectory": "Trajet 2",
+      "kind": "actes",
+      "scoring": "single",
+      "prompt": "Zeg: Zijn zus heet Julie.",
+      "instruction": "Schrijf de volledige Franse zin",
+      "accepted_answers": [
+        "Sa sœur s’appelle Julie.",
+        "La sœur s’appelle Julie."
+      ],
+      "targets": [
+        "uf1-item-000238"
+      ],
+      "source": "Digiboek Trajet 2 – Présenter quelqu’un (2), dialoogkader en oefeningen p. 84–90",
+      "scope_kind": "focused"
+    },
+    {
+      "id": "T2-PRES-R-021",
+      "trajectory": "Trajet 2",
+      "kind": "actes",
+      "scoring": "single",
+      "prompt": "Zeg: Ze wonen in Parijs (jongens).",
+      "instruction": "Schrijf de volledige Franse zin",
+      "accepted_answers": [
+        "Ils habitent à Paris."
+      ],
+      "targets": [
+        "uf1-item-000239"
+      ],
+      "source": "Digiboek Trajet 2 – Présenter quelqu’un (2), dialoogkader en oefeningen p. 84–90",
+      "scope_kind": "focused"
+    },
+    {
+      "id": "T2-PRES-R-022",
+      "trajectory": "Trajet 2",
+      "kind": "actes",
+      "scoring": "single",
+      "prompt": "Zeg: Ze wonen in Lille (meisjes).",
+      "instruction": "Schrijf de volledige Franse zin",
+      "accepted_answers": [
+        "Elles habitent à Lille."
+      ],
+      "targets": [
+        "uf1-item-000239"
+      ],
+      "source": "Digiboek Trajet 2 – Présenter quelqu’un (2), dialoogkader en oefeningen p. 84–90",
+      "scope_kind": "focused"
+    },
+    {
+      "id": "T2-SON-E-001",
+      "trajectory": "Trajet 2",
+      "kind": "spelling",
+      "scoring": "single",
+      "prompt": "J’___ douze ans.",
+      "instruction": "Vul alleen de ontbrekende letters in: ai, er, ez, é of et",
+      "accepted_answers": [
+        "ai"
+      ],
+      "targets": [
+        "uf1-item-000281"
+      ],
+      "source": "Digiboek Trajet 2 – Le son [e] (télé), p. 135–136; schriftelijke herkenning",
+      "scope_kind": "focused"
+    },
+    {
+      "id": "T2-SON-E-002",
+      "trajectory": "Trajet 2",
+      "kind": "spelling",
+      "scoring": "single",
+      "prompt": "J’___ un frère.",
+      "instruction": "Vul alleen de ontbrekende letters in: ai, er, ez, é of et",
+      "accepted_answers": [
+        "ai"
+      ],
+      "targets": [
+        "uf1-item-000281"
+      ],
+      "source": "Digiboek Trajet 2 – Le son [e] (télé), p. 135–136; schriftelijke herkenning",
+      "scope_kind": "focused"
+    },
+    {
+      "id": "T2-SON-E-003",
+      "trajectory": "Trajet 2",
+      "kind": "spelling",
+      "scoring": "single",
+      "prompt": "J’___me le français.",
+      "instruction": "Vul alleen de ontbrekende letters in: ai, er, ez, é of et",
+      "accepted_answers": [
+        "ai"
+      ],
+      "targets": [
+        "uf1-item-000281"
+      ],
+      "source": "Digiboek Trajet 2 – Le son [e] (télé), p. 135–136; schriftelijke herkenning",
+      "scope_kind": "focused"
+    },
+    {
+      "id": "T2-SON-E-004",
+      "trajectory": "Trajet 2",
+      "kind": "spelling",
+      "scoring": "single",
+      "prompt": "J’aime dans___ le samedi.",
+      "instruction": "Vul alleen de ontbrekende letters in: ai, er, ez, é of et",
+      "accepted_answers": [
+        "er"
+      ],
+      "targets": [
+        "uf1-item-000282"
+      ],
+      "source": "Digiboek Trajet 2 – Le son [e] (télé), p. 135–136; schriftelijke herkenning",
+      "scope_kind": "focused"
+    },
+    {
+      "id": "T2-SON-E-005",
+      "trajectory": "Trajet 2",
+      "kind": "spelling",
+      "scoring": "single",
+      "prompt": "Tu aimes jou___ au foot.",
+      "instruction": "Vul alleen de ontbrekende letters in: ai, er, ez, é of et",
+      "accepted_answers": [
+        "er"
+      ],
+      "targets": [
+        "uf1-item-000282"
+      ],
+      "source": "Digiboek Trajet 2 – Le son [e] (télé), p. 135–136; schriftelijke herkenning",
+      "scope_kind": "focused"
+    },
+    {
+      "id": "T2-SON-E-006",
+      "trajectory": "Trajet 2",
+      "kind": "spelling",
+      "scoring": "single",
+      "prompt": "J’aime écout___ la radio.",
+      "instruction": "Vul alleen de ontbrekende letters in: ai, er, ez, é of et",
+      "accepted_answers": [
+        "er"
+      ],
+      "targets": [
+        "uf1-item-000282"
+      ],
+      "source": "Digiboek Trajet 2 – Le son [e] (télé), p. 135–136; schriftelijke herkenning",
+      "scope_kind": "focused"
+    },
+    {
+      "id": "T2-SON-E-007",
+      "trajectory": "Trajet 2",
+      "kind": "spelling",
+      "scoring": "single",
+      "prompt": "Vous aim___ le français.",
+      "instruction": "Vul alleen de ontbrekende letters in: ai, er, ez, é of et",
+      "accepted_answers": [
+        "ez"
+      ],
+      "targets": [
+        "uf1-item-000283"
+      ],
+      "source": "Digiboek Trajet 2 – Le son [e] (télé), p. 135–136; schriftelijke herkenning",
+      "scope_kind": "focused"
+    },
+    {
+      "id": "T2-SON-E-008",
+      "trajectory": "Trajet 2",
+      "kind": "spelling",
+      "scoring": "single",
+      "prompt": "Vous dans___ souvent.",
+      "instruction": "Vul alleen de ontbrekende letters in: ai, er, ez, é of et",
+      "accepted_answers": [
+        "ez"
+      ],
+      "targets": [
+        "uf1-item-000283"
+      ],
+      "source": "Digiboek Trajet 2 – Le son [e] (télé), p. 135–136; schriftelijke herkenning",
+      "scope_kind": "focused"
+    },
+    {
+      "id": "T2-SON-E-009",
+      "trajectory": "Trajet 2",
+      "kind": "spelling",
+      "scoring": "single",
+      "prompt": "Vous parl___ le néerlandais.",
+      "instruction": "Vul alleen de ontbrekende letters in: ai, er, ez, é of et",
+      "accepted_answers": [
+        "ez"
+      ],
+      "targets": [
+        "uf1-item-000283"
+      ],
+      "source": "Digiboek Trajet 2 – Le son [e] (télé), p. 135–136; schriftelijke herkenning",
+      "scope_kind": "focused"
+    },
+    {
+      "id": "T2-SON-E-010",
+      "trajectory": "Trajet 2",
+      "kind": "spelling",
+      "scoring": "single",
+      "prompt": "Elle est n___e en France.",
+      "instruction": "Vul alleen de ontbrekende letters in: ai, er, ez, é of et",
+      "accepted_answers": [
+        "é"
+      ],
+      "targets": [
+        "uf1-item-000284"
+      ],
+      "source": "Digiboek Trajet 2 – Le son [e] (télé), p. 135–136; schriftelijke herkenning",
+      "scope_kind": "focused"
+    },
+    {
+      "id": "T2-SON-E-011",
+      "trajectory": "Trajet 2",
+      "kind": "spelling",
+      "scoring": "single",
+      "prompt": "Paul est n___ le 5 décembre.",
+      "instruction": "Vul alleen de ontbrekende letters in: ai, er, ez, é of et",
+      "accepted_answers": [
+        "é"
+      ],
+      "targets": [
+        "uf1-item-000284"
+      ],
+      "source": "Digiboek Trajet 2 – Le son [e] (télé), p. 135–136; schriftelijke herkenning",
+      "scope_kind": "focused"
+    },
+    {
+      "id": "T2-SON-E-012",
+      "trajectory": "Trajet 2",
+      "kind": "spelling",
+      "scoring": "single",
+      "prompt": "Nous allons au cin___ma.",
+      "instruction": "Vul alleen de ontbrekende letters in: ai, er, ez, é of et",
+      "accepted_answers": [
+        "é"
+      ],
+      "targets": [
+        "uf1-item-000284"
+      ],
+      "source": "Digiboek Trajet 2 – Le son [e] (télé), p. 135–136; schriftelijke herkenning",
+      "scope_kind": "focused"
+    },
+    {
+      "id": "T2-SON-E-013",
+      "trajectory": "Trajet 2",
+      "kind": "spelling",
+      "scoring": "single",
+      "prompt": "Paul ___ Emma sont cousins.",
+      "instruction": "Vul alleen de ontbrekende letters in: ai, er, ez, é of et",
+      "accepted_answers": [
+        "et"
+      ],
+      "targets": [
+        "uf1-item-000285"
+      ],
+      "source": "Digiboek Trajet 2 – Le son [e] (télé), p. 135–136; schriftelijke herkenning",
+      "scope_kind": "focused"
+    },
+    {
+      "id": "T2-SON-E-014",
+      "trajectory": "Trajet 2",
+      "kind": "spelling",
+      "scoring": "single",
+      "prompt": "Mon chien ___ mon chat sont gentils.",
+      "instruction": "Vul alleen de ontbrekende letters in: ai, er, ez, é of et",
+      "accepted_answers": [
+        "et"
+      ],
+      "targets": [
+        "uf1-item-000285"
+      ],
+      "source": "Digiboek Trajet 2 – Le son [e] (télé), p. 135–136; schriftelijke herkenning",
+      "scope_kind": "focused"
+    },
+    {
+      "id": "T2-SON-E-015",
+      "trajectory": "Trajet 2",
+      "kind": "spelling",
+      "scoring": "single",
+      "prompt": "Le français ___ le néerlandais sont des langues.",
+      "instruction": "Vul alleen de ontbrekende letters in: ai, er, ez, é of et",
+      "accepted_answers": [
+        "et"
+      ],
+      "targets": [
+        "uf1-item-000285"
+      ],
+      "source": "Digiboek Trajet 2 – Le son [e] (télé), p. 135–136; schriftelijke herkenning",
+      "scope_kind": "focused"
     }
   ]
 }
