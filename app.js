@@ -1876,6 +1876,8 @@ function renderQuestion(message) {
   const roundProgress = roundState ? window.MonParcoursTaskRounds.progress(roundState, roundsForAssignment(roundState)) : null;
   const progress = roundProgress ? Math.round((roundProgress.done / Math.max(1, roundProgress.selected)) * 100) : Math.round((session.index / session.questions.length) * 100);
   const isTest = session.mode === "test";
+  const inlinePhraseFeedback = !isTest && question.item && question.item.type === "phrase" &&
+    !question.choices && question.variantScoring !== "multi_gap";
   const exercise = question.exerciseKey === "full-sentence-nl-fr"
     ? { type: "phrase", label: "Volledige zin vertalen", labelFr: "Traduire la phrase entière" } :
     EXERCISES[question.exerciseKey] || EXERCISES[session.exerciseKey] ||
@@ -1896,13 +1898,14 @@ function renderQuestion(message) {
         (question.context ? '<p class="question-context">' + escapeHtml(question.context) + '</p>' : "") +
         (question.item && question.item.type === "phrase" && /\[(?:naam|leeftijd|klas|groep|plaats)\]/i.test(question.prompt) ? '<p class="input-help variable-slot-help">' + uiText("Remplace les crochets par un vrai nom, âge, classe, groupe ou lieu.", "Vul een echte naam, leeftijd, klas, groep of plaats in; typ geen [haakjes] over.") + '</p>' : '') +
         '<form id="answer-form" autocomplete="off">' + answerInputsHtml(question) +
+          (inlinePhraseFeedback ? '<div id="feedback" class="feedback feedback-inline" tabindex="-1" aria-live="polite"></div>' : '') +
           (question.choices ? '' : '<div class="accent-row" aria-label="Franse accenten">' + ACCENTS.map(function (accent) {
             return '<button type="button" data-action="insert-accent" data-accent="' + accent + '">' + accent + '</button>';
           }).join("") + '</div>') +
           '<p id="answer-help" class="input-help">' + (isTest ? uiText("Tu verras ton résultat à la fin.", "Je krijgt je resultaat op het einde.") : uiText("Appuie sur Entrée pour vérifier.", "Druk op Enter om te controleren.")) + '</p>' +
           '<button class="button button-primary submit-button" type="submit">' + (isTest ? uiText("Enregistrer la réponse", "Antwoord bewaren") : uiText("Vérifier", "Controleren")) + '</button>' +
         '</form>' +
-        '<div id="feedback" class="feedback" aria-live="polite">' + (message || "") + '</div>' +
+        (inlinePhraseFeedback ? '' : '<div id="feedback" class="feedback" aria-live="polite">' + (message || "") + '</div>') +
       '</article>' +
     '</section>';
   focusAnswer();
@@ -2137,12 +2140,21 @@ function showFeedback(correct, messageFr, messageNl, allowNext, clearInput) {
   const visual = !correct && state.session && state.session.visualAnswer && state.session.visualAnswer.question === state.session.questions[state.session.index] ? state.session.visualAnswer : null;
   const mistakes = itemState ? Number(itemState.item.wrong_count || 0) : Number(state.session && state.session.questionAttempts || 0) + 1;
   const marking = visual ? markedAnswerFeedback(visual.question, visual.answer, visual.graded, mistakes) : "";
+  const inlinePhrase = feedback.className.includes("feedback-inline");
+  const annotation = !correct && inlinePhrase && visual && window.MonParcoursPhraseFeedback &&
+    typeof window.MonParcoursPhraseFeedback.annotatedAnswer === "function" ?
+    window.MonParcoursPhraseFeedback.annotatedAnswer(visual.question, visual.answer) : "";
+  const tipHeading = !correct && inlinePhrase ?
+    '<h2 class="phrase-feedback-title">⚠ ' + uiText("Regarde ton propre texte et la piste ci-dessous", "Kijk naar jouw zin en de aanwijzing hieronder") + '</h2>' : "";
   const ligatureNote = correct && state.session && state.session.visualAnswer &&
     /\\bsoeur\\b/i.test(String(state.session.visualAnswer.answer || "")) &&
     (state.session.visualAnswer.question.answers || []).some(function (answer) { return /sœur/i.test(answer); }) ?
     '<p class="orthography-note">' + uiText("C’est juste ! En français, on écrit « sœur » avec œ.", "Juist! De correcte Franse schrijfwijze is « sœur » met œ.") + '</p>' : "";
-  feedback.className = "feedback visible " + (correct ? "correct" : "wrong");
-  feedback.innerHTML = '<span class="feedback-mark" aria-hidden="true">' + (correct ? "✓" : "!") + '</span><div><p>' + uiHtml(messageFr, messageNl) + '</p>' + ligatureNote + marking +
+  feedback.className = "feedback visible " + (correct ? "correct" : "wrong") +
+    (inlinePhrase ? " feedback-inline" : "");
+  feedback.innerHTML = '<span class="feedback-mark" aria-hidden="true">' + (correct ? "✓" : "!") +
+    '</span><div class="feedback-body">' + tipHeading + annotation +
+    '<p class="feedback-main-message">' + uiHtml(messageFr, messageNl) + '</p>' + ligatureNote + marking +
     (!correct && state.session && state.session.assignment_round_number === 1 ? '<button class="button button-primary consult-action" type="button" data-action="consult-round">' + contentIcon("vocabulary") + uiText("Consulter", "Opzoeken") + '</button>' : "") +
     (canReport ? '<p class="report-explanation">' + uiText("Si ta réponse semble correcte, si la question n’est pas claire ou s’il y a un problème technique. Ce n’est pas un bouton « je ne sais pas ».", "Alleen als je antwoord volgens jou juist is, de vraag onduidelijk lijkt of er een technisch probleem is. Niet voor ‘ik weet het niet’.") + '</p><button class="text-button report-action" type="button" data-action="report-round-item">' + uiText("Je pense que ma réponse est refusée à tort", "Mijn antwoord wordt volgens mij onterecht fout gerekend") + '</button>' : '') +
     (allowNext ? '<button class="button ' + (!correct && state.session && state.session.assignment_round_number === 1 ? 'button-secondary' : 'button-primary') + '" type="button" data-action="next-question">' + uiText("Suivant", "Volgende") + '</button>' : "") + '</div>';
@@ -2151,7 +2163,13 @@ function showFeedback(correct, messageFr, messageNl, allowNext, clearInput) {
     if (state.session.questions[state.session.index].variantScoring === "multi_gap" && document.querySelectorAll)
       document.querySelectorAll('input[name^="gap-"]').forEach(function (field) { field.disabled = true; });
     submit.hidden = true;
-    feedback.querySelector("button").focus();
+    const firstAction = feedback.querySelector("button");
+    if (inlinePhrase && !correct) {
+      // The hint is beside the answer input, not below the submit button.
+      if (typeof feedback.focus === "function") feedback.focus({ preventScroll: true });
+      if (typeof feedback.scrollIntoView === "function")
+        feedback.scrollIntoView({ behavior: "auto", block: "nearest" });
+    } else if (firstAction) firstAction.focus();
   } else {
     if (clearInput !== false) {
       input.value = "";
