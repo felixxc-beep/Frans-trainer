@@ -58,6 +58,13 @@
         && /^(?:je|j'|tu)\b/.test(value)) {
       fr = "Le sujet doit être « il » ou « elle », pas « je » ou « tu ».";
       nl = "Let op wie je bedoelt: het gaat over hij/zij, niet over ik of jij.";
+    } else if (/\b(?:il|elle)\/(?:il|elle)\b/.test(value)) {
+      fr = "Choisis un seul pronom dans ta phrase : « il » ou « elle », sans barre oblique.";
+      nl = "Kies één voornaamwoord: il of elle. Schrijf geen il/elle met een schuine streep in je antwoord.";
+    } else if (/\b(?:t'appelle|m'appelle)\b/.test(value) &&
+        /\b(?:s'appelle|son nom)\b/.test(expected)) {
+      fr = "Avec « s'appeler », le pronom réfléchi change selon le sujet : me, te ou se.";
+      nl = "Bij s'appeler verandert het wederkerend voornaamwoord met het onderwerp: me, te of se.";
     } else if (/\bquel\b.*\bclasse\b|\bquelle\b.*\bgroupe\b/.test(value)) {
       fr = "« Classe » est féminin, « groupe » est masculin. Vérifie quel/quelle.";
       nl = "Controleer quel/quelle: classe is vrouwelijk, groupe is mannelijk.";
