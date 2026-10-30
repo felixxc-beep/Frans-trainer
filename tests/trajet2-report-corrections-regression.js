@@ -57,7 +57,7 @@ for(const [id,answer,expected] of [
   const hint = helper(answer,{item,exerciseKey:"vocab-nl-fr",answers:item.accepted_answers || [item.fr]});
   assert.ok(hint && hint.nl.toLowerCase().includes(expected),id+" "+JSON.stringify(hint));
 }
-assert.match(app,/window\.confirm/);
+assert.match(app,/report-reason/);\nassert.match(app,/report-explanation/);\nassert.match(app,/report_reason: reason/);
 assert.match(index,/exercise-variants\.js\?v=20261030-trajet2-reports-1/);
 assert.match(index,/app\.js\?v=20261030-trajet2-reports-1/);
 assert.match(teacherHtml,/teacher\.js\?v=20261030-trajet2-reports-1/);
