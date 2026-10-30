@@ -333,6 +333,8 @@ dialog::backdrop { background: rgba(10,29,23,.45); backdrop-filter: blur(4px); }
 .feedback-inline .phrase-answer-review small { font-size: .8rem; color: #70482c; }
 .feedback-inline .phrase-word-check { background: #ffe4cf; color: #7a250d; padding: 0 .07rem; text-decoration: underline wavy #ba3c20 2px; text-underline-offset: .24rem; font-weight: 800; }
 .feedback-inline .phrase-missing { display: inline-block; color: #8a3218; padding: 0 .22rem; border: 2px dashed #c57850; border-radius: 4px; font-weight: 850; }
+.feedback-inline .phrase-missing-slot { white-space: nowrap; font-size: .85em; background: #fff1e6; }
+.feedback-inline .phrase-slot-instruction { margin: .5rem 0 0 !important; padding: .55rem .65rem; border-left: 4px solid #c35f2b; border-radius: 5px; background: #fff4df; color: #5e301c; font-size: .92rem; font-weight: 700; line-height: 1.45; }
 .feedback-inline .feedback-main-message { font-weight: 650; line-height: 1.45; }
 .feedback-inline .feedback-main-message .ui-nl { font-weight: 800; }
 @media (max-width: 620px) {
