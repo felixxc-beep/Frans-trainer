@@ -1885,7 +1885,7 @@ function renderQuestion(message) {
   const roundProgress = roundState ? window.MonParcoursTaskRounds.progress(roundState, roundsForAssignment(roundState)) : null;
   const progress = roundProgress ? Math.round((roundProgress.done / Math.max(1, roundProgress.selected)) * 100) : Math.round((session.index / session.questions.length) * 100);
   const isTest = session.mode === "test";
-  const inlinePhraseFeedback = !isTest && question.item && question.item.type === "phrase" &&
+  const inlinePhraseFeedback = !isTest && question.item && ["phrase", "vocabulary"].includes(question.item.type) &&
     !question.choices && question.variantScoring !== "multi_gap";
   const exercise = question.exerciseKey === "full-sentence-nl-fr"
     ? { type: "phrase", label: "Volledige zin vertalen", labelFr: "Traduire la phrase entière" } :
@@ -2157,7 +2157,7 @@ function showFeedback(correct, messageFr, messageNl, allowNext, clearInput) {
   const annotation = !correct && inlinePhrase && visual && window.MonParcoursPhraseFeedback &&
     typeof window.MonParcoursPhraseFeedback.annotatedAnswer === "function" ?
     window.MonParcoursPhraseFeedback.annotatedAnswer(visual.question, visual.answer) : "";
-  const tipHeading = !correct && inlinePhrase ?
+  const tipHeading = !correct && inlinePhrase && visual && visual.question && visual.question.item && visual.question.item.type === "phrase" ?
     '<h2 class="phrase-feedback-title">⚠ ' + uiText("Regarde ton propre texte et la piste ci-dessous", "Kijk naar jouw zin en de aanwijzing hieronder") + '</h2>' : "";
   const ligatureNote = correct && state.session && state.session.visualAnswer &&
     /\\bsoeur\\b/i.test(String(state.session.visualAnswer.answer || "")) &&
