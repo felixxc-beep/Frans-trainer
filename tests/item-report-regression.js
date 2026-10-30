@@ -38,7 +38,7 @@ assert.match(teacher, /data-action="commit-report-selections"/);
 assert.match(teacher, /queuedReportDecisions/);
 assert.match(teacher, /resolve_assignment_item_report/);
 assert.doesNotMatch(teacher, /data-action="resolve-item-report"/);
-assert.match(html, /teacher\.js\?v=20261029-2/);
+assert.match(html, /teacher\.js\?v=20261030-2/);
 assert.match(app, /Je pense que ma réponse est refusée à tort/);
 assert.match(app, /Mijn antwoord wordt volgens mij onterecht fout gerekend/);
 assert.match(teacher, /Als fout beoordeelde invoeren \(oudste → nieuwste\)/);
