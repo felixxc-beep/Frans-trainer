@@ -47,7 +47,36 @@ assert.match(app, /dir="ltr" autocomplete="off" autocorrect="off"/);
 assert.match(css, /#answer-input, \.gap-answer-list input \{ direction: ltr; text-align: left;/);
 assert.ok(html.indexOf("phrase-feedback.js") > 0);
 assert.ok(html.indexOf("phrase-feedback.js") < html.indexOf("app.js"));
-assert.match(html, /styles\.css\?v=20261030-1/);
+assert.match(html, /styles\.css\?v=20261030-2/);
+assert.match(html, /phrase-feedback\.js\?v=20261030-2/);
+assert.match(html, /app\.js\?v=20261030-2/);
+
+// An exact copy of the learner's answer now appears directly below the input.
+// Only reliable differences are marked; uncertain diagnoses stay unmarked.
+assert.equal(typeof feedback.annotatedAnswer, "function");
+const annotated = [
+  ["000537", "Tu es dans quel classe ?", "quel</mark>"],
+  ["000544", "Il t'appelle comment ?", "t&#39;appelle</mark>"],
+  ["000549", "Elle est 12 ans", "est</mark>"],
+  ["000551", "Elle habite dans Beerse", "dans</mark>"],
+  ["000538", "Je suis en [classe]", "[classe]</mark>"],
+  ["000540", "Je suis dans le groupe", "phrase-missing"],
+  ["000563", "sdfgh", "Jouw antwoord:"]
+];
+annotated.forEach(function ([id, answer, expected]) {
+  const result = feedback.annotatedAnswer(phrase(id), answer);
+  assert.match(result, /Jouw antwoord:/);
+  assert.ok(result.includes(expected), id + " " + answer + " mist " + expected);
+});
+assert.doesNotMatch(feedback.annotatedAnswer(phrase("000563"), "sdfgh"), /phrase-word-check/);
+assert.doesNotMatch(feedback.annotatedAnswer(phrase("000523"), "<img src=x onerror=alert(1)>"), /<img/);
+assert.equal(feedback.annotatedAnswer({ item: { type: "vocabulary" }, answers: ["le vélo"] }, "le vêlo"), "");
+assert.match(app, /inlinePhraseFeedback \? '<div id="feedback" class="feedback feedback-inline"/);
+assert.match(app, /inlinePhraseFeedback \? '' : '<div id="feedback"/);
+assert.match(app, /MonParcoursPhraseFeedback\.annotatedAnswer/);
+assert.match(css, /\.feedback-inline \.phrase-word-check/);
+assert.match(css, /\.feedback-inline \.phrase-missing/);
+
 
 const alternatives = {
   "000527": "Où habitez-vous ?",
@@ -65,4 +94,4 @@ Object.entries(alternatives).forEach(function ([id, answer]) {
 });
 assert.ok(!phrase("000537").answers.includes("Tu es dans quel classe ?"));
 assert.ok(phrase("000556").answers.includes("Il aime les jeux vidéo."));
-console.log("ZINSFEEDBACK-REGRESSIE OK: " + checks.length + " diagnoses, 4 stages, 9 accepted alternatives.");
+console.log("ZINSFEEDBACK-REGRESSIE OK: " + checks.length + " diagnoses, " + annotated.length + " inkleuringen, 4 stages, 9 accepted alternatives.");
