@@ -64,4 +64,47 @@ assert.match(index,/exercise-variants\.js\?v=20261030-trajet2-reports-1/);
 assert.match(index,/app\.js\?v=20261030-trajet2-reports-1/);
 assert.match(teacherHtml,/teacher\.js\?v=20261030-trajet2-reports-1/);
 assert.match(teacher,/course\.json\?v=20261030-trajet2-reports-1/);
+
+// A report should require a reason, but must keep valid complaints possible.
+const reportStart = app.indexOf("function reportRoundItem()");
+const reportEnd = app.indexOf("\nfunction reportExerciseDirection(", reportStart);
+assert.ok(reportStart >= 0 && reportEnd > reportStart);
+const fields = {
+  "#report-reason": { value: "", focus() {} },
+  "#report-explanation": { value: "", focus() {} },
+  "#report-validation": { textContent: "" },
+  "#feedback": { className: "", innerHTML: "", querySelector() { return { focus() {} }; } }
+};
+const reportItem = { wrong_count: 2, reported_pending: false, completed_at: null, attempt_history: [
+  { answer: "jouer au football", was_correct: false },
+  { answer: "jouer au football", was_correct: false }
+] };
+const reportQuestion = { prompt: "voetballen", answers: ["jouer au foot"],
+  item: find(169), exerciseKey: "vocab-nl-fr" };
+const reports = [];
+const reportHandler = new Function("state", "currentRoundItemState", "window", "document",
+  "createClientId", "reportExerciseDirection", "formatAnswers", "saveAssignmentRounds", "uiText",
+  'const APP_VERSION = "regression";\n' + app.slice(reportStart, reportEnd) + "\nreturn reportRoundItem;")(
+  { session: { index: 0, questions: [reportQuestion], assignment_round_number: 1,
+    assignment_id: "assignment", identity_subject: "student" } },
+  () => ({ item: reportItem, itemId: find(169).id, assignment: {}, rounds: [] }),
+  { MonParcoursSync: { enqueueIssueReport(value) { reports.push(value); return true; } } },
+  { querySelector(selector) { return fields[selector] || null; } },
+  () => "00000000-0000-4000-8000-000000000001",
+  () => "vocab-nl-fr", () => "jouer au foot", () => {}, (_, nl) => nl
+);
+reportHandler();
+assert.equal(reports.length, 0);
+fields["#report-reason"].value = "correct_alternative";
+fields["#report-explanation"].value = "fout";
+reportHandler();
+assert.equal(reports.length, 0);
+fields["#report-explanation"].value = "Het boek aanvaardt ook jouer au football.";
+reportHandler();
+assert.equal(reports.length, 1);
+assert.equal(reports[0].report.attempt_details[0].report_reason, "correct_alternative");
+assert.match(reports[0].report.attempt_details[0].report_explanation, /football/);
+reportHandler();
+assert.equal(reports.length, 1);
+
 console.log("TRAJET 2 REPORT CORRECTIONS OK: valid spellings, strict wrong answers, feedback, unchanged IDs.");
