@@ -5589,7 +5589,8 @@
           "answer": "NON, onderwerp + NE + werkwoord + PAS",
           "example_fr": "Non, il ne cherche pas le prof.",
           "example_nl": "Nee, hij zoekt de leerkracht niet.",
-          "id": "uf1-item-000276"
+          "id": "uf1-item-000276",
+          "rule_nl": "Bij een klinker of een stomme h wordt ne → n’. Zet de ontkenningswoorden rond het vervoegde werkwoord: ne/n’ + werkwoord + pas."
         },
         {
           "top_category": "Atelier Grammaire",
@@ -5602,7 +5603,8 @@
           "answer": "NON, onderwerp + NE + werkwoord + PLUS",
           "example_fr": "Non, il n’est plus à Paris.",
           "example_nl": "Nee, hij is niet meer in Parijs.",
-          "id": "uf1-item-000277"
+          "id": "uf1-item-000277",
+          "rule_nl": "Bij een klinker of een stomme h wordt ne → n’. Zet de ontkenningswoorden rond het vervoegde werkwoord: ne/n’ + werkwoord + plus."
         },
         {
           "top_category": "Atelier Grammaire",
@@ -5615,7 +5617,8 @@
           "answer": "NON, onderwerp + NE + werkwoord + JAMAIS",
           "example_fr": "Non, ils ne vont jamais au zoo.",
           "example_nl": "Nee, ze gaan nooit naar de zoo.",
-          "id": "uf1-item-000278"
+          "id": "uf1-item-000278",
+          "rule_nl": "Bij een klinker of een stomme h wordt ne → n’. Zet de ontkenningswoorden rond het vervoegde werkwoord: ne/n’ + werkwoord + jamais."
         },
         {
           "top_category": "Atelier Grammaire",
