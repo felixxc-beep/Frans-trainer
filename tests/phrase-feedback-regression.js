@@ -47,9 +47,9 @@ assert.match(app, /dir="ltr" autocomplete="off" autocorrect="off"/);
 assert.match(css, /#answer-input, \.gap-answer-list input \{ direction: ltr; text-align: left;/);
 assert.ok(html.indexOf("phrase-feedback.js") > 0);
 assert.ok(html.indexOf("phrase-feedback.js") < html.indexOf("app.js"));
-assert.match(html, /styles\.css\?v=20261030-2/);
-assert.match(html, /phrase-feedback\.js\?v=20261030-2/);
-assert.match(html, /app\.js\?v=20261030-2/);
+assert.match(html, /styles\.css\?v=20261030-3/);
+assert.match(html, /phrase-feedback\.js\?v=20261030-3/);
+assert.match(html, /app\.js\?v=20261030-3/);
 
 // An exact copy of the learner's answer now appears directly below the input.
 // Only reliable differences are marked; uncertain diagnoses stay unmarked.
@@ -68,6 +68,32 @@ annotated.forEach(function ([id, answer, expected]) {
   assert.match(result, /Jouw antwoord:/);
   assert.ok(result.includes(expected), id + " " + answer + " mist " + expected);
 });
+// A missing concrete value is marked at its real position and explained beside
+// the learner's own answer. It must never be inserted in the middle of a verb frame.
+const missingNameHint = feedback.hint(phrase("000522"), "je m’appelle", 1, 1, "practice");
+assert.equal(missingNameHint.nl,
+  "Er ontbreekt een echte naam aan het einde: schrijf bijvoorbeeld je eigen voornaam achter je m’appelle.");
+const missingNameReview = feedback.annotatedAnswer(phrase("000522"), "je m’appelle");
+assert.ok(missingNameReview.indexOf("phrase-missing") > missingNameReview.indexOf("m’appelle"));
+assert.match(missingNameReview, /m’appelle <span[^>]+>\[naam ontbreekt\]<\/span>/);
+assert.doesNotMatch(missingNameReview, /je <span[^>]+>.*m’appelle/);
+assert.match(missingNameReview, /phrase-slot-instruction/);
+assert.match(missingNameReview, /Wat moet je doen\?/);
+
+[
+  ["000526", "J’ai ans", "echte leeftijd tussen", "leeftijd ontbreekt", "12"],
+  ["000538", "Je suis en", "echte klas aan het einde", "klas ontbreekt", "1A"],
+  ["000540", "Je suis dans le groupe", "echte groep aan het einde", "groep ontbreekt", "A"],
+  ["000551", "Elle habite à", "echte plaats aan het einde", "plaats ontbreekt", "Turnhout"]
+].forEach(function ([id, answer, hintText, marker, example]) {
+  const hint = feedback.hint(phrase(id), answer, 1, 1, "practice");
+  const review = feedback.annotatedAnswer(phrase(id), answer);
+  assert.match(hint.nl, new RegExp(hintText));
+  assert.ok(review.indexOf("phrase-missing") > review.indexOf(answer.split(/\s+/).slice(-1)[0]));
+  assert.ok(review.includes("[" + marker + "]"));
+  assert.ok(review.includes(example));
+});
+
 assert.doesNotMatch(feedback.annotatedAnswer(phrase("000563"), "sdfgh"), /phrase-word-check/);
 assert.doesNotMatch(feedback.annotatedAnswer(phrase("000523"), "<img src=x onerror=alert(1)>"), /<img/);
 assert.equal(feedback.annotatedAnswer({ item: { type: "vocabulary" }, answers: ["le vélo"] }, "le vêlo"), "");
