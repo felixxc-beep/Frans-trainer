@@ -1,5 +1,5 @@
-const DATA_URL = "./data/course.json?v=20261030-2";
-const VARIANT_DATA_URL = "./data/exercise-variants.json?v=20261013-9";
+const DATA_URL = "./data/course.json?v=20261030-t2-1";
+const VARIANT_DATA_URL = "./data/exercise-variants.json?v=20261030-t2-1";
 const STORAGE_KEY = "monParcoursProgressV1";
 const ACTIVE_SESSION_KEY = "monParcoursActiveSessionV1";
 const MASTERY_ATTEMPTS_KEY = "monParcoursMasteryAttemptsV1";
@@ -8,7 +8,7 @@ const ASSIGNMENTS_CACHE_KEY = "monParcoursAssignmentsCacheV1";
 const VERB_EVIDENCE_KEY = "monParcoursVerbEvidenceV1";
 const VERB_SERVER_CACHE_KEY = "monParcoursVerbServerCacheV1";
 const TASK_ROUNDS_KEY = "monParcoursTaskRoundsV1";
-const APP_VERSION = "20261030-phrase-hints";
+const APP_VERSION = "20261030-trajet2-aligned";
 const INACTIVITY_TIMEOUT_MS = 60000;
 const MAX_DYNAMIC_NUMBER_ALL = 101;
 const ACCENTS = ["é", "è", "ê", "ë", "à", "â", "ç", "ù", "û", "ô", "î", "ï"];
@@ -1189,6 +1189,11 @@ function renderUnit() {
     breadcrumbHtml([{ label: trajectory.trajectory, action: "home" }]) +
     journeySteps(3) +
     '<section class="unit-hero"><div><p class="eyebrow unit-kind">' + contentIcon(contentTypeKey(unit.top_category)) + escapeHtml(unit.top_category) + '</p><h1>' + escapeHtml(unit.title) + '</h1>' +
+    (trajectory.trajectory === "Trajet 2" && unit.top_category === "Chiffres et lettres"
+      ? '<p class="input-help number-goal-note">' + uiText(
+        "L’objectif est de lire, comprendre et prononcer les nombres de 0 à 20. Les écrire est un exercice supplémentaire.",
+        "Leerdoel: de getallen 0–20 lezen, begrijpen en uitspreken. Zelf foutloos schrijven is extra oefening, geen vereiste in het boek."
+      ) + '</p>' : '') +
     '<p class="lede">' + learningCountsHtml(exerciseCount, curatedCount, /^Action/i.test(unit.top_category)) + '</p></div>' +
     (exerciseCount || curatedCount ? compactScopeButton(unit, "", "", unit.title, exerciseCount || curatedCount) : "") + '</section>' +
     '<section class="structure-stack" aria-label="Cursusstructuur">' + sectionsHtml + '</section>' +
@@ -1916,7 +1921,11 @@ function renderQuestion(message) {
 }
 
 function answerInputsHtml(question) {
-  if (question.choices) return '<label for="answer-input">' + uiText("Choisis le type de réponse", "Kies het soort antwoord") + '</label><select id="answer-input" name="answer" aria-describedby="answer-help">' +
+  if (question.choices) return '<label for="answer-input">' +
+    (question.exerciseKey === "number-recognition" ?
+      uiText("Quel chiffre correspond à ce nombre ?", "Welk cijfer hoort bij dit Franse getal?") :
+      uiText("Choisis le type de réponse", "Kies het soort antwoord")) +
+    '</label><select id="answer-input" name="answer" aria-describedby="answer-help">' +
     '<option value="">—</option>' + question.choices.map(function (choice) {
       return '<option value="' + escapeHtml(choice) + '">' + escapeHtml(choice) + '</option>';
     }).join('') + '</select>';
