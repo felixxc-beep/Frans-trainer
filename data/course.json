@@ -5586,11 +5586,15 @@
           "category": "ne ... pas",
           "type": "grammar_rule",
           "prompt": "Hoe maak je een gewone ontkenning?",
-          "answer": "NON, onderwerp + NE + werkwoord + PAS",
+          "answer": "NON, onderwerp + NE / N’ + werkwoord + PAS",
           "example_fr": "Non, il ne cherche pas le prof.",
           "example_nl": "Nee, hij zoekt de leerkracht niet.",
           "id": "uf1-item-000276",
-          "rule_nl": "Bij een klinker of een stomme h wordt ne → n’. Zet de ontkenningswoorden rond het vervoegde werkwoord: ne/n’ + werkwoord + pas."
+          "rule_nl": "Bij een klinker of een stomme h wordt ne → n’. Zet de ontkenningswoorden rond het vervoegde werkwoord: ne/n’ + werkwoord + pas.",
+          "accepted_answers": [
+            "NON, onderwerp + NE / N’ + werkwoord + PAS",
+            "NON, onderwerp + NE + werkwoord + PAS"
+          ]
         },
         {
           "top_category": "Atelier Grammaire",
@@ -5600,11 +5604,15 @@
           "category": "ne ... plus",
           "type": "grammar_rule",
           "prompt": "Hoe ontken je encore (nog)?",
-          "answer": "NON, onderwerp + NE + werkwoord + PLUS",
+          "answer": "NON, onderwerp + NE / N’ + werkwoord + PLUS",
           "example_fr": "Non, il n’est plus à Paris.",
           "example_nl": "Nee, hij is niet meer in Parijs.",
           "id": "uf1-item-000277",
-          "rule_nl": "Bij een klinker of een stomme h wordt ne → n’. Zet de ontkenningswoorden rond het vervoegde werkwoord: ne/n’ + werkwoord + plus."
+          "rule_nl": "Bij een klinker of een stomme h wordt ne → n’. Zet de ontkenningswoorden rond het vervoegde werkwoord: ne/n’ + werkwoord + plus.",
+          "accepted_answers": [
+            "NON, onderwerp + NE / N’ + werkwoord + PLUS",
+            "NON, onderwerp + NE + werkwoord + PLUS"
+          ]
         },
         {
           "top_category": "Atelier Grammaire",
@@ -5614,11 +5622,15 @@
           "category": "ne ... jamais",
           "type": "grammar_rule",
           "prompt": "Hoe ontken je parfois / souvent?",
-          "answer": "NON, onderwerp + NE + werkwoord + JAMAIS",
+          "answer": "NON, onderwerp + NE / N’ + werkwoord + JAMAIS",
           "example_fr": "Non, ils ne vont jamais au zoo.",
           "example_nl": "Nee, ze gaan nooit naar de zoo.",
           "id": "uf1-item-000278",
-          "rule_nl": "Bij een klinker of een stomme h wordt ne → n’. Zet de ontkenningswoorden rond het vervoegde werkwoord: ne/n’ + werkwoord + jamais."
+          "rule_nl": "Bij een klinker of een stomme h wordt ne → n’. Zet de ontkenningswoorden rond het vervoegde werkwoord: ne/n’ + werkwoord + jamais.",
+          "accepted_answers": [
+            "NON, onderwerp + NE / N’ + werkwoord + JAMAIS",
+            "NON, onderwerp + NE + werkwoord + JAMAIS"
+          ]
         },
         {
           "top_category": "Atelier Grammaire",
