@@ -3596,11 +3596,12 @@
           "category": "substantifs",
           "type": "vocabulary",
           "fr": "le nom (de famille)",
-          "nl": "de (familie)naam",
+          "nl": "de naam / de familienaam",
           "gender": "m",
           "accepted_answers": [
             "le nom",
-            "le nom de famille"
+            "le nom de famille",
+            "le nom (de famille)"
           ],
           "id": "uf1-item-000154"
         },
@@ -3802,7 +3803,11 @@
           "fr": "jouer au foot",
           "nl": "voetballen",
           "gender": "",
-          "id": "uf1-item-000169"
+          "id": "uf1-item-000169",
+          "accepted_answers": [
+            "jouer au foot",
+            "jouer au football"
+          ]
         },
         {
           "top_category": "Atelier Parole",
@@ -3839,10 +3844,14 @@
           "subsection": "On découvre !",
           "category": "substantifs",
           "type": "vocabulary",
-          "fr": "l’aîné",
-          "nl": "de oudste",
+          "fr": "l’ainé",
+          "nl": "de oudste (mannelijk)",
           "gender": "m",
-          "id": "uf1-item-000172"
+          "id": "uf1-item-000172",
+          "accepted_answers": [
+            "l’ainé",
+            "l’aîné"
+          ]
         },
         {
           "top_category": "Atelier Parole",
@@ -3851,10 +3860,14 @@
           "subsection": "On découvre !",
           "category": "substantifs",
           "type": "vocabulary",
-          "fr": "l’aînée",
-          "nl": "de oudste",
+          "fr": "l’ainée",
+          "nl": "de oudste (vrouwelijk)",
           "gender": "f",
-          "id": "uf1-item-000173"
+          "id": "uf1-item-000173",
+          "accepted_answers": [
+            "l’ainée",
+            "l’aînée"
+          ]
         },
         {
           "top_category": "Atelier Parole",
@@ -4072,7 +4085,7 @@
           "category": "substantifs",
           "type": "vocabulary",
           "fr": "le jumeau",
-          "nl": "de tweeling",
+          "nl": "de tweeling (mannelijk)",
           "gender": "m",
           "id": "uf1-item-000191"
         },
@@ -4084,7 +4097,7 @@
           "category": "substantifs",
           "type": "vocabulary",
           "fr": "la jumelle",
-          "nl": "de tweeling",
+          "nl": "de tweeling (vrouwelijk)",
           "gender": "f",
           "id": "uf1-item-000192"
         },
@@ -4464,8 +4477,8 @@
           "subsection": "On découvre !",
           "category": "expressions",
           "type": "vocabulary",
-          "fr": "être (quatre)",
-          "nl": "met z’n (vieren) zijn",
+          "fr": "être quatre",
+          "nl": "met z'n vieren zijn",
           "gender": "",
           "accepted_answers": [
             "être quatre"

@@ -1,0 +1,27 @@
+name: Verify Trajet 2 reports
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [fix/trajet2-reports-20261030]
+
+permissions:
+  contents: read
+
+jobs:
+  regressions:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify current exercise and reporting behaviour
+        run: |
+          node tests/exercise-variants-regression.js
+          node tests/trajet2-content-regression.js
+          node tests/trajet2-report-corrections-regression.js
+          node tests/phrase-feedback-regression.js
+          node tests/item-report-regression.js
+          node tests/teacher-task-lifecycle-regression.js
+          node tests/actes-batch-review-regression.js

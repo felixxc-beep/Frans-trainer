@@ -47,9 +47,9 @@ assert.match(app, /dir="ltr" autocomplete="off" autocorrect="off"/);
 assert.match(css, /#answer-input, \.gap-answer-list input \{ direction: ltr; text-align: left;/);
 assert.ok(html.indexOf("phrase-feedback.js") > 0);
 assert.ok(html.indexOf("phrase-feedback.js") < html.indexOf("app.js"));
-assert.match(html, /styles\.css\?v=20261030-3/);
+assert.match(html, /styles\.css\?v=20261030-report-gate-1/);
 assert.match(html, /phrase-feedback\.js\?v=20261030-3/);
-assert.match(html, /app\.js\?v=20261030-t2-1/);
+assert.match(html, /app\.js\?v=20261030-trajet2-reports-1/);
 
 // An exact copy of the learner's answer now appears directly below the input.
 // Only reliable differences are marked; uncertain diagnoses stay unmarked.

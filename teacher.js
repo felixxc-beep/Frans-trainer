@@ -1845,6 +1845,15 @@
         const model = report.model_answer || (report.exercise_direction === "full-sentence-nl-fr"
           ? asArray(report.accepted_answers)[0] || ''
           : courseItem && (courseItem.fr || courseItem.infinitive || courseItem.answer) || '');
+        const issueContext = asArray(report.attempt_details)[0] || {};
+        const reasonLabels = {
+          correct_alternative: "Mijn antwoord is ook correct",
+          ambiguous_question: "De vraag is onduidelijk of dubbelzinnig",
+          technical_problem: "Er is een technisch probleem"
+        };
+        const issueReason = reasonLabels[issueContext.report_reason] || "";
+        const issueExplanation = typeof issueContext.report_explanation === "string"
+          ? issueContext.report_explanation.slice(0, 250) : "";
         const pending = !report.status || report.status === "pending";
         const decision = pending ? reportDecisions[report.id] : null;
         return '<article class="task-report-card' + (decision ? ' is-selected is-' + decision : '') + '" data-report-id="' + escapeHtml(report.id) + '"><div><strong>' + escapeHtml(report.student_name) + '</strong> · ' + escapeHtml(report.class_name) +
@@ -1856,6 +1865,8 @@
               (detail ? ' <small>' + escapeHtml(detail.at || '') + ' · ' + escapeHtml(detail.variant_id || 'cursusitem') +
                 ' · ' + escapeHtml(detail.prompt || '') + '</small>' : '') + '</li>';
           }).join('') + '</ol></div>' +
+          (issueReason ? '<p><b>Reden melding:</b> ' + escapeHtml(issueReason) + '</p>' : '') +
+          (issueExplanation ? '<p><b>Uitleg leerling:</b> ' + escapeHtml(issueExplanation) + '</p>' : '') +
           '<p><b>Verwacht:</b> ' + asArray(report.accepted_answers).map(escapeHtml).join(' / ') + (model ? ' · model: ' + escapeHtml(model) : '') + '</p>' +
           '<p class="muted">' + escapeHtml(report.exercise_type || report.exercise_direction) + ' · ' + escapeHtml(report.variant_id || 'cursusitem') + ' · opgezocht: ' + (report.consulted ? 'ja' : 'nee') + ' · app ' + escapeHtml(report.app_version || 'onbekend') + '</p>' +
           (pending ? (canManage ?
@@ -3050,7 +3061,7 @@
 
   async function loadCourse() {
     try {
-      const response = await fetch("./data/course.json?v=20261030-t2-1");
+      const response = await fetch("./data/course.json?v=20261030-trajet2-reports-1");
       if (!response.ok) throw new Error("COURSE_LOAD_FAILED");
       state.course = await response.json();
       state.courseIndex = buildCourseIndex(state.course);

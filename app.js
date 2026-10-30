@@ -1,4 +1,4 @@
-const DATA_URL = "./data/course.json?v=20261030-t2-1";
+const DATA_URL = "./data/course.json?v=20261030-trajet2-reports-1";
 const VARIANT_DATA_URL = "./data/exercise-variants.json?v=20261030-t2-1";
 const STORAGE_KEY = "monParcoursProgressV1";
 const ACTIVE_SESSION_KEY = "monParcoursActiveSessionV1";
@@ -8,7 +8,7 @@ const ASSIGNMENTS_CACHE_KEY = "monParcoursAssignmentsCacheV1";
 const VERB_EVIDENCE_KEY = "monParcoursVerbEvidenceV1";
 const VERB_SERVER_CACHE_KEY = "monParcoursVerbServerCacheV1";
 const TASK_ROUNDS_KEY = "monParcoursTaskRoundsV1";
-const APP_VERSION = "20261030-trajet2-aligned";
+const APP_VERSION = "20261030-trajet2-reports-1";
 const INACTIVITY_TIMEOUT_MS = 60000;
 const MAX_DYNAMIC_NUMBER_ALL = 101;
 const ACCENTS = ["é", "è", "ê", "ë", "à", "â", "ç", "ù", "û", "ô", "î", "ï"];
@@ -1885,7 +1885,7 @@ function renderQuestion(message) {
   const roundProgress = roundState ? window.MonParcoursTaskRounds.progress(roundState, roundsForAssignment(roundState)) : null;
   const progress = roundProgress ? Math.round((roundProgress.done / Math.max(1, roundProgress.selected)) * 100) : Math.round((session.index / session.questions.length) * 100);
   const isTest = session.mode === "test";
-  const inlinePhraseFeedback = !isTest && question.item && question.item.type === "phrase" &&
+  const inlinePhraseFeedback = !isTest && question.item && ["phrase", "vocabulary"].includes(question.item.type) &&
     !question.choices && question.variantScoring !== "multi_gap";
   const exercise = question.exerciseKey === "full-sentence-nl-fr"
     ? { type: "phrase", label: "Volledige zin vertalen", labelFr: "Traduire la phrase entière" } :
@@ -2157,7 +2157,7 @@ function showFeedback(correct, messageFr, messageNl, allowNext, clearInput) {
   const annotation = !correct && inlinePhrase && visual && window.MonParcoursPhraseFeedback &&
     typeof window.MonParcoursPhraseFeedback.annotatedAnswer === "function" ?
     window.MonParcoursPhraseFeedback.annotatedAnswer(visual.question, visual.answer) : "";
-  const tipHeading = !correct && inlinePhrase ?
+  const tipHeading = !correct && inlinePhrase && visual && visual.question && visual.question.item && visual.question.item.type === "phrase" ?
     '<h2 class="phrase-feedback-title">⚠ ' + uiText("Regarde ton propre texte et la piste ci-dessous", "Kijk naar jouw zin en de aanwijzing hieronder") + '</h2>' : "";
   const ligatureNote = correct && state.session && state.session.visualAnswer &&
     /\\bsoeur\\b/i.test(String(state.session.visualAnswer.answer || "")) &&
@@ -2169,7 +2169,17 @@ function showFeedback(correct, messageFr, messageNl, allowNext, clearInput) {
     '</span><div class="feedback-body">' + tipHeading + annotation +
     '<p class="feedback-main-message">' + uiHtml(messageFr, messageNl) + '</p>' + ligatureNote + marking +
     (!correct && state.session && state.session.assignment_round_number === 1 ? '<button class="button button-primary consult-action" type="button" data-action="consult-round">' + contentIcon("vocabulary") + uiText("Consulter", "Opzoeken") + '</button>' : "") +
-    (canReport ? '<p class="report-explanation">' + uiText("Si ta réponse semble correcte, si la question n’est pas claire ou s’il y a un problème technique. Ce n’est pas un bouton « je ne sais pas ».", "Alleen als je antwoord volgens jou juist is, de vraag onduidelijk lijkt of er een technisch probleem is. Niet voor ‘ik weet het niet’.") + '</p><button class="text-button report-action" type="button" data-action="report-round-item">' + uiText("Je pense que ma réponse est refusée à tort", "Mijn antwoord wordt volgens mij onterecht fout gerekend") + '</button>' : '') +
+    (canReport ? '<details class="report-gate"><summary>' + uiText("Je pense qu’il y a un problème dans l’exercice", "Ik denk dat er een probleem is met de oefening") + '</summary>' +
+      '<p class="report-explanation">' + uiText("Compare d’abord avec le cours. Une faute d’orthographe, d’accent ou d’article n’est pas un problème technique.", "Vergelijk eerst met je cursus. Een eigen spelling-, accent- of lidwoordfout is geen probleem met de oefening.") + '</p>' +
+      '<label for="report-reason">' + uiText("Pourquoi veux-tu signaler cet exercice ?", "Waarom wil je dit melden?") + '</label>' +
+      '<select id="report-reason"><option value="">' + uiText("Choisis une raison", "Kies een reden") + '</option>' +
+        '<option value="correct_alternative">' + uiText("Ma réponse est correcte", "Mijn antwoord is ook correct") + '</option>' +
+        '<option value="ambiguous_question">' + uiText("La question est ambiguë", "De vraag is onduidelijk of dubbelzinnig") + '</option>' +
+        '<option value="technical_problem">' + uiText("Il y a un problème technique", "Er is een technisch probleem") + '</option></select>' +
+      '<label for="report-explanation">' + uiText("Explique en quelques mots ce qui ne va pas", "Leg kort uit waarom dit volgens jou een probleem is") + '</label>' +
+      '<textarea id="report-explanation" maxlength="250" rows="2" placeholder="' + uiText("Explique ton raisonnement…", "Bijvoorbeeld: in mijn boek staat…") + '"></textarea>' +
+      '<p id="report-validation" class="report-validation" role="status" aria-live="polite"></p>' +
+      '<button class="text-button report-action" type="button" data-action="report-round-item">' + uiText("Envoyer ce problème", "Probleem melden") + '</button></details>' : '') +
     (allowNext ? '<button class="button ' + (!correct && state.session && state.session.assignment_round_number === 1 ? 'button-secondary' : 'button-primary') + '" type="button" data-action="next-question">' + uiText("Suivant", "Volgende") + '</button>' : "") + '</div>';
   if (allowNext) {
     input.disabled = true;
@@ -2200,6 +2210,20 @@ function reportRoundItem() {
   if (!current || current.item.completed_at || current.item.reported_pending ||
       Number(current.item.returned_for_retry ? current.item.wrong_since_return : current.item.wrong_count || 0) < 2 ||
       !window.MonParcoursSync || typeof window.MonParcoursSync.enqueueIssueReport !== "function") return;
+  // Ask pupils to identify a genuine ambiguity, correct alternative or technical issue.
+  // Never silently discard a report: a pupil may have found a real textbook discrepancy.
+  const reasonField = document.querySelector("#report-reason");
+  const explanationField = document.querySelector("#report-explanation");
+  const validation = document.querySelector("#report-validation");
+  const reason = reasonField ? reasonField.value : "";
+  const explanation = explanationField ? explanationField.value.trim() : "";
+  if (!["correct_alternative", "ambiguous_question", "technical_problem"].includes(reason) ||
+      explanation.length < 12 || !/[a-zA-ZÀ-ÿ]{4}/.test(explanation)) {
+    if (validation) validation.textContent = "Kies een reden en leg in minstens 12 tekens uit wat er verkeerd is. Vergelijk eerst met je boek.";
+    if (!reason && reasonField && typeof reasonField.focus === "function") reasonField.focus();
+    else if (explanationField && typeof explanationField.focus === "function") explanationField.focus();
+    return;
+  }
   const answers = (current.item.attempt_history || []).filter(function (entry) { return !entry.was_correct; })
     .map(function (entry) { return entry.answer; });
   if (!answers.length) return;
@@ -2211,7 +2235,10 @@ function reportRoundItem() {
       ? question.gaps.map(function (gap) { return gap.accepted_answers.join(" / "); }) : question.answers.slice(),
     variant_id: question.variantId || null, model_answer: formatAnswers(question),
     exercise_type: question.variantKind || question.item.type,
-    attempt_details: (current.item.attempt_history || []).filter(function (entry) { return !entry.was_correct; }),
+    // The existing JSONB attempt_details stores report context without a schema migration.
+    attempt_details: (current.item.attempt_history || []).filter(function (entry) { return !entry.was_correct; })
+      .map(function (entry, index) { return index === 0 ?
+        Object.assign({}, entry, { report_reason: reason, report_explanation: explanation }) : entry; }),
     consulted: Boolean(current.item.consulted), app_version: APP_VERSION,
     created_at: new Date().toISOString()
   };
@@ -3155,20 +3182,54 @@ function nearCorrectHint(rawAnswer, question) {
   const french = question.exerciseKey === "vocab-nl-fr";
   const dutch = question.exerciseKey === "vocab-fr-nl";
   if (!french && !dutch) return null;
+  const session = state.session;
+  const roundState = session && session.assignment_round_number ? currentRoundItemState(session, question) : null;
+  const attempts = Math.max(1, Number(roundState ? roundState.item.wrong_count || 1 :
+    session && session.questionAttempts || 1));
   const candidate = normalizeAnswer(rawAnswer, true);
+
+  // These are valid French words but do not practise the specific textbook word
+  // explicitly requested in this exercise.
+  if (french && question.item.id === "uf1-item-000151" && candidate === "la mère")
+    return attempts >= 2 ?
+      { fr: "Tu as écrit « mère » (moeder). Le cours demande le mot pour « mama » : maman.",
+        nl: "« La mère » betekent moeder. Hier wordt het cursuswoord voor mama gevraagd: « la maman »." } :
+      { fr: "« Mère » et « maman » ne sont pas le même mot dans cette liste.",
+        nl: "De vraag zegt mama, niet moeder. Zoek het juiste woord uit de cursus." };
+  if (french && question.item.id === "uf1-item-000156" && candidate === "le père")
+    return attempts >= 2 ?
+      { fr: "« Père » signifie vader. Ici on demande « papa » : le papa.",
+        nl: "« Le père » betekent vader. Hier wordt het cursuswoord voor papa gevraagd: « le papa »." } :
+      { fr: "Vérifie la différence entre « père » et « papa » dans ton cours.",
+        nl: "Controleer het verschil tussen vader en papa in je cursus." };
+  if (french && question.item.id === "uf1-item-000170" &&
+      /\bjeu\s+vid[ée]o\b/i.test(candidate))
+    return { fr: "Tu parles de plusieurs jeux : ajoute la marque du pluriel à « jeu ».",
+      nl: "Het gaat over meerdere spelletjes: bij « jeu » ontbreekt de meervouds-s." };
+
   for (const answer of question.answers || []) {
     const expected = normalizeAnswer(answer, true);
     if (candidate === expected) return null;
     const source = splitAnswerArticle(expected, french);
     const typed = splitAnswerArticle(candidate, french);
     if (source.article && source.stem === typed.stem && source.article !== typed.article) {
-      return { fr: "Presque ! Vérifie l’article.", nl: "Bijna! Controleer het lidwoord." };
+      const model = attempts >= 2 ? " Het juiste lidwoord is « " + source.article + " »." : "";
+      return { fr: "Presque ! Vérifie l’article." + (attempts >= 2 ? " L’article correct est « " + source.article + " »." : ""),
+        nl: "Bijna! Het woord klopt, maar het lidwoord niet." + model };
     }
     if (french && normalizeAnswer(candidate, false) === normalizeAnswer(expected, false)) {
-      return { fr: "Presque ! Vérifie les accents.", nl: "Bijna! Controleer de accenten." };
+      return attempts >= 2 ?
+        { fr: "Ce sont les accents. Écriture exacte : « " + answer + " ».",
+          nl: "Alle letters kloppen; alleen de accenten verschillen. Correct gespeld: « " + answer + " »." } :
+        { fr: "Presque ! Vérifie précisément les accents (é, è, ê, î…).",
+          nl: "Bijna! Controleer de accenten nauwkeurig: bijvoorbeeld é en è zijn verschillend." };
     }
     if (source.article === typed.article && oneSmallSpellingDifference(typed.stem, source.stem)) {
-      return { fr: "Presque ! Vérifie l’orthographe.", nl: "Bijna! Controleer de spelling." };
+      return attempts >= 2 ?
+        { fr: "Il y a une petite faute de lettres. Compare avec « " + answer + " ».",
+          nl: "Er zit een kleine letterfout in. Vergelijk jouw antwoord met « " + answer + " »." } :
+        { fr: "Presque ! Vérifie une lettre dans l’orthographe.",
+          nl: "Bijna! Controleer één letter in de spelling." };
     }
   }
   return null;
