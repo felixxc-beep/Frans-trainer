@@ -56,8 +56,8 @@ for (const [suffix, answer, expected] of cases) {
   const graded = evaluate.isCorrect(answer, evaluate.answerList(item.fr, item), true);
   assert.equal(graded, expected, suffix + " " + answer);
 }
-assert.match(app, /const DATA_URL = ".+20261029-1"/);
-assert.match(html, /teacher\.js\?v=20261029-2/);
+assert.match(app, /const DATA_URL = ".+20261030-2"/);
+assert.match(html, /teacher\.js\?v=20261030-2/);
 assert.match(teacher, /data-action="queue-item-report"/);
 assert.match(teacher, /data-action="commit-report-selections"/);
 assert.doesNotMatch(teacher, /data-action="resolve-item-report"/);
