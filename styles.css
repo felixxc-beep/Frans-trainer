@@ -344,6 +344,13 @@ dialog::backdrop { background: rgba(10,29,23,.45); backdrop-filter: blur(4px); }
 
 .feedback .report-action { display: inline-flex; min-height: 42px; margin: .35rem .55rem .35rem 0; }
 .feedback .report-explanation { max-width: 38rem; margin: .6rem 0 .2rem; font-size: .9rem; line-height: 1.45; }
+.feedback .report-gate { margin-top: .8rem; padding: .5rem .75rem .7rem; border: 1px solid rgba(141,44,30,.35); border-radius: 10px; background: rgba(255,255,255,.75); max-width: 38rem; }
+.feedback .report-gate summary { cursor: pointer; font-weight: 650; padding: .2rem 0; }
+.feedback .report-gate label { display: block; margin-top: .65rem; margin-bottom: .25rem; font-size: .91rem; font-weight: 700; }
+.feedback .report-gate select, .feedback .report-gate textarea { width: 100%; max-width: 100%; box-sizing: border-box; border: 1px solid #bdaaa2; border-radius: 8px; color: #312a25; background: #fff; font: inherit; padding: .58rem; }
+.feedback .report-gate textarea { min-height: 4rem; resize: vertical; }
+.feedback .report-gate .report-validation { margin: .4rem 0 0; font-size: .9rem; font-weight: 650; color: #9b2c20; }
+
 .retry-note { margin: 0 0 .45rem; color: #8d5a1e; font-weight: 850; }
 .feedback-mark { width: 30px; height: 30px; flex: 0 0 auto; display: grid; place-items: center; border: 2px solid currentColor; border-radius: 50%; font-weight: 900; }
 .feedback p { margin: .1rem 0 .8rem; }
