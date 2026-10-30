@@ -1,4 +1,4 @@
-const DATA_URL = "./data/course.json?v=20261030-t2-1";
+const DATA_URL = "./data/course.json?v=20261030-trajet2-reports-1";
 const VARIANT_DATA_URL = "./data/exercise-variants.json?v=20261030-t2-1";
 const STORAGE_KEY = "monParcoursProgressV1";
 const ACTIVE_SESSION_KEY = "monParcoursActiveSessionV1";
@@ -8,7 +8,7 @@ const ASSIGNMENTS_CACHE_KEY = "monParcoursAssignmentsCacheV1";
 const VERB_EVIDENCE_KEY = "monParcoursVerbEvidenceV1";
 const VERB_SERVER_CACHE_KEY = "monParcoursVerbServerCacheV1";
 const TASK_ROUNDS_KEY = "monParcoursTaskRoundsV1";
-const APP_VERSION = "20261030-trajet2-aligned";
+const APP_VERSION = "20261030-trajet2-reports-1";
 const INACTIVITY_TIMEOUT_MS = 60000;
 const MAX_DYNAMIC_NUMBER_ALL = 101;
 const ACCENTS = ["é", "è", "ê", "ë", "à", "â", "ç", "ù", "û", "ô", "î", "ï"];
@@ -2200,6 +2200,13 @@ function reportRoundItem() {
   if (!current || current.item.completed_at || current.item.reported_pending ||
       Number(current.item.returned_for_retry ? current.item.wrong_since_return : current.item.wrong_count || 0) < 2 ||
       !window.MonParcoursSync || typeof window.MonParcoursSync.enqueueIssueReport !== "function") return;
+  // The report button is for ambiguous questions, valid alternatives or technical errors.
+  // Requiring an explicit confirmation reduces accidental reports of ordinary mistakes;
+  // it does not take away a pupil's ability to report a genuine false negative.
+  if (typeof window.confirm === "function" && !window.confirm(
+    "Meld alleen een probleem als je antwoord echt correct is, de vraag dubbelzinnig is of er een technische fout is. " +
+    "Een fout lidwoord, ontbrekend accent of spelfout blijft fout. Heb je je antwoord met de cursus vergeleken?"
+  )) return;
   const answers = (current.item.attempt_history || []).filter(function (entry) { return !entry.was_correct; })
     .map(function (entry) { return entry.answer; });
   if (!answers.length) return;
