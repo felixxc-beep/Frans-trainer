@@ -1962,7 +1962,11 @@
           "fr": "Il / Elle aime jouer à des jeux vidéo.",
           "accepted_answers": [
             "Il aime jouer à des jeux vidéo.",
-            "Elle aime jouer à des jeux vidéo."
+            "Elle aime jouer à des jeux vidéo.",
+            "Il aime jouer aux jeux vidéo.",
+            "Elle aime jouer aux jeux vidéo.",
+            "Il aime les jeux vidéo.",
+            "Elle aime les jeux vidéo."
           ],
           "id": "uf1-item-000556"
         },
