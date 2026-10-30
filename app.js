@@ -2166,8 +2166,9 @@ function showFeedback(correct, messageFr, messageNl, allowNext, clearInput) {
     const firstAction = feedback.querySelector("button");
     if (inlinePhrase && !correct) {
       // The hint is beside the answer input, not below the submit button.
-      feedback.focus({ preventScroll: true });
-      feedback.scrollIntoView({ behavior: "auto", block: "nearest" });
+      if (typeof feedback.focus === "function") feedback.focus({ preventScroll: true });
+      if (typeof feedback.scrollIntoView === "function")
+        feedback.scrollIntoView({ behavior: "auto", block: "nearest" });
     } else if (firstAction) firstAction.focus();
   } else {
     if (clearInput !== false) {
