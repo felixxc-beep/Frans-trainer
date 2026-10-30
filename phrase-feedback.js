@@ -109,5 +109,78 @@
     return { fr: fr, nl: nl };
   }
 
-  root.MonParcoursPhraseFeedback = Object.freeze({ hint: hint });
+
+  // Native text inputs cannot mark individual words. Display an annotated,
+  // HTML-escaped copy of the student's exact answer directly below the input.
+  // When errors cannot be located confidently, leave the answer unmarked.
+  function annotatedAnswer(question, rawAnswer) {
+    if (!question || !question.item || question.item.type !== "phrase" ||
+        typeof rawAnswer !== "string" || !rawAnswer.trim()) return "";
+    const entered = rawAnswer.trim().match(/\S+/gu) || [];
+    const variants = (question.answers || []).filter(function (answer) {
+      return typeof answer === "string" && answer.trim();
+    });
+    const cleaned = function (token) {
+      return normal(token).replace(/^[.!?,;:]+|[.!?,;:]+$/g, "");
+    };
+    const actual = entered.map(cleaned);
+    function same(actualWord, expectedWord) {
+      // A concrete value for a model [slot] is not a misspelled word.
+      if (/^\[[^\]]+\]$/.test(expectedWord))
+        return Boolean(actualWord && !/^\[[^\]]+\]$/.test(actualWord));
+      return actualWord === expectedWord;
+    }
+    function compare(target) {
+      const expected = (target.match(/\S+/gu) || []).map(cleaned);
+      const m = actual.length, n = expected.length;
+      if (!m || !n || m > 55 || n > 55) return null;
+      const dp = Array.from({ length: m + 1 }, function () { return new Array(n + 1).fill(0); });
+      for (let i = 0; i <= m; i++) dp[i][0] = i;
+      for (let j = 0; j <= n; j++) dp[0][j] = j;
+      for (let i = 1; i <= m; i++) for (let j = 1; j <= n; j++) {
+        dp[i][j] = Math.min(
+          dp[i - 1][j - 1] + (same(actual[i - 1], expected[j - 1]) ? 0 : 1),
+          dp[i - 1][j] + 1, dp[i][j - 1] + 1
+        );
+      }
+      const wrong = new Set(), missing = [];
+      let matched = 0, i = m, j = n;
+      while (i || j) {
+        if (i && j && dp[i][j] === dp[i - 1][j - 1] +
+            (same(actual[i - 1], expected[j - 1]) ? 0 : 1)) {
+          if (same(actual[i - 1], expected[j - 1])) matched++;
+          else wrong.add(i - 1);
+          i--; j--;
+        } else if (j && dp[i][j] === dp[i][j - 1] + 1) {
+          missing.push(i); j--;
+        } else if (i) {
+          wrong.add(i - 1); i--;
+        } else break;
+      }
+      return { errors: dp[m][n], matched, wrong, missing };
+    }
+    let best = null;
+    variants.forEach(function (variant) {
+      const comparison = compare(variant);
+      if (comparison && (!best || comparison.errors < best.errors ||
+          comparison.errors === best.errors && comparison.matched > best.matched)) best = comparison;
+    });
+    const reliable = best && best.errors > 0 && best.errors <= 2 &&
+      best.matched >= 2 && best.matched >= Math.ceil(entered.length * .5);
+    const wrong = reliable ? best.wrong : new Set();
+    const missing = reliable ? new Set(best.missing) : new Set();
+    const sentence = entered.map(function (token, index) {
+      const absent = missing.has(index) ?
+        '<span class="phrase-missing" aria-label="Hier ontbreekt mogelijk iets">…</span> ' : "";
+      return absent + (wrong.has(index) ?
+        '<mark class="phrase-word-check">' + html(token) + '</mark>' : html(token));
+    }).join(" ") + (missing.has(entered.length) ?
+      ' <span class="phrase-missing" aria-label="Hier ontbreekt mogelijk iets">…</span>' : "");
+    return '<div class="phrase-answer-review"><strong>Jouw antwoord:</strong>' +
+      '<p class="phrase-answer-words" dir="ltr" lang="fr">' + sentence + '</p>' +
+      (reliable ? '<small>Onderstreept = nakijken · … = er ontbreekt mogelijk iets.</small>' : '') +
+      '</div>';
+  }
+
+  root.MonParcoursPhraseFeedback = Object.freeze({ hint: hint, annotatedAnswer: annotatedAnswer });
 })(typeof window !== "undefined" ? window : globalThis);
