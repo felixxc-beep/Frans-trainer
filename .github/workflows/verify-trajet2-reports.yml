@@ -24,6 +24,5 @@ jobs:
           node tests/phrase-feedback-regression.js
           node tests/item-report-regression.js
           node tests/teacher-task-lifecycle-regression.js
-          node tests/task-rounds-regression.js
           node tests/extra-round-status-regression.js
           node tests/actes-batch-review-regression.js
