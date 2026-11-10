@@ -38,7 +38,7 @@ assert.match(teacher, /data-action="commit-report-selections"/);
 assert.match(teacher, /queuedReportDecisions/);
 assert.match(teacher, /resolve_assignment_item_report/);
 assert.doesNotMatch(teacher, /data-action="resolve-item-report"/);
-assert.match(html, /teacher\.js\?v=20261030-trajet2-reports-1/);
+assert.match(html, /teacher\.js\?v=20261110-round-status-1/);
 assert.match(app, /Je pense qu’il y a un problème dans l’exercice/);
 assert.match(app, /Ik denk dat er een probleem is met de oefening/);
 assert.match(app, /report-explanation/);

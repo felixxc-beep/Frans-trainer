@@ -61,8 +61,8 @@ assert.match(app,/report-reason/);
 assert.match(app,/report-explanation/);
 assert.match(app,/report_reason: reason/);
 assert.match(index,/exercise-variants\.js\?v=20261030-trajet2-reports-1/);
-assert.match(index,/app\.js\?v=20261030-trajet2-reports-1/);
-assert.match(teacherHtml,/teacher\.js\?v=20261030-trajet2-reports-1/);
+assert.match(index,/app\.js\?v=20261110-round-status-1/);
+assert.match(teacherHtml,/teacher\.js\?v=20261110-round-status-1/);
 assert.match(teacher,/course\.json\?v=20261030-trajet2-reports-1/);
 
 // A report should require a reason, but must keep valid complaints possible.

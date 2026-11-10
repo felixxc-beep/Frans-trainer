@@ -1893,6 +1893,9 @@
       (task.status === "archived" && canManage && taskLifecycle(Object.assign({}, task, { status: "published" }), Date.now()) === "archived" ? '<p class="muted">Na herstel blijft deze taak wegens de oorspronkelijke deadline in het archief. Pas de deadline daarna aan als je haar opnieuw actief wilt maken.</p>' : '') +
       (editable && task.status === "published" && task.completion_strategy === "rounds" ?
         '<section class="section-block"><h3>Rondes beheren</h3><p>' + Number(task.released_rounds || task.required_rounds) + ' van ' + task.required_rounds + ' rondes vrijgegeven. Een lopende ronde blijft ongewijzigd.</p>' +
+        (Number(task.released_rounds || task.required_rounds) < Number(task.required_rounds) ?
+          '<p class="muted" role="status"><strong>Let op:</strong> Je hebt meer rondes ingesteld dan vrijgegeven. Leerlingen zien dat de taak nog niet afgerond is, maar kunnen de nieuwe ronde pas maken zodra je hieronder op <strong>Ronde ' +
+          (Number(task.released_rounds || 0) + 1) + ' vrijgeven</strong> klikt.</p>' : '') +
         '<label>Oefeningen in volgende rondes <select id="futureRoundSize">' + ['10','20','30','all'].map(function (size) {
           const history = asArray(task.round_size_history);
           const last = history.length ? String(history[history.length - 1].size) : String(window.MonParcoursExercisePolicy && window.MonParcoursExercisePolicy.read(task.instructions).poolSettings && window.MonParcoursExercisePolicy.read(task.instructions).poolSettings.size || 'all');
