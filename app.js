@@ -88,6 +88,9 @@ document.addEventListener("focusin", function (event) {
 });
 document.addEventListener("visibilitychange", handleVisibilityChange);
 if (window.addEventListener) window.addEventListener("pagehide", handlePageHide);
+if (window.addEventListener) window.addEventListener("focus", function () {
+  if (["home", "assignments", "assignment-detail"].includes(state.view)) refreshStudentAssignments();
+});
 if (window.addEventListener) window.addEventListener("monparcours:sync-complete", function () {
   refreshMasteryFromServer();
   refreshVerbEvidenceFromServer();
@@ -748,7 +751,7 @@ function assignmentBuckets(now) {
   entries.forEach(function (item) {
     if (assignmentIsExpired(item, now)) { expired.push(item); return; }
     const status = assignmentProgress(item).status;
-    if (["completed","waiting_release","pending_review"].includes(status)) done.push(item);
+    if (["completed","pending_review"].includes(status)) done.push(item);
     else active.push(item);
   });
   const due = function (item) {
@@ -786,7 +789,7 @@ function assignmentCourseLabel(assignment) {
 
 function assignmentStatus(progress) {
   const labels = {
-    waiting_release: ["Tour terminé — en attente du professeur", "Ronde klaar — wacht op volgende ronde"],
+    waiting_release: ["Devoir pas encore terminé — prochain tour non publié", "Taak nog niet klaar — volgende ronde nog niet vrijgegeven"],
     completed: ["Terminée", "Afgerond"],
     pending_review: ["En attente du professeur", "Wacht op controle van de leerkracht"],
     late: ["En retard", "Te laat"],
@@ -815,7 +818,7 @@ function assignmentCard(assignment) {
 
 function roundCardStatus(progress) {
   const status = progress.status;
-  if (status === "waiting_release") return { className: "complete", fr: "✓ Tour terminé", nl: "✓ Ronde klaar" };
+  if (status === "waiting_release") return { className: "in-progress", fr: "En attente du prochain tour", nl: "Wacht op vrijgave — niet klaar" };
   if (status === "completed") return { className: "complete", fr: "✓ Terminé", nl: "Klaar" };
   if (status === "late") return { className: "late", fr: "En retard", nl: "Te laat — niet klaar" };
   if (status === "not_started") return { className: "todo", fr: "À faire", nl: "Niet gestart" };
@@ -849,8 +852,8 @@ function roundStatusHtml(rounds, completed, compact, pendingCount, notStarted) {
         pendingCount + " probleem" + (pendingCount === 1 ? "" : "en") + " gemeld") + '</span>' +
       '<span class="round-awaiting">' + uiText("En attente du professeur", "Wacht op controle van de leerkracht") + '</span>' :
       completed ? '<strong class="round-complete-label">✓ ' + uiText("Devoir terminé", "Taak klaar") + '</strong>' :
-      rounds.waitingForRelease ? '<strong class="round-complete-label">✓ ' + uiText("Tour terminé", "Ronde klaar") + '</strong><span class="round-awaiting">' +
-        uiText("Attends le prochain tour du professeur.", "Wacht tot je leerkracht de volgende ronde vrijgeeft.") + '</span>' :
+      rounds.waitingForRelease ? '<strong class="task-round-label">' + uiText("Devoir pas encore terminé", "Taak nog niet afgerond") + '</strong><span class="round-awaiting">' +
+        uiText("Tour actuel terminé. Attends que le professeur publie le prochain.", "Je huidige ronde is klaar, maar de volgende ronde moet nog vrijgegeven worden.") + '</span>' :
       '<strong class="task-round-label">' + uiText("Passage " + rounds.round + " sur " + rounds.required,
         "Ronde " + rounds.round + " van " + rounds.required) + '</strong>' +
       '<span class="task-round-score"><b>' + rounds.done + ' / ' + rounds.selected + '</b><small>' + uiText("traités", "afgewerkt") + '</small></span>' +
@@ -1760,6 +1763,11 @@ function handlePracticeActivity(event) {
 }
 
 function handleVisibilityChange() {
+  if (document.visibilityState === "visible") {
+    // Pick up newly added or released rounds even when this browser tab stayed open.
+    if (["home", "assignments", "assignment-detail"].includes(state.view)) refreshStudentAssignments();
+    return;
+  }
   if (!state.session) return;
   if (document.visibilityState === "hidden") {
     settleActiveTime(true);
