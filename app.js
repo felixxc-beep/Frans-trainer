@@ -2033,6 +2033,8 @@ function submitAnswer(rawAnswer) {
       });
     if (graded && question.variantScoring === "multi_gap") submissionTargetResults(question,graded,correct).forEach(function (result) {
       if (result.item_id !== itemId) {
+        // A prerequisite outside this task must not become an extra round goal.
+        if (!round.items[result.item_id]) return;
         if (question.taskPoolQuestion && result.was_correct && session.questions.some(function (q) {
           return q.stableItemIds.includes(result.item_id) && !(session.task_pool_completed || []).includes(q.taskPoolKey);
         })) return;
