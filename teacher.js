@@ -1239,7 +1239,7 @@
           escapeHtml(({
             vocabulary_direct: "Losse woorden vertalen",
             vocabulary_context: "Woorden in een zin",
-            verb_conjugation: "Werkwoorden vervoegen",
+            verb_conjugation: "Werkwoorden: Nederlands → Frans (vertalen en vervoegen)",
             verb_context: "Werkwoorden in een zin",
             grammar_context: "Grammatica in een zin",
             grammar_mixed: "Gemengde grammaticaoefeningen",
@@ -1252,7 +1252,8 @@
           })[option.key] || policy.labels[option.key]) +
           ' (' + count + ')</span></label>';
       }).join('') + '</div>' +
-      (!draft.exercise_forms.length ? '<p class="form-message" role="alert">Vink minstens één oefenvorm aan.</p>' : '') +
+      (draft.exercise_forms.includes('verb_conjugation') ? '<p class="muted">Wil je enkel vanuit het Nederlands laten vervoegen? Vink dan alleen deze werkwoordoefenvorm aan. Bij Trajet 2 krijgen leerlingen een Nederlandse persoonsvorm, bijvoorbeeld: ik vertrek → je pars.</p>' : '') +
+       (!draft.exercise_forms.length ? '<p class="form-message" role="alert">Vink minstens één oefenvorm aan.</p>' : '') +
       renderTaskExerciseCount(draft, items) + '</fieldset>';
   }
 
@@ -1477,7 +1478,7 @@
     }).join(" · ");
     const names = {
       vocabulary_direct: "losse woorden", vocabulary_context: "woorden in zinnen",
-      verb_conjugation: "vervoegen", verb_context: "werkwoorden in zinnen",
+      verb_conjugation: "werkwoorden NL → FR vervoegen", verb_context: "werkwoorden in zinnen",
       grammar_rule: "grammatica", grammar_context: "grammatica in zinnen",
       grammar_mixed: "gemengde grammatica", revision: "zinnen vertalen",
       revision_other: "andere Révision-oefeningen", numbers: "getallen",
