@@ -126,6 +126,22 @@
       .map(function (target) { return typeof target === "string" ? target : target.item_id; })));
   }
 
+  // Article-contrast variants deliberately ask one familiar Trajet 1
+  // article and one Trajet 2 negation article. Keep each gap mapped to its
+  // genuine mastery goal, but let the Trajet 2 teacher and pupil select them.
+  function isTrajet2NegationContrast(variant, ids, scope) {
+    if (!/^T2-GRAM-ART-0(09|10|11|12)$/.test(variant.id)) return false;
+    if (scope && (scope.trajectory && scope.trajectory !== "Trajet 2" ||
+        scope.top_category && scope.top_category !== "Atelier Grammaire" ||
+        scope.lesson && scope.lesson !== "La négation" ||
+        scope.category && scope.category !== "article après négation")) return false;
+    const targets = targetsForVariant(variant);
+    return ids.has("uf1-item-000279") &&
+      targets.every(function (id) { return ids.has(id) || [
+        "uf1-item-000126", "uf1-item-000128", "uf1-item-000132"
+      ].includes(id); });
+  }
+
   // A narrow grammar scope must test every requested answer, not just one
   // incidental target in a mixed question. Broad unit/revision scopes allow mixes.
   function matchesScope(variant, ids, narrow) {
@@ -174,9 +190,10 @@
           variant.kind==='spelling' ? scope.top_category==='Comment écrire ?' : variant.kind==='number' && scope.top_category==='Chiffres et lettres';
       }
       if (revision && !explicitGoals) return !variant.required_subsection || !scope.subsection || scope.subsection === variant.required_subsection;
-      if (!targets.every(function (id) { return ids.has(id); })) return false;
+      const articleContrast = isTrajet2NegationContrast(variant, ids, scope);
+      if (!targets.every(function (id) { return ids.has(id); }) && !articleContrast) return false;
       if (variant.required_subsection && scope.subsection !== variant.required_subsection) return false;
-      return matchesScope(variant, ids, narrow && variant.kind !== 'revision');
+      return matchesScope(variant, ids, narrow && variant.kind !== 'revision') || articleContrast;
     });
   }
 
@@ -210,5 +227,6 @@
 
   return { KINDS: KINDS, SCORING: SCORING, normalizeAnswer: normalizeAnswer,
     itemIndex: itemIndex, validateBank: validateBank, compileVariant: compileVariant, grade: grade,
-    targetsForVariant: targetsForVariant, matchesScope: matchesScope, eligibleVariants: eligibleVariants };
+    targetsForVariant: targetsForVariant, matchesScope: matchesScope,
+    isTrajet2NegationContrast: isTrajet2NegationContrast, eligibleVariants: eligibleVariants };
 });
