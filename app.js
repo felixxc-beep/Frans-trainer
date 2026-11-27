@@ -1,5 +1,5 @@
 const DATA_URL = "./data/course.json?v=20261030-trajet2-reports-1";
-const VARIANT_DATA_URL = "./data/exercise-variants.json?v=20261030-t2-1";
+const VARIANT_DATA_URL = "./data/exercise-variants.json?v=20261127-negation-verbes-1";
 const STORAGE_KEY = "monParcoursProgressV1";
 const ACTIVE_SESSION_KEY = "monParcoursActiveSessionV1";
 const MASTERY_ATTEMPTS_KEY = "monParcoursMasteryAttemptsV1";
@@ -8,7 +8,7 @@ const ASSIGNMENTS_CACHE_KEY = "monParcoursAssignmentsCacheV1";
 const VERB_EVIDENCE_KEY = "monParcoursVerbEvidenceV1";
 const VERB_SERVER_CACHE_KEY = "monParcoursVerbServerCacheV1";
 const TASK_ROUNDS_KEY = "monParcoursTaskRoundsV1";
-const APP_VERSION = "20261110-round-status-1";
+const APP_VERSION = "20261127-negation-verbes-1";
 const INACTIVITY_TIMEOUT_MS = 60000;
 const MAX_DYNAMIC_NUMBER_ALL = 101;
 const ACCENTS = ["é", "è", "ê", "ë", "à", "â", "ç", "ù", "û", "ô", "î", "ï"];
