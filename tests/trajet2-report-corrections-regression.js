@@ -12,7 +12,7 @@ const items = course.trajectories[1].items;
 const find = (n) => items.find((item) => item.id === "uf1-item-" + String(n).padStart(6,"0"));
 assert.equal(items.length,148);
 assert.equal(new Set(items.map(item => item.id)).size,148);
-assert.deepEqual(engine.validateBank(bank,course),{variants:1795,permanentItems:1036});
+assert.deepEqual(engine.validateBank(bank,course),{variants:1797,permanentItems:1036});
 
 for(const [id,form,accepted] of [
   [172,"mannelijk",["l’ainé","l’aîné"]],
@@ -60,9 +60,9 @@ for(const [id,answer,expected] of [
 assert.match(app,/report-reason/);
 assert.match(app,/report-explanation/);
 assert.match(app,/report_reason: reason/);
-assert.match(index,/exercise-variants\.js\?v=20261030-trajet2-reports-1/);
-assert.match(index,/app\.js\?v=20261110-round-status-1/);
-assert.match(teacherHtml,/teacher\.js\?v=20261110-round-status-1/);
+assert.match(index,/exercise-variants\.js\?v=20261127-negation-verbes-1/);
+assert.match(index,/app\.js\?v=20261127-negation-verbes-1/);
+assert.match(teacherHtml,/teacher\.js\?v=20261127-negation-verbes-1/);
 assert.match(teacher,/course\.json\?v=20261030-trajet2-reports-1/);
 
 // A report should require a reason, but must keep valid complaints possible.
