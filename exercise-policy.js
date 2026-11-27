@@ -80,8 +80,10 @@
       // This bank entry asks for the lexical infinitive "cuisiner" from a
       // situation. It is not offered as a grammar form in the task creator.
       return variant.id !== "T1-GRAM-AIMER-022" && trajectories.has(variant.trajectory) &&
-        variant.evidence_policy !== "practice_only" && targets.length && targets.every(function (id) { return ids.has(id); }) &&
-        engine.matchesScope(variant, ids, !mixed && variant.kind !== "revision") &&
+        variant.evidence_policy !== "practice_only" && targets.length &&
+        (targets.every(function (id) { return ids.has(id); }) || engine.isTrajet2NegationContrast(variant,ids,{trajectory:"Trajet 2"})) &&
+        (engine.matchesScope(variant, ids, !mixed && variant.kind !== "revision") ||
+          engine.isTrajet2NegationContrast(variant,ids,{trajectory:"Trajet 2"})) &&
         (!variant.required_subsection || items.every(function (item) { return item.subsection === variant.required_subsection; })) &&
         variantForm(variant, index);
     });
