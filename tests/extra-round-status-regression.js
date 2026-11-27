@@ -74,6 +74,6 @@ assert.match(app,/document.visibilityState === "visible"[\s\S]*refreshStudentAss
   "Returning to a pupil tab must refresh added/released rounds");
 assert.match(teacher,/Let op:[\s\S]*meer rondes ingesteld dan vrijgegeven/);
 assert.match(teacher,/Ronde '[\s\S]*vrijgeven/);
-assert.match(home,/app\.js\?v=20261110-round-status-1/);
-assert.match(teacherHtml,/teacher\.js\?v=20261110-round-status-1/);
+assert.match(home,/app\.js\?v=20261127-negation-verbes-1/);
+assert.match(teacherHtml,/teacher\.js\?v=20261127-negation-verbes-1/);
 console.log("EXTRA-RONDE-STATUS OK: pending = amber/open, release = available, completion = green.");

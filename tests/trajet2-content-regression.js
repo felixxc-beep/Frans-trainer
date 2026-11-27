@@ -16,7 +16,7 @@ assert.equal(items.length, 148, "Do not change existing permanent mastery goals"
 assert.deepEqual(["vocabulary", "phrase", "verb", "number", "grammar_rule", "sound_rule"].map(function (type) {
   return items.filter(function (item) { return item.type === type; }).length;
 }), [83, 19, 15, 21, 5, 5]);
-assert.deepEqual(engine.validateBank(bank, course), { variants: 1795, permanentItems: 1036 });
+assert.deepEqual(engine.validateBank(bank, course), { variants: 1797, permanentItems: 1036 });
 
 const answers = bank.variants.filter(function (row) { return /^T2-PRES-R-/.test(row.id); });
 const sounds = bank.variants.filter(function (row) { return /^T2-SON-E-/.test(row.id); });
@@ -114,12 +114,12 @@ const soundOptions = policy.options(items.filter(function (item) { return item.t
 assert.ok(soundOptions.some(function (row) { return row.key === "spelling" && row.variantCount >= 15; }),
   "Teacher must be able to assign the written sound exercises");
 
-assert.match(home,/app\.js\?v=20261110-round-status-1/);
-assert.match(home,/exercise-policy\.js\?v=20261030-t2-1/);
-assert.match(teacherHtml,/teacher\.js\?v=20261110-round-status-1/);
-assert.match(teacherHtml,/exercise-policy\.js\?v=20261030-t2-1/);
+assert.match(home,/app\.js\?v=20261127-negation-verbes-1/);
+assert.match(home,/exercise-policy\.js\?v=20261127-negation-verbes-1/);
+assert.match(teacherHtml,/teacher\.js\?v=20261127-negation-verbes-1/);
+assert.match(teacherHtml,/exercise-policy\.js\?v=20261127-negation-verbes-1/);
 assert.match(source,/const DATA_URL = ".+20261030-trajet2-reports-1"/);
-assert.match(source,/const VARIANT_DATA_URL = ".+20261030-t2-1"/);
-assert.match(teacher,/exercise-variants\.json\?v=20261030-t2-1/);
+assert.match(source,/const VARIANT_DATA_URL = ".+20261127-negation-verbes-1"/);
+assert.match(teacher,/exercise-variants\.json\?v=20261127-negation-verbes-1/);
 assert.match(source,/number-goal-note/);
 console.log("TRAJET 2 CONTENT + TASK OPTIONS OK: 148 goals, 37 new variants, 18 family examples, 21 recognition questions.");
