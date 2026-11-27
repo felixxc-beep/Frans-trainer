@@ -116,6 +116,19 @@ assert.deepEqual([lookup("réfléchir","tu").prompt,lookup("réfléchir","tu").a
   ["jij denkt na","tu réfléchis"]);
 assert.deepEqual([lookup("sortir","on").prompt,lookup("sortir","on").answers[0]],
   ["men gaat uit","on sort"]);
+// The teacher's Dutch-only task choice uses the same 135 Dutch prompts.
+const verbScope={trajectory:"Trajet 2",top_category:"Atelier Verbes"};
+const verbOption=policy.options(verbItems,bank,course,verbScope).find(row=>row.key==="verb_conjugation");
+assert.equal(verbOption.courseCount,135);
+const taskMetadata=policy.read(policy.write("",["verb_conjugation"],{size:20,scope:verbScope}));
+const taskEntries=policy.pool(verbItems,bank,course,taskMetadata.forms,taskMetadata.poolSettings.scope);
+assert.equal(taskEntries.length,15);
+assert.ok(taskEntries.every(entry=>entry.direct==="verb_conjugation" && !entry.variant));
+assert.equal(taskEntries.flatMap(entry=>build.buildQuestions([entry.item],"verb-nl-conj")).length,135);
+assert.match(teacher,/Werkwoorden: Nederlands → Frans \(vertalen en vervoegen\)/);
+assert.match(app,/verb_conjugation:'verb-nl-conj'/);
+assert.match(teacherHtml,/teacher\.js\?v=20261127-negation-verbes-1-task-nl-1/);
+
 const earlier = course.trajectories[0].items.find(item=>item.type==="verb");
 const earlierQuestions=build.buildQuestions([{...earlier,_id:earlier.id,_trajectoryIndex:0}],"verb-nl-conj");
 assert.ok(earlierQuestions.length>0);
