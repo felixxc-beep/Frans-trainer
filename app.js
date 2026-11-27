@@ -18,7 +18,7 @@ const EXERCISES = {
   "vocab-fr-nl": { type: "vocabulary", label: "Frans → Nederlands", labelFr: "Français → néerlandais", short: "Woordenschat", shortFr: "Vocabulaire" },
   "verb-nl-inf": { type: "verb", label: "Nederlands → Frans", labelFr: "Néerlandais → français", short: "Werkwoorden", shortFr: "Verbes" },
   "verb-fr-nl": { type: "verb", label: "Frans → Nederlands", labelFr: "Français → néerlandais", short: "Werkwoorden", shortFr: "Verbes" },
-  "verb-nl-conj": { type: "verb", label: "Vervoegen vanuit Nederlands", labelFr: "Conjuguer depuis le néerlandais", short: "Vervoegen", shortFr: "Conjuguer" },
+  "verb-nl-conj": { type: "verb", label: "Vertaal en vervoeg vanuit Nederlands", labelFr: "Traduire et conjuguer depuis le néerlandais", short: "Vervoegen", shortFr: "Conjuguer" },
   "verb-fr-conj": { type: "verb", label: "Vervoegen vanuit Frans", labelFr: "Conjuguer depuis le français", short: "Vervoegen", shortFr: "Conjuguer" },
   "verb-rule-recognition": { type: "verb", label: "De uitgangen herkennen", labelFr: "Reconnaître les terminaisons", short: "Regel", shortFr: "Règle" },
   "phrase-nl-fr": { type: "phrase", label: "Nederlandse zin → Franse zin", labelFr: "Phrase néerlandaise → phrase française", short: "Zinnen", shortFr: "Phrases" },
@@ -506,6 +506,12 @@ function curatedVariantsForScope(exerciseKey, scopeOverride) {
   const scope = scopeOverride || state.selectedScope || {};
   if (!trajectory || !unit) return [];
   const wanted = exerciseKey.slice("curated-".length);
+  // The mixed Trajet 2 tile is a curated scope, not a new permanent mastery goal.
+  if (trajectory.trajectory === "Trajet 2" && unit.top_category === "Atelier Grammaire" &&
+      unit.title === "La négation" && scope.category === "Mélange")
+    return curatedVariantsForUnit(trajectory,unit).filter(function (variant) {
+      return variant.kind === wanted && variant.scope_kind === "mixed";
+    });
   if (window.MonParcoursExerciseVariants && window.MonParcoursExerciseVariants.eligibleVariants) {
     const path = Object.assign({}, scope, {trajectory:trajectory.trajectory,top_category:unit.top_category,lesson:unit.title});
     const items = itemsForScope(trajectory,unit,scope).filter(isExerciseItem);
@@ -1200,6 +1206,12 @@ function renderUnit() {
     '<p class="lede">' + learningCountsHtml(exerciseCount, curatedCount, /^Action/i.test(unit.top_category)) + '</p></div>' +
     (exerciseCount || curatedCount ? compactScopeButton(unit, "", "", unit.title, exerciseCount || curatedCount) : "") + '</section>' +
     '<section class="structure-stack" aria-label="Cursusstructuur">' + sectionsHtml + '</section>' +
+    (trajectory.trajectory === "Trajet 2" && unit.top_category === "Atelier Grammaire" && unit.title === "La négation" ?
+      '<section class="structure-card"><div class="structure-heading"><div><small>' +
+        uiText("Application", "Toepassing") + '</small><h3>' + uiText("Mélange", "Alles door elkaar") +
+        '</h3></div></div><div class="scope-choice-grid">' +
+        scopeChoiceCard(unit, "", "", "Mélange",curatedCountForScope({category:"Mélange"}),"Mélange") +
+        '</div></section>' : '') +
     renderSoundNotes(soundItems);
   focusApp();
 }
@@ -1359,7 +1371,9 @@ function renderSetup() {
   const advancedKeys = new Set(["vocab-fr-nl", "verb-nl-inf", "verb-fr-nl", "verb-nl-conj", "verb-rule-recognition", "number-fr-nl"]);
   const mainChoices = assignment ? available : available.filter(function (key) { return !advancedKeys.has(key); });
   const extraChoices = assignment ? [] : available.filter(function (key) { return advancedKeys.has(key); });
-  const choicesHtml = renderExerciseChoices(mainChoices, items, assignment, scope, mainChoices[0]) +
+  const defaultExercise = !assignment && unit.top_category === "Atelier Verbes" && mainChoices.includes("verb-nl-conj")
+    ? "verb-nl-conj" : mainChoices[0];
+  const choicesHtml = renderExerciseChoices(mainChoices, items, assignment, scope, defaultExercise) +
     (extraChoices.length ? '<details class="more-exercises"><summary>' + uiText("Autres exercices", "Meer oefenvormen") +
       '</summary><div class="choice-list">' + renderExerciseChoices(extraChoices, items, assignment, scope, mainChoices[0]) + '</div></details>' : '');
 
@@ -1893,8 +1907,11 @@ function renderQuestion(message) {
   const roundProgress = roundState ? window.MonParcoursTaskRounds.progress(roundState, roundsForAssignment(roundState)) : null;
   const progress = roundProgress ? Math.round((roundProgress.done / Math.max(1, roundProgress.selected)) * 100) : Math.round((session.index / session.questions.length) * 100);
   const isTest = session.mode === "test";
-  const inlinePhraseFeedback = !isTest && question.item && ["phrase", "vocabulary"].includes(question.item.type) &&
-    !question.choices && question.variantScoring !== "multi_gap";
+  const inlinePhraseFeedback = !isTest && (
+    question.variantKind === "grammar" ||
+    question.item && ["phrase", "vocabulary"].includes(question.item.type) &&
+      !question.choices && question.variantScoring !== "multi_gap"
+  );
   const exercise = question.exerciseKey === "full-sentence-nl-fr"
     ? { type: "phrase", label: "Volledige zin vertalen", labelFr: "Traduire la phrase entière" } :
     EXERCISES[question.exerciseKey] || EXERCISES[session.exerciseKey] ||
@@ -2037,7 +2054,8 @@ function submitAnswer(rawAnswer) {
       showFeedback(true, "Bonne réponse !", "Juist antwoord!", true);
     } else {
       requeueRoundQuestion(question);
-      const hint = (window.MonParcoursPhraseFeedback && window.MonParcoursPhraseFeedback.hint(
+      const hint = trajet2NegationHint(question, rawAnswer, graded) ||
+        (window.MonParcoursPhraseFeedback && window.MonParcoursPhraseFeedback.hint(
         question, rawAnswer, Number(itemState && itemState.wrong_count || 1),
         session.assignment_round_number, session.mode)) ||
         sentenceCorrectionHint(rawAnswer, question, Number(itemState && itemState.wrong_count || 0) >= 2) ||
@@ -2094,12 +2112,13 @@ function submitAnswer(rawAnswer) {
     recordAttempt(question, false, graded);
     session.questionAttempts += 1;
     if (session.questionAttempts === 1) {
-      const hint = (window.MonParcoursPhraseFeedback && window.MonParcoursPhraseFeedback.hint(
+      const hint = trajet2NegationHint(question, rawAnswer, graded) ||
+        (window.MonParcoursPhraseFeedback && window.MonParcoursPhraseFeedback.hint(
         question, rawAnswer, session.questionAttempts, null, session.mode)) || nearCorrectHint(rawAnswer, question);
       const wrongGaps = graded && graded.gapResults.filter(function (gap) { return !gap.correct; })
         .map(function (gap, index) { return question.gaps.findIndex(function (candidate) { return candidate.id === gap.gapId; }) + 1; });
-      showFeedback(false, wrongGaps && wrongGaps.length ? "Vérifie les trous " + wrongGaps.join(", ") + "." : hint ? hint.fr : "Pas encore. Regarde bien et réessaie.",
-        wrongGaps && wrongGaps.length ? "Controleer gat " + wrongGaps.join(", ") + "." : hint ? hint.nl : "Nog niet juist. Kijk nog eens goed en probeer opnieuw.", false);
+      showFeedback(false, hint ? hint.fr : wrongGaps && wrongGaps.length ? "Vérifie les trous " + wrongGaps.join(", ") + "." : "Pas encore. Regarde bien et réessaie.",
+        hint ? hint.nl : wrongGaps && wrongGaps.length ? "Controleer gat " + wrongGaps.join(", ") + "." : "Nog niet juist. Kijk nog eens goed en probeer opnieuw.", false);
     } else {
       requeueQuestion(question);
       showFeedback(false, 'Réponses possibles : <strong>' + escapeHtml(formatAnswers(question)) + '</strong>. Cet élément reviendra plus tard.', 'Mogelijke juiste antwoorden: <strong>' + escapeHtml(formatAnswers(question)) + '</strong>. Dit item komt straks terug.', true, true);
@@ -2935,14 +2954,49 @@ function buildQuestions(items, exerciseKey) {
     if (exerciseKey === "verb-nl-conj" || exerciseKey === "verb-fr-conj") {
       (item.conjugations || []).forEach(function (conjugation) {
         concreteConjugations(conjugation).forEach(function (variant) {
-          const prompt = (exerciseKey === "verb-nl-conj" ? item.nl : item.infinitive) + " — " + variant.subject;
+          const dutchSentence = exerciseKey === "verb-nl-conj" && trajet2DutchConjugationPrompt(item,variant.subject);
+          const prompt = dutchSentence ||
+            (exerciseKey === "verb-nl-conj" ? item.nl : item.infinitive) + " — " + variant.subject;
           questions.push(makeQuestion(Object.assign({}, base, { itemVariant: variant.subject }), prompt,
-            variant.accepted_answers || [variant.form], "Vervoeg het werkwoord"));
+            variant.accepted_answers || [variant.form],
+            dutchSentence ? "Vertaal en vervoeg de volledige zin" : "Vervoeg het werkwoord"));
         });
       });
     }
   });
   return mergeEquivalentQuestions(questions);
+}
+
+// Exact Dutch finite forms for Trajet 2. A Dutch cue must not show the French infinitive or subject.
+const TRAJET2_NL_CONJUGATIONS = Object.freeze({
+  partir: ["vertrek","vertrekt","vertrekt","vertrekken","vertrekken","vertrekken"],
+  mentir: ["lieg","liegt","liegt","liegen","liegen","liegen"],
+  sentir: ["ruik","ruikt","ruikt","ruiken","ruiken","ruiken"],
+  servir: ["dien op","dient op","dient op","dienen op","dienen op","dienen op"],
+  sortir: ["ga uit","gaat uit","gaat uit","gaan uit","gaan uit","gaan uit"],
+  dormir: ["slaap","slaapt","slaapt","slapen","slapen","slapen"],
+  finir: ["eindig","eindigt","eindigt","eindigen","eindigen","eindigen"],
+  choisir: ["kies","kiest","kiest","kiezen","kiezen","kiezen"],
+  grandir: ["groei","groeit","groeit","groeien","groeien","groeien"],
+  grossir: ["verdik","verdikt","verdikt","verdikken","verdikken","verdikken"],
+  maigrir: ["vermager","vermagert","vermagert","vermageren","vermageren","vermageren"],
+  réagir: ["reageer","reageert","reageert","reageren","reageren","reageren"],
+  réfléchir: ["denk na","denkt na","denkt na","denken na","denken na","denken na"],
+  remplir: ["vul in","vult in","vult in","vullen in","vullen in","vullen in"],
+  rougir: ["bloos","bloost","bloost","blozen","blozen","blozen"]
+});
+const TRAJET2_NL_PERSONS = Object.freeze({
+  je: ["ik",0,""], tu: ["jij",1,""], il: ["hij",2,""],
+  elle: ["zij",2," (enkelvoud)"], on: ["men",2,""],
+  nous: ["wij",3,""], vous: ["jullie",4,""],
+  ils: ["zij",5," (jongens of gemengde groep)"],
+  elles: ["zij",5," (alleen meisjes)"]
+});
+function trajet2DutchConjugationPrompt(item, subject) {
+  if (item._trajectoryIndex !== 1 || !item.infinitive) return null;
+  const forms = TRAJET2_NL_CONJUGATIONS[item.infinitive];
+  const person = TRAJET2_NL_PERSONS[subject];
+  return forms && person ? person[0] + " " + forms[person[1]] + person[2] : null;
 }
 
 function concreteConjugations(conjugation) {
@@ -3180,6 +3234,31 @@ function sentenceCorrectionHint(rawAnswer, question, detailed) {
   if (modelWords.some(function (word, index) { return word !== actualWords[index]; }))
     return { fr: "Regarde les accords, les conjugaisons et l'orthographe de ta phrase.", nl: "Controleer de vervoegingen, overeenkomsten en spelling in je zin." };
   return null;
+}
+
+// Specific first-error guidance for Trajet 2 negation: never give the full answer immediately.
+function trajet2NegationHint(question, rawAnswer, graded) {
+  if (!question || !/^T2-GRAM-/.test(question.variantId || "")) return null;
+  if (question.variantScoring === "multi_gap" && graded && graded.gapResults) {
+    const incorrect = graded.gapResults.map(function (gap,index) {
+      return gap.correct ? null : index;
+    }).filter(function (index) { return index !== null; });
+    if (!incorrect.length) return null;
+    const index = incorrect[0];
+    if (index === 0 && !/^T2-GRAM-ART-/.test(question.variantId))
+      return { fr:"Vérifie ne ou n’ devant le verbe conjugué.",
+        nl:"Controleer het eerste ontkenningswoord: vóór een klinker of stomme h schrijf je n’, anders ne." };
+    if (/^T2-GRAM-ART-/.test(question.variantId))
+      return { fr:"Compare l'article avant et après la négation. Un article défini reste le même.",
+        nl:"Vergelijk het lidwoord vóór en na de ontkenning. un/une/des wordt doorgaans de/d’; le/la/les blijft staan." };
+    return { fr:"Que veut dire la phrase : pas, plus ou jamais ?",
+      nl:"Controleer de betekenis: gaat het om niet (pas), niet meer (plus) of nooit (jamais)?" };
+  }
+  if (/^T2-GRAM-(ART|ETRE)-/.test(question.variantId))
+    return { fr:"Regarde le verbe et l'article : après être, l'article ne change pas.",
+      nl:"Controleer het lidwoord: un/une/des wordt bij een gewone ontkenning de/d’, maar na être blijft het staan." };
+  return { fr:"Place ne/n’ avant le verbe conjugué et choisis pas, plus ou jamais selon le sens.",
+    nl:"Zet ne/n’ vóór het vervoegde werkwoord en kies pas, plus of jamais volgens de betekenis." };
 }
 
 function nearCorrectHint(rawAnswer, question) {
@@ -3684,6 +3763,7 @@ function instructionFrench(instruction) {
   if (value === "Schrijf de volledige Franse zin") return "Écris la phrase française complète";
   if (value === "Schrijf het getal in het Frans") return "Écris le nombre en français";
   if (value === "Schrijf het cijfer") return "Écris le nombre en chiffres";
+  if (value === "Vertaal en vervoeg de volledige zin") return "Traduis et conjugue la phrase complète";
   if (value === "Vervoeg het werkwoord") return "Conjugue le verbe";
   if (value === "Geef de uitgang van de regel") return "Donne la terminaison de la règle";
   if (value.indexOf("Vul de regel aan") === 0) return value.replace("Vul de regel aan", "Complète la règle");
