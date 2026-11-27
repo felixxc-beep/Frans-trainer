@@ -6799,7 +6799,7 @@
       "scoring": "single",
       "prompt": "Il a une sœur. (ne ... pas)",
       "source_line": 1666,
-      "instruction": "Let op het lidwoord na de ontkenning",
+      "instruction": "Maak de volledige zin ontkennend met ne ... pas. Let op het lidwoord.",
       "accepted_answers": [
         "Il n’a pas de sœur."
       ],
@@ -6815,7 +6815,7 @@
       "scoring": "single",
       "prompt": "Elle a un frère. (ne ... pas)",
       "source_line": 1667,
-      "instruction": "Let op het lidwoord na de ontkenning",
+      "instruction": "Maak de volledige zin ontkennend met ne ... pas. Let op het lidwoord.",
       "accepted_answers": [
         "Elle n’a pas de frère."
       ],
@@ -6831,7 +6831,7 @@
       "scoring": "single",
       "prompt": "Nous avons des cousins. (ne ... pas)",
       "source_line": 1668,
-      "instruction": "Let op het lidwoord na de ontkenning",
+      "instruction": "Maak de volledige zin ontkennend met ne ... pas. Let op het lidwoord.",
       "accepted_answers": [
         "Nous n’avons pas de cousins."
       ],
@@ -6847,7 +6847,7 @@
       "scoring": "single",
       "prompt": "Tu manges une pomme. (ne ... pas)",
       "source_line": 1669,
-      "instruction": "Let op het lidwoord na de ontkenning",
+      "instruction": "Maak de volledige zin ontkennend met ne ... pas. Let op het lidwoord.",
       "accepted_answers": [
         "Tu ne manges pas de pomme."
       ],
@@ -6863,7 +6863,7 @@
       "scoring": "single",
       "prompt": "Ils cherchent des photos. (ne ... pas)",
       "source_line": 1670,
-      "instruction": "Let op het lidwoord na de ontkenning",
+      "instruction": "Maak de volledige zin ontkennend met ne ... pas. Let op het lidwoord.",
       "accepted_answers": [
         "Ils ne cherchent pas de photos."
       ],
@@ -6879,7 +6879,7 @@
       "scoring": "single",
       "prompt": "Elle aime les frites. (ne ... pas)",
       "source_line": 1671,
-      "instruction": "Let op het lidwoord na de ontkenning",
+      "instruction": "Maak de volledige zin ontkennend met ne ... pas. Let op het lidwoord.",
       "accepted_answers": [
         "Elle n’aime pas les frites."
       ],
@@ -6895,7 +6895,7 @@
       "scoring": "single",
       "prompt": "Nous aimons le français. (ne ... pas)",
       "source_line": 1672,
-      "instruction": "Let op het lidwoord na de ontkenning",
+      "instruction": "Maak de volledige zin ontkennend met ne ... pas. Let op het lidwoord.",
       "accepted_answers": [
         "Nous n’aimons pas le français."
       ],
@@ -6911,7 +6911,7 @@
       "scoring": "single",
       "prompt": "Lucas adore la musique. (ne ... pas)",
       "source_line": 1673,
-      "instruction": "Let op het lidwoord na de ontkenning",
+      "instruction": "Maak de volledige zin ontkennend met ne ... pas. Let op het lidwoord.",
       "accepted_answers": [
         "Lucas n’adore pas la musique."
       ],
@@ -6927,7 +6927,7 @@
       "scoring": "multi_gap",
       "prompt": "Elle mange ___ frites. → Elle ne mange pas ___ frites.",
       "source_line": 1679,
-      "instruction": "Let op het lidwoord na de ontkenning",
+      "instruction": "Vul beide lidwoorden in: vóór en na de ontkenning.",
       "gaps": [
         {
           "id": "gap-1",
@@ -6957,7 +6957,7 @@
       "scoring": "multi_gap",
       "prompt": "Elle aime ___ frites. → Elle n’aime pas ___ frites.",
       "source_line": 1680,
-      "instruction": "Let op het lidwoord na de ontkenning",
+      "instruction": "Vul beide lidwoorden in: vóór en na de ontkenning.",
       "gaps": [
         {
           "id": "gap-1",
@@ -6987,7 +6987,7 @@
       "scoring": "multi_gap",
       "prompt": "Il a ___ frère. → Il n’a plus ___ frère.",
       "source_line": 1681,
-      "instruction": "Let op het lidwoord na de ontkenning",
+      "instruction": "Vul beide lidwoorden in: vóór en na de ontkenning.",
       "gaps": [
         {
           "id": "gap-1",
@@ -7017,7 +7017,7 @@
       "scoring": "multi_gap",
       "prompt": "Nous avons ___ cousins. → Nous n’avons jamais ___ cousins à la maison.",
       "source_line": 1682,
-      "instruction": "Let op het lidwoord na de ontkenning",
+      "instruction": "Vul beide lidwoorden in: vóór en na de ontkenning.",
       "gaps": [
         {
           "id": "gap-1",
@@ -7149,7 +7149,7 @@
             "ne"
           ],
           "targets": [
-            "uf1-item-000276"
+            "uf1-item-000278"
           ]
         },
         {
@@ -7162,7 +7162,7 @@
           ]
         }
       ],
-      "scope_kind": "mixed"
+      "scope_kind": "focused"
     },
     {
       "id": "T2-GRAM-JAM-003",
@@ -7209,7 +7209,7 @@
             "ne"
           ],
           "targets": [
-            "uf1-item-000276"
+            "uf1-item-000278"
           ]
         },
         {
@@ -7222,7 +7222,7 @@
           ]
         }
       ],
-      "scope_kind": "mixed"
+      "scope_kind": "focused"
     },
     {
       "id": "T2-GRAM-JAM-005",
@@ -7239,7 +7239,7 @@
             "ne"
           ],
           "targets": [
-            "uf1-item-000276"
+            "uf1-item-000278"
           ]
         },
         {
@@ -7252,7 +7252,7 @@
           ]
         }
       ],
-      "scope_kind": "mixed"
+      "scope_kind": "focused"
     },
     {
       "id": "T2-GRAM-JAM-006",
@@ -7305,7 +7305,7 @@
       "trajectory": "Trajet 2",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "— Vous sortez souvent ? — Non, ...",
+      "prompt": "— Vous deux, vous sortez souvent ? — Non, nous ...",
       "source_line": 1644,
       "instruction": "Maak de zin ontkennend met ne ... jamais",
       "accepted_answers": [
@@ -7337,9 +7337,9 @@
       "trajectory": "Trajet 2",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Tu habites encore à Bruxelles ? → Non, je ... (ne ... plus)",
+      "prompt": "Tu habites encore à Bruxelles ? (Nee, ik woon niet meer in Brussel.) → Non, je ...",
       "source_line": 1708,
-      "instruction": "Kies de ontkenning die bij de betekenis past",
+      "instruction": "Schrijf het ontbrekende Franse deel. Kies de ontkenning volgens de betekenis.",
       "accepted_answers": [
         "n’habite plus à Bruxelles"
       ],
@@ -7353,9 +7353,9 @@
       "trajectory": "Trajet 2",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Tu joues souvent au foot ? → Non, je ... (ne ... jamais)",
+      "prompt": "Tu joues souvent au foot ? (Nee, ik speel nooit voetbal.) → Non, je ...",
       "source_line": 1709,
-      "instruction": "Kies de ontkenning die bij de betekenis past",
+      "instruction": "Schrijf het ontbrekende Franse deel. Kies de ontkenning volgens de betekenis.",
       "accepted_answers": [
         "ne joue jamais au foot"
       ],
@@ -7369,9 +7369,9 @@
       "trajectory": "Trajet 2",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Tu aimes le coca ? → Non, je ... (ne ... pas)",
+      "prompt": "Tu aimes le coca ? (Nee, ik hou niet van cola.) → Non, je ...",
       "source_line": 1710,
-      "instruction": "Kies de ontkenning die bij de betekenis past",
+      "instruction": "Schrijf het ontbrekende Franse deel. Kies de ontkenning volgens de betekenis.",
       "accepted_answers": [
         "n’aime pas le coca"
       ],
@@ -7385,9 +7385,9 @@
       "trajectory": "Trajet 2",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Elle a encore une sœur à la maison ? → Non, elle ... (ne ... plus)",
+      "prompt": "Elle a encore une sœur à la maison ? (Nee, ze heeft geen zus meer in huis.) → Non, elle ...",
       "source_line": 1711,
-      "instruction": "Kies de ontkenning die bij de betekenis past",
+      "instruction": "Schrijf het ontbrekende Franse deel. Kies de ontkenning volgens de betekenis.",
       "accepted_answers": [
         "n’a plus de sœur à la maison"
       ],
@@ -7401,9 +7401,9 @@
       "trajectory": "Trajet 2",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "Ils mangent souvent des pommes ? → Non, ils ... (ne ... jamais)",
+      "prompt": "Ils mangent souvent des pommes ? (Nee, ze eten nooit appels.) → Non, ils ...",
       "source_line": 1712,
-      "instruction": "Kies de ontkenning die bij de betekenis past",
+      "instruction": "Schrijf het ontbrekende Franse deel. Kies de ontkenning volgens de betekenis.",
       "accepted_answers": [
         "ne mangent jamais de pommes"
       ],
@@ -7417,9 +7417,9 @@
       "trajectory": "Trajet 2",
       "kind": "grammar",
       "scoring": "single",
-      "prompt": "C’est un garçon paresseux ? → Non, ... (ne ... pas)",
+      "prompt": "C’est un garçon paresseux ? (Nee, het is geen luie jongen.) → Non, ...",
       "source_line": 1713,
-      "instruction": "Kies de ontkenning die bij de betekenis past",
+      "instruction": "Schrijf het ontbrekende Franse deel. Kies de ontkenning volgens de betekenis.",
       "accepted_answers": [
         "ce n’est pas un garçon paresseux"
       ],
@@ -7441,7 +7441,7 @@
             "n’"
           ],
           "targets": [
-            "uf1-item-000276"
+            "uf1-item-000277"
           ]
         },
         {
@@ -7455,14 +7455,15 @@
         }
       ],
       "source_line": 1717,
-      "scope_kind": "mixed"
+      "scope_kind": "mixed",
+      "instruction": "Vul de juiste ontkenning in op basis van de betekenis"
     },
     {
       "id": "T2-GRAM-MIX-008",
       "trajectory": "Trajet 2",
       "kind": "grammar",
       "scoring": "multi_gap",
-      "prompt": "Emma joue au tennis tous les jours, mais elle ne joue au basket aucun jour.\nEmma ___ joue ___ au basket.",
+      "prompt": "Emma speelt elke dag tennis, maar nooit basket.\nEmma ___ joue ___ au basket.",
       "gaps": [
         {
           "id": "gap-1",
@@ -7470,7 +7471,7 @@
             "ne"
           ],
           "targets": [
-            "uf1-item-000276"
+            "uf1-item-000278"
           ]
         },
         {
@@ -7484,14 +7485,15 @@
         }
       ],
       "source_line": 1723,
-      "scope_kind": "mixed"
+      "scope_kind": "mixed",
+      "instruction": "Vul de juiste ontkenning in op basis van de betekenis"
     },
     {
       "id": "T2-GRAM-MIX-009",
       "trajectory": "Trajet 2",
       "kind": "grammar",
       "scoring": "multi_gap",
-      "prompt": "Hugo a un frère, mais il n’a aucune sœur.\nHugo ___ a ___ de sœur.",
+      "prompt": "Hugo heeft een broer, maar geen zus.\nHugo ___ a ___ de sœur.",
       "gaps": [
         {
           "id": "gap-1",
@@ -7513,14 +7515,15 @@
         }
       ],
       "source_line": 1729,
-      "scope_kind": "mixed"
+      "scope_kind": "mixed",
+      "instruction": "Vul de juiste ontkenning in op basis van de betekenis"
     },
     {
       "id": "T2-GRAM-MIX-010",
       "trajectory": "Trajet 2",
       "kind": "grammar",
       "scoring": "multi_gap",
-      "prompt": "Julie aime les jeux vidéo, mais elle n’aime pas le foot.\nJulie ___ aime ___ le foot.",
+      "prompt": "Julie aime les jeux vidéo, mais elle déteste le foot.\nJulie ___ aime ___ le foot.",
       "gaps": [
         {
           "id": "gap-1",
@@ -7542,7 +7545,8 @@
         }
       ],
       "source_line": 1735,
-      "scope_kind": "mixed"
+      "scope_kind": "mixed",
+      "instruction": "Vul de juiste ontkenning in op basis van de betekenis"
     },
     {
       "id": "T2-GRAM-PAS-001",
@@ -8005,7 +8009,7 @@
       "trajectory": "Trajet 2",
       "kind": "grammar",
       "scoring": "multi_gap",
-      "prompt": "Nous cohabitons encore. → Nous ___ cohabitons ___.",
+      "prompt": "Nous habitons encore ici. → Nous ___ habitons ___ ici.",
       "source_line": 1614,
       "instruction": "Maak de zin ontkennend met ne ... plus",
       "gaps": [
@@ -30068,6 +30072,36 @@
       ],
       "source": "Digiboek Trajet 2 – Le son [e] (télé), p. 135–136; schriftelijke herkenning",
       "scope_kind": "focused"
+    },
+    {
+      "id": "T2-GRAM-ART-013",
+      "trajectory": "Trajet 2",
+      "kind": "grammar",
+      "scoring": "single",
+      "scope_kind": "focused",
+      "prompt": "Il a un ami. (ne ... pas)",
+      "instruction": "Maak de volledige zin ontkennend met ne ... pas. Let op de klinker na de.",
+      "accepted_answers": [
+        "Il n’a pas d’ami."
+      ],
+      "targets": [
+        "uf1-item-000279"
+      ]
+    },
+    {
+      "id": "T2-GRAM-ART-014",
+      "trajectory": "Trajet 2",
+      "kind": "grammar",
+      "scoring": "single",
+      "scope_kind": "focused",
+      "prompt": "Nous avons des amis. (ne ... pas)",
+      "instruction": "Maak de volledige zin ontkennend met ne ... pas. Let op de klinker na de.",
+      "accepted_answers": [
+        "Nous n’avons pas d’amis."
+      ],
+      "targets": [
+        "uf1-item-000279"
+      ]
     }
   ]
 }
