@@ -12,7 +12,7 @@ assert.match(index, /exercise-variants\.js[^]*app\.js/, "variant engine loads be
 const allItems = course.trajectories.flatMap(function (trajectory) { return trajectory.items; });
 assert.equal(allItems.length, 1036);
 assert.equal(new Set(allItems.map(function (item) { return item.id; })).size, 1036);
-assert.deepEqual(engine.validateBank(bank, course), { variants: 1795, permanentItems: 1036 });
+assert.deepEqual(engine.validateBank(bank, course), { variants: 1797, permanentItems: 1036 });
 assert.deepEqual([1, 2, 3, 4, 5, 6].map(function (number) {
   return bank.variants.filter(function (variant) { return variant.trajectory === "Trajet " + number; }).length;
 }), [378, 259, 234, 295, 289, 340]);
