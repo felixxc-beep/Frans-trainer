@@ -3069,7 +3069,7 @@
       state.course = await response.json();
       state.courseIndex = buildCourseIndex(state.course);
       try {
-        const variantsResponse = await fetch("./data/exercise-variants.json?v=20261030-t2-1");
+        const variantsResponse = await fetch("./data/exercise-variants.json?v=20261127-negation-verbes-1");
         if (!variantsResponse.ok) throw Error("VARIANT_LOAD_FAILED");
         const bank = await variantsResponse.json();
         window.MonParcoursExerciseVariants.validateBank(bank, state.course);
