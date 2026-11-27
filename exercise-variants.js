@@ -104,6 +104,12 @@
       ? variant.gaps.flatMap(function (gap) { return targetIds(gap.targets, index, variant.id + "/" + gap.id); })
       : targetIds(variant.targets, index, variant.id);
     const ids = Array.from(new Set(mapped));
+    // The Trajet 2 negation goal owns the question in a Trajet 2 task,
+    // even when the first blank revises an older Trajet 1 article.
+    if (isTrajet2NegationContrast(variant,new Set(["uf1-item-000279"]),{trajectory:"Trajet 2"})) {
+      const position = ids.indexOf("uf1-item-000279");
+      if (position > 0) ids.unshift(ids.splice(position,1)[0]);
+    }
     const item = index.get(ids[0]);
     return {
       variantId: variant.id, variantKind: variant.kind, variantScoring: variant.scoring,
